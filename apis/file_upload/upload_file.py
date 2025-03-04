@@ -352,8 +352,11 @@ def get_file_url_route():
             return create_api_response(result, 200)
         finally:
             # Ensure cursor and connection are closed even if an exception occurs
-            if not cursor.closed:
+            try:
                 cursor.close()
+            except:
+                pass
+            
             if db_conn:
                 db_conn.close()
         
@@ -497,8 +500,11 @@ def delete_file_route():
             }, 200)
         finally:
             # Ensure cursor and connection are closed even if an exception occurs
-            if not cursor.closed:
+            try:
                 cursor.close()
+            except:
+                pass
+            
             if db_conn:
                 db_conn.close()
     except Exception as e:
