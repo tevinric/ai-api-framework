@@ -302,46 +302,60 @@ def get_file_url_route():
         db_conn = DatabaseService.get_connection()
         cursor = db_conn.cursor()
         
-        query = """
-        SELECT id, user_id, original_filename, blob_url, content_type, upload_date
-        FROM file_uploads
-        WHERE id = ?
-        """
+        try:
+            query = """
+            SELECT id, user_id, original_filename, blob_url, content_type, upload_date
+            FROM file_uploads
+            WHERE id = ?
+            """
+            
+            cursor.execute(query, [file_id])
+            file_info = cursor.fetchone()
+            
+            if not file_info:
+                cursor.close()
+                db_conn.close()
+                return create_api_response({
+                    "error": "Not Found",
+                    "message": f"File with ID {file_id} not found"
+                }, 404)
+            
+            # Get user scope from database
+            user_scope_query = """
+            SELECT scope FROM users WHERE id = ?
+            """
+            cursor.execute(user_scope_query, [g.user_id])
+            user_scope_result = cursor.fetchone()
+            user_scope = user_scope_result[0] if user_scope_result else 1  # Default to regular user if not found
         
-        cursor.execute(query, [file_id])
-        file_info = cursor.fetchone()
-        cursor.close()
-        db_conn.close()
-        
-        if not file_info:
-            return create_api_response({
-                "error": "Not Found",
-                "message": f"File with ID {file_id} not found"
-            }, 404)
-        
-        # Get user scope from database
-        user_scope_query = """
-        SELECT scope FROM users WHERE id = ?
-        """
-        cursor.execute(user_scope_query, [g.user_id])
-        user_scope_result = cursor.fetchone()
-        user_scope = user_scope_result[0] if user_scope_result else 1  # Default to regular user if not found
-        
-        # Check if user has access to this file (admin or file owner)
-        # Admins (scope=0) can access any file
-        if user_scope != 0 and str(file_info[1]) != g.user_id:
-            return create_api_response({
-                "error": "Forbidden",
-                "message": "You don't have permission to access this file"
-            }, 403)
-        
-        # Return file info with URL
-        return create_api_response({
-            "file_name": file_info[2],
-            "file_url": file_info[3],
-            "content_type": file_info[4],
-            "upload_date": file_info[5].isoformat() if file_info[5] else None
-        }, 200)
+            # Check if user has access to this file (admin or file owner)
+            # Admins (scope=0) can access any file
+            if user_scope != 0 and str(file_info[1]) != g.user_id:
+                cursor.close()
+                db_conn.close()
+                return create_api_response({
+                    "error": "Forbidden",
+                    "message": "You don't have permission to access this file"
+                }, 403)
+            
+            # Return file info with URL
+            result = {
+                "file_name": file_info[2],
+                "file_url": file_info[3],
+                "content_type": file_info[4],
+                "upload_date": file_info[5].isoformat() if file_info[5] else None
+            }
+            
+            cursor.close()
+            db_conn.close()
+            
+            return create_api_response(result, 200)
+        finally:
+            # Ensure cursor and connection are closed even if an exception occurs
+            if not cursor.closed:
+                cursor.close()
+            if db_conn:
+                db_conn.close()
         
     except Exception as e:
         logger.error(f"Error retrieving file URL: {str(e)}")
@@ -422,70 +436,77 @@ def delete_file_route():
         db_conn = DatabaseService.get_connection()
         cursor = db_conn.cursor()
         
-        query = """
-        SELECT id, user_id, blob_name
-        FROM file_uploads
-        WHERE id = ?
-        """
-        
-        cursor.execute(query, [file_id])
-        file_info = cursor.fetchone()
-        
-        if not file_info:
-            cursor.close()
-            db_conn.close()
-            return create_api_response({
-                "error": "Not Found",
-                "message": f"File with ID {file_id} not found"
-            }, 404)
-        
-        # Get user scope from database
-        user_scope_query = """
-        SELECT scope FROM users WHERE id = ?
-        """
-        cursor.execute(user_scope_query, [g.user_id])
-        user_scope_result = cursor.fetchone()
-        user_scope = user_scope_result[0] if user_scope_result else 1  # Default to regular user if not found
-        
-        # Check if user has permission to delete this file (admin or file owner)
-        # Admins (scope=0) can delete any file
-        if user_scope != 0 and str(file_info[1]) != g.user_id:
-            cursor.close()
-            db_conn.close()
-            return create_api_response({
-                "error": "Forbidden",
-                "message": "You don't have permission to delete this file"
-            }, 403)
-        
-        # Delete from blob storage
-        blob_name = file_info[2]
-        blob_service_client = get_azure_blob_client()
-        container_client = blob_service_client.get_container_client(FILE_UPLOAD_CONTAINER)
-        blob_client = container_client.get_blob_client(blob_name)
-        
-        # Try to delete the blob (may already be deleted)
         try:
-            blob_client.delete_blob()
-        except Exception as e:
-            logger.warning(f"Error deleting blob {blob_name}, may already be deleted: {str(e)}")
-        
-        # Delete from database
-        delete_query = """
-        DELETE FROM file_uploads
-        WHERE id = ?
-        """
-        
-        cursor.execute(delete_query, [file_id])
-        db_conn.commit()
-        cursor.close()
-        db_conn.close()
-        
-        logger.info(f"File {file_id} deleted by user {g.user_id}")
-        
+            query = """
+            SELECT id, user_id, blob_name
+            FROM file_uploads
+            WHERE id = ?
+            """
+            
+            cursor.execute(query, [file_id])
+            file_info = cursor.fetchone()
+            
+            if not file_info:
+                return create_api_response({
+                    "error": "Not Found",
+                    "message": f"File with ID {file_id} not found"
+                }, 404)
+            
+            # Get user scope from database
+            user_scope_query = """
+            SELECT scope FROM users WHERE id = ?
+            """
+            cursor.execute(user_scope_query, [g.user_id])
+            user_scope_result = cursor.fetchone()
+            user_scope = user_scope_result[0] if user_scope_result else 1  # Default to regular user if not found
+            
+            # Check if user has permission to delete this file (admin or file owner)
+            # Admins (scope=0) can delete any file
+            if user_scope != 0 and str(file_info[1]) != g.user_id:
+                return create_api_response({
+                    "error": "Forbidden",
+                    "message": "You don't have permission to delete this file"
+                }, 403)
+            
+            # Delete from blob storage
+            blob_name = file_info[2]
+            blob_service_client = get_azure_blob_client()
+            container_client = blob_service_client.get_container_client(FILE_UPLOAD_CONTAINER)
+            blob_client = container_client.get_blob_client(blob_name)
+            
+            # Try to delete the blob (may already be deleted)
+            try:
+                blob_client.delete_blob()
+            except Exception as e:
+                logger.warning(f"Error deleting blob {blob_name}, may already be deleted: {str(e)}")
+            
+            # Delete from database
+            delete_query = """
+            DELETE FROM file_uploads
+            WHERE id = ?
+            """
+            
+            cursor.execute(delete_query, [file_id])
+            db_conn.commit()
+            
+            logger.info(f"File {file_id} deleted by user {g.user_id}")
+            
+            return create_api_response({
+                "message": "File deleted successfully",
+                "file_id": file_id
+            }, 200)
+        finally:
+            # Ensure cursor and connection are closed even if an exception occurs
+            if not cursor.closed:
+                cursor.close()
+            if db_conn:
+                db_conn.close()
+    except Exception as e:
+        logger.error(f"Error deleting file: {str(e)}")
         return create_api_response({
-            "message": "File deleted successfully",
-            "file_id": file_id
-        }, 200)
+            "error": "Server Error",
+            "message": f"Error deleting file: {str(e)}"
+        }, 500)
         
     except Exception as e:
         logger.error(f"Error deleting file: {str(e)}")
