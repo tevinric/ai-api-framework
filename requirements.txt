@@ -1,0 +1,13 @@
+flask
+msal
+pytz
+pyodbc
+flasgger
+openai
+langchain
+langchain_community
+langchain_openai
+faiss_cpu
+azure.storage.blob
+azure.ai.inference
+gunicorn

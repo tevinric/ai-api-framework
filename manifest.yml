@@ -1,0 +1,185 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: #{ApplicationName}#
+  labels:
+    app: #{ApplicationName}#
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: #{ApplicationName}#
+  template:
+    metadata:
+      labels:
+        app: #{ApplicationName}#
+    spec:
+      containers:
+        - name: #{ApplicationName}#
+          image: #{RegistryAddress}#/#{ImageName}#:#{Version}#
+          env:
+          - name: ENTRA_APP_TENANT_ID
+            valueFrom:
+              secretKeyRef:
+                name: tihaiapi-credentials
+                key: ENTRA_APP_TENANT_ID
+
+          - name: ENTRA_APP_CLIENT_ID
+            valueFrom:
+              secretKeyRef:
+                name: tihaiapi-credentials
+                key: ENTRA_APP_CLIENT_ID
+          
+          - name: ENTRA_APP_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: tihaiapi-credentials
+                key: ENTRA_APP_CLIENT_SECRET
+
+          - name: DB_DRIVER
+            valueFrom:
+              secretKeyRef:
+                name: tihaiapi-credentials
+                key: DB_DRIVER
+
+          - name: DB_SERVER
+            valueFrom:
+              secretKeyRef:
+                name: tihaiapi-credentials
+                key: DB_SERVER
+
+          - name: DB_NAME
+            valueFrom:
+              secretKeyRef:
+                name: tihaiapi-credentials
+                key: DB_NAME
+
+          - name: DB_USER
+            valueFrom:
+              secretKeyRef:
+                name: tihaiapi-credentials
+                key: DB_USER
+
+          - name: DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: tihaiapi-credentials
+                key: DB_PASSWORD
+
+          - name: OPENAI_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: tihaiapi-credentials
+                key: OPENAI_API_KEY
+
+          - name: OPENAI_API_ENDPOINT
+            valueFrom:
+              secretKeyRef:
+                name: tihaiapi-credentials
+                key: OPENAI_API_ENDPOINT
+
+          - name: DEEPSEEK_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: tihaiapi-credentials
+                key: DEEPSEEK_API_KEY       
+
+          - name: LLAMA_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: tihaiapi-credentials
+                key: LLAMA_API_KEY
+
+          - name: AZURE_STORAGE_CONNECTION_STRING
+            valueFrom:
+              secretKeyRef:
+                name: tihaiapi-credentials
+                key: AZURE_STORAGE_CONNECTION_STRING     
+
+          - name: AZURE_STORAGE_CONTAINER
+            valueFrom:
+              secretKeyRef:
+                name: tihaiapi-credentials
+                key: AZURE_STORAGE_CONTAINER     
+
+          - name: AZURE_STORAGE_ACCOUNT
+            valueFrom:
+              secretKeyRef:
+                name: tihaiapi-credentials
+                key: AZURE_STORAGE_ACCOUNT 
+
+          - name: AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT
+            valueFrom:
+              secretKeyRef:
+                name: tihaiapi-credentials
+                key: AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT                
+
+          - name: AZURE_DOCUMENT_INTELLIGENCE_KEY
+            valueFrom:
+              secretKeyRef:
+                name: tihaiapi-credentials
+                key: AZURE_DOCUMENT_INTELLIGENCE_KEY   
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            privileged: false
+            readOnlyRootFilesystem: false
+            runAsNonRoot: false
+          ports:
+            - containerPort: 8000
+              name: http
+          #livenessProbe:
+          #  failureThreshold: 3
+          #  httpGet:
+          #    path: /health
+          #    port: 80
+          #    scheme: HTTP
+          #  initialDelaySeconds: 10
+          #  periodSeconds: 2
+          #  successThreshold: 1
+          #  timeoutSeconds: 2
+          #readinessProbe:
+          #  failureThreshold: 3
+          # httpGet:
+          #   path: /health
+          #   port: 80
+          #   scheme: HTTP
+          # initialDelaySeconds: 10
+          # periodSeconds: 2
+          # successThreshold: 2
+          # timeoutSeconds: 2
+          resources:
+            requests:
+              ephemeral-storage: 100Mi
+            limits:
+              ephemeral-storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: #{ApplicationName}#
+  labels:
+    app: #{ApplicationName}#-service
+spec:
+  selector:
+    app: #{ApplicationName}#
+  ports:
+    - name: http
+      port: 8000
+      protocol: TCP
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: #{ApplicationName}#-node
+  labels:
+    app: #{ApplicationName}#-service-node
+spec:
+  selector:
+    app: #{ApplicationName}#
+  ports:
+    - name: http-node
+      port: 8000
+      protocol: TCP
+  type: NodePort

@@ -1,0 +1,14 @@
+variables:
+    applicationName: tihaiapis
+    teamName: coe
+    projectNamespace: tihaiapis
+    #K8sManifestDir: 
+    SonarQubeApplication:
+    SonarQubeContinueOnError:
+    #projectKey:
+    #serviceLanguage:
+    #RunUnitTests:
+    #RunLintChecks:
+    KongEnabled: false
+    #KongDirectory:
+    #NugetAuth: 

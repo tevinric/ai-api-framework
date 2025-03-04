@@ -1,0 +1,19 @@
+ISMS-POL-APP-001 Application Security Policy_v2.0 1.pdf	411284	Thu Sep 26 18:16:11 2024
+ISMS-POL-ASS-001 Vulnerability and Patch Management Policy v2.1 2.pdf	511395	Thu Sep 26 18:16:16 2024
+ISMS-POL-GOV-001 Information Security Policy v2.2 2.pdf	529245	Thu Sep 26 18:16:20 2024
+ISMS-POL-GOV-002 Information and Technology Governance Policy v3.2 3.pdf	580090	Thu Sep 26 18:16:28 2024
+ISMS-POL-GOV-003 GIT Change Management Policy_v3.2 3.pdf	358787	Thu Sep 26 18:16:07 2024
+ISMS-POL-GOV-004 GIT Release Management Policy 3.pdf	337803	Thu Sep 26 18:16:05 2024
+ISMS-POL-HR-001 Acceptable Usage Policy v2.2 2.pdf	406485	Thu Sep 26 18:16:18 2024
+ISMS-POL-MON-001 Security Event Monitoring Policy_Feb2024 1.pdf	403783	Thu Sep 26 18:16:30 2024
+ISMS-POL-NET-001 Network Security Policy v2.0 1.pdf	347412	Thu Sep 26 18:16:14 2024
+ISMS-POL-RES-002 Info Sec Incident Response Policy_v2.0 1.pdf	400462	Thu Sep 26 18:16:09 2024
+ISMS-POL-SYS-001 Cloud Security Policy_ v2.0 1.pdf	347811	Thu Sep 26 18:16:23 2024
+ISMS-POL-SYS-002 System Infrastructure Security policy v2.0 1.pdf	512441	Thu Sep 26 18:16:13 2024
+ISMS-POL-USER-001 User Identity and Access Management Policy 2.pdf	552480	Thu Sep 26 18:16:26 2024
+ISMS-PRS-GOV-001 Governance Document Management process_v001 1.pdf	629180	Thu Sep 26 18:15:57 2024
+ISMS-PRS-RES-002 GIT - Incident Management Process v3.0 1.pdf	518448	Thu Sep 26 18:16:01 2024
+ISMS-PRS-RES-003  GIT - Major Incident Process 1.pdf	236345	Thu Sep 26 18:16:04 2024
+ISMS-STD-NET-003 Wireless Network Security v2.pdf	385328	Thu Sep 26 18:16:34 2024
+ISMS-STD-RES-001 GIT - Incident Management_Priority & Categorization Model v3.2_July24 2.pdf	277194	Thu Sep 26 18:16:36 2024
+ISMS-STD-RES-002 GIT - Major Incident Severity Classificationv3.2 2.pdf	227304	Thu Sep 26 18:16:32 2024

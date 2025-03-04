@@ -1,0 +1,59 @@
+resources:
+  repositories:
+    - repository: Pipeline-Templates
+      type: git
+      name: 'TIH Libraries and Controls/Pipeline-Templates'
+
+trigger:
+  branches:
+    include:
+      - master
+      #- feature
+      #- release
+      #- main
+
+pr:
+  - master
+  #- dev
+
+variables:
+  - template: pipeline-vars.yml
+
+  - name: projectImage
+    value: '${{variables.teamName}}/${{variables.applicationName}}'
+  - name: DeployPool
+    value: 'Container Agents'
+  - name: ACR_Service_Principal
+    value: 'Azure DevOps Pipeline Service'
+  - name: K8s-ServiceConnection-Dev
+    value: Kubernetes_OnPrem_Dev
+  - name: K8s-ServiceConnection-SIT
+    value: Kubernetes_OnPrem_Sit
+  - name: K8s-ServiceConnection-UAT
+    value: Kubernetes_OnPrem_UAT
+  - name: K8s-ServiceConnection-Prod
+    value: Kubernetes_OnPrem_Prod
+
+pool: 'TIH Hosted'
+
+stages:
+  - template: 'templates/pipelines/Python_K8s.yml@Pipeline-Templates'
+    parameters:
+      ImageName: '${{variables.projectImage}}'
+      ApplicationName: '${{variables.applicationName}}'
+      RunLintChecks : false
+      RunUnitTests : false
+      AgentPool: $(DeployPool)
+      Namespace: '${{variables.projectNamespace}}'
+      K8sServiceConnectionDEV : $(K8s-ServiceConnection-Dev)
+      K8sServiceConnectionSIT : $(K8s-ServiceConnection-SIT)
+      K8sServiceConnectionUAT : $(K8s-ServiceConnection-UAT)
+      K8sServiceConnectionPROD : $(K8s-ServiceConnection-Prod)
+      #K8sManifestDir: '${{variables.K8sManifestDir}}'
+      #ACR_Service_Principal: '$(ACR_Service_Principal)'
+      #sonarQubeEndpoint : '${{variables.sonarQubeEndpoint}}'
+      #SonarQubeContinueOnError : '${{variables.SonarQubeContinueOnError}}'
+      #projectName : '${{variables.projectNamespace}}'
+      #projectKey: '${{variables.sonarQubeProjectKey}}'
+      #KongEnabled : '${{variables.KongEnabled}}'
+      #NugetAuth: ${{variables.NugetAuth}}

@@ -1,0 +1,13 @@
+-- Create endpoints table 
+USE AIAPISDEV;
+
+CREATE TABLE endpoints (
+    id UNIQUEIDENTIFIER PRIMIARY KEY DEFAULT NEWID(),
+    endpoint_name NVARCHAR(100) NOT NULL,
+    endpoint_path NVARCHAR(MAX) NOT NULL,
+    description NVARCHAR(MAX),
+    created_at DATETIME2 NOT NULL DEFAULT DATEADD(HOUR, 2, GETUTCDATE()),
+    modifed_at DATETIME2 NOT NULL DEFAULT DATEADD(HOUR, 2, GETUTCDATE())
+    active BIT NOT NULL DEFAULT 1,
+    cost INT NOT NULL DEFAULT 1
+);
