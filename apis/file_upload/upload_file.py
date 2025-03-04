@@ -212,16 +212,22 @@ def get_file_url_route():
     tags:
       - File Upload
     parameters:
-      - name: API-Key
+      - name: X-Token
         in: header
         type: string
         required: true
-        description: API Key for authentication
-      - name: file_id
-        in: query
-        type: string
+        description: Valid token for authentication
+      - name: body
+        in: body
         required: true
-        description: Unique file identifier
+        schema:
+          type: object
+          required:
+            - file_id
+          properties:
+            file_id:
+              type: string
+              description: Unique file identifier
     produces:
       - application/json
     responses:
@@ -281,13 +287,15 @@ def get_file_url_route():
     g.user_id = token_details["user_id"]
     g.token_id = token_details["id"]
     
-    # Get file_id from query parameter
-    file_id = request.args.get('file_id')
-    if not file_id:
+    # Get request data
+    data = request.get_json()
+    if not data or 'file_id' not in data:
         return create_api_response({
             "error": "Bad Request",
-            "message": "file_id is required"
+            "message": "file_id is required in the request body"
         }, 400)
+    
+    file_id = data['file_id']
     
     try:
         # Query database for file information
@@ -489,5 +497,5 @@ def delete_file_route():
 def register_file_upload_routes(app):
     """Register file upload routes with the Flask app"""
     app.route('/upload-file', methods=['POST'])(api_logger(upload_file_route))
-    app.route('/get-file-url', methods=['GET'])(api_logger(get_file_url_route))
+    app.route('/get-file-url', methods=['POST'])(api_logger(get_file_url_route))
     app.route('/delete-file', methods=['DELETE'])(api_logger(delete_file_route))
