@@ -107,5 +107,9 @@ register_rag_query_routes(app)
 from apis.image_generation.dalle3 import register_image_generation_routes
 register_image_generation_routes(app)
 
+
+from apis.file_upload.upload_file import register_file_upload_routes
+register_file_upload_routes(app)
+
 if __name__ == '__main__':
     app.run()
