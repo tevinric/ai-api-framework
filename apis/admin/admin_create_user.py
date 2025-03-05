@@ -1,4 +1,4 @@
-from flask import jsonify, request, g , make_response
+from flask import jsonify, request, g, make_response
 from apis.utils.tokenService import TokenService
 from apis.utils.databaseService import DatabaseService
 from apis.utils.logMiddleware import api_logger
@@ -28,19 +28,20 @@ def create_user_route():
         type: string
         required: true
         description: Admin API Key for authentication
+      - name: token
+        in: query
+        type: string
+        required: true
+        description: A valid token for verification
       - name: body
         in: body
         required: true
         schema:
           type: object
           required:
-            - token
             - user_name
             - user_email
           properties:
-            token:
-              type: string
-              description: A valid token for verification
             user_name:
               type: string
               description: Username for the new user
@@ -146,22 +147,14 @@ def create_user_route():
             "message": "Admin privileges required to create users"
         }, 403)
     
-    # Get request data
-    data = request.get_json()
-    if not data:
-        return create_api_response({
-            "error": "Bad Request",
-            "message": "Request body is required"
-        }, 400)
-    
-    # Validate token from request body
-    token = data.get('token')
+    # Get token from query parameter
+    token = request.args.get('token')
     if not token:
         return create_api_response({
             "error": "Bad Request",
-            "message": "Valid token is required in the request body"
+            "message": "Missing token parameter"
         }, 400)
-        
+    
     # Verify the token is valid
     token_details = DatabaseService.get_token_details_by_value(token)
     if not token_details:
@@ -186,6 +179,14 @@ def create_user_route():
             "error": "Authentication Error",
             "message": "Token has expired"
         }, 401)
+    
+    # Get request data
+    data = request.get_json()
+    if not data:
+        return create_api_response({
+            "error": "Bad Request",
+            "message": "Request body is required"
+        }, 400)
     
     # Validate required fields for user creation
     required_fields = ['user_name', 'user_email']
