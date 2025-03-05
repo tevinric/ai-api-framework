@@ -53,6 +53,12 @@ def admin_update_user_route():
             common_name:
               type: string
               description: Updated common name (optional)
+            company:
+              type: string
+              description: Updated company name (optional)
+            department:
+              type: string
+              description: Updated department name (optional)
             scope:
               type: integer
               description: Updated permission scope (optional, 1-5)
@@ -223,7 +229,7 @@ def admin_update_user_route():
     
     # Prepare update data (only include fields that are provided)
     update_data = {}
-    valid_fields = ['user_name', 'user_email', 'common_name', 'scope', 'active', 'comment']
+    valid_fields = ['user_name', 'user_email', 'common_name', 'company', 'department', 'scope', 'active', 'comment']
     
     for field in valid_fields:
         if field in data and data[field] is not None:

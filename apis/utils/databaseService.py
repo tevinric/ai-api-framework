@@ -36,6 +36,7 @@ class DatabaseService:
             logger.error(f"Database connection error: {str(e)}")
             raise
 
+
     @staticmethod
     def validate_api_key(api_key):
         """Validate API key and return user details if valid"""
@@ -44,7 +45,7 @@ class DatabaseService:
             cursor = conn.cursor()
             
             query = """
-            SELECT id, user_name, user_email, common_name, api_key, scope, active
+            SELECT id, user_name, user_email, common_name, company, department, api_key, scope, active
             FROM users
             WHERE api_key = ?
             """
@@ -60,15 +61,18 @@ class DatabaseService:
                     "user_name": user[1],
                     "user_email": user[2],
                     "common_name": user[3],
-                    "api_key": str(user[4]),
-                    "scope": user[5],
-                    "active": user[6]
+                    "company": user[4],
+                    "department": user[5],
+                    "api_key": str(user[6]),
+                    "scope": user[7],
+                    "active": user[8]
                 }
             return None
             
         except Exception as e:
             logger.error(f"API key validation error: {str(e)}")
             return None
+
 
     @staticmethod
     def get_token_details_by_value(token_value):
@@ -249,6 +253,8 @@ class DatabaseService:
                 - user_name: Username for the new user
                 - user_email: Email address for the new user
                 - common_name: (Optional) Common name for the new user
+                - company: (Optional) Company name for the new user
+                - department: (Optional) Department name for the new user
                 - scope: (Optional) Permission scope (1-5), defaults to 1
                 - active: (Optional) Whether the user is active, defaults to True
                 - comment: (Optional) Comment about the user
@@ -266,6 +272,8 @@ class DatabaseService:
             
             # Set default values for optional fields
             common_name = user_data.get('common_name')
+            company = user_data.get('company')
+            department = user_data.get('department')
             scope = user_data.get('scope', 1)
             active = user_data.get('active', True)
             comment = user_data.get('comment')
@@ -276,7 +284,9 @@ class DatabaseService:
                 id, 
                 user_name, 
                 user_email, 
-                common_name, 
+                common_name,
+                company,
+                department,
                 api_key, 
                 scope, 
                 active, 
@@ -285,7 +295,7 @@ class DatabaseService:
                 comment
             )
             VALUES (
-                ?, ?, ?, ?, ?, ?, ?,
+                ?, ?, ?, ?, ?, ?, ?, ?, ?,
                 DATEADD(HOUR, 2, GETUTCDATE()),
                 DATEADD(HOUR, 2, GETUTCDATE()),
                 ?
@@ -298,6 +308,8 @@ class DatabaseService:
                 user_data['user_name'],
                 user_data['user_email'],
                 common_name,
+                company,
+                department,
                 api_key,
                 scope,
                 1 if active else 0,  # Convert boolean to bit
@@ -322,6 +334,7 @@ class DatabaseService:
         except Exception as e:
             logger.error(f"Error creating user: {str(e)}")
             return (None, None)
+     
         
     @staticmethod
     def get_user_by_id(user_id):
@@ -338,7 +351,7 @@ class DatabaseService:
             cursor = conn.cursor()
             
             query = """
-            SELECT id, user_name, user_email, common_name, api_key, scope, active, comment
+            SELECT id, user_name, user_email, common_name, company, department, api_key, scope, active, comment
             FROM users
             WHERE id = ?
             """
@@ -354,16 +367,19 @@ class DatabaseService:
                     "user_name": user[1],
                     "user_email": user[2],
                     "common_name": user[3],
-                    "api_key": str(user[4]),
-                    "scope": user[5],
-                    "active": bool(user[6]),
-                    "comment": user[7]
+                    "company": user[4],
+                    "department": user[5],
+                    "api_key": str(user[6]),
+                    "scope": user[7],
+                    "active": bool(user[8]),
+                    "comment": user[9]
                 }
             return None
             
         except Exception as e:
             logger.error(f"Error retrieving user by ID: {str(e)}")
             return None
+
 
     @staticmethod
     def update_user(user_id, update_data):

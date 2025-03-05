@@ -51,6 +51,12 @@ def create_user_route():
             common_name:
               type: string
               description: Common name for the new user (optional)
+            company:
+              type: string
+              description: Company name for the new user (optional)
+            department:
+              type: string
+              description: Department name for the new user (optional)
             scope:
               type: integer
               description: Permission scope for the new user (1-5)
@@ -211,7 +217,9 @@ def create_user_route():
         'common_name': data.get('common_name', None),
         'scope': data.get('scope', 1),  # Default scope is 1
         'active': data.get('active', True),  # Default active is True
-        'comment': data.get('comment', None)
+        'comment': data.get('comment', None),
+        'company': data.get('company', None),  # New field
+        'department': data.get('department', None)  # New field
     }
     
     # Validate scope is within allowed range (1-5)
