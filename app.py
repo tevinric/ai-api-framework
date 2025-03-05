@@ -75,8 +75,8 @@ register_create_user_routes(app)
 from apis.admin.admin_update_user import register_admin_update_user_routes
 register_admin_update_user_routes(app)
 ## DELETE USER
-from apis.admin.admin_delete_user import register_admin_delete_user_routes
-register_admin_delete_user_routes(app)
+# from apis.admin.admin_delete_user import register_admin_delete_user_routes
+# register_admin_delete_user_routes(app)
 
 # ENDPOINT MANAGEMENT
 from apis.endpoint_management.admin_endpoint_management import register_admin_endpoint_routes
