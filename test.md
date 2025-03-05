@@ -26,7 +26,10 @@ ai-api-framework/
 |           |-- databaseService.py
 |           |-- logMiddleware.py
 |           |-- tokenService.py
-|    |-- balance_endpoints.py
+|    |-- balance_management
+|           |-- balance_endpoints.py
+|    |-- file_upload
+|           |-- upload_file.py
 |-- app.py
 |-- requirements.txt
 
@@ -284,6 +287,943 @@ def create_user_route():
 def register_create_user_routes(app):
     """Register routes with the Flask app"""
     app.route('/admin/create-user', methods=['POST'])(api_logger(create_user_route))
+
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+apis\file_upload\upload_file.py
+
+from flask import jsonify, request, g, make_response
+from apis.utils.tokenService import TokenService
+from apis.utils.databaseService import DatabaseService
+from apis.utils.logMiddleware import api_logger
+from apis.utils.config import get_azure_blob_client, ensure_container_exists
+import logging
+import uuid
+import pytz
+from datetime import datetime
+import os
+
+# CONFIGURE LOGGING
+logger = logging.getLogger(__name__)
+
+# Define container for file uploads - different from image container
+FILE_UPLOAD_CONTAINER = os.environ.get("AZURE_STORAGE_UPLOAD_CONTAINER", "file-uploads")
+STORAGE_ACCOUNT = os.environ.get("AZURE_STORAGE_ACCOUNT")
+BASE_BLOB_URL = f"https://{STORAGE_ACCOUNT}.blob.core.windows.net/{FILE_UPLOAD_CONTAINER}"
+
+def create_api_response(data, status_code=200):
+    """Helper function to create consistent API responses"""
+    response = make_response(jsonify(data))
+    response.status_code = status_code
+    return response
+
+def upload_file_route():
+    """
+    Upload one or more files to Azure Blob Storage
+    ---
+    tags:
+      - File Upload
+    parameters:
+      - name: X-Token
+        in: header
+        type: string
+        required: true
+        description: Valid token for authentication
+      - name: files
+        in: formData
+        type: file
+        required: true
+        description: Files to upload (can be multiple)
+    consumes:
+      - multipart/form-data
+    produces:
+      - application/json
+    responses:
+      200:
+        description: Files uploaded successfully
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              example: Files uploaded successfully
+            uploaded_files:
+              type: array
+              items:
+                type: object
+                properties:
+                  file_name:
+                    type: string
+                  file_id:
+                    type: string
+                  content_type:
+                    type: string
+      400:
+        description: Bad request
+      401:
+        description: Authentication error
+      500:
+        description: Server error
+    """
+    # Get token from X-Token header
+    token = request.headers.get('X-Token')
+    if not token:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "Missing X-Token header"
+        }, 401)
+    
+    # Validate token and get token details
+    token_details = DatabaseService.get_token_details_by_value(token)
+    if not token_details:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "Invalid token"
+        }, 401)
+        
+    # Check if token is expired
+    now = datetime.now(pytz.UTC)
+    expiration_time = token_details["token_expiration_time"]
+    
+    # Ensure expiration_time is timezone-aware
+    if expiration_time.tzinfo is None:
+        johannesburg_tz = pytz.timezone('Africa/Johannesburg')
+        expiration_time = johannesburg_tz.localize(expiration_time)
+        
+    if now > expiration_time:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "Token has expired"
+        }, 401)
+        
+    g.user_id = token_details["user_id"]
+    g.token_id = token_details["id"]
+    
+    # Check if any files were uploaded
+    if 'files' not in request.files:
+        return create_api_response({
+            "error": "Bad Request",
+            "message": "No files part in the request"
+        }, 400)
+    
+    files = request.files.getlist('files')
+    if not files or files[0].filename == '':
+        return create_api_response({
+            "error": "Bad Request",
+            "message": "No files selected for upload"
+        }, 400)
+    
+    try:
+        # Ensure container exists
+        ensure_container_exists(FILE_UPLOAD_CONTAINER)
+        
+        # Get blob service client
+        blob_service_client = get_azure_blob_client()
+        container_client = blob_service_client.get_container_client(FILE_UPLOAD_CONTAINER)
+        
+        uploaded_files = []
+        
+        for file in files:
+            # Generate unique ID for the file
+            file_id = str(uuid.uuid4())
+            original_filename = file.filename
+            
+            # Create a blob name using the file_id to ensure uniqueness
+            # Keep original extension if any
+            _, file_extension = os.path.splitext(original_filename)
+            blob_name = f"{file_id}{file_extension}"
+            
+            # Upload the file to blob storage
+            blob_client = container_client.get_blob_client(blob_name)
+            file_content = file.read()  # Read file content
+            
+            content_settings = None
+            if file.content_type:
+                from azure.storage.blob import ContentSettings
+                content_settings = ContentSettings(content_type=file.content_type)
+            
+            blob_client.upload_blob(file_content, overwrite=True, content_settings=content_settings)
+            
+            # Generate URL to the blob
+            blob_url = f"{BASE_BLOB_URL}/{blob_name}"
+            
+            # Store file info in database
+            db_conn = None
+            cursor = None
+            try:
+                db_conn = DatabaseService.get_connection()
+                cursor = db_conn.cursor()
+                
+                insert_query = """
+                INSERT INTO file_uploads (
+                    id, 
+                    user_id, 
+                    original_filename, 
+                    blob_name, 
+                    blob_url, 
+                    content_type, 
+                    file_size, 
+                    upload_date
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, DATEADD(HOUR, 2, GETUTCDATE()))
+                """
+                
+                cursor.execute(insert_query, [
+                    file_id,
+                    g.user_id,
+                    original_filename,
+                    blob_name,
+                    blob_url,
+                    file.content_type or 'application/octet-stream',
+                    len(file_content)  # File size in bytes
+                ])
+                
+                db_conn.commit()
+            finally:
+                if cursor:
+                    try:
+                        cursor.close()
+                    except:
+                        pass
+                if db_conn:
+                    try:
+                        db_conn.close()
+                    except:
+                        pass
+            
+            # Add to the list of uploaded files
+            uploaded_files.append({
+                "file_name": original_filename,
+                "file_id": file_id,
+                "content_type": file.content_type or 'application/octet-stream'
+            })
+            
+            logger.info(f"File uploaded: {original_filename} with ID {file_id} by user {g.user_id}")
+        
+        return create_api_response({
+            "message": "Files uploaded successfully",
+            "uploaded_files": uploaded_files
+        }, 200)
+        
+    except Exception as e:
+        logger.error(f"Error uploading files: {str(e)}")
+        return create_api_response({
+            "error": "Server Error",
+            "message": f"Error uploading files: {str(e)}"
+        }, 500)
+
+def get_file_url_route():
+    """
+    Get access URL for a previously uploaded file using its ID
+    ---
+    tags:
+      - File Upload
+    parameters:
+      - name: X-Token
+        in: header
+        type: string
+        required: true
+        description: Valid token for authentication
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+            - file_id
+          properties:
+            file_id:
+              type: string
+              description: Unique file identifier
+    produces:
+      - application/json
+    responses:
+      200:
+        description: File URL retrieved successfully
+        schema:
+          type: object
+          properties:
+            file_name:
+              type: string
+            file_url:
+              type: string
+            content_type:
+              type: string
+            upload_date:
+              type: string
+      400:
+        description: Bad request
+      401:
+        description: Authentication error
+      404:
+        description: File not found
+      500:
+        description: Server error
+    """
+    # Get token from X-Token header
+    token = request.headers.get('X-Token')
+    if not token:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "Missing X-Token header"
+        }, 401)
+    
+    # Validate token and get token details
+    token_details = DatabaseService.get_token_details_by_value(token)
+    if not token_details:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "Invalid token"
+        }, 401)
+        
+    # Check if token is expired
+    now = datetime.now(pytz.UTC)
+    expiration_time = token_details["token_expiration_time"]
+    
+    # Ensure expiration_time is timezone-aware
+    if expiration_time.tzinfo is None:
+        johannesburg_tz = pytz.timezone('Africa/Johannesburg')
+        expiration_time = johannesburg_tz.localize(expiration_time)
+        
+    if now > expiration_time:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "Token has expired"
+        }, 401)
+        
+    g.user_id = token_details["user_id"]
+    g.token_id = token_details["id"]
+    
+    # Get request data
+    data = request.get_json()
+    if not data or 'file_id' not in data:
+        return create_api_response({
+            "error": "Bad Request",
+            "message": "file_id is required in the request body"
+        }, 400)
+    
+    file_id = data['file_id']
+    
+    # Query database for file information
+    db_conn = None
+    cursor = None
+    
+    try:
+        db_conn = DatabaseService.get_connection()
+        cursor = db_conn.cursor()
+        
+        query = """
+        SELECT id, user_id, original_filename, blob_url, content_type, upload_date
+        FROM file_uploads
+        WHERE id = ?
+        """
+        
+        cursor.execute(query, [file_id])
+        file_info = cursor.fetchone()
+        
+        if not file_info:
+            return create_api_response({
+                "error": "Not Found",
+                "message": f"File with ID {file_id} not found"
+            }, 404)
+        
+        # Get user scope from database
+        user_scope_query = """
+        SELECT scope FROM users WHERE id = ?
+        """
+        cursor.execute(user_scope_query, [g.user_id])
+        user_scope_result = cursor.fetchone()
+        user_scope = user_scope_result[0] if user_scope_result else 1  # Default to regular user if not found
+    
+        # Check if user has access to this file (admin or file owner)
+        # Admins (scope=0) can access any file
+        if user_scope != 0 and str(file_info[1]) != g.user_id:
+            return create_api_response({
+                "error": "Forbidden",
+                "message": "You don't have permission to access this file"
+            }, 403)
+        
+        # Return file info with URL
+        result = {
+            "file_name": file_info[2],
+            "file_url": file_info[3],
+            "content_type": file_info[4],
+            "upload_date": file_info[5].isoformat() if file_info[5] else None
+        }
+        
+        return create_api_response(result, 200)
+    
+    except Exception as e:
+        logger.error(f"Error retrieving file URL: {str(e)}")
+        return create_api_response({
+            "error": "Server Error",
+            "message": f"Error retrieving file URL: {str(e)}"
+        }, 500)
+        
+    finally:
+        # Ensure cursor and connection are closed even if an exception occurs
+        if cursor:
+            try:
+                cursor.close()
+            except:
+                pass
+        
+        if db_conn:
+            try:
+                db_conn.close()
+            except:
+                pass
+
+def delete_file_route():
+    """
+    Delete a previously uploaded file using its ID
+    ---
+    tags:
+      - File Upload
+    parameters:
+      - name: X-Token
+        in: header
+        type: string
+        required: true
+        description: Valid token for authentication
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+            - file_id
+          properties:
+            file_id:
+              type: string
+              description: Unique file identifier
+    produces:
+      - application/json
+    responses:
+      200:
+        description: File deleted successfully
+      400:
+        description: Bad request
+      401:
+        description: Authentication error
+      403:
+        description: Forbidden - not authorized to delete this file
+      404:
+        description: File not found
+      500:
+        description: Server error
+    """
+    # Get token from X-Token header
+    token = request.headers.get('X-Token')
+    if not token:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "Missing X-Token header"
+        }, 401)
+    
+    # Validate token and get token details
+    token_details = DatabaseService.get_token_details_by_value(token)
+    if not token_details:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "Invalid token"
+        }, 401)
+        
+    # Check if token is expired
+    now = datetime.now(pytz.UTC)
+    expiration_time = token_details["token_expiration_time"]
+    
+    # Ensure expiration_time is timezone-aware
+    if expiration_time.tzinfo is None:
+        johannesburg_tz = pytz.timezone('Africa/Johannesburg')
+        expiration_time = johannesburg_tz.localize(expiration_time)
+        
+    if now > expiration_time:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "Token has expired"
+        }, 401)
+        
+    g.user_id = token_details["user_id"]
+    g.token_id = token_details["id"]
+    
+    # Get request data
+    data = request.get_json()
+    if not data or 'file_id' not in data:
+        return create_api_response({
+            "error": "Bad Request",
+            "message": "file_id is required in the request body"
+        }, 400)
+    
+    file_id = data['file_id']
+    
+    # Query database for file information
+    db_conn = None
+    cursor = None
+    
+    try:
+        db_conn = DatabaseService.get_connection()
+        cursor = db_conn.cursor()
+        
+        query = """
+        SELECT id, user_id, blob_name
+        FROM file_uploads
+        WHERE id = ?
+        """
+        
+        cursor.execute(query, [file_id])
+        file_info = cursor.fetchone()
+        
+        if not file_info:
+            return create_api_response({
+                "error": "Not Found",
+                "message": f"File with ID {file_id} not found"
+            }, 404)
+        
+        # Get user scope from database
+        user_scope_query = """
+        SELECT scope FROM users WHERE id = ?
+        """
+        cursor.execute(user_scope_query, [g.user_id])
+        user_scope_result = cursor.fetchone()
+        user_scope = user_scope_result[0] if user_scope_result else 1  # Default to regular user if not found
+        
+        # Check if user has permission to delete this file (admin or file owner)
+        # Admins (scope=0) can delete any file
+        if user_scope != 0 and str(file_info[1]) != g.user_id:
+            return create_api_response({
+                "error": "Forbidden",
+                "message": "You don't have permission to delete this file"
+            }, 403)
+        
+        # Delete from blob storage
+        blob_name = file_info[2]
+        blob_service_client = get_azure_blob_client()
+        container_client = blob_service_client.get_container_client(FILE_UPLOAD_CONTAINER)
+        blob_client = container_client.get_blob_client(blob_name)
+        
+        # Try to delete the blob (may already be deleted)
+        try:
+            blob_client.delete_blob()
+        except Exception as e:
+            logger.warning(f"Error deleting blob {blob_name}, may already be deleted: {str(e)}")
+        
+        # Delete from database
+        delete_query = """
+        DELETE FROM file_uploads
+        WHERE id = ?
+        """
+        
+        cursor.execute(delete_query, [file_id])
+        db_conn.commit()
+        
+        logger.info(f"File {file_id} deleted by user {g.user_id}")
+        
+        return create_api_response({
+            "message": "File deleted successfully",
+            "file_id": file_id
+        }, 200)
+    
+    except Exception as e:
+        logger.error(f"Error deleting file: {str(e)}")
+        return create_api_response({
+            "error": "Server Error",
+            "message": f"Error deleting file: {str(e)}"
+        }, 500)
+    
+    finally:
+        # Ensure cursor and connection are closed even if an exception occurs
+        if cursor:
+            try:
+                cursor.close()
+            except:
+                pass
+        
+        if db_conn:
+            try:
+                db_conn.close()
+            except:
+                pass
+
+def register_file_upload_routes(app):
+    """Register file upload routes with the Flask app"""
+    app.route('/upload-file', methods=['POST'])(api_logger(upload_file_route))
+    app.route('/get-file-url', methods=['POST'])(api_logger(get_file_url_route))
+    app.route('/delete-file', methods=['DELETE'])(api_logger(delete_file_route))
+
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+apis\image_generation\dalle3.py
+
+from flask import jsonify, request, g, make_response
+from apis.utils.tokenService import TokenService
+from apis.utils.databaseService import DatabaseService
+import logging
+import pytz
+from datetime import datetime
+import uuid
+import io
+import requests
+from openai import AzureOpenAI
+from apis.utils.config import get_openai_client, get_azure_blob_client, IMAGE_GENERATION_CONTAINER, STORAGE_ACCOUNT
+from apis.utils.logMiddleware import api_logger
+from apis.utils.balanceMiddleware import check_balance
+from azure.storage.blob import BlobServiceClient, ContentSettings
+
+# CONFIGURE LOGGING
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Initialize OpenAI client
+client = get_openai_client()
+
+# Default deployment model for image generation
+DEFAULT_IMAGE_DEPLOYMENT = 'dall-e-3'  # Options: 'dalle3', 'dalle3-hd'
+
+# Azure Blob Storage container for images
+BLOB_CONTAINER_NAME = IMAGE_GENERATION_CONTAINER
+BASE_BLOB_URL = f"https://{STORAGE_ACCOUNT}.blob.core.windows.net/{BLOB_CONTAINER_NAME}"
+
+def create_api_response(data, status_code=200):
+    """Helper function to create consistent API responses"""
+    response = make_response(jsonify(data))
+    response.status_code = status_code
+    return response
+
+def save_image_to_blob(image_data, image_name):
+    """Save image to Azure Blob Storage and return the URL"""
+    try:
+        # Get blob service client
+        blob_service_client = get_azure_blob_client()
+        
+        # Get container client
+        container_client = blob_service_client.get_container_client(BLOB_CONTAINER_NAME)
+        
+        # Create container if it doesn't exist
+        if not container_client.exists():
+            container_client.create_container()
+        
+        # Set content settings for the blob (image)
+        content_settings = ContentSettings(content_type='image/png')
+        
+        # Upload image to blob
+        blob_client = container_client.get_blob_client(image_name)
+        blob_client.upload_blob(image_data, overwrite=True, content_settings=content_settings)
+        
+        # Return the URL to the image
+        return f"{BASE_BLOB_URL}/{image_name}"
+    
+    except Exception as e:
+        logger.error(f"Error saving image to blob storage: {str(e)}")
+        raise
+
+def custom_image_generation_route():
+    """
+    Generate images using Azure OpenAI DALLE-3
+    ---
+    tags:
+      - Image Generation
+    parameters:
+      - name: X-Token
+        in: header
+        type: string
+        required: true
+        description: Authentication token
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+            - prompt
+          properties:
+            prompt:
+              type: string
+              description: Text prompt describing the image to generate
+            deployment:
+              type: string
+              enum: [dall-e-3, dalle3-hd]
+              default: dall-e-3
+              description: The DALLE-3 model deployment to use
+            size:
+              type: string
+              enum: [1024x1024, 1792x1024, 1024x1792]
+              default: 1024x1024
+              description: Output image size
+            quality:
+              type: string
+              enum: [standard, hd]
+              default: standard
+              description: Image quality (standard or high definition)
+            style:
+              type: string
+              enum: [vivid, natural]
+              default: vivid
+              description: Image generation style
+    produces:
+      - application/json
+    consumes:
+      - application/json
+    security:
+      - ApiKeyHeader: []
+    x-code-samples:
+      - lang: curl
+        source: |-
+          curl -X POST "https://your-api-domain.com/image/generate" \\
+          -H "X-Token: your-api-token-here" \\
+          -H "Content-Type: application/json" \\
+          -d '{
+            "prompt": "A futuristic city with flying cars and tall glass buildings",
+            "deployment": "dall-e-3",
+            "size": "1024x1024",
+            "quality": "standard",
+            "style": "vivid"
+          }'
+    x-sample-header:
+      X-Token: your-api-token-here
+      Content-Type: application/json
+    responses:
+      200:
+        description: Successful image generation
+        schema:
+          type: object
+          properties:
+            response:
+              type: string
+              example: "200"
+            message:
+              type: string
+              description: Success message
+              example: "Image generated successfully"
+            image_url:
+              type: string
+              description: URL to the generated image in Azure Blob Storage
+              example: "https://yourstorageaccount.blob.core.windows.net/dalle-images/image-12345.png"
+            prompt_tokens:
+              type: integer
+              description: Number of prompt tokens used
+            user_id:
+              type: integer
+              description: ID of the authenticated user
+            user_name:
+              type: string
+              description: Name of the authenticated user
+            user_email:
+              type: string
+              description: Email of the authenticated user
+            model:
+              type: string
+              description: The model deployment used
+              enum: [dall-e-3, dalle3-hd]
+      400:
+        description: Bad request
+        schema:
+          type: object
+          properties:
+            response:
+              type: string
+              example: "400"
+            message:
+              type: string
+              description: Error message
+              examples:
+                - "Request body is required"
+                - "Missing required field: prompt"
+                - "Invalid deployment. Must be one of: dall-e-3, dalle3-hd"
+                - "Invalid size. Must be one of: 1024x1024, 1792x1024, 1024x1792"
+                - "Invalid quality. Must be one of: standard, hd"
+                - "Invalid style. Must be one of: vivid, natural"
+      401:
+        description: Authentication error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: "Authentication Error"
+            message:
+              type: string
+              description: Authentication error details
+              examples:
+                - "Missing X-Token header"
+                - "Invalid token - not found in database"
+                - "Token has expired"
+                - "Token is no longer valid with provider"
+                - "User associated with token not found"
+      500:
+        description: Server error
+        schema:
+          type: object
+          properties:
+            response:
+              type: string
+              example: "500"
+            message:
+              type: string
+              description: Error message from the server, OpenAI API, or Azure Blob Storage
+    """
+    # Get token from X-Token header
+    token = request.headers.get('X-Token')
+    if not token:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "Missing X-Token header"
+        }, 401)
+    
+    # Validate token from database
+    token_details = DatabaseService.get_token_details_by_value(token)
+    if not token_details:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "Invalid token - not found in database"
+        }, 401)
+    
+    # Store token ID and user ID in g for logging and balance check
+    g.token_id = token_details["id"]
+    g.user_id = token_details["user_id"]  # This is critical for the balance middleware
+    
+    # Check if token is expired
+    now = datetime.now(pytz.UTC)
+    expiration_time = token_details["token_expiration_time"]
+    
+    # Ensure expiration_time is timezone-aware
+    if expiration_time.tzinfo is None:
+        johannesburg_tz = pytz.timezone('Africa/Johannesburg')
+        expiration_time = johannesburg_tz.localize(expiration_time)
+        
+    if now > expiration_time:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "Token has expired"
+        }, 401)
+    
+    # Validate token with Microsoft Graph
+    is_valid = TokenService.validate_token(token)
+    if not is_valid:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "Token is no longer valid with provider"
+        }, 401)
+        
+    # Get user details
+    user_id = token_details["user_id"]
+    user_details = DatabaseService.get_user_by_id(user_id)
+    if not user_details:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "User associated with token not found"
+        }, 401)
+    
+    # Get request data
+    data = request.get_json()
+    if not data:
+        return create_api_response({
+            "response": "400",
+            "message": "Request body is required"
+        }, 400)
+    
+    # Validate required fields
+    if 'prompt' not in data or not data['prompt']:
+        return create_api_response({
+            "response": "400",
+            "message": "Missing required field: prompt"
+        }, 400)
+    
+    # Extract parameters with defaults
+    prompt = data.get('prompt', '')
+    deployment = data.get('deployment', DEFAULT_IMAGE_DEPLOYMENT)
+    size = data.get('size', '1024x1024')
+    quality = data.get('quality', 'standard')
+    style = data.get('style', 'vivid')
+    
+    # Validate deployment option
+    valid_deployments = ['dall-e-3', 'dalle3-hd']
+    if deployment not in valid_deployments:
+        return create_api_response({
+            "response": "400",
+            "message": f"Invalid deployment. Must be one of: {', '.join(valid_deployments)}"
+        }, 400)
+    
+    # Validate size option
+    valid_sizes = ['1024x1024', '1792x1024', '1024x1792']
+    if size not in valid_sizes:
+        return create_api_response({
+            "response": "400",
+            "message": f"Invalid size. Must be one of: {', '.join(valid_sizes)}"
+        }, 400)
+    
+    # Validate quality option
+    valid_qualities = ['standard', 'hd']
+    if quality not in valid_qualities:
+        return create_api_response({
+            "response": "400",
+            "message": f"Invalid quality. Must be one of: {', '.join(valid_qualities)}"
+        }, 400)
+    
+    # Validate style option
+    valid_styles = ['vivid', 'natural']
+    if style not in valid_styles:
+        return create_api_response({
+            "response": "400",
+            "message": f"Invalid style. Must be one of: {', '.join(valid_styles)}"
+        }, 400)
+    
+    try:
+        # Log API usage
+        logger.info(f"Image Generation API called by user: {user_id}, deployment: {deployment}")
+        
+        # Make request to DALLE-3
+        response = client.images.generate(
+            model=deployment,
+            prompt=prompt,
+            n=1,  # Generate 1 image
+            size=size,
+            quality=quality,
+            style=style,
+            response_format="b64_json"  # Get base64 encoded image data
+        )
+        
+        # Extract token usage
+        prompt_tokens = response.usage.prompt_tokens if hasattr(response, 'usage') and hasattr(response.usage, 'prompt_tokens') else 0
+        
+        # Get the image data (base64)
+        b64_image = response.data[0].b64_json
+        
+        # Convert base64 to binary
+        import base64
+        image_data = base64.b64decode(b64_image)
+        
+        # Generate a unique name for the image
+        image_name = f"image-{uuid.uuid4()}.png"
+        
+        # Save the image to Azure Blob Storage
+        image_url = save_image_to_blob(image_data, image_name)
+        
+        # Prepare successful response with user details
+        return create_api_response({
+            "response": "200",
+            "message": "Image generated successfully",
+            "image_url": image_url,
+            "prompt_tokens": prompt_tokens,
+            "user_id": user_details["id"],
+            "user_name": user_details["user_name"],
+            "user_email": user_details["user_email"],
+            "model": deployment
+        }, 200)
+        
+    except Exception as e:
+        logger.error(f"Image Generation API error: {str(e)}")
+        status_code = 500 if not str(e).startswith("4") else 400
+        return create_api_response({
+            "response": str(status_code),
+            "message": str(e)
+        }, status_code)
+
+def register_image_generation_routes(app):
+    """Register routes with the Flask app"""
+    from apis.utils.logMiddleware import api_logger
+    from apis.utils.balanceMiddleware import check_balance
+    
+    app.route('/image-generation/dalle3', methods=['POST'])(api_logger(check_balance(custom_image_generation_route)))
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 /apis/admin/admin_delete_user.py
@@ -3820,19 +4760,20 @@ def admin_update_balance_route():
         type: string
         required: true
         description: Admin API Key for authentication
+      - name: token
+        in: query
+        type: string
+        required: true
+        description: Valid token for verification
       - name: body
         in: body
         required: true
         schema:
           type: object
           required:
-            - token
             - user_id
             - new_balance
           properties:
-            token:
-              type: string
-              description: Valid token for verification
             user_id:
               type: string
               description: ID of user to update
@@ -3876,20 +4817,12 @@ def admin_update_balance_route():
             "message": "Admin privileges required to update balances"
         }, 403)
 
-    # Get request data
-    data = request.get_json()
-    if not data:
-        return create_api_response({
-            "error": "Bad Request",
-            "message": "Request body is required"
-        }, 400)
-
-    # Validate token
-    token = data.get('token')
+    # Get token from query parameter
+    token = request.args.get('token')
     if not token:
         return create_api_response({
             "error": "Bad Request",
-            "message": "Valid token is required"
+            "message": "Missing token parameter"
         }, 400)
 
     # Verify token is valid and not expired
@@ -3914,6 +4847,14 @@ def admin_update_balance_route():
             "error": "Authentication Error",
             "message": "Token has expired"
         }, 401)
+
+    # Get request data
+    data = request.get_json()
+    if not data:
+        return create_api_response({
+            "error": "Bad Request",
+            "message": "Request body is required"
+        }, 400)
 
     # Get required parameters
     user_id = data.get('user_id')
