@@ -92,6 +92,9 @@ def usage_by_user_route():
                     type: number
                     format: float
                     description: Average response time in milliseconds
+                  credits_consumed:
+                    type: integer
+                    description: Credits consumed by this endpoint
             credits_consumed:
               type: integer
               description: Total credits consumed
@@ -334,6 +337,9 @@ def usage_by_department_route():
                           type: number
                           format: float
                           description: Average response time in milliseconds
+                        credits_consumed:
+                          type: integer
+                          description: Credits consumed by this endpoint
                   credits_consumed:
                     type: integer
                     description: Credits consumed by this user
@@ -552,7 +558,8 @@ def get_user_usage_statistics(user_id, time_period):
             COUNT(al.id) as number_calls,
             SUM(CASE WHEN al.response_status >= 200 AND al.response_status < 400 THEN 1 ELSE 0 END) as successful_calls,
             SUM(CASE WHEN al.response_status < 200 OR al.response_status >= 400 THEN 1 ELSE 0 END) as failed_calls,
-            AVG(CAST(al.response_time_ms as FLOAT)) as avg_response_time
+            AVG(CAST(al.response_time_ms as FLOAT)) as avg_response_time,
+            SUM(e.cost) as endpoint_credits_consumed
         FROM 
             api_logs al
         JOIN 
@@ -576,7 +583,8 @@ def get_user_usage_statistics(user_id, time_period):
                 "number_calls": result[2],
                 "number_successful_calls": result[3],
                 "number_failed_calls": result[4],
-                "average_response_time": round(result[5], 2) if result[5] is not None else 0
+                "average_response_time": round(result[5], 2) if result[5] is not None else 0,
+                "credits_consumed": result[6] if result[6] is not None else 0
             })
         
         # Get credits consumed from balance transactions
