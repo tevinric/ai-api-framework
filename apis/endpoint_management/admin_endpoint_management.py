@@ -55,8 +55,9 @@ def admin_add_endpoint_route():
               type: boolean
               description: "Whether the endpoint is active (default: true)"
             cost:
-              type: integer
-              description: "Cost in balance units for each call to this endpoint (default: 1)"
+              type: number
+              format: float
+              description: "Cost in balance units for each call to this endpoint (default: 1.0, can be 0 or fractional values like 0.5)"
     produces:
       - application/json
     responses:
@@ -155,16 +156,16 @@ def admin_add_endpoint_route():
     
     # Validate cost is a positive integer
     try:
-        cost = int(cost)
-        if cost <= 0:
+        cost = float(cost)
+        if cost < 0:  # Allow zero as a valid cost
             return create_api_response({
-                "error": "Bad Request",
-                "message": "Cost must be a positive integer"
+                "error": "Bad Request", 
+                "message": "Cost must be a non-negative number"
             }, 400)
     except (ValueError, TypeError):
         return create_api_response({
             "error": "Bad Request",
-            "message": "Cost must be a valid integer"
+            "message": "Cost must be a valid number"
         }, 400)
     
     # Ensure endpoint_path starts with /
@@ -491,17 +492,17 @@ def admin_update_endpoint_route():
         if 'cost' in data:
             # Validate cost is a positive integer
             try:
-                cost = int(data['cost'])
-                if cost <= 0:
+                cost = float(data['cost'])
+                if cost < 0:  # Allow zero as a valid cost
                     return create_api_response({
                         "error": "Bad Request",
-                        "message": "Cost must be a positive integer"
+                        "message": "Cost must be a non-negative number"
                     }, 400)
                 update_data['cost'] = cost
             except (ValueError, TypeError):
                 return create_api_response({
                     "error": "Bad Request",
-                    "message": "Cost must be a valid integer"
+                    "message": "Cost must be a valid number"
                 }, 400)
         
         # Only proceed if there are fields to update

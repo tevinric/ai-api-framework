@@ -99,11 +99,11 @@ class BalanceService:
             if deduction_amount is None:
                 cursor.execute("SELECT cost FROM endpoints WHERE id = ?", [endpoint_id])
                 result = cursor.fetchone()
-                if not result:
-                    logger.error(f"Endpoint {endpoint_id} not found")
-                    return False, "Endpoint not found"
-                deduction_amount = result[0]
-                logger.info(f"Using endpoint cost of {deduction_amount} for endpoint {endpoint_id}")
+            if not result:
+                logger.error(f"Endpoint {endpoint_id} not found")
+                return False, "Endpoint not found"
+            deduction_amount = float(result[0])
+            logger.info(f"Using endpoint cost of {deduction_amount} for endpoint {endpoint_id}")
 
             current_month = BalanceService.get_first_day_of_month()
 
@@ -140,8 +140,8 @@ class BalanceService:
                 SET current_balance = ?,
                     last_updated = DATEADD(HOUR, 2, GETUTCDATE())
                 WHERE user_id = ? AND balance_month = ?
-            """, [new_balance, user_id, current_month])
-
+            """, [float(new_balance), user_id, current_month])
+            
             # Log the transaction
             cursor.execute("""
                 INSERT INTO balance_transactions 

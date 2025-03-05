@@ -93,10 +93,12 @@ def usage_by_user_route():
                     format: float
                     description: Average response time in milliseconds
                   credits_consumed:
-                    type: integer
+                    type: number
+                    format: float
                     description: Credits consumed by this endpoint
             credits_consumed:
-              type: integer
+              type: number
+              format: float
               description: Total credits consumed
       400:
         description: Bad request
@@ -338,10 +340,12 @@ def usage_by_department_route():
                           format: float
                           description: Average response time in milliseconds
                         credits_consumed:
-                          type: integer
+                          type: number
+                          format: float
                           description: Credits consumed by this endpoint
                   credits_consumed:
-                    type: integer
+                    type: number
+                    format: float
                     description: Credits consumed by this user
       400:
         description: Bad request
