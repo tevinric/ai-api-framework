@@ -238,12 +238,17 @@ def admin_update_user_route():
             "message": f"User with ID {user_id} not found"
         }, 404)
     
-    # Prepare update data (only include fields that are provided)
+    # Prepare update data (only include fields that are provided AND different from current values)
     update_data = {}
     valid_fields = ['user_name', 'user_email', 'common_name', 'company', 'department', 'scope', 'active', 'comment']
     
     for field in valid_fields:
         if field in data and data[field] is not None:
+            # Skip fields where the value hasn't changed
+            if field in current_user and data[field] == current_user[field]:
+                logger.info(f"Skipping field '{field}' as value hasn't changed")
+                continue
+                
             # For email, validate format
             if field == 'user_email' and '@' not in data[field]:
                 return create_api_response({
