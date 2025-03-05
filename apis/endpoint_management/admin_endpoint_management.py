@@ -28,19 +28,20 @@ def admin_add_endpoint_route():
         type: string
         required: true
         description: "Admin API Key for authentication"
+      - name: token
+        in: query
+        type: string
+        required: true
+        description: "A valid token for verification"
       - name: body
         in: body
         required: true
         schema:
           type: object
           required:
-            - token
             - endpoint_path
             - endpoint_name
           properties:
-            token:
-              type: string
-              description: "A valid token for verification"
             endpoint_path:
               type: string
               description: "The API endpoint path (e.g., /llm/custom)"
@@ -97,23 +98,15 @@ def admin_add_endpoint_route():
             "message": "Admin privileges required to manage endpoints"
         }, 403)
     
-    # Get request data
-    data = request.get_json()
-    if not data:
-        return create_api_response({
-            "error": "Bad Request",
-            "message": "Request body is required"
-        }, 400)
-    
-    # Validate token
-    token = data.get('token')
+    # Get token from query parameter
+    token = request.args.get('token')
     if not token:
         return create_api_response({
             "error": "Bad Request",
-            "message": "Valid token is required"
+            "message": "Missing token parameter"
         }, 400)
-        
-    # Verify token is valid and not expired
+    
+    # Validate token from query parameter
     token_details = DatabaseService.get_token_details_by_value(token)
     if not token_details:
         return create_api_response({
@@ -123,7 +116,7 @@ def admin_add_endpoint_route():
         
     g.token_id = token_details["id"]
     
-    # Check token expiration
+    # Check if token is expired
     now = datetime.now(pytz.UTC)
     expiration_time = token_details["token_expiration_time"]
     if expiration_time.tzinfo is None:
@@ -135,6 +128,14 @@ def admin_add_endpoint_route():
             "error": "Authentication Error",
             "message": "Token has expired"
         }, 401)
+    
+    # Get request data
+    data = request.get_json()
+    if not data:
+        return create_api_response({
+            "error": "Bad Request",
+            "message": "Request body is required"
+        }, 400)
     
     # Validate required fields
     required_fields = ['endpoint_path', 'endpoint_name']
@@ -219,6 +220,11 @@ def admin_get_endpoints_route():
         type: string
         required: true
         description: "Admin API Key for authentication"
+      - name: token
+        in: query
+        type: string
+        required: true
+        description: "A valid token for verification"
       - name: active
         in: query
         type: boolean
@@ -261,6 +267,37 @@ def admin_get_endpoints_route():
             "message": "Admin privileges required to view endpoints"
         }, 403)
     
+    # Get token from query parameter
+    token = request.args.get('token')
+    if not token:
+        return create_api_response({
+            "error": "Bad Request",
+            "message": "Missing token parameter"
+        }, 400)
+    
+    # Validate token from query parameter
+    token_details = DatabaseService.get_token_details_by_value(token)
+    if not token_details:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "Invalid token provided"
+        }, 401)
+        
+    g.token_id = token_details["id"]
+    
+    # Check if token is expired
+    now = datetime.now(pytz.UTC)
+    expiration_time = token_details["token_expiration_time"]
+    if expiration_time.tzinfo is None:
+        johannesburg_tz = pytz.timezone('Africa/Johannesburg')
+        expiration_time = johannesburg_tz.localize(expiration_time)
+        
+    if now > expiration_time:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "Token has expired"
+        }, 401)
+    
     # Get optional active filter
     active_filter = request.args.get('active')
     if active_filter:
@@ -294,18 +331,19 @@ def admin_update_endpoint_route():
         type: string
         required: true
         description: "Admin API Key for authentication"
+      - name: token
+        in: query
+        type: string
+        required: true
+        description: "A valid token for verification"
       - name: body
         in: body
         required: true
         schema:
           type: object
           required:
-            - token
             - endpoint_id
           properties:
-            token:
-              type: string
-              description: "A valid token for verification"
             endpoint_id:
               type: string
               description: "ID of the endpoint to update"
@@ -367,23 +405,15 @@ def admin_update_endpoint_route():
             "message": "Admin privileges required to update endpoints"
         }, 403)
     
-    # Get request data
-    data = request.get_json()
-    if not data:
-        return create_api_response({
-            "error": "Bad Request",
-            "message": "Request body is required"
-        }, 400)
-    
-    # Validate token
-    token = data.get('token')
+    # Get token from query parameter
+    token = request.args.get('token')
     if not token:
         return create_api_response({
             "error": "Bad Request",
-            "message": "Valid token is required"
+            "message": "Missing token parameter"
         }, 400)
-        
-    # Verify token is valid and not expired
+    
+    # Validate token from query parameter
     token_details = DatabaseService.get_token_details_by_value(token)
     if not token_details:
         return create_api_response({
@@ -393,7 +423,7 @@ def admin_update_endpoint_route():
         
     g.token_id = token_details["id"]
     
-    # Check token expiration
+    # Check if token is expired
     now = datetime.now(pytz.UTC)
     expiration_time = token_details["token_expiration_time"]
     if expiration_time.tzinfo is None:
@@ -405,6 +435,14 @@ def admin_update_endpoint_route():
             "error": "Authentication Error",
             "message": "Token has expired"
         }, 401)
+    
+    # Get request data
+    data = request.get_json()
+    if not data:
+        return create_api_response({
+            "error": "Bad Request",
+            "message": "Request body is required"
+        }, 400)
     
     # Validate endpoint_id
     endpoint_id = data.get('endpoint_id')

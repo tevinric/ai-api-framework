@@ -88,19 +88,20 @@ def admin_update_balance_route():
         type: string
         required: true
         description: Admin API Key for authentication
+      - name: token
+        in: query
+        type: string
+        required: true
+        description: Valid token for verification
       - name: body
         in: body
         required: true
         schema:
           type: object
           required:
-            - token
             - user_id
             - new_balance
           properties:
-            token:
-              type: string
-              description: Valid token for verification
             user_id:
               type: string
               description: ID of user to update
@@ -144,20 +145,12 @@ def admin_update_balance_route():
             "message": "Admin privileges required to update balances"
         }, 403)
 
-    # Get request data
-    data = request.get_json()
-    if not data:
-        return create_api_response({
-            "error": "Bad Request",
-            "message": "Request body is required"
-        }, 400)
-
-    # Validate token
-    token = data.get('token')
+    # Get token from query parameter
+    token = request.args.get('token')
     if not token:
         return create_api_response({
             "error": "Bad Request",
-            "message": "Valid token is required"
+            "message": "Missing token parameter"
         }, 400)
 
     # Verify token is valid and not expired
@@ -182,6 +175,14 @@ def admin_update_balance_route():
             "error": "Authentication Error",
             "message": "Token has expired"
         }, 401)
+
+    # Get request data
+    data = request.get_json()
+    if not data:
+        return create_api_response({
+            "error": "Bad Request",
+            "message": "Request body is required"
+        }, 400)
 
     # Get required parameters
     user_id = data.get('user_id')
