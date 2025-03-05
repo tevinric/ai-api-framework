@@ -275,21 +275,44 @@ def stable_diffusion_ultra_route():
         # Parse the response
         sd_result = sd_response.json()
         
+        # Log the response for debugging
+        logger.info(f"Received Stable Diffusion API response: {sd_result}")
+        
         # Extract the image data
-        # The exact response format may need to be adjusted based on the actual API response
-        if 'output' in sd_result:
-            # If the API returns base64 encoded image data
-            image_data = base64.b64decode(sd_result['output'])
-        elif 'output_url' in sd_result:
-            # If the API returns a URL to the generated image
-            image_url = sd_result['output_url']
-            image_response = requests.get(image_url)
-            image_data = image_response.content
-        else:
+        try:
+            # The Stable Diffusion Ultra API returns a base64 encoded image in the 'result' field
+            if 'result' in sd_result:
+                # Decode the base64 string to get the image data
+                image_data = base64.b64decode(sd_result['result'])
+            # Alternative response structure possibilities
+            elif 'images' in sd_result and len(sd_result['images']) > 0:
+                image_data = base64.b64decode(sd_result['images'][0])
+            elif 'image' in sd_result:
+                image_data = base64.b64decode(sd_result['image'])
+            elif 'output' in sd_result:
+                image_data = base64.b64decode(sd_result['output'])
+            elif 'output_url' in sd_result:
+                # If the API returns a URL to the generated image
+                image_url = sd_result['output_url']
+                image_response = requests.get(image_url)
+                image_data = image_response.content
+            else:
+                # If the API returns the entire JSON as a single string containing the base64 image
+                # This is a fallback when the response is not in the expected format
+                response_text = sd_response.text
+                # Try to extract base64 data if it exists in the response
+                if "," in response_text:
+                    base64_part = response_text.split(",")[1]
+                    image_data = base64.b64decode(base64_part)
+                else:
+                    # Try treating the entire response as base64
+                    image_data = base64.b64decode(response_text)
+        except Exception as e:
+            logger.error(f"Error extracting image data: {str(e)}")
             logger.error(f"Unexpected response format from Stable Diffusion API: {sd_result}")
             return create_api_response({
                 "response": "500",
-                "message": "Failed to extract image data from Stable Diffusion API response"
+                "message": f"Failed to extract image data from Stable Diffusion API response: {str(e)}"
             }, 500)
         
         # Generate a unique name for the image
