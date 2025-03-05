@@ -324,7 +324,8 @@ def custom_image_generation_route():
         )
 
         # Create a files dictionary for the upload-file endpoint
-        files = {'files': image_file}
+        # Explicitly set the content type to image/png to ensure proper file type recognition
+        files = {'files': (image_name, io.BytesIO(image_data), 'image/png')}
         
         # Call upload-file endpoint using internal Flask request
         from flask import current_app
