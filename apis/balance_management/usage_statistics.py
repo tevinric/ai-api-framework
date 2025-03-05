@@ -277,7 +277,10 @@ def get_user_usage_statistics(user_id, time_period):
             start_date = f"{year}-{month:02d}-01"
             end_date = f"{year}-{month:02d}-{last_day}"
             
-            date_filter = "AND (al.timestamp BETWEEN ? AND ?)"
+            # Use different column names based on the table
+            token_date_filter = "AND (tt.created_at BETWEEN ? AND ?)"
+            api_log_date_filter = "AND (al.timestamp BETWEEN ? AND ?)"
+            balance_date_filter = "AND (bt.transaction_date BETWEEN ? AND ?)"
             date_params = [start_date, end_date]
         
         # Get tokens generated count
@@ -285,7 +288,7 @@ def get_user_usage_statistics(user_id, time_period):
         SELECT COUNT(*) 
         FROM token_transactions tt
         WHERE tt.user_id = ?
-        {date_filter if time_period != 'all' else ''}
+        {token_date_filter if time_period != 'all' else ''}
         """
         
         token_params = [user_id] + date_params if time_period != 'all' else [user_id]
@@ -307,7 +310,7 @@ def get_user_usage_statistics(user_id, time_period):
             endpoints e ON al.endpoint_id = e.id
         WHERE 
             al.user_id = ?
-            {date_filter}
+            {api_log_date_filter if time_period != 'all' else ''}
         GROUP BY 
             e.id, e.endpoint_name
         """
@@ -335,7 +338,7 @@ def get_user_usage_statistics(user_id, time_period):
             balance_transactions bt
         WHERE 
             bt.user_id = ?
-            {date_filter}
+            {balance_date_filter if time_period != 'all' else ''}
         """
         
         credits_params = [user_id] + date_params if time_period != 'all' else [user_id]
