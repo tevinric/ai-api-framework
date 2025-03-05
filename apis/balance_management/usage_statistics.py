@@ -1,6 +1,3 @@
-# File: apis/balance_management/usage_statistics.py
-# This is the same content as in the usage-stats artifact but properly placed in the module structure
-
 from flask import jsonify, request, g, make_response
 from apis.utils.tokenService import TokenService
 from apis.utils.databaseService import DatabaseService
@@ -47,7 +44,7 @@ def usage_by_user_route():
             time_period:
               type: string
               description: Time period for statistics, either "all" or in format "YYYY-MM"
-              example: "all" or "2024-03"
+              example: "2024-03"
     produces:
       - application/json
     responses:
