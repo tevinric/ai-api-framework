@@ -173,7 +173,8 @@ def refresh_token_route():
             expires_in=expires_in,
             expires_on=expires_on,
             token_scope=token_details["token_scope"],
-            regenerated_by=user_info["id"]
+            regenerated_by=user_info["id"],
+            regenerated_from=token_details["id"]  # Add original token ID reference
         )
         
         if not success:
