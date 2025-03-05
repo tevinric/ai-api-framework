@@ -74,11 +74,11 @@ def get_azure_blob_client():
     return BlobServiceClient.from_connection_string(connection_string)
 
 # Azure Blob Storage configuration
-BLOB_CONTAINER_NAME = os.environ.get("AZURE_STORAGE_CONTAINER", "dalle-images")
+FILE_UPLOADS_CONTAINER = os.environ.get("FILE_UPLOADS_CONTAINER")
+IMAGE_GENERATION_CONTAINER = os.environ.get("IMAGE_GENERATION_CONTAINER")
 STORAGE_ACCOUNT = os.environ.get("AZURE_STORAGE_ACCOUNT")
-BASE_BLOB_URL = f"https://{STORAGE_ACCOUNT}.blob.core.windows.net/{BLOB_CONTAINER_NAME}"
 
-def ensure_container_exists(container_name=BLOB_CONTAINER_NAME):
+def ensure_container_exists(container_name=IMAGE_GENERATION_CONTAINER):
     """
     Ensures that the specified blob container exists.
     Creates it with public access if it doesn't exist.
@@ -101,7 +101,7 @@ def ensure_container_exists(container_name=BLOB_CONTAINER_NAME):
         logger.error(f"Error ensuring container exists: {str(e)}")
         raise
 
-def save_image_to_blob(image_data, image_name, container_name=BLOB_CONTAINER_NAME):
+def save_image_to_blob(image_data, image_name, container_name=IMAGE_GENERATION_CONTAINER):
     """
     Save image data to Azure Blob Storage and return the URL
     
@@ -140,7 +140,7 @@ def save_image_to_blob(image_data, image_name, container_name=BLOB_CONTAINER_NAM
         logger.error(f"Error saving image to blob storage: {str(e)}")
         raise Exception(f"Failed to save generated image: {str(e)}")
 
-def delete_image_from_blob(image_name, container_name=BLOB_CONTAINER_NAME):
+def delete_image_from_blob(image_name, container_name=IMAGE_GENERATION_CONTAINER):
     """
     Delete an image from Azure Blob Storage
     
@@ -172,7 +172,7 @@ def delete_image_from_blob(image_name, container_name=BLOB_CONTAINER_NAME):
         logger.error(f"Error deleting image from blob storage: {str(e)}")
         return False
 
-def list_blob_images(container_name=BLOB_CONTAINER_NAME, max_results=100):
+def list_blob_images(container_name=IMAGE_GENERATION_CONTAINER, max_results=100):
     """
     List all images in the blob container
     

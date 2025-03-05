@@ -8,7 +8,7 @@ import uuid
 import io
 import requests
 from openai import AzureOpenAI
-from apis.utils.config import get_openai_client, get_azure_blob_client
+from apis.utils.config import get_openai_client, get_azure_blob_client, IMAGE_GENERATION_CONTAINER, STORAGE_ACCOUNT
 from apis.utils.logMiddleware import api_logger
 from apis.utils.balanceMiddleware import check_balance
 from azure.storage.blob import BlobServiceClient, ContentSettings
@@ -21,11 +21,11 @@ logger = logging.getLogger(__name__)
 client = get_openai_client()
 
 # Default deployment model for image generation
-DEFAULT_IMAGE_DEPLOYMENT = 'Dalle3'  # Options: 'dalle3', 'dalle3-hd'
+DEFAULT_IMAGE_DEPLOYMENT = 'dall-e-3'  # Options: 'dalle3', 'dalle3-hd'
 
 # Azure Blob Storage container for images
-BLOB_CONTAINER_NAME = 'image-generation'
-BASE_BLOB_URL = 'https://aiapistoragecontainer.blob.core.windows.net/image-generation'  # Replace with your actual base URL
+BLOB_CONTAINER_NAME = IMAGE_GENERATION_CONTAINER
+BASE_BLOB_URL = f"https://{STORAGE_ACCOUNT}.blob.core.windows.net/{BLOB_CONTAINER_NAME}"
 
 def create_api_response(data, status_code=200):
     """Helper function to create consistent API responses"""
@@ -85,8 +85,8 @@ def custom_image_generation_route():
               description: Text prompt describing the image to generate
             deployment:
               type: string
-              enum: [dalle3, dalle3-hd]
-              default: dalle3
+              enum: [dall-e-3, dalle3-hd]
+              default: dall-e-3
               description: The DALLE-3 model deployment to use
             size:
               type: string
@@ -117,7 +117,7 @@ def custom_image_generation_route():
           -H "Content-Type: application/json" \\
           -d '{
             "prompt": "A futuristic city with flying cars and tall glass buildings",
-            "deployment": "dalle3",
+            "deployment": "dall-e-3",
             "size": "1024x1024",
             "quality": "standard",
             "style": "vivid"
@@ -157,7 +157,7 @@ def custom_image_generation_route():
             model:
               type: string
               description: The model deployment used
-              enum: [dalle3, dalle3-hd]
+              enum: [dall-e-3, dalle3-hd]
       400:
         description: Bad request
         schema:
@@ -172,7 +172,7 @@ def custom_image_generation_route():
               examples:
                 - "Request body is required"
                 - "Missing required field: prompt"
-                - "Invalid deployment. Must be one of: dalle3, dalle3-hd"
+                - "Invalid deployment. Must be one of: dall-e-3, dalle3-hd"
                 - "Invalid size. Must be one of: 1024x1024, 1792x1024, 1024x1792"
                 - "Invalid quality. Must be one of: standard, hd"
                 - "Invalid style. Must be one of: vivid, natural"
@@ -280,7 +280,7 @@ def custom_image_generation_route():
     style = data.get('style', 'vivid')
     
     # Validate deployment option
-    valid_deployments = ['dalle3', 'dalle3-hd']
+    valid_deployments = ['dall-e-3', 'dalle3-hd']
     if deployment not in valid_deployments:
         return create_api_response({
             "response": "400",
