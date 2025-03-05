@@ -144,30 +144,53 @@ def refresh_token_route():
     token_service = TokenService()
     
     try:
-        # Call MSAL to get a new token
-        response_data, status_code = token_service.get_token(user_info)
+        # Get a new token directly from the token service
+        # This bypasses the log_token_transaction call in the get_token method
+        import requests
+        import os
+        from apis.utils.config import Config
         
-        if status_code != 200 or "access_token" not in response_data:
+        # Define the token endpoint
+        token_endpoint = f"https://login.microsoftonline.com/{Config.TENANT_ID}/oauth2/token/"
+        
+        # Prepare the request body
+        data = {
+            "client_id": Config.CLIENT_ID,
+            "client_secret": Config.CLIENT_SECRET,
+            "resource": 'https://graph.microsoft.com',
+            "grant_type": "client_credentials"
+        }
+        
+        # Make the POST request
+        response = requests.post(token_endpoint, data=data)
+        
+        # Check if the request was successful
+        response.raise_for_status()
+        
+        # Parse the response
+        result = response.json()
+        
+        if "access_token" not in result:
+            logger.error(f"Token acquisition failed: {result.get('error_description', 'Unknown error')}")
             return create_api_response({
-                "error": "Server Error",
-                "message": "Failed to generate a new token"
+                "error": "Failed to acquire token",
+                "details": result.get("error_description", "Unknown error")
             }, 500)
-            
-        # Get the new token details
-        new_token = response_data["access_token"]
-        expires_in = response_data["expires_in"]
         
-        # Parse expires_on string to datetime
-        expires_on_str = response_data.get("expires_on")
-        try:
-            # Try to parse the datetime string (format may vary)
-            expires_on = datetime.strptime(expires_on_str, "%Y-%m-%d %H:%M:%S %z")
-        except (ValueError, TypeError):
-            # Fallback: calculate from expires_in
-            expires_on = now + timedelta(seconds=expires_in)
+        # Extract token information
+        new_token = result.get("access_token")
+        expires_in = result.get("expires_in")
         
-        # Create a new token record while preserving the original record
-        # This links the new token to the original via regenerated_from
+        # Calculate expiration time
+        expires_on_timestamp = int(result.get("expires_on"))
+        utc_time = datetime.fromtimestamp(expires_on_timestamp, pytz.UTC)
+        gmt_plus_2 = pytz.timezone('Africa/Johannesburg')
+        expires_on = utc_time.astimezone(gmt_plus_2)
+        
+        # Format for response
+        formatted_expiry = expires_on.strftime('%Y-%m-%d %H:%M:%S %z')
+        
+        # Create the refreshed token record with regenerated_from field
         transaction_id = DatabaseService.log_refreshed_token(
             user_id=user_info["id"],
             token_scope=token_details["token_scope"],
@@ -184,6 +207,14 @@ def refresh_token_route():
                 "error": "Server Error",
                 "message": "Failed to store refreshed token"
             }, 500)
+        
+        # Prepare response data
+        response_data = {
+            "access_token": new_token,
+            "token_type": result.get("token_type", "Bearer"),
+            "expires_in": expires_in,
+            "expires_on": formatted_expiry
+        }
         
         return create_api_response(response_data, 200)
         
