@@ -28,18 +28,19 @@ def admin_delete_user_route():
         type: string
         required: true
         description: Admin API Key for authentication
+      - name: token
+        in: query
+        type: string
+        required: true
+        description: A valid token for verification
       - name: body
         in: body
         required: true
         schema:
           type: object
           required:
-            - token
             - id
           properties:
-            token:
-              type: string
-              description: A valid token for verification
             id:
               type: string
               description: UUID of the user to delete
@@ -149,25 +150,15 @@ def admin_delete_user_route():
             "message": "Admin privileges required to delete users"
         }, 403)
     
-    # Get request data
-    data = request.get_json()
-    if not data:
+    # Get token from query parameter
+    token = request.args.get('token')
+    if not token:
         return create_api_response({
             "error": "Bad Request",
-            "message": "Request body is required"
+            "message": "Missing token parameter"
         }, 400)
     
-    # Validate required fields
-    required_fields = ['token', 'id']
-    missing_fields = [field for field in required_fields if field not in data]
-    if missing_fields:
-        return create_api_response({
-            "error": "Bad Request",
-            "message": f"Missing required fields: {', '.join(missing_fields)}"
-        }, 400)
-    
-    # Validate token from request body
-    token = data.get('token')
+    # Validate token
     token_details = DatabaseService.get_token_details_by_value(token)
     if not token_details:
         return create_api_response({
@@ -191,6 +182,21 @@ def admin_delete_user_route():
             "error": "Authentication Error",
             "message": "Token has expired"
         }, 401)
+    
+    # Get request data
+    data = request.get_json()
+    if not data:
+        return create_api_response({
+            "error": "Bad Request",
+            "message": "Request body is required"
+        }, 400)
+    
+    # Validate required fields
+    if 'id' not in data:
+        return create_api_response({
+            "error": "Bad Request",
+            "message": "Missing required field: id"
+        }, 400)
     
     # Get user ID to delete
     user_id = data.get('id')
