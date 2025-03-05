@@ -29,6 +29,8 @@ OPENAI_API_ENDPOINT = os.environ.get("OPENAI_API_ENDPOINT")
 DEEPSEEK_API_KEY=os.environ.get("DEEPSEEK_API_KEY")
 LLAMA_API_KEY=os.environ.get("LLAMA_API_KEY")
 
+STABLE_DIFFUSION_API_KEY = os.environ.get("STABLE_DIFFUSION_API_KEY")
+
 def get_openai_client():
     client = AzureOpenAI(
     azure_endpoint=OPENAI_API_ENDPOINT,
