@@ -113,5 +113,8 @@ register_stable_diffusion_ultra_routes(app)
 from apis.file_upload.upload_file import register_file_upload_routes
 register_file_upload_routes(app)
 
+from apis.balance_management.usage_statistics import register_usage_stats_routes
+register_usage_stats_routes(app)
+
 if __name__ == '__main__':
     app.run()
