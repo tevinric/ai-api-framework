@@ -1,4 +1,4 @@
-from flask import jsonify, request, g, make_response
+from flask import jsonify, request,g, make_response
 from apis.utils.tokenService import TokenService
 from apis.utils.databaseService import DatabaseService
 from apis.utils.logMiddleware import api_logger
@@ -28,19 +28,18 @@ def admin_update_user_route():
         type: string
         required: true
         description: Admin API Key for authentication
-      - name: token
-        in: query
-        type: string
-        required: true
-        description: A valid token for verification
       - name: body
         in: body
         required: true
         schema:
           type: object
           required:
+            - token
             - id
           properties:
+            token:
+              type: string
+              description: A valid token for verification
             id:
               type: string
               description: UUID of the user to update
@@ -131,6 +130,17 @@ def admin_update_user_route():
             message:
               type: string
               example: User not found
+      409:
+        description: Conflict
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Conflict
+            message:
+              type: string
+              example: Email address already in use by another user
       500:
         description: Server error
         schema:
@@ -168,15 +178,25 @@ def admin_update_user_route():
             "message": "Admin privileges required to update users"
         }, 403)
     
-    # Get token from query parameter
-    token = request.args.get('token')
-    if not token:
+    # Get request data
+    data = request.get_json()
+    if not data:
         return create_api_response({
             "error": "Bad Request",
-            "message": "Missing token parameter"
+            "message": "Request body is required"
         }, 400)
     
-    # Validate token
+    # Validate required fields
+    required_fields = ['token', 'id']
+    missing_fields = [field for field in required_fields if field not in data]
+    if missing_fields:
+        return create_api_response({
+            "error": "Bad Request",
+            "message": f"Missing required fields: {', '.join(missing_fields)}"
+        }, 400)
+    
+    # Validate token from request body
+    token = data.get('token')
     token_details = DatabaseService.get_token_details_by_value(token)
     if not token_details:
         return create_api_response({
@@ -200,21 +220,6 @@ def admin_update_user_route():
             "error": "Authentication Error",
             "message": "Token has expired"
         }, 401)
-    
-    # Get request data
-    data = request.get_json()
-    if not data:
-        return create_api_response({
-            "error": "Bad Request",
-            "message": "Request body is required"
-        }, 400)
-    
-    # Validate required fields
-    if 'id' not in data:
-        return create_api_response({
-            "error": "Bad Request",
-            "message": "Missing required field: id"
-        }, 400)
     
     # Get user ID to update
     user_id = data.get('id')
@@ -257,6 +262,35 @@ def admin_update_user_route():
             "updated_fields": []
         }, 200)
     
+    # Check if trying to update email, make sure it's not already in use by another user
+    if 'user_email' in update_data:
+        new_email = update_data['user_email']
+        
+        # Check if this email is already in use by a DIFFERENT user
+        try:
+            conn = DatabaseService.get_connection()
+            cursor = conn.cursor()
+            
+            query = """
+            SELECT id FROM users 
+            WHERE user_email = ? AND id != ?
+            """
+            
+            cursor.execute(query, [new_email, user_id])
+            existing_user = cursor.fetchone()
+            cursor.close()
+            conn.close()
+            
+            if existing_user:
+                return create_api_response({
+                    "error": "Conflict",
+                    "message": f"Email address {new_email} is already in use by another user"
+                }, 409)
+                
+        except Exception as e:
+            logger.error(f"Error checking email uniqueness: {str(e)}")
+            # Continue with the update, we'll handle any DB constraint errors later
+    
     try:
         # Update user in database
         success, updated_fields = DatabaseService.update_user(user_id, update_data)
@@ -273,6 +307,19 @@ def admin_update_user_route():
             "updated_fields": updated_fields
         }, 200)
         
+    except ValueError as ve:
+        # Handle specific validation errors from DatabaseService
+        error_message = str(ve)
+        if "Email address already exists" in error_message:
+            return create_api_response({
+                "error": "Conflict",
+                "message": error_message
+            }, 409)
+        else:
+            return create_api_response({
+                "error": "Bad Request",
+                "message": error_message
+            }, 400)
     except Exception as e:
         logger.error(f"Error updating user: {str(e)}")
         return create_api_response({
