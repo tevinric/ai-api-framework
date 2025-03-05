@@ -33,33 +33,6 @@ def create_api_response(data, status_code=200):
     response.status_code = status_code
     return response
 
-def save_image_to_blob(image_data, image_name):
-    """Save image to Azure Blob Storage and return the URL"""
-    try:
-        # Get blob service client
-        blob_service_client = get_azure_blob_client()
-        
-        # Get container client
-        container_client = blob_service_client.get_container_client(BLOB_CONTAINER_NAME)
-        
-        # Create container if it doesn't exist
-        if not container_client.exists():
-            container_client.create_container()
-        
-        # Set content settings for the blob (image)
-        content_settings = ContentSettings(content_type='image/png')
-        
-        # Upload image to blob
-        blob_client = container_client.get_blob_client(image_name)
-        blob_client.upload_blob(image_data, overwrite=True, content_settings=content_settings)
-        
-        # Return the URL to the image
-        return f"{BASE_BLOB_URL}/{image_name}"
-    
-    except Exception as e:
-        logger.error(f"Error saving image to blob storage: {str(e)}")
-        raise
-
 def custom_image_generation_route():
     """
     Generate images using Azure OpenAI DALLE-3
@@ -138,10 +111,10 @@ def custom_image_generation_route():
               type: string
               description: Success message
               example: "Image generated successfully"
-            image_url:
+            file_id:
               type: string
-              description: URL to the generated image in Azure Blob Storage
-              example: "https://yourstorageaccount.blob.core.windows.net/dalle-images/image-12345.png"
+              description: ID of the file in the upload system
+              example: "12345678-1234-5678-1234-567812345678"
             prompt_tokens:
               type: integer
               description: Number of prompt tokens used
@@ -339,14 +312,57 @@ def custom_image_generation_route():
         # Generate a unique name for the image
         image_name = f"image-{uuid.uuid4()}.png"
         
-        # Save the image to Azure Blob Storage
-        image_url = save_image_to_blob(image_data, image_name)
+        # Instead of saving directly to blob storage, use the upload-file endpoint
+        # Create a temporary file-like object to send to the upload endpoint
+        import io
+        from werkzeug.datastructures import FileStorage
+        
+        image_file = FileStorage(
+            stream=io.BytesIO(image_data),
+            filename=image_name,
+            content_type='image/png'
+        )
+
+        # Create a files dictionary for the upload-file endpoint
+        files = {'files': image_file}
+        
+        # Call upload-file endpoint using internal Flask request
+        from flask import current_app
+
+        # Create a new request to the upload-file endpoint
+        upload_url = f"{request.url_root.rstrip('/')}/upload-file"
+        
+        # Make the POST request to upload-file endpoint
+        upload_response = requests.post(
+            upload_url,
+            headers={'X-Token': token},
+            files=files
+        )
+        
+        # Check if the upload was successful
+        if upload_response.status_code != 200:
+            logger.error(f"Failed to upload image: {upload_response.json()}")
+            return create_api_response({
+                "response": "500",
+                "message": f"Failed to upload generated image: {upload_response.json().get('message', 'Unknown error')}"
+            }, 500)
+        
+        # Extract the file_id from the upload response
+        upload_data = upload_response.json()
+        if 'uploaded_files' not in upload_data or not upload_data['uploaded_files']:
+            logger.error(f"No file information in upload response: {upload_data}")
+            return create_api_response({
+                "response": "500",
+                "message": "Failed to upload generated image: No file information returned"
+            }, 500)
+            
+        file_id = upload_data['uploaded_files'][0]['file_id']
         
         # Prepare successful response with user details
         return create_api_response({
             "response": "200",
             "message": "Image generated successfully",
-            "image_url": image_url,
+            "file_id": file_id,
             "prompt_tokens": prompt_tokens,
             "user_id": user_details["id"],
             "user_name": user_details["user_name"],
