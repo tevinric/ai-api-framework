@@ -86,85 +86,92 @@ class BalanceService:
                 conn.close()
 
 # Fixed version of the check_and_deduct_balance function in apis/utils/balanceService.py
+# Fixed version of the check_and_deduct_balance function in apis/utils/balanceService.py
 
-@staticmethod
-def check_and_deduct_balance(user_id, endpoint_id, deduction_amount=None):
-    """Check if user has sufficient balance and deduct if they do"""
-    conn = None
-    cursor = None
-    try:
-        logger.info(f"Checking balance for user {user_id}, endpoint {endpoint_id}")
-        conn = DatabaseService.get_connection()
-        cursor = conn.cursor()
+    @staticmethod
+    def check_and_deduct_balance(user_id, endpoint_id, deduction_amount=None):
+        """Check if user has sufficient balance and deduct if they do"""
+        conn = None
+        cursor = None
+        try:
+            logger.info(f"Checking balance for user {user_id}, endpoint {endpoint_id}")
+            conn = DatabaseService.get_connection()
+            cursor = conn.cursor()
 
-        # If deduction_amount is not provided, get it from endpoint's cost
-        if deduction_amount is None:
-            cursor.execute("SELECT cost FROM endpoints WHERE id = ?", [endpoint_id])
-            endpoint_result = cursor.fetchone()
-            if not endpoint_result:
-                logger.error(f"Endpoint {endpoint_id} not found")
-                return False, "Endpoint not found"
-            deduction_amount = float(endpoint_result[0])
-            logger.info(f"Using endpoint cost of {deduction_amount} for endpoint {endpoint_id}")
+            # If deduction_amount is not provided, get it from endpoint's cost
+            if deduction_amount is None:
+                cursor.execute("SELECT cost FROM endpoints WHERE id = ?", [endpoint_id])
+                endpoint_result = cursor.fetchone()
+                if not endpoint_result:
+                    logger.error(f"Endpoint {endpoint_id} not found")
+                    return False, "Endpoint not found"
+                    
+                # Convert to float for consistent handling
+                deduction_amount = float(endpoint_result[0])
+                logger.info(f"Using endpoint cost of {deduction_amount} for endpoint {endpoint_id}")
+            else:
+                # Ensure deduction_amount is a float even if provided externally
+                deduction_amount = float(deduction_amount)
 
-        current_month = BalanceService.get_first_day_of_month()
+            current_month = BalanceService.get_first_day_of_month()
 
-        # First, ensure the user has a balance for current month
-        initialized = BalanceService.initialize_monthly_balance(user_id)
-        if not initialized:
-            logger.error(f"Failed to initialize balance for user {user_id}")
-            return False, "Failed to initialize balance"
+            # First, ensure the user has a balance for current month
+            initialized = BalanceService.initialize_monthly_balance(user_id)
+            if not initialized:
+                logger.error(f"Failed to initialize balance for user {user_id}")
+                return False, "Failed to initialize balance"
 
-        # Get current balance
-        cursor.execute("""
-            SELECT current_balance
-            FROM user_balances
-            WHERE user_id = ? AND balance_month = ?
-        """, [user_id, current_month])
+            # Get current balance
+            cursor.execute("""
+                SELECT current_balance
+                FROM user_balances
+                WHERE user_id = ? AND balance_month = ?
+            """, [user_id, current_month])
 
-        balance_result = cursor.fetchone()
-        if not balance_result:
-            logger.error(f"No balance record found for user {user_id} for {current_month}")
-            return False, "No balance record found"
+            balance_result = cursor.fetchone()
+            if not balance_result:
+                logger.error(f"No balance record found for user {user_id} for {current_month}")
+                return False, "No balance record found"
 
-        current_balance = float(balance_result[0])
-        logger.info(f"Current balance for user {user_id}: {current_balance}")
+            # Convert to float for consistent handling
+            current_balance = float(balance_result[0])
+            logger.info(f"Current balance for user {user_id}: {current_balance}")
 
-        if current_balance < deduction_amount:
-            logger.warning(f"Insufficient balance for user {user_id}: {current_balance} < {deduction_amount}")
-            return False, "Insufficient balance"
+            if current_balance < deduction_amount:
+                logger.warning(f"Insufficient balance for user {user_id}: {current_balance} < {deduction_amount}")
+                return False, "Insufficient balance"
 
-        # Deduct balance and log transaction
-        new_balance = current_balance - deduction_amount
-        
-        cursor.execute("""
-            UPDATE user_balances
-            SET current_balance = ?,
-                last_updated = DATEADD(HOUR, 2, GETUTCDATE())
-            WHERE user_id = ? AND balance_month = ?
-        """, [new_balance, user_id, current_month])
+            # Deduct balance and log transaction
+            new_balance = current_balance - deduction_amount
+            
+            cursor.execute("""
+                UPDATE user_balances
+                SET current_balance = ?,
+                    last_updated = DATEADD(HOUR, 2, GETUTCDATE())
+                WHERE user_id = ? AND balance_month = ?
+            """, [new_balance, user_id, current_month])
 
-        # Log the transaction
-        cursor.execute("""
-            INSERT INTO balance_transactions 
-            (id, user_id, endpoint_id, deducted_amount, balance_after)
-            VALUES (NEWID(), ?, ?, ?, ?)
-        """, [user_id, endpoint_id, deduction_amount, new_balance])
+            # Log the transaction
+            cursor.execute("""
+                INSERT INTO balance_transactions 
+                (id, user_id, endpoint_id, deducted_amount, balance_after)
+                VALUES (NEWID(), ?, ?, ?, ?)
+            """, [user_id, endpoint_id, deduction_amount, new_balance])
 
-        conn.commit()
-        logger.info(f"Successfully deducted {deduction_amount} from user {user_id}, new balance: {new_balance}")
-        return True, new_balance
+            conn.commit()
+            logger.info(f"Successfully deducted {deduction_amount} from user {user_id}, new balance: {new_balance}")
+            return True, new_balance
 
-    except Exception as e:
-        logger.error(f"Error checking/deducting balance: {str(e)}")
-        if conn:
-            conn.rollback()
-        return False, str(e)
-    finally:
-        if cursor:
-            cursor.close()
-        if conn:
-            conn.close()
+        except Exception as e:
+            logger.error(f"Error checking/deducting balance: {str(e)}")
+            if conn:
+                conn.rollback()
+            return False, str(e)
+        finally:
+            if cursor:
+                cursor.close()
+            if conn:
+                conn.close()
             
     @staticmethod
     def get_current_balance(user_id):
