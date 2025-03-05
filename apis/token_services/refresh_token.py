@@ -166,22 +166,23 @@ def refresh_token_route():
             # Fallback: calculate from expires_in
             expires_on = now + timedelta(seconds=expires_in)
         
-        # Update the existing token record instead of creating a new one
-        success = DatabaseService.update_token(
-            existing_token=token,
-            new_token_value=new_token,
+        # Create a new token record while preserving the original record
+        # This links the new token to the original via regenerated_from
+        transaction_id = DatabaseService.log_refreshed_token(
+            user_id=user_info["id"],
+            token_scope=token_details["token_scope"],
             expires_in=expires_in,
             expires_on=expires_on,
-            token_scope=token_details["token_scope"],
-            regenerated_by=user_info["id"],
-            regenerated_from=token_details["id"]  # Add original token ID reference
+            token_value=new_token,
+            regenerated_from=token_details["id"],  # ID of the original token
+            regenerated_by=user_info["id"]
         )
         
-        if not success:
-            logger.warning("Failed to update token in database")
+        if not transaction_id:
+            logger.warning("Failed to log refreshed token in database")
             return create_api_response({
                 "error": "Server Error",
-                "message": "Failed to update token record"
+                "message": "Failed to store refreshed token"
             }, 500)
         
         return create_api_response(response_data, 200)
