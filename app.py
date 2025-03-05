@@ -107,6 +107,9 @@ from apis.image_generation.dalle3 import register_image_generation_routes
 register_image_generation_routes(app)
 
 
+from apis.image_generation.stable_diffusion_ultra import register_stable_diffusion_ultra_routes
+register_stable_diffusion_ultra_routes(app)
+
 from apis.file_upload.upload_file import register_file_upload_routes
 register_file_upload_routes(app)
 
