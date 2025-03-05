@@ -82,9 +82,8 @@ register_admin_update_user_routes(app)
 from apis.endpoint_management.admin_endpoint_management import register_admin_endpoint_routes
 register_admin_endpoint_routes(app)
 
-from apis.balance_endpoints import register_balance_routes
+from apis.balance_management.balance_endpoints import register_balance_routes
 register_balance_routes(app)
-
 
 from apis.llm.deepseek_r1 import register_llm_deepseek_r1
 register_llm_deepseek_r1(app)
