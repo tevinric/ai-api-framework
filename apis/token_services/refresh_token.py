@@ -4,6 +4,7 @@ from apis.utils.databaseService import DatabaseService
 from apis.utils.logMiddleware import api_logger
 import logging
 import pytz
+import uuid
 from datetime import datetime, timedelta
 
 # CONFIGURE LOGGING
@@ -165,19 +166,37 @@ def refresh_token_route():
             # Fallback: calculate from expires_in
             expires_on = now + timedelta(seconds=expires_in)
         
-        # Log the refreshed token
-        success = DatabaseService.log_refreshed_token(
-            user_id=user_info["id"],
-            token_scope=token_details["token_scope"],
-            expires_in=expires_in,
-            expires_on=expires_on,
-            token_value=new_token,
-            regenerated_from=token,
-            regenerated_by=user_info["id"]
-        )
-        
-        if not success:
-            logger.warning("Failed to log refreshed token in database")
+        # Ensure properly formatted UUIDs for database
+        try:
+            # Validate user_id is a proper UUID
+            user_id_uuid = user_info["id"]
+            # If it's not a UUID object yet, try to convert it
+            if not isinstance(user_id_uuid, uuid.UUID):
+                user_id_uuid = str(user_id_uuid)  # Ensure it's a string
+                
+            # For token_id (regenerated_from)
+            token_id = token_details["id"]
+            if not isinstance(token_id, uuid.UUID):
+                token_id = str(token_id)
+                
+            # Log the refreshed token
+            success = DatabaseService.log_refreshed_token(
+                user_id=user_id_uuid,
+                token_scope=token_details["token_scope"],
+                expires_in=expires_in,
+                expires_on=expires_on,
+                token_value=new_token,
+                regenerated_from=token_id,
+                regenerated_by=user_id_uuid
+            )
+            
+            if not success:
+                logger.warning("Failed to log refreshed token in database")
+                
+        except Exception as db_error:
+            logger.error(f"Database error when logging refreshed token: {str(db_error)}")
+            # Continue anyway - we don't want to fail the overall operation
+            # just because we couldn't log it
         
         return create_api_response(response_data, 200)
         
