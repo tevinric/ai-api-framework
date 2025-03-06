@@ -177,6 +177,118 @@ def extract_text_from_xlsx(file_path):
         logger.error(f"Error extracting text from Excel: {str(e)}")
         raise
 
+def parse_llm_response_json(content):
+    """
+    Parse potential JSON in LLM responses and extract the actual content
+    This handles cases where the LLM returns a JSON object with the actual content in a field
+    """
+    # If it's not a string, convert it to a string
+    if not isinstance(content, str):
+        return str(content), {}
+    
+    # If it doesn't look like JSON, return as is
+    if not (content.strip().startswith('{') and content.strip().endswith('}')):
+        return content, {}
+    
+    try:
+        # Try to parse as JSON
+        json_obj = json.loads(content)
+        
+        # If it's not a dict, return as is
+        if not isinstance(json_obj, dict):
+            return content, {}
+        
+        # Check for common fields in LLM responses
+        extracted_content = None
+        metadata = {}
+        
+        # Look for the actual content
+        for field in ["message", "summary", "content", "text", "result"]:
+            if field in json_obj and isinstance(json_obj[field], str):
+                extracted_content = json_obj[field]
+                break
+        
+        # If we didn't find any of those fields, check if there's only one string field
+        if extracted_content is None:
+            string_fields = {k: v for k, v in json_obj.items() if isinstance(v, str)}
+            if len(string_fields) == 1:
+                extracted_content = next(iter(string_fields.values()))
+        
+        # Extract token metadata if present
+        token_fields = {
+            "input_tokens": "prompt_tokens",
+            "prompt_tokens": "prompt_tokens",
+            "completion_tokens": "completion_tokens",
+            "output_tokens": "total_tokens",
+            "total_tokens": "total_tokens"
+        }
+        
+        for json_field, meta_field in token_fields.items():
+            if json_field in json_obj and isinstance(json_obj[json_field], (int, float)):
+                metadata[meta_field] = json_obj[json_field]
+        
+        # If we found content, return it along with metadata
+        if extracted_content is not None:
+            return extracted_content, metadata
+        
+        # If we get here, we couldn't extract content, return the original
+        return content, {}
+    except json.JSONDecodeError:
+        # Not valid JSON, return as is
+        return content, {}
+
+def extract_summary_from_llm_response(response_data):
+    """
+    Extract actual summary text from LLM response JSON
+    This handles cases where the summary contains a full JSON response
+    """
+    if not response_data:
+        return "No summary available", [], {}
+    
+    # If response_data is already a string, return it
+    if isinstance(response_data, str):
+        # Check if it's a JSON string
+        parsed_content, metadata = parse_llm_response_json(response_data)
+        if parsed_content != response_data:
+            # We were able to extract something
+            key_points = extract_key_points_from_content(parsed_content)
+            return parsed_content, key_points, metadata
+        return response_data, [], {}
+    
+    # Check if we received a JSON object with a 'message' field
+    if isinstance(response_data, dict):
+        # If it has a message field, that's the actual summary
+        if "message" in response_data:
+            summary_text = response_data["message"]
+            
+            # Extract token information
+            token_info = {
+                "prompt_tokens": response_data.get("input_tokens", 0),
+                "completion_tokens": response_data.get("completion_tokens", 0),
+                "total_tokens": response_data.get("output_tokens", 0)
+            }
+            
+            # Try to extract key points from the summary
+            key_points = extract_key_points_from_content(summary_text)
+            
+            return summary_text, key_points, token_info
+        
+        # If it has a summary field, use that
+        if "summary" in response_data:
+            summary_text = response_data["summary"]
+            key_points = response_data.get("key_points", [])
+            token_info = response_data.get("tokens", {})
+            
+            # If summary is still a dict, try to extract it
+            if isinstance(summary_text, dict) and "message" in summary_text:
+                summary_text = summary_text["message"]
+                
+            return summary_text, key_points, token_info
+    
+    # If we get here, we couldn't extract a proper summary
+    # Just convert the whole thing to a string
+    return str(response_data), [], {}
+
 def extract_key_points_from_content(content, min_points=5):
     """
     Extract key points from content if the LLM didn't properly format them
@@ -319,23 +431,20 @@ def chunk_text(text, max_chunk_size=12000, overlap=500):  # Increased overlap fo
     return chunks
 
 def format_docx_summary(summary_data):
-    """Format summary data for docx - ensures proper structure returned"""
-    # Extract only what we need, ensuring summary is a string
-    summary_text = summary_data.get("summary", "")
-    if not isinstance(summary_text, str):
-        logger.warning("Summary is not a string, converting")
-        summary_text = str(summary_text)
-        
-    # Check for any missing data
-    if not summary_text and "content" in summary_data:
-        logger.warning("Missing summary field, using content field instead")
-        summary_text = summary_data["content"]
-        
-    # Make sure key_points is a list of strings
-    key_points = summary_data.get("key_points", [])
+    """Format summary data for docx with improved JSON handling"""
+    # Extract summary, key points and token info from potential JSON response
+    summary_text, key_points, token_info = extract_summary_from_llm_response(summary_data)
+    
+    # Update token info if available in original data
+    if "tokens" in summary_data and isinstance(summary_data["tokens"], dict):
+        token_info = summary_data["tokens"]
+    
+    # Use existing key points if available and not empty
+    if "key_points" in summary_data and summary_data["key_points"]:
+        key_points = summary_data["key_points"]
+    
+    # If we still don't have key points, extract them from the summary
     if not key_points:
-        logger.warning("No key points found in summary data, generating generic ones")
-        # Extract some key sentences from the summary as fallback key points
         key_points = extract_key_points_from_content(summary_text)
     
     # Create formatted response with correct structure
@@ -344,29 +453,26 @@ def format_docx_summary(summary_data):
         "key_points": key_points,
         "document_structure": summary_data.get("document_structure", {}),
         "pages_processed": summary_data.get("pages_processed", 0),
-        "tokens": summary_data.get("tokens", {})
+        "tokens": token_info
     }
     
     return formatted
 
 def format_pdf_summary(summary_data):
-    """Format summary data for PDF - ensures proper structure returned"""
-    # Extract only what we need, ensuring summary is a string
-    summary_text = summary_data.get("summary", "")
-    if not isinstance(summary_text, str):
-        logger.warning("Summary is not a string, converting")
-        summary_text = str(summary_text)
-        
-    # Check for any missing data
-    if not summary_text and "content" in summary_data:
-        logger.warning("Missing summary field, using content field instead")
-        summary_text = summary_data["content"]
-        
-    # Make sure key_points is a list of strings
-    key_points = summary_data.get("key_points", [])
+    """Format summary data for PDF with improved JSON handling"""
+    # Extract summary, key points and token info from potential JSON response
+    summary_text, key_points, token_info = extract_summary_from_llm_response(summary_data)
+    
+    # Update token info if available in original data
+    if "tokens" in summary_data and isinstance(summary_data["tokens"], dict):
+        token_info = summary_data["tokens"]
+    
+    # Use existing key points if available and not empty
+    if "key_points" in summary_data and summary_data["key_points"]:
+        key_points = summary_data["key_points"]
+    
+    # If we still don't have key points, extract them from the summary
     if not key_points:
-        logger.warning("No key points found in summary data, generating generic ones")
-        # Extract some key sentences from the summary as fallback key points
         key_points = extract_key_points_from_content(summary_text)
     
     # Create formatted response with correct structure
@@ -375,29 +481,26 @@ def format_pdf_summary(summary_data):
         "key_points": key_points,
         "document_structure": summary_data.get("document_structure", {}),
         "pages_processed": summary_data.get("pages_processed", 0),
-        "tokens": summary_data.get("tokens", {})
+        "tokens": token_info
     }
     
     return formatted
 
 def format_pptx_summary(summary_data):
-    """Format summary data for PowerPoint - ensures proper structure returned"""
-    # Extract only what we need, ensuring summary is a string
-    summary_text = summary_data.get("summary", "")
-    if not isinstance(summary_text, str):
-        logger.warning("Summary is not a string, converting")
-        summary_text = str(summary_text)
-        
-    # Check for any missing data
-    if not summary_text and "content" in summary_data:
-        logger.warning("Missing summary field, using content field instead")
-        summary_text = summary_data["content"]
-        
-    # Make sure key_points is a list of strings
-    key_points = summary_data.get("key_points", [])
+    """Format summary data for PowerPoint with improved JSON handling"""
+    # Extract summary, key points and token info from potential JSON response
+    summary_text, key_points, token_info = extract_summary_from_llm_response(summary_data)
+    
+    # Update token info if available in original data
+    if "tokens" in summary_data and isinstance(summary_data["tokens"], dict):
+        token_info = summary_data["tokens"]
+    
+    # Use existing key points if available and not empty
+    if "key_points" in summary_data and summary_data["key_points"]:
+        key_points = summary_data["key_points"]
+    
+    # If we still don't have key points, extract them from the summary
     if not key_points:
-        logger.warning("No key points found in summary data, generating generic ones")
-        # Extract some key sentences from the summary as fallback key points
         key_points = extract_key_points_from_content(summary_text)
     
     # Create formatted response with correct structure
@@ -406,29 +509,26 @@ def format_pptx_summary(summary_data):
         "key_points": key_points,
         "slides_processed": summary_data.get("pages_processed", 0),
         "presentation_structure": summary_data.get("document_structure", {}),
-        "tokens": summary_data.get("tokens", {})
+        "tokens": token_info
     }
     
     return formatted
 
 def format_xlsx_summary(summary_data):
-    """Format summary data for Excel - ensures proper structure returned"""
-    # Extract only what we need, ensuring summary is a string
-    summary_text = summary_data.get("summary", "")
-    if not isinstance(summary_text, str):
-        logger.warning("Summary is not a string, converting")
-        summary_text = str(summary_text)
-        
-    # Check for any missing data
-    if not summary_text and "content" in summary_data:
-        logger.warning("Missing summary field, using content field instead")
-        summary_text = summary_data["content"]
-        
-    # Make sure key_points is a list of strings
-    key_points = summary_data.get("key_points", [])
+    """Format summary data for Excel with improved JSON handling"""
+    # Extract summary, key points and token info from potential JSON response
+    summary_text, key_points, token_info = extract_summary_from_llm_response(summary_data)
+    
+    # Update token info if available in original data
+    if "tokens" in summary_data and isinstance(summary_data["tokens"], dict):
+        token_info = summary_data["tokens"]
+    
+    # Use existing key points if available and not empty
+    if "key_points" in summary_data and summary_data["key_points"]:
+        key_points = summary_data["key_points"]
+    
+    # If we still don't have key points, extract them from the summary
     if not key_points:
-        logger.warning("No key points found in summary data, generating generic ones")
-        # Extract some key sentences from the summary as fallback key points
         key_points = extract_key_points_from_content(summary_text)
     
     # Create formatted response with correct structure
@@ -437,7 +537,7 @@ def format_xlsx_summary(summary_data):
         "key_points": key_points,
         "sheets_processed": summary_data.get("pages_processed", 0),
         "data_insights": summary_data.get("document_structure", {}),
-        "tokens": summary_data.get("tokens", {})
+        "tokens": token_info
     }
     
     return formatted
@@ -598,8 +698,21 @@ def chunk_and_summarize(text, total_pages, llm_endpoint, summary_options):
                 content = json.dumps(result)
                 logger.warning(f"No choices in response, using whole result")
             
-            # Try to parse as JSON if it looks like it
-            if content and (content.strip().startswith('{') and content.strip().endswith('}')):
+            # Parse content, handling potential JSON wrapping
+            parsed_content, metadata = parse_llm_response_json(content)
+
+            if parsed_content != content:
+                logger.info(f"Successfully extracted content from JSON wrapper")
+                summary_result = {
+                    "summary": parsed_content,
+                    "key_points": [],
+                    "document_structure": {}
+                }
+                
+                # Add any extracted metadata
+                if metadata:
+                    summary_result["tokens"] = metadata
+            elif content and (content.strip().startswith('{') and content.strip().endswith('}')):
                 try:
                     summary_result = json.loads(content)
                     logger.info(f"Successfully parsed content as JSON")
@@ -733,7 +846,29 @@ def chunk_and_summarize(text, total_pages, llm_endpoint, summary_options):
                     try:
                         if "choices" in result and result["choices"] and "message" in result["choices"][0]:
                             content = result["choices"][0]["message"].get("content", "{}")
-                            final_summary = json.loads(content)
+                            
+                            # Try to parse out JSON response
+                            parsed_content, metadata = parse_llm_response_json(content)
+                            if parsed_content != content:
+                                final_summary = {
+                                    "summary": parsed_content,
+                                    "key_points": extract_key_points_from_content(parsed_content),
+                                    "document_structure": combined_structure
+                                }
+                                # Add any metadata
+                                if metadata:
+                                    final_summary["tokens"] = metadata
+                            else:
+                                # Try to parse as JSON
+                                try:
+                                    final_summary = json.loads(content)
+                                except json.JSONDecodeError:
+                                    logger.error(f"Failed to parse JSON in final summary")
+                                    final_summary = {
+                                        "summary": content,  # Use full content
+                                        "key_points": all_key_points,  # No limit on key points
+                                        "document_structure": combined_structure
+                                    }
                             
                             # If the final summary doesn't include enough key points, check and add them
                             existing_key_points = final_summary.get("key_points", [])
@@ -793,6 +928,14 @@ def chunk_and_summarize(text, total_pages, llm_endpoint, summary_options):
     if not final_summary.get("key_points") or len(final_summary.get("key_points", [])) == 0:
         logger.warning("No key points in final summary, generating from summary text")
         final_summary["key_points"] = extract_key_points_from_content(final_summary.get("summary", ""))
+    
+    # Make sure the summary is a string, not a dictionary
+    if isinstance(final_summary["summary"], dict):
+        logger.warning("Summary is a dictionary in final result, extracting text")
+        summary_text, key_points, token_info = extract_summary_from_llm_response(final_summary["summary"])
+        final_summary["summary"] = summary_text
+        if key_points and not final_summary.get("key_points"):
+            final_summary["key_points"] = key_points
     
     logger.info(f"Final summary generated successfully, length: {len(final_summary.get('summary', ''))}")
     return final_summary
@@ -1348,22 +1491,54 @@ def document_summarization_route():
                 logger.error(f"Error uploading summary file: {str(e)}")
                 # Continue with the process even if file upload fails
         
-        # Ensure the summary is a string, not a dict
+        # Extract actual summary text, handling potential JSON wrapping
         summary_text = formatted_summary.get("summary", "")
+        
+        # Handle case where summary is a JSON object
         if isinstance(summary_text, dict):
-            logger.warning("Summary is still a dictionary, extracting text")
-            summary_text = str(summary_text.get("summary", ""))
+            logger.warning("Summary is a dictionary, extracting message field")
+            # If it has a message field, that's the actual summary
+            if "message" in summary_text:
+                summary_text = summary_text["message"]
+            # Otherwise stringify the whole object
+            else:
+                summary_text = str(summary_text)
         elif not isinstance(summary_text, str):
             logger.warning(f"Summary is not a string (type: {type(summary_text)}), converting")
             summary_text = str(summary_text)
-
-        # Ensure key_points is a list of strings
+        
+        # Try to parse summary text if it looks like a JSON string
+        if summary_text.strip().startswith('{') and summary_text.strip().endswith('}'):
+            try:
+                summary_json = json.loads(summary_text)
+                if isinstance(summary_json, dict) and "message" in summary_json:
+                    logger.info("Found message field in JSON string summary, extracting")
+                    summary_text = summary_json["message"]
+                    
+                    # If there are token fields in the summary JSON, extract them
+                    token_info = {}
+                    if "input_tokens" in summary_json:
+                        token_info["prompt_tokens"] = summary_json.get("input_tokens", 0)
+                    if "completion_tokens" in summary_json:
+                        token_info["completion_tokens"] = summary_json.get("completion_tokens", 0)
+                    if "output_tokens" in summary_json:
+                        token_info["total_tokens"] = summary_json.get("output_tokens", 0)
+                    
+                    # Update token info if we found any
+                    if token_info:
+                        formatted_summary["tokens"] = token_info
+            except json.JSONDecodeError:
+                # Not valid JSON, just use as is
+                logger.info("Summary looks like JSON but isn't valid JSON, using as is")
+                pass
+        
+        # Ensure key_points is a list of strings and not empty
         key_points = formatted_summary.get("key_points", [])
         if not key_points:
             logger.warning("No key points in formatted summary, generating from summary text")
-            # Extract some key sentences from the summary as fallback key points
+            # Extract key points from the summary text
             key_points = extract_key_points_from_content(summary_text)
-
+        
         # Create response with proper structure
         response_data = {
             "message": "Document successfully summarized",
@@ -1372,7 +1547,7 @@ def document_summarization_route():
             "summary": summary_text,
             "key_points": key_points
         }
-
+        
         # Add the appropriate page/slide/sheet count
         if summary_options['document_type'] == 'pptx':
             response_data["slides_processed"] = formatted_summary.get("slides_processed", 0)
@@ -1380,10 +1555,10 @@ def document_summarization_route():
             response_data["sheets_processed"] = formatted_summary.get("sheets_processed", 0)
         else:
             response_data["pages_processed"] = formatted_summary.get("pages_processed", 0)
-
+        
         # Add token usage as a separate field
         response_data["token_usage"] = formatted_summary.get("tokens", {})
-
+        
         # Add document structure if included
         if summary_options['include_structure']:
             if summary_options['document_type'] == 'pptx':
@@ -1392,6 +1567,20 @@ def document_summarization_route():
                 response_data["data_insights"] = formatted_summary.get("data_insights", {})
             else:
                 response_data["document_structure"] = formatted_summary.get("document_structure", {})
+                
+        # Final verification - make sure summary is not JSON or dict
+        if isinstance(response_data["summary"], dict):
+            logger.error("Summary is still a dictionary after all processing!")
+            response_data["summary"] = str(response_data["summary"])
+        
+        # Extract any wrapped JSON
+        if isinstance(response_data["summary"], str) and response_data["summary"].strip().startswith('{') and response_data["summary"].strip().endswith('}'):
+            try:
+                json_obj = json.loads(response_data["summary"])
+                if isinstance(json_obj, dict) and "message" in json_obj:
+                    response_data["summary"] = json_obj["message"]
+            except:
+                pass
         
         return create_api_response(response_data, 200)
         
