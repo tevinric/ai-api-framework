@@ -40,16 +40,31 @@ def create_api_response(data, status_code=200):
 def extract_text_from_pdf(file_path):
     """Extract text from PDF files using PyMuPDF (faster and better for large files)"""
     try:
+        logger.info(f"Opening PDF file: {file_path}")
         doc = fitz.open(file_path)
         total_pages = len(doc)
+        logger.info(f"PDF has {total_pages} pages")
+        
+        if total_pages == 0:
+            raise ValueError("PDF file has no pages")
+            
         text_content = []
         
         # Process each page
         for page_num in range(total_pages):
             page = doc.load_page(page_num)
-            text_content.append(page.get_text())
+            page_text = page.get_text()
+            text_content.append(page_text)
             
-        return "\n".join(text_content), total_pages
+            # Log first few characters of first and last page for debugging
+            if page_num == 0 or page_num == total_pages - 1:
+                preview = page_text[:100].replace('\n', ' ').strip()
+                logger.info(f"Page {page_num+1} preview: {preview}...")
+        
+        full_text = "\n".join(text_content)
+        logger.info(f"Extracted {len(full_text)} characters of text from PDF")
+        
+        return full_text, total_pages
     except Exception as e:
         logger.error(f"Error extracting text from PDF: {str(e)}")
         raise
@@ -57,15 +72,18 @@ def extract_text_from_pdf(file_path):
 def extract_text_from_docx(file_path):
     """Extract text from DOCX files"""
     try:
+        logger.info(f"Opening DOCX file: {file_path}")
         doc = docx.Document(file_path)
         paragraphs = []
         
         # Extract paragraphs
+        logger.info(f"DOCX has {len(doc.paragraphs)} paragraphs")
         for para in doc.paragraphs:
             if para.text.strip():
                 paragraphs.append(para.text)
                 
         # Extract text from tables
+        logger.info(f"DOCX has {len(doc.tables)} tables")
         for table in doc.tables:
             for row in table.rows:
                 for cell in row.cells:
@@ -74,11 +92,17 @@ def extract_text_from_docx(file_path):
         
         # Number of paragraphs as a proxy for "pages"
         # This is not perfect but gives an estimate
-        total_pages = len(paragraphs) // 4  # Rough estimate: ~4 paragraphs per page
-        if total_pages < 1:
-            total_pages = 1
+        total_pages = max(1, len(paragraphs) // 4)  # Rough estimate: ~4 paragraphs per page
+        
+        full_text = "\n".join(paragraphs)
+        logger.info(f"Extracted {len(full_text)} characters from DOCX")
+        
+        # Log a preview of the text for debugging
+        if paragraphs:
+            preview = paragraphs[0][:100].replace('\n', ' ').strip()
+            logger.info(f"Text preview: {preview}...")
             
-        return "\n".join(paragraphs), total_pages
+        return full_text, total_pages
     except Exception as e:
         logger.error(f"Error extracting text from DOCX: {str(e)}")
         raise
@@ -86,19 +110,32 @@ def extract_text_from_docx(file_path):
 def extract_text_from_pptx(file_path):
     """Extract text from PPTX files"""
     try:
+        logger.info(f"Opening PPTX file: {file_path}")
         presentation = Presentation(file_path)
+        total_slides = len(presentation.slides)
+        logger.info(f"PPTX has {total_slides} slides")
+        
         text_content = []
         
         # Process each slide
-        for slide in presentation.slides:
+        for slide_idx, slide in enumerate(presentation.slides):
             slide_text = []
             for shape in slide.shapes:
                 if hasattr(shape, "text") and shape.text.strip():
                     slide_text.append(shape.text)
-            text_content.append("\n".join(slide_text))
+            
+            slide_content = "\n".join(slide_text)
+            text_content.append(f"--- Slide {slide_idx + 1} ---\n{slide_content}")
+            
+            # Log preview of first and last slide for debugging
+            if slide_idx == 0 or slide_idx == total_slides - 1:
+                preview = slide_content[:100].replace('\n', ' ').strip()
+                logger.info(f"Slide {slide_idx+1} preview: {preview}...")
         
-        total_slides = len(presentation.slides)
-        return "\n".join(text_content), total_slides
+        full_text = "\n\n".join(text_content)
+        logger.info(f"Extracted {len(full_text)} characters from PPTX")
+        
+        return full_text, total_slides
     except Exception as e:
         logger.error(f"Error extracting text from PPTX: {str(e)}")
         raise
@@ -106,19 +143,36 @@ def extract_text_from_pptx(file_path):
 def extract_text_from_xlsx(file_path):
     """Extract text from Excel files"""
     try:
+        logger.info(f"Opening Excel file: {file_path}")
+        
         # Read all sheets
         all_sheets = pd.read_excel(file_path, sheet_name=None)
+        total_sheets = len(all_sheets)
+        logger.info(f"Excel file has {total_sheets} sheets")
+        
         text_content = []
         
         # Process each sheet
         for sheet_name, df in all_sheets.items():
-            text_content.append(f"Sheet: {sheet_name}")
-            text_content.append(df.to_string(index=False))
+            logger.info(f"Processing sheet '{sheet_name}' with {len(df)} rows and {len(df.columns)} columns")
+            
+            # Add a clear sheet header
+            text_content.append(f"=== Sheet: {sheet_name} ===")
+            
+            # Convert dataframe to string representation
+            sheet_text = df.to_string(index=False)
+            text_content.append(sheet_text)
             text_content.append("\n")
+            
+            # Log preview for debugging
+            if not df.empty:
+                preview = str(df.head(1)).replace('\n', ' ')[:100]
+                logger.info(f"Sheet '{sheet_name}' preview: {preview}...")
         
-        # Count sheets as "pages"
-        total_sheets = len(all_sheets)
-        return "\n".join(text_content), total_sheets
+        full_text = "\n".join(text_content)
+        logger.info(f"Extracted {len(full_text)} characters from Excel file")
+        
+        return full_text, total_sheets
     except Exception as e:
         logger.error(f"Error extracting text from Excel: {str(e)}")
         raise
@@ -133,7 +187,10 @@ def chunk_text(text, max_chunk_size=12000, overlap=200):
     Returns:
         List of text chunks
     """
+    logger.info(f"Chunking text of length {len(text)} with max_chunk_size={max_chunk_size}, overlap={overlap}")
+    
     if len(text) <= max_chunk_size:
+        logger.info("Text fits in a single chunk")
         return [text]
     
     chunks = []
@@ -147,20 +204,29 @@ def chunk_text(text, max_chunk_size=12000, overlap=200):
             paragraph_break = text.rfind('\n\n', start + max_chunk_size - overlap, end)
             if paragraph_break != -1:
                 end = paragraph_break + 2
+                logger.info(f"Found paragraph break at position {paragraph_break}")
             else:
                 # Look for a sentence break
                 sentence_break = text.rfind('. ', start + max_chunk_size - overlap, end)
                 if sentence_break != -1:
                     end = sentence_break + 2
+                    logger.info(f"Found sentence break at position {sentence_break}")
                 else:
                     # If all else fails, look for any space
                     space = text.rfind(' ', start + max_chunk_size - overlap, end)
                     if space != -1:
                         end = space + 1
+                        logger.info(f"Found space break at position {space}")
+                    else:
+                        logger.info(f"No natural break found, using hard cutoff at position {end}")
         
-        chunks.append(text[start:end])
+        chunk = text[start:end]
+        chunks.append(chunk)
+        logger.info(f"Created chunk {len(chunks)} with length {len(chunk)}")
+        
         start = end - overlap
     
+    logger.info(f"Text split into {len(chunks)} chunks")
     return chunks
 
 def format_docx_summary(summary_data):
@@ -736,6 +802,15 @@ def document_summarization_route():
         with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file_name)[1]) as temp_file:
             temp_file.write(file_response.content)
             temp_file_path = temp_file.name
+            
+        logger.info(f"Downloaded file saved to temporary location: {temp_file_path}")
+        
+        # Verify the file exists and has content
+        if not os.path.exists(temp_file_path) or os.path.getsize(temp_file_path) == 0:
+            return create_api_response({
+                "error": "Server Error",
+                "message": "Downloaded file is empty or not accessible"
+            }, 500)
         
         # Determine file type and extract text
         file_extension = os.path.splitext(file_name)[1].lower()
@@ -769,6 +844,14 @@ def document_summarization_route():
                 "error": "Bad Request",
                 "message": "The document contains no extractable text content"
             }, 400)
+            
+        # Log the total content length for debugging
+        content_length = len(text_content)
+        logger.info(f"Document processed successfully: {content_length} characters extracted from {total_pages} pages")
+        
+        # Log a preview of the content
+        preview = text_content[:200].replace('\n', ' ').strip()
+        logger.info(f"Content preview: {preview}...")
         
         # Set endpoint for LLM summarization
         llm_endpoint = f"{request.url_root.rstrip('/')}/llm/gpt-4o-mini"
