@@ -278,11 +278,13 @@ def chunk_and_summarize(text, total_pages, llm_endpoint, summary_options):
             "Content-Type": "application/json"
         }
         
+        # Create the combined prompt with system instructions and user content
+        system_prompt = full_system_prompt.strip()
+        user_content = f"Here's the document content to summarize:\n\n{chunk}"
+        
         data = {
-            "messages": [
-                {"role": "system", "content": full_system_prompt},
-                {"role": "user", "content": f"Here's the document content to summarize:\n\n{chunk}"}
-            ],
+            "system_message": system_prompt,
+            "user_input": user_content,
             "temperature": summary_options.get('temperature', 0.3),
             "response_format": {"type": "json_object"}
         }
@@ -337,6 +339,7 @@ def chunk_and_summarize(text, total_pages, llm_endpoint, summary_options):
                 "Content-Type": "application/json"
             }
             
+            # Create full prompt with all instructions
             final_system_prompt = f"""You are a document summarization expert tasked with creating a final cohesive summary from multiple partial summaries.
             Create a well-structured final summary that integrates all the information.
             The length should be {summary_options.get('length', 'medium')} and the style should be {summary_options.get('style', 'concise')}.
@@ -349,11 +352,11 @@ def chunk_and_summarize(text, total_pages, llm_endpoint, summary_options):
             }}
             """
             
+            combined_content = f"Here are all the partial summaries to combine:\n\n{combined_text}\n\nAnd all key points:\n\n{json.dumps(all_key_points)}"
+            
             data = {
-                "messages": [
-                    {"role": "system", "content": final_system_prompt},
-                    {"role": "user", "content": f"Here are all the partial summaries to combine:\n\n{combined_text}\n\nAnd all key points:\n\n{json.dumps(all_key_points)}"}
-                ],
+                "system_message": final_system_prompt,
+                "user_input": combined_content,
                 "temperature": summary_options.get('temperature', 0.3),
                 "response_format": {"type": "json_object"}
             }
@@ -768,7 +771,7 @@ def document_summarization_route():
             }, 400)
         
         # Set endpoint for LLM summarization
-        llm_endpoint = f"{request.url_root.rstrip('/')}/llm/gpt4omini"
+        llm_endpoint = f"{request.url_root.rstrip('/')}/llm/gpt-4o-mini"
         
         # Process text and generate summary
         summary_result = chunk_and_summarize(text_content, total_pages, llm_endpoint, summary_options)
