@@ -116,5 +116,8 @@ register_file_upload_routes(app)
 from apis.balance_management.usage_statistics import register_usage_stats_routes
 register_usage_stats_routes(app)
 
+from apis.speech_services.stt import register_speech_to_text_routes
+register_speech_to_text_routes(app)
+
 if __name__ == '__main__':
     app.run()
