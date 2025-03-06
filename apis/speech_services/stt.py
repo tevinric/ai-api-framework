@@ -41,31 +41,19 @@ def transcribe_audio(file_url, diarization=False, south_african=True):
         "Accept": "application/json"
     }
     
-    # Set up options for transcription
+    # Set up options for transcription with default locale
+    # Always use en-US as it's universally supported
     options = {
         "profanityFilterMode": "Masked",
-        "locales": ["en-US"]  # Default locale, will be overridden for South African option
+        "locales": ["en-US"]  # Default to US English which is always supported
     }
     
     # Add speaker diarization if requested
     if diarization:
         options["diarizationEnabled"] = True
     
-    # Configure for South African languages if requested
-    if south_african:
-        # South African languages with Microsoft Speech API codes
-        options["locales"] = ["en-ZA"]  # Primary locale for South Africa
-        
-        # Add language identification to handle multiple South African languages
-        options["languageIdentification"] = {
-            "candidateLocales": [
-                "en-ZA",  # South African English
-                "af-ZA",  # Afrikaans
-                "zu-ZA",  # Zulu
-                "xh-ZA",  # Xhosa
-                "en-US"   # Fallback to US English
-            ]
-        }
+    # No special handling for South African languages for now
+    # We'll keep the parameter for future expansion when more locales are supported
     
     # Convert options to JSON
     definition = json.dumps(options)
