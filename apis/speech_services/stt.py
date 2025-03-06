@@ -24,14 +24,15 @@ def create_api_response(data, status_code=200):
     response.status_code = status_code
     return response
 
-def transcribe_audio(file_url, transcription_options=None):
+def transcribe_audio(file_url, diarization=False, south_african=True):
     """
     Transcribe audio using Microsoft Speech to Text API
     
     Args:
         file_url (str): URL to the audio file in blob storage
-        transcription_options (dict): Optional settings for transcription
-    
+        diarization (bool): Whether to enable speaker diarization
+        south_african (bool): Whether to optimize for South African languages
+        
     Returns:
         tuple: (transcription_result, error)
     """
@@ -40,38 +41,32 @@ def transcribe_audio(file_url, transcription_options=None):
         "Accept": "application/json"
     }
     
-    # Default options
+    # Set up options for transcription
     options = {
-        "locales": ["en-US"],
-        "profanityFilterMode": "Masked",
-        "channels": []
+        "profanityFilterMode": "Masked"
     }
     
-    # Update with user-provided options if any
-    if transcription_options:
-        # Language options
-        if "locale" in transcription_options:
-            options["locales"] = [transcription_options["locale"]]
-        
-        # Profanity filter options
-        if "profanity_filter" in transcription_options:
-            options["profanityFilterMode"] = transcription_options["profanity_filter"]
-        
-        # Speaker diarization
-        if "diarization" in transcription_options and transcription_options["diarization"]:
-            options["diarizationEnabled"] = True
-        
-        # Add any additional channels
-        if "channels" in transcription_options and transcription_options["channels"]:
-            options["channels"] = transcription_options["channels"]
-            
-        # Add punctuation
-        if "punctuation" in transcription_options:
-            options["punctuationMode"] = transcription_options["punctuation"]
-            
-        # Language identification
-        if "language_identification" in transcription_options:
-            options["languageIdentification"] = transcription_options["language_identification"]
+    # Add speaker diarization if requested
+    if diarization:
+        options["diarizationEnabled"] = True
+    
+    # Configure for South African languages if requested
+    if south_african:
+        # South African languages with Microsoft Speech API codes
+        # Include the most common South African languages
+        options["languageIdentification"] = {
+            "candidateLocales": [
+                "en-ZA",  # South African English
+                "af-ZA",  # Afrikaans
+                "zu-ZA",  # Zulu
+                "xh-ZA",  # Xhosa
+                "en-US"   # Fallback to US English
+            ],
+            "mode": "AtStart"  # Identify at the start of the audio
+        }
+    else:
+        # Default to US English if South African optimization not requested
+        options["locales"] = ["en-US"]
 
     # Convert options to JSON
     definition = json.dumps(options)
@@ -131,42 +126,14 @@ def speech_to_text_route():
             file_id:
               type: string
               description: ID of the uploaded audio file
-            locale:
-              type: string
-              description: Language locale (e.g., "en-US", "es-ES", "fr-FR")
-              default: "en-US"
-            profanity_filter:
-              type: string
-              enum: ["Raw", "Masked", "Removed"]
-              description: Profanity filter mode
-              default: "Masked"
             diarization:
               type: boolean
               description: Enable speaker diarization (identify different speakers)
               default: false
-            punctuation:
-              type: string
-              enum: ["Automatic", "Explicit", "None"]
-              description: Punctuation mode
-              default: "Automatic"
-            language_identification:
-              type: object
-              description: Settings for language identification
-              properties:
-                candidateLocales:
-                  type: array
-                  items:
-                    type: string
-                  description: List of candidate language locales
-                mode: 
-                  type: string
-                  enum: ["AtStart", "Continuous"]
-                  description: Language identification mode
-            channels:
-              type: array
-              items:
-                type: object
-              description: Channel settings for multi-channel audio
+            south_african:
+              type: boolean
+              description: Optimize for South African languages
+              default: true
     consumes:
       - application/json
     produces:
@@ -183,9 +150,14 @@ def speech_to_text_route():
             transcript:
               type: string
               description: Transcript text
-            transcription_options:
+            settings:
               type: object
-              description: Options used for the transcription
+              properties:
+                diarization:
+                  type: boolean
+                south_african:
+                  type: boolean
+              description: Settings used for the transcription
             transcription_details:
               type: object
               description: Full details of the transcription results
@@ -248,42 +220,9 @@ def speech_to_text_route():
             "message": "file_id is required"
         }, 400)
     
-    # Extract transcription options from request data
-    transcription_options = {}
-    
-    # Language locale
-    if 'locale' in data:
-        transcription_options['locale'] = data['locale']
-    
-    # Profanity filter
-    if 'profanity_filter' in data:
-        if data['profanity_filter'] not in ["Raw", "Masked", "Removed"]:
-            return create_api_response({
-                "error": "Bad Request",
-                "message": "Invalid profanity_filter value. Must be one of: Raw, Masked, Removed"
-            }, 400)
-        transcription_options['profanity_filter'] = data['profanity_filter']
-    
-    # Speaker diarization
-    if 'diarization' in data:
-        transcription_options['diarization'] = bool(data['diarization'])
-    
-    # Punctuation mode
-    if 'punctuation' in data:
-        if data['punctuation'] not in ["Automatic", "Explicit", "None"]:
-            return create_api_response({
-                "error": "Bad Request",
-                "message": "Invalid punctuation value. Must be one of: Automatic, Explicit, None"
-            }, 400)
-        transcription_options['punctuation'] = data['punctuation']
-    
-    # Language identification
-    if 'language_identification' in data:
-        transcription_options['language_identification'] = data['language_identification']
-    
-    # Channel settings
-    if 'channels' in data:
-        transcription_options['channels'] = data['channels']
+    # Get optional parameters with defaults
+    diarization = data.get('diarization', False)
+    south_african = data.get('south_african', True)
     
     try:
         # Get file URL from file-upload system
@@ -308,8 +247,8 @@ def speech_to_text_route():
                 "message": "File URL not found in response"
             }, 500)
         
-        # Transcribe the audio file with provided options
-        transcription_result, error = transcribe_audio(file_url, transcription_options)
+        # Transcribe the audio file with the simplified options
+        transcription_result, error = transcribe_audio(file_url, diarization, south_african)
         
         if error:
             return create_api_response({
@@ -338,7 +277,10 @@ def speech_to_text_route():
         response_data = {
             "message": "Audio transcribed successfully",
             "transcript": transcript,
-            "transcription_options": transcription_options,
+            "settings": {
+                "diarization": diarization,
+                "south_african": south_african
+            },
             "transcription_details": transcription_result
         }
         
