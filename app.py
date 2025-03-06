@@ -122,5 +122,8 @@ register_speech_to_text_routes(app)
 from apis.speech_services.stt_diarize import register_speech_to_text_diarize_routes
 register_speech_to_text_diarize_routes(app)
 
+from apis.document_intelligence.summarization import register_document_intelligence_routes
+register_document_intelligence_routes(app)
+
 if __name__ == '__main__':
     app.run()
