@@ -11,3 +11,8 @@ faiss_cpu
 azure.storage.blob
 azure.ai.inference
 gunicorn
+pymupdf
+python-pptx
+openpyxl
+python-docx
+pandas
