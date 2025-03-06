@@ -33,18 +33,11 @@ def transcribe_audio_with_diarization(file_url):
         "Accept": "application/json"
     }
 
-    # Enable diarization and set advanced options
+    # Ensure locales is properly provided in the correct format
     definition = json.dumps({
-        "locales": ["en-US"],
+        "locales": ["en-US"],  # Always include this
         "profanityFilterMode": "Masked",
-        "diarizationEnabled": True,  # Enable speaker diarization
-        "phraseDetectionMode": "Strict",  # Use strict phrase detection for better segmentation
-        "timeToLive": "PT1H",  # Keep the transcription results for 1 hour
-        # Add multichannel options if the audio has multiple channels
-        "channels": [
-            {"channel": 0, "name": "Speaker 1"},
-            {"channel": 1, "name": "Speaker 2"}
-        ]
+        "diarizationEnabled": True
     })
 
     try:
@@ -55,6 +48,9 @@ def transcribe_audio_with_diarization(file_url):
             "audio": ("audio_file", audio_data),
             "definition": (None, definition, "application/json")
         }
+
+        # Log the request details for debugging
+        logger.info(f"Sending transcription request with definition: {definition}")
 
         # Call Microsoft Speech to Text API
         response = requests.post(STT_ENDPOINT, headers=headers, files=files)
@@ -71,11 +67,15 @@ def transcribe_audio_with_diarization(file_url):
             }
     
     except requests.RequestException as e:
-        return None, {
+        logger.error(f"API request error: {str(e)}")
+        error_response = getattr(e, 'response', None)
+        error_detail = {
             "error": f"Request failed: {str(e)}",
-            "response_text": getattr(e.response, 'text', None),
-            "status_code": getattr(e.response, 'status_code', None)
+            "response_text": getattr(error_response, 'text', 'No response text'),
+            "status_code": getattr(error_response, 'status_code', 'No status code')
         }
+        logger.error(f"Error details: {error_detail}")
+        return None, error_detail
 
 def format_diarized_conversation(transcription_result):
     """
