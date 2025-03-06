@@ -24,41 +24,18 @@ def create_api_response(data, status_code=200):
     response.status_code = status_code
     return response
 
-def transcribe_audio(file_url, diarization=False, south_african=True):
-    """
-    Transcribe audio using Microsoft Speech to Text API
-    
-    Args:
-        file_url (str): URL to the audio file in blob storage
-        diarization (bool): Whether to enable speaker diarization
-        south_african (bool): Whether to optimize for South African languages
-        
-    Returns:
-        tuple: (transcription_result, error)
-    """
+def transcribe_audio(file_url):
+    """Transcribe audio using Microsoft Speech to Text API"""
     headers = {
         "Ocp-Apim-Subscription-Key": STT_API_KEY,
         "Accept": "application/json"
     }
-    
-    # Set up options for transcription with default locale
-    # Always use en-US as it's universally supported
-    options = {
+
+    definition = json.dumps({
+        "locales": ["en-US"],
         "profanityFilterMode": "Masked",
-        "locales": ["en-US"]  # Default to US English which is always supported
-    }
-    
-    # Add speaker diarization if requested
-    if diarization:
-        options["diarizationEnabled"] = True
-    
-    # No special handling for South African languages for now
-    # We'll keep the parameter for future expansion when more locales are supported
-    
-    # Convert options to JSON
-    definition = json.dumps(options)
-    
-    logger.info(f"Transcription options: {definition}")
+        "channels": []
+    })
 
     try:
         # Download the file from Azure Blob Storage
@@ -113,14 +90,6 @@ def speech_to_text_route():
             file_id:
               type: string
               description: ID of the uploaded audio file
-            diarization:
-              type: boolean
-              description: Enable speaker diarization (identify different speakers)
-              default: false
-            south_african:
-              type: boolean
-              description: Optimize for South African languages
-              default: true
     consumes:
       - application/json
     produces:
@@ -137,14 +106,6 @@ def speech_to_text_route():
             transcript:
               type: string
               description: Transcript text
-            settings:
-              type: object
-              properties:
-                diarization:
-                  type: boolean
-                south_african:
-                  type: boolean
-              description: Settings used for the transcription
             transcription_details:
               type: object
               description: Full details of the transcription results
@@ -207,10 +168,6 @@ def speech_to_text_route():
             "message": "file_id is required"
         }, 400)
     
-    # Get optional parameters with defaults
-    diarization = data.get('diarization', False)
-    south_african = data.get('south_african', True)
-    
     try:
         # Get file URL from file-upload system
         file_url_response = requests.post(
@@ -234,8 +191,8 @@ def speech_to_text_route():
                 "message": "File URL not found in response"
             }, 500)
         
-        # Transcribe the audio file with the simplified options
-        transcription_result, error = transcribe_audio(file_url, diarization, south_african)
+        # Transcribe the audio file
+        transcription_result, error = transcribe_audio(file_url)
         
         if error:
             return create_api_response({
@@ -264,10 +221,6 @@ def speech_to_text_route():
         response_data = {
             "message": "Audio transcribed successfully",
             "transcript": transcript,
-            "settings": {
-                "diarization": diarization,
-                "south_african": south_african
-            },
             "transcription_details": transcription_result
         }
         
