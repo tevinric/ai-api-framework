@@ -128,17 +128,21 @@ def process_transcript_with_llm(transcript, token, chunk_number=None, total_chun
     You are a speech-to-text post-processor specialized in creating speaker-diarized transcripts with timestamps.
     
     TASK:
-    Analyze the provided transcript and convert it into a properly formatted transcript with:
+    Analyze the provided transcript and convert it into a properly structured JSON output with:
     1. Speaker identification (Speaker 1, Speaker 2, etc.)
     2. Timestamps in [HH:MM:SS] format for each speaker turn
-    3. Natural paragraph breaks
+    3. The full spoken text for each turn
     
     IMPORTANT FORMATTING RULES:
-    - Format each speaker turn as: "[HH:MM:SS] Speaker X: {spoken text}"
+    - Each entry in the output should represent one utterance, in chronological order
+    - Return data in this exact format: 
+      { "Speaker 1": ["00:00:00", "Hello, how are you?"], "Speaker 2": ["00:00:05", "I'm fine, thank you"], "Speaker 1": ["00:00:10", "That's interesting"] }
+    - The key is the speaker identifier, and the value is an array containing [timestamp, text]
     - Start timestamps at [00:00:00] and estimate progression based on spoken content
     - Estimate approximately 150 words per minute when calculating timestamps
     - Maintain the exact same content and meaning as the original transcript
     - For multiple speakers, identify them consistently throughout the transcript
+    - IMPORTANT: Your ENTIRE response must be valid JSON and nothing else
     """
     
     if chunk_number is not None and total_chunks is not None:
@@ -155,7 +159,8 @@ def process_transcript_with_llm(transcript, token, chunk_number=None, total_chun
             json={
                 "system_prompt": system_prompt,
                 "user_input": transcript,
-                "temperature": 0.2
+                "temperature": 0.2,
+                "json_output": True
             }
         )
         
@@ -168,7 +173,18 @@ def process_transcript_with_llm(transcript, token, chunk_number=None, total_chun
             }
         
         result = response.json()
-        return result.get("message"), None
+        
+        # Parse the JSON string from the message
+        try:
+            transcript_json = json.loads(result.get("message"))
+            return transcript_json, None
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse JSON from LLM response: {e}")
+            return None, {
+                "error": "JSON Parsing Error",
+                "message": f"Failed to parse structured transcript: {str(e)}",
+                "raw_response": result.get("message")
+            }
         
     except Exception as e:
         logger.error(f"Error in LLM processing: {str(e)}")
@@ -328,26 +344,24 @@ def enhanced_speech_to_text_route():
         token_count = count_tokens(raw_transcript)
         logger.info(f"Transcript token count: {token_count}")
         
-        enhanced_transcript = ""
-        
         if token_count <= MAX_CHUNK_TOKENS:
             # Process the entire transcript at once
-            processed_transcript, error = process_transcript_with_llm(raw_transcript, token)
+            enhanced_transcript, error = process_transcript_with_llm(raw_transcript, token)
             if error:
                 return create_api_response({
                     "error": "LLM Processing Error",
                     "message": f"Error enhancing transcript: {error.get('message', 'Unknown error')}",
                     "details": error
                 }, 500)
-            
-            enhanced_transcript = processed_transcript
         else:
             # Split the transcript into chunks and process each one
             chunks = split_transcript_into_chunks(raw_transcript)
             total_chunks = len(chunks)
             logger.info(f"Splitting transcript into {total_chunks} chunks")
             
-            enhanced_chunks = []
+            # We'll concatenate the chronological utterances from each chunk
+            enhanced_transcript = {}
+            
             for i, chunk in enumerate(chunks):
                 logger.info(f"Processing chunk {i+1}/{total_chunks}, token count: {count_tokens(chunk)}")
                 processed_chunk, error = process_transcript_with_llm(
@@ -361,10 +375,9 @@ def enhanced_speech_to_text_route():
                         "details": error
                     }, 500)
                 
-                enhanced_chunks.append(processed_chunk)
-            
-            # Combine the processed chunks
-            enhanced_transcript = "\n\n".join(enhanced_chunks)
+                # Merge this chunk with the overall transcript
+                # For the flat structure, we'll just add all entries to the same dict
+                enhanced_transcript.update(processed_chunk)
         
         # Delete the uploaded file to avoid storage bloat
         delete_response = requests.delete(
@@ -392,6 +405,6 @@ def enhanced_speech_to_text_route():
             "message": f"Error processing request: {str(e)}"
         }, 500)
 
-def register_speech_to_text_diarize_routes(app):
+def register_enhanced_speech_to_text_routes(app):
     """Register enhanced speech to text routes with the Flask app"""
-    app.route('/speech/stt_diarize', methods=['POST'])(api_logger(check_balance(enhanced_speech_to_text_route)))
+    app.route('/speech/enhanced-stt', methods=['POST'])(api_logger(check_balance(enhanced_speech_to_text_route)))
