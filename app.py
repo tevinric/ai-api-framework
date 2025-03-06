@@ -119,5 +119,8 @@ register_usage_stats_routes(app)
 from apis.speech_services.stt import register_speech_to_text_routes
 register_speech_to_text_routes(app)
 
+from apis.speech_services.stt_diarize import register_speech_to_text_diarize_routes
+register_speech_to_text_diarize_routes(app)
+
 if __name__ == '__main__':
     app.run()
