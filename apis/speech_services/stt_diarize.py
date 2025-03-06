@@ -345,3 +345,5 @@ def speech_to_text_diarize_route():
 def register_speech_to_text_diarize_routes(app):
     """Register speech to text diarization routes with the Flask app"""
     app.route('/speech/stt_diarize', methods=['POST'])(api_logger(check_balance(speech_to_text_diarize_route)))
+    
+    ##
