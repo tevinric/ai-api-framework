@@ -33,11 +33,21 @@ def transcribe_audio_with_diarization(file_url):
         "Accept": "application/json"
     }
 
-    # Ensure locales is properly provided in the correct format
+    # Enhanced configuration for diarization
     definition = json.dumps({
-        "locales": ["en-US"],  # Always include this
+        "locales": ["en-US"],
         "profanityFilterMode": "Masked",
-        "diarizationEnabled": True
+        "timeToLive": "PT1H",  # Keep transcription available for 1 hour
+        "diarizationEnabled": True,
+        "speechFeatures": [
+            {
+                "feature": "Diarization"  # Explicitly specify diarization feature
+            }
+        ],
+        "properties": {
+            "diarizationMinSpeakers": 2,  # Set minimum number of speakers
+            "diarizationMaxSpeakers": 6   # Set maximum number of speakers
+        }
     })
 
     try:
@@ -85,97 +95,163 @@ def format_diarized_conversation(transcription_result):
         transcription_result: The JSON result from the transcription service
         
     Returns:
-        dict: Formatted conversation with speaker turns in the exact requested format
+        dict: Formatted conversation with speaker turns in the format "Speaker X (start-end)"
     """
     formatted_conversation = {}
     
-    # We need to work with the phrases array for detailed timing
-    phrases = transcription_result.get('phrases', [])
-    
-    # If no detailed phrases, get the text from combinedPhrases
-    if not phrases and 'combinedPhrases' in transcription_result and transcription_result['combinedPhrases']:
-        full_text = transcription_result['combinedPhrases'][0]['text']
-        sentences = re.split(r'(?<=[.!?]) +', full_text)
+    # Check if we have the expected diarization data
+    if 'recognizedPhrases' in transcription_result:
+        # This is the format for batch transcription with diarization
+        recognized_phrases = transcription_result.get('recognizedPhrases', [])
         
-        # Force alternating speakers with time intervals
-        current_speaker = 1
-        current_time = 0.0
-        
-        for sentence in sentences:
-            if not sentence.strip():
+        for phrase in recognized_phrases:
+            # Extract the best recognition result
+            nBest = phrase.get('nBest', [])
+            if not nBest:
                 continue
                 
-            sentence_length = len(sentence)
-            duration = sentence_length * 0.1  # Rough estimate: 0.1 second per character
+            best_result = nBest[0]
+            text = best_result.get('display', best_result.get('lexical', ''))
             
-            start_time = current_time
-            end_time = current_time + duration
+            if not text.strip():
+                continue
+                
+            # Extract speaker and timing information
+            speaker_id = best_result.get('speaker', phrase.get('speaker', 0))
             
-            key = f"Speaker {current_speaker} ({start_time:.2f}-{end_time:.2f})"
-            formatted_conversation[key] = sentence
+            # Convert to human-readable speaker ID
+            speaker_label = f"Speaker {speaker_id + 1}"  # +1 because APIs often use 0-indexed speakers
             
-            # Alternate speakers
-            current_speaker = 2 if current_speaker == 1 else 1
-            current_time = end_time + 0.5  # Add small gap between turns
+            # Extract timing
+            offset_sec = phrase.get('offsetInTicks', 0) / 10000000  # Convert from 100ns to seconds
+            duration_sec = phrase.get('durationInTicks', 0) / 10000000
+            end_time = offset_sec + duration_sec
             
-        return formatted_conversation
+            # Format the key as requested
+            key = f"{speaker_label} ({offset_sec:.2f}-{end_time:.2f})"
+            formatted_conversation[key] = text
     
-    # Process detailed phrases if available
-    # Sort phrases by offset to ensure proper order
-    phrases.sort(key=lambda x: x.get('offset', 0))
-    
-    # Manually assign speakers based on timing gaps
-    current_speaker = 1
-    last_end_time = 0
-    
-    for phrase in phrases:
-        if not phrase.get('text', '').strip():
-            continue
+    elif 'phrases' in transcription_result:
+        # Alternative format with phrases array
+        phrases = transcription_result.get('phrases', [])
+        
+        # Sort phrases by offset to ensure proper order
+        phrases.sort(key=lambda x: x.get('offset', 0))
+        
+        for phrase in phrases:
+            if not phrase.get('text', '').strip():
+                continue
+                
+            # Extract speaker information - the key difference here!
+            speaker_id = phrase.get('speakerId', phrase.get('speaker', 0))
+            speaker_label = f"Speaker {speaker_id + 1}"
             
-        # Extract time information
-        offset_ns = phrase.get('offset', 0)
-        duration_ns = phrase.get('duration', 0)
-        
-        # Convert to seconds (from 100-nanosecond units)
-        start_time = offset_ns / 10000000
-        end_time = (offset_ns + duration_ns) / 10000000
-        
-        # Detect speaker change based on gaps
-        time_gap = start_time - last_end_time
-        if time_gap > 0.5:  # Gap greater than 0.5 second suggests speaker change
-            current_speaker = 2 if current_speaker == 1 else 1
+            # Extract time information
+            offset_ns = phrase.get('offset', 0)
+            duration_ns = phrase.get('duration', 0)
             
-        # Format the key exactly as requested
-        key = f"Speaker {current_speaker} ({start_time:.2f}-{end_time:.2f})"
-        formatted_conversation[key] = phrase.get('text', '')
-        
-        # Update last end time
-        last_end_time = end_time
+            # Convert to seconds (from 100-nanosecond units)
+            start_time = offset_ns / 10000000
+            end_time = (offset_ns + duration_ns) / 10000000
+            
+            # Format the key exactly as requested
+            key = f"{speaker_label} ({start_time:.2f}-{end_time:.2f})"
+            formatted_conversation[key] = phrase.get('text', '')
     
-    # If still no conversation (no phrases with text), use fallback approach with combinedPhrases
-    if not formatted_conversation and 'combinedPhrases' in transcription_result:
-        text = transcription_result['combinedPhrases'][0]['text']
-        total_duration = transcription_result.get('duration', 0) / 10000000  # Convert to seconds
+    elif 'results' in transcription_result and 'segments' in transcription_result.get('results', {}):
+        # Format for conversation transcription service
+        segments = transcription_result.get('results', {}).get('segments', [])
         
-        # Split the text into roughly equal parts for two speakers
-        mid_point = len(text) // 2
+        for segment in segments:
+            text = segment.get('text', '')
+            if not text.strip():
+                continue
+                
+            # Extract speaker and timing information
+            speaker_id = segment.get('speaker', 0)
+            speaker_label = f"Speaker {speaker_id + 1}"
+            
+            # Extract timing
+            start_time = segment.get('startTimeInSeconds', 0)
+            end_time = segment.get('endTimeInSeconds', 0)
+            
+            # Format the key as requested
+            key = f"{speaker_label} ({start_time:.2f}-{end_time:.2f})"
+            formatted_conversation[key] = text
+    
+    # If still no conversation (no recognized phrases with text), try additional formats
+    if not formatted_conversation:
+        # Try to extract from combinedPhrases if available
+        if 'combinedPhrases' in transcription_result and transcription_result['combinedPhrases']:
+            try:
+                # Look for speaker information in combinedPhrases
+                for phrase in transcription_result['combinedPhrases']:
+                    text = phrase.get('text', '')
+                    if not text.strip():
+                        continue
+                        
+                    # Try to extract speaker ID
+                    speaker_id = phrase.get('speaker', 0)
+                    speaker_label = f"Speaker {speaker_id + 1}"
+                    
+                    # Try to extract timing
+                    offset_sec = phrase.get('offsetInSeconds', phrase.get('offset', 0) / 10000000)
+                    duration_sec = phrase.get('durationInSeconds', phrase.get('duration', 0) / 10000000)
+                    end_time = offset_sec + duration_sec
+                    
+                    # Format the key as requested
+                    key = f"{speaker_label} ({offset_sec:.2f}-{end_time:.2f})"
+                    formatted_conversation[key] = text
+            except Exception as e:
+                logger.error(f"Error processing combinedPhrases: {str(e)}")
         
-        # Find a good break point near the middle (end of sentence)
-        break_point = mid_point
-        for i in range(mid_point, min(mid_point + 100, len(text))):
-            if i < len(text) and text[i] in '.!?':
-                break_point = i + 1
-                break
-        
-        # Split into two parts
-        first_part = text[:break_point].strip()
-        second_part = text[break_point:].strip()
-        
-        # Assign first part to Speaker 1
-        formatted_conversation[f"Speaker 1 (0.00-{total_duration/2:.2f})"] = first_part
-        
-        # Assign second part to Speaker 2
-        formatted_conversation[f"Speaker 2 ({total_duration/2:.2f}-{total_duration:.2f})"] = second_part
+        # Try to parse the specific V3 transcript format if available
+        if not formatted_conversation and 'transcript' in transcription_result:
+            transcript = transcription_result.get('transcript', {})
+            if 'segments' in transcript:
+                segments = transcript.get('segments', [])
+                for segment in segments:
+                    text = segment.get('text', '')
+                    if not text.strip():
+                        continue
+                    
+                    # Extract speaker ID
+                    speaker_id = segment.get('speakerId', 0)
+                    speaker_label = f"Speaker {speaker_id + 1}"
+                    
+                    # Extract timing
+                    start_time = segment.get('start', 0)
+                    end_time = segment.get('end', 0)
+                    
+                    # Format the key as requested
+                    key = f"{speaker_label} ({start_time:.2f}-{end_time:.2f})"
+                    formatted_conversation[key] = text
+                
+        # Final fallback if still no conversation - split by timing or sentence breaks
+        if not formatted_conversation and 'combinedPhrases' in transcription_result and transcription_result['combinedPhrases']:
+            full_text = transcription_result['combinedPhrases'][0].get('text', '')
+            total_duration = transcription_result.get('duration', 10000000000) / 10000000  # Default to 1000s if unknown
+            
+            # Try to detect speaker changes based on the text content
+            sentences = re.split(r'(?<=[.!?]) +', full_text)
+            current_speaker = 1
+            current_time = 0.0
+            
+            for sentence in sentences:
+                if not sentence.strip():
+                    continue
+                    
+                # Estimate duration based on length of sentence
+                approx_duration = len(sentence) * 0.07  # Rough estimate of speaking speed
+                end_time = current_time + approx_duration
+                
+                # Format the key as requested
+                key = f"Speaker {current_speaker} ({current_time:.2f}-{end_time:.2f})"
+                formatted_conversation[key] = sentence
+                
+                # Switch speakers and update time
+                current_speaker = 2 if current_speaker == 1 else 1
+                current_time = end_time
     
     return formatted_conversation
 
@@ -329,7 +405,7 @@ def speech_to_text_diarize_route():
         # Prepare the response
         response_data = {
             "message": "Audio transcribed successfully with diarization",
-            "conversation": conversation_result.get("conversation", []),
+            "conversation": conversation_result,  # This is now correctly formatted
             "transcription_details": transcription_result
         }
         
@@ -345,5 +421,3 @@ def speech_to_text_diarize_route():
 def register_speech_to_text_diarize_routes(app):
     """Register speech to text diarization routes with the Flask app"""
     app.route('/speech/stt_diarize', methods=['POST'])(api_logger(check_balance(speech_to_text_diarize_route)))
-    
-    ##
