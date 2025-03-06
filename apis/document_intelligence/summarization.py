@@ -50,7 +50,7 @@ def extract_text_from_pdf(file_path):
             
         text_content = []
         
-        # Process each page
+        # Process each page without truncation
         for page_num in range(total_pages):
             page = doc.load_page(page_num)
             page_text = page.get_text()
@@ -177,7 +177,7 @@ def extract_text_from_xlsx(file_path):
         logger.error(f"Error extracting text from Excel: {str(e)}")
         raise
 
-def chunk_text(text, max_chunk_size=12000, overlap=200):
+def chunk_text(text, max_chunk_size=12000, overlap=500):  # Increased overlap for better context
     """
     Split text into chunks of maximum size with overlap
     Args:
@@ -199,7 +199,7 @@ def chunk_text(text, max_chunk_size=12000, overlap=200):
     while start < len(text):
         end = start + max_chunk_size
         if end < len(text):
-            # Find a good breaking point (newline or period followed by space)
+            # Find a good breaking point for natural text flow
             # Look for a paragraph break first
             paragraph_break = text.rfind('\n\n', start + max_chunk_size - overlap, end)
             if paragraph_break != -1:
@@ -220,17 +220,32 @@ def chunk_text(text, max_chunk_size=12000, overlap=200):
                     else:
                         logger.info(f"No natural break found, using hard cutoff at position {end}")
         
+        # Ensure we're not creating tiny chunks at the end
+        if end >= len(text) - (overlap / 2) and end < len(text):
+            end = len(text)
+            logger.info(f"Extending final chunk to include remaining {len(text) - end} characters")
+        
         chunk = text[start:end]
         chunks.append(chunk)
         logger.info(f"Created chunk {len(chunks)} with length {len(chunk)}")
         
+        # Check for potential data loss
+        if end < len(text) and len(chunk) < (max_chunk_size * 0.75):
+            logger.warning(f"Chunk {len(chunks)} is significantly smaller than max size, possible content splitting issue")
+        
         start = end - overlap
+    
+    # Verify that all text has been chunked properly
+    total_unique_chars = len(text)
+    chunked_chars = sum(len(c) for c in chunks) - (overlap * (len(chunks) - 1))
+    if chunked_chars < total_unique_chars:
+        logger.warning(f"Potential data loss: Original text has {total_unique_chars} chars, chunks cover {chunked_chars} chars")
     
     logger.info(f"Text split into {len(chunks)} chunks")
     return chunks
 
 def format_docx_summary(summary_data):
-    """Format summary data for docx"""
+    """Format summary data for docx - ensures no data is truncated"""
     formatted = {
         "summary": summary_data.get("summary", ""),
         "key_points": summary_data.get("key_points", []),
@@ -238,10 +253,16 @@ def format_docx_summary(summary_data):
         "pages_processed": summary_data.get("pages_processed", 0),
         "tokens": summary_data.get("tokens", {})
     }
+    
+    # Check for any missing data
+    if not formatted["summary"] and "content" in summary_data:
+        logger.warning("Missing summary field, using content field instead")
+        formatted["summary"] = summary_data["content"]
+        
     return formatted
 
 def format_pdf_summary(summary_data):
-    """Format summary data for PDF"""
+    """Format summary data for PDF - ensures no data is truncated"""
     formatted = {
         "summary": summary_data.get("summary", ""),
         "key_points": summary_data.get("key_points", []),
@@ -249,10 +270,16 @@ def format_pdf_summary(summary_data):
         "pages_processed": summary_data.get("pages_processed", 0),
         "tokens": summary_data.get("tokens", {})
     }
+    
+    # Check for any missing data
+    if not formatted["summary"] and "content" in summary_data:
+        logger.warning("Missing summary field, using content field instead")
+        formatted["summary"] = summary_data["content"]
+        
     return formatted
 
 def format_pptx_summary(summary_data):
-    """Format summary data for PowerPoint"""
+    """Format summary data for PowerPoint - ensures no data is truncated"""
     formatted = {
         "summary": summary_data.get("summary", ""),
         "key_points": summary_data.get("key_points", []),
@@ -260,10 +287,16 @@ def format_pptx_summary(summary_data):
         "presentation_structure": summary_data.get("document_structure", {}),
         "tokens": summary_data.get("tokens", {})
     }
+    
+    # Check for any missing data
+    if not formatted["summary"] and "content" in summary_data:
+        logger.warning("Missing summary field, using content field instead")
+        formatted["summary"] = summary_data["content"]
+        
     return formatted
 
 def format_xlsx_summary(summary_data):
-    """Format summary data for Excel"""
+    """Format summary data for Excel - ensures no data is truncated"""
     formatted = {
         "summary": summary_data.get("summary", ""),
         "key_points": summary_data.get("key_points", []),
@@ -271,6 +304,12 @@ def format_xlsx_summary(summary_data):
         "data_insights": summary_data.get("document_structure", {}),
         "tokens": summary_data.get("tokens", {})
     }
+    
+    # Check for any missing data
+    if not formatted["summary"] and "content" in summary_data:
+        logger.warning("Missing summary field, using content field instead")
+        formatted["summary"] = summary_data["content"]
+        
     return formatted
 
 def chunk_and_summarize(text, total_pages, llm_endpoint, summary_options):
@@ -298,16 +337,19 @@ def chunk_and_summarize(text, total_pages, llm_endpoint, summary_options):
             if idx < len(chunks) - 1:
                 system_prompt = f"""You are a document summarization expert tasked with creating an intermediate summary of a portion of a document. 
                 This is chunk {idx+1} of {len(chunks)}. Focus on extracting the main points and key information only.
-                Be concise but thorough. The final summary will be created by combining these intermediary summaries."""
+                Be concise but thorough. The final summary will be created by combining these intermediary summaries.
+                IMPORTANT: Do NOT truncate or omit ANY information from the document. Your summary must be comprehensive and include ALL key points."""
             else:
                 system_prompt = f"""You are a document summarization expert tasked with combining all previous summaries into a final coherent summary.
                 This is the final chunk {idx+1} of {len(chunks)}. Create a well-structured final summary that captures the key points from all chunks.
-                The length should be {summary_options.get('length', 'medium')} and the style should be {summary_options.get('style', 'concise')}."""
+                The length should be {summary_options.get('length', 'medium')} and the style should be {summary_options.get('style', 'concise')}.
+                IMPORTANT: Do NOT truncate or omit ANY information from the document. Your summary must be comprehensive and include ALL key points."""
         else:
             # For documents that fit in a single chunk
             system_prompt = f"""You are a document summarization expert tasked with creating a comprehensive summary of a document.
             The summary should be {summary_options.get('length', 'medium')} in length and {summary_options.get('style', 'concise')} in style.
-            Include key points, main ideas, and important details. The document has {total_pages} pages total."""
+            IMPORTANT: Do NOT truncate or omit ANY information from the document. Your summary must be comprehensive and include ALL key points and important details.
+            The document has {total_pages} pages total."""
         
         # Prepare specific instructions based on document type and options
         specific_instructions = ""
@@ -360,15 +402,14 @@ def chunk_and_summarize(text, total_pages, llm_endpoint, summary_options):
         
         # Make the request to the LLM endpoint with better error handling
         try:
-            response = requests.post(llm_endpoint, headers=headers, json=data, timeout=60)
+            response = requests.post(llm_endpoint, headers=headers, json=data, timeout=120)  # Increased timeout for larger content
             
             if response.status_code != 200:
-                logger.error(f"Error from LLM API: Status {response.status_code}, Response: {response.text[:500]}")
-                raise Exception(f"LLM API error: {response.status_code} - {response.text[:200]}")
+                logger.error(f"Error from LLM API: Status {response.status_code}")
+                raise Exception(f"LLM API error: {response.status_code}")
             
-            # Log response preview for debugging
-            response_preview = response.text[:200].replace('\n', ' ').strip()
-            logger.info(f"LLM response preview: {response_preview}...")
+            # Log response received
+            logger.info(f"Received response from LLM API for chunk {idx+1}")
             
             result = response.json()
             logger.info(f"Successfully parsed JSON response")
@@ -384,10 +425,10 @@ def chunk_and_summarize(text, total_pages, llm_endpoint, summary_options):
             continue
             
         except json.JSONDecodeError as e:
-            logger.error(f"Failed to parse JSON response: {response.text[:200]}... Error: {str(e)}")
+            logger.error(f"Failed to parse JSON response: Error: {str(e)}")
             # Create a fallback with the raw response if JSON parsing fails
             all_summaries.append({
-                "summary": f"Error: Unable to process document chunk {idx+1}. Raw response: {response.text[:500]}",
+                "summary": f"Error: Unable to process document chunk {idx+1}. Raw response not parseable as JSON.",
                 "key_points": ["Error occurred during processing"],
                 "document_structure": {}
             })
@@ -418,11 +459,11 @@ def chunk_and_summarize(text, total_pages, llm_endpoint, summary_options):
                 else:
                     # Last resort, try to use the whole choice
                     content = json.dumps(choice)
-                    logger.warning(f"Could not find standard content field, using whole choice: {content[:200]}...")
+                    logger.warning(f"Could not find standard content field, using whole choice")
             else:
                 # If no choices field, try to use the whole result
                 content = json.dumps(result)
-                logger.warning(f"No choices in response, using whole result: {content[:200]}...")
+                logger.warning(f"No choices in response, using whole result")
             
             # Try to parse as JSON if it looks like it
             if content and (content.strip().startswith('{') and content.strip().endswith('}')):
@@ -430,17 +471,17 @@ def chunk_and_summarize(text, total_pages, llm_endpoint, summary_options):
                     summary_result = json.loads(content)
                     logger.info(f"Successfully parsed content as JSON")
                 except json.JSONDecodeError as e:
-                    logger.error(f"Content looks like JSON but failed to parse: {content[:200]}... Error: {str(e)}")
+                    logger.error(f"Content looks like JSON but failed to parse: Error: {str(e)}")
                     summary_result = {
-                        "summary": content,
+                        "summary": content,  # Use full content without truncation
                         "key_points": [],
                         "document_structure": {}
                     }
             else:
                 # If not JSON, use as raw text
-                logger.warning(f"Content is not in JSON format: {content[:200]}...")
+                logger.warning(f"Content is not in JSON format")
                 summary_result = {
-                    "summary": content,
+                    "summary": content,  # Use full content without truncation
                     "key_points": [],
                     "document_structure": {}
                 }
@@ -449,7 +490,7 @@ def chunk_and_summarize(text, total_pages, llm_endpoint, summary_options):
             if not isinstance(summary_result, dict):
                 logger.warning(f"Summary result is not a dictionary: {type(summary_result)}")
                 summary_result = {
-                    "summary": str(summary_result),
+                    "summary": str(summary_result),  # Convert to string but don't truncate
                     "key_points": [],
                     "document_structure": {}
                 }
@@ -458,7 +499,7 @@ def chunk_and_summarize(text, total_pages, llm_endpoint, summary_options):
                 logger.warning("Missing or empty summary field in result")
                 # Extract a summary from the content if possible
                 if isinstance(content, str) and len(content) > 0:
-                    summary_result["summary"] = content[:1000]  # Use first 1000 chars as fallback
+                    summary_result["summary"] = content  # Use full content without truncation
                 else:
                     summary_result["summary"] = f"Summary could not be generated for chunk {idx+1}."
             
@@ -515,6 +556,7 @@ def chunk_and_summarize(text, total_pages, llm_endpoint, summary_options):
             final_system_prompt = f"""You are a document summarization expert tasked with creating a final cohesive summary from multiple partial summaries.
             Create a well-structured final summary that integrates all the information.
             The length should be {summary_options.get('length', 'medium')} and the style should be {summary_options.get('style', 'concise')}.
+            IMPORTANT: Do NOT truncate or omit ANY information from the document. Your summary must be comprehensive and include ALL key points.
             
             Respond in JSON format with the following structure:
             {{
@@ -534,13 +576,13 @@ def chunk_and_summarize(text, total_pages, llm_endpoint, summary_options):
             }
             
             try:
-                response = requests.post(llm_endpoint, headers=headers, json=data, timeout=60)
+                response = requests.post(llm_endpoint, headers=headers, json=data, timeout=120)  # Increased timeout for larger content
                 
                 if response.status_code != 200:
-                    logger.error(f"Error from LLM API during final summary: {response.text[:200]}")
-                    # Use the last summary as fallback
+                    logger.error(f"Error from LLM API during final summary: Status {response.status_code}")
+                    # Use the last summary as fallback but preserve ALL key points
                     final_summary = all_summaries[-1]
-                    final_summary["key_points"] = all_key_points[:15]
+                    final_summary["key_points"] = all_key_points  # No limit on key points
                     final_summary["document_structure"] = combined_structure
                 else:
                     result = response.json()
@@ -555,31 +597,38 @@ def chunk_and_summarize(text, total_pages, llm_endpoint, summary_options):
                         if "choices" in result and result["choices"] and "message" in result["choices"][0]:
                             content = result["choices"][0]["message"].get("content", "{}")
                             final_summary = json.loads(content)
+                            
+                            # If the final summary doesn't include all key points, add them
+                            existing_key_points = final_summary.get("key_points", [])
+                            if len(existing_key_points) < len(all_key_points):
+                                logger.warning(f"Final summary contains fewer key points ({len(existing_key_points)}) than collected ({len(all_key_points)}). Adding all key points.")
+                                final_summary["key_points"] = all_key_points
+                                
                         else:
                             logger.warning("Unexpected format in final summary response")
                             final_summary = {
-                                "summary": combined_text[:2000],  # Use first 2000 chars as fallback
-                                "key_points": all_key_points[:15],
+                                "summary": combined_text,  # Use full combined text instead of truncated
+                                "key_points": all_key_points,  # No limit on key points
                                 "document_structure": combined_structure
                             }
                     except json.JSONDecodeError:
-                        logger.error(f"Failed to parse JSON in final summary: {content[:200]}")
+                        logger.error(f"Failed to parse JSON in final summary")
                         final_summary = {
-                            "summary": content,
-                            "key_points": all_key_points[:15],
+                            "summary": content,  # Use full content
+                            "key_points": all_key_points,  # No limit on key points
                             "document_structure": combined_structure
                         }
             except Exception as e:
                 logger.error(f"Error during final summary generation: {str(e)}")
                 # Use the last summary as fallback
                 final_summary = all_summaries[-1]
-                final_summary["key_points"] = all_key_points[:15]
+                final_summary["key_points"] = all_key_points  # No limit on key points
                 final_summary["document_structure"] = combined_structure
         else:
             # If combined text is manageable, use the last summary as the final one
             # but enrich it with all key points and structure
             final_summary = all_summaries[-1]
-            final_summary["key_points"] = all_key_points[:15]  # Limit to 15 key points
+            final_summary["key_points"] = all_key_points  # No limit on key points
             final_summary["document_structure"] = combined_structure
     else:
         # For single chunk documents, just use the one summary
@@ -635,33 +684,113 @@ def upload_summary_to_blob(summary_content, file_name, user_id, token):
         # If it's not a dict, just use the content directly
         text_content = summary_content
     
-    # Prepare file data
-    file_data = io.BytesIO(text_content.encode('utf-8'))
-    file_data.name = summary_file_name
+    logger.info(f"Preparing to upload summary file: {summary_file_name}, size: {len(text_content)} characters")
     
-    # Create multipart form data
-    files = {'files': (summary_file_name, file_data, 'text/plain')}
+    # For very large summaries, we may need to split them into multiple files
+    max_upload_size = 10 * 1024 * 1024  # 10MB limit for upload
     
-    # Prepare headers
-    headers = {"X-Token": token}
-    
-    # Make POST request to upload-file endpoint
-    upload_response = requests.post(
-        f"{request.url_root.rstrip('/')}/upload-file",
-        headers=headers,
-        files=files
-    )
-    
-    if upload_response.status_code != 200:
-        logger.error(f"Failed to upload summary file: {upload_response.text}")
-        raise Exception(f"Failed to upload summary file: {upload_response.text}")
-    
-    upload_result = upload_response.json()
-    if "uploaded_files" in upload_result and len(upload_result["uploaded_files"]) > 0:
-        return upload_result["uploaded_files"][0]["file_id"]
+    if len(text_content) > max_upload_size:
+        logger.warning(f"Summary text exceeds maximum upload size ({len(text_content)} > {max_upload_size})")
+        # Split into multiple files if needed
+        parts = []
+        current_part = 1
+        for i in range(0, len(text_content), max_upload_size):
+            part_name = f"{summary_file_name}.part{current_part}"
+            part_content = text_content[i:i+max_upload_size]
+            parts.append((part_name, part_content))
+            current_part += 1
+            
+        logger.info(f"Split summary into {len(parts)} parts for upload")
+        
+        # Upload each part
+        uploaded_ids = []
+        for part_name, part_content in parts:
+            file_data = io.BytesIO(part_content.encode('utf-8'))
+            file_data.name = part_name
+            
+            # Create multipart form data
+            files = {'files': (part_name, file_data, 'text/plain')}
+            
+            # Prepare headers
+            headers = {"X-Token": token}
+            
+            # Make POST request to upload-file endpoint
+            upload_response = requests.post(
+                f"{request.url_root.rstrip('/')}/upload-file",
+                headers=headers,
+                files=files
+            )
+            
+            if upload_response.status_code != 200:
+                logger.error(f"Failed to upload summary file part {part_name}: {upload_response.text}")
+                raise Exception(f"Failed to upload summary file part {part_name}: {upload_response.text}")
+            
+            upload_result = upload_response.json()
+            if "uploaded_files" in upload_result and len(upload_result["uploaded_files"]) > 0:
+                uploaded_ids.append(upload_result["uploaded_files"][0]["file_id"])
+            else:
+                logger.error(f"No file ID in upload response for part {part_name}: {upload_result}")
+                raise Exception(f"No file ID returned from upload endpoint for part {part_name}")
+        
+        # Create a manifest file that lists all the parts
+        manifest = f"# Summary Split into Multiple Files\n\nThis summary was split into {len(parts)} files due to size limitations.\n\n"
+        for i, file_id in enumerate(uploaded_ids):
+            manifest += f"Part {i+1}: {file_id}\n"
+        
+        # Upload the manifest
+        manifest_name = f"{summary_file_name}.manifest"
+        manifest_data = io.BytesIO(manifest.encode('utf-8'))
+        manifest_data.name = manifest_name
+        
+        files = {'files': (manifest_name, manifest_data, 'text/plain')}
+        headers = {"X-Token": token}
+        
+        upload_response = requests.post(
+            f"{request.url_root.rstrip('/')}/upload-file",
+            headers=headers,
+            files=files
+        )
+        
+        if upload_response.status_code != 200:
+            logger.error(f"Failed to upload manifest file: {upload_response.text}")
+            # Return the first part ID if manifest upload fails
+            return uploaded_ids[0] if uploaded_ids else None
+        
+        upload_result = upload_response.json()
+        if "uploaded_files" in upload_result and len(upload_result["uploaded_files"]) > 0:
+            return upload_result["uploaded_files"][0]["file_id"]
+        else:
+            # Return the first part ID if manifest result parsing fails
+            return uploaded_ids[0] if uploaded_ids else None
     else:
-        logger.error(f"No file ID in upload response: {upload_result}")
-        raise Exception("No file ID returned from upload endpoint")
+        # Normal upload for reasonable sized files
+        # Prepare file data
+        file_data = io.BytesIO(text_content.encode('utf-8'))
+        file_data.name = summary_file_name
+        
+        # Create multipart form data
+        files = {'files': (summary_file_name, file_data, 'text/plain')}
+        
+        # Prepare headers
+        headers = {"X-Token": token}
+        
+        # Make POST request to upload-file endpoint
+        upload_response = requests.post(
+            f"{request.url_root.rstrip('/')}/upload-file",
+            headers=headers,
+            files=files
+        )
+        
+        if upload_response.status_code != 200:
+            logger.error(f"Failed to upload summary file: {upload_response.text}")
+            raise Exception(f"Failed to upload summary file: {upload_response.text}")
+        
+        upload_result = upload_response.json()
+        if "uploaded_files" in upload_result and len(upload_result["uploaded_files"]) > 0:
+            return upload_result["uploaded_files"][0]["file_id"]
+        else:
+            logger.error(f"No file ID in upload response: {upload_result}")
+            raise Exception("No file ID returned from upload endpoint")
 
 def document_summarization_route():
     """
@@ -929,7 +1058,7 @@ def document_summarization_route():
             logger.info(f"Downloading file from URL: {file_url}")
             
             # Try first with standard request
-            file_response = requests.get(file_url, timeout=30)
+            file_response = requests.get(file_url, timeout=60)  # Increased timeout for larger files
             
             # If it's an Azure blob URL, we might need to add authorization
             if file_response.status_code != 200 and "blob.core.windows.net" in file_url:
@@ -937,7 +1066,7 @@ def document_summarization_route():
                 file_response = requests.get(
                     file_url,
                     headers={"Authorization": f"Bearer {token}"},
-                    timeout=30
+                    timeout=60
                 )
             
             if file_response.status_code != 200:
