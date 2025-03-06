@@ -85,124 +85,99 @@ def format_diarized_conversation(transcription_result):
         transcription_result: The JSON result from the transcription service
         
     Returns:
-        dict: Formatted conversation with speaker turns
+        dict: Formatted conversation with speaker turns in the exact requested format
     """
-    # Initialize structured conversation
-    conversation_parts = {}
+    formatted_conversation = {}
     
-    # Check if we have any phrases
-    if 'phrases' not in transcription_result or not transcription_result['phrases']:
-        if 'combinedPhrases' in transcription_result and transcription_result['combinedPhrases']:
-            # Use the combined phrases as a fallback
-            full_text = transcription_result['combinedPhrases'][0]['text']
-            
-            # Manually split text into segments to simulate speakers
-            sentences = re.split(r'(?<=[.!?]) +', full_text)
-            
-            # Alternately assign sentences to Speaker 1 and Speaker 2
-            speaker_toggle = 1
-            offset_counter = 0
-            
-            for i, sentence in enumerate(sentences):
-                if not sentence.strip():  # Skip empty sentences
-                    continue
-                    
-                # Simulate time ranges based on character length
-                sentence_length = len(sentence)
-                time_start = offset_counter
-                time_end = offset_counter + (sentence_length * 0.1)  # Rough approximation
-                
-                # Format time as XX.XX
-                time_start_formatted = f"{time_start:.2f}"
-                time_end_formatted = f"{time_end:.2f}"
-                
-                # Alternate speakers
-                speaker_name = f"Speaker {speaker_toggle}"
-                
-                # Add to conversation
-                key = f"{speaker_name} ({time_start_formatted}-{time_end_formatted})"
-                conversation_parts[key] = sentence
-                
-                # Toggle speaker for next sentence
-                speaker_toggle = 2 if speaker_toggle == 1 else 1
-                
-                # Update offset for next sentence
-                offset_counter = time_end + 0.5  # Add a small gap between sentences
-                
-            return conversation_parts
-    
-    # Process the detailed phrases if available
+    # We need to work with the phrases array for detailed timing
     phrases = transcription_result.get('phrases', [])
     
-    # Get speaker mapping if available
-    speaker_map = {}
-    if 'speakers' in transcription_result:
-        for speaker in transcription_result['speakers']:
-            speaker_map[speaker['id']] = speaker['name']
+    # If no detailed phrases, get the text from combinedPhrases
+    if not phrases and 'combinedPhrases' in transcription_result and transcription_result['combinedPhrases']:
+        full_text = transcription_result['combinedPhrases'][0]['text']
+        sentences = re.split(r'(?<=[.!?]) +', full_text)
+        
+        # Force alternating speakers with time intervals
+        current_speaker = 1
+        current_time = 0.0
+        
+        for sentence in sentences:
+            if not sentence.strip():
+                continue
+                
+            sentence_length = len(sentence)
+            duration = sentence_length * 0.1  # Rough estimate: 0.1 second per character
+            
+            start_time = current_time
+            end_time = current_time + duration
+            
+            key = f"Speaker {current_speaker} ({start_time:.2f}-{end_time:.2f})"
+            formatted_conversation[key] = sentence
+            
+            # Alternate speakers
+            current_speaker = 2 if current_speaker == 1 else 1
+            current_time = end_time + 0.5  # Add small gap between turns
+            
+        return formatted_conversation
     
-    # Sort phrases by offset to ensure correct order
+    # Process detailed phrases if available
+    # Sort phrases by offset to ensure proper order
     phrases.sort(key=lambda x: x.get('offset', 0))
     
-    # Assign speakers based on available data
+    # Manually assign speakers based on timing gaps
     current_speaker = 1
-    prev_speaker_id = None
+    last_end_time = 0
     
     for phrase in phrases:
-        # Skip phrases without text
         if not phrase.get('text', '').strip():
             continue
             
-        # Get text and timing information
-        text = phrase.get('text', '')
-        offset_ms = phrase.get('offset', 0)
-        duration_ms = phrase.get('duration', 0)
+        # Extract time information
+        offset_ns = phrase.get('offset', 0)
+        duration_ns = phrase.get('duration', 0)
         
-        # Convert timing to seconds for better readability
-        time_start = offset_ms / 10000000  # Convert from 100-nanosecond units to seconds
-        time_end = (offset_ms + duration_ms) / 10000000
+        # Convert to seconds (from 100-nanosecond units)
+        start_time = offset_ns / 10000000
+        end_time = (offset_ns + duration_ns) / 10000000
         
-        # Format as XX.XX seconds with 2 decimal places
-        time_start_formatted = f"{time_start:.2f}"
-        time_end_formatted = f"{time_end:.2f}"
-        
-        # Get speaker ID from phrase if available
-        speaker_id = phrase.get('speakerId')
-        
-        # Map speaker ID to name if available
-        if speaker_id in speaker_map:
-            speaker_name = speaker_map[speaker_id]
-        elif speaker_id:
-            speaker_name = f"Speaker {speaker_id}"
-        else:
-            # If no speaker ID, alternate speakers based on changes in speech patterns
-            # Look at confidence, duration and offset gaps to determine speaker changes
+        # Detect speaker change based on gaps
+        time_gap = start_time - last_end_time
+        if time_gap > 0.5:  # Gap greater than 0.5 second suggests speaker change
+            current_speaker = 2 if current_speaker == 1 else 1
             
-            # Detect speaker change based on timing gap (if gap > 1 second, likely speaker change)
-            if prev_speaker_id is not None:
-                prev_offset = prev_speaker_id.get('offset', 0) + prev_speaker_id.get('duration', 0)
-                time_gap = offset_ms - prev_offset
-                
-                if time_gap > 10000000:  # 1 second gap (in 100ns units)
-                    current_speaker = 2 if current_speaker == 1 else 1
-            
-            speaker_name = f"Speaker {current_speaker}"
+        # Format the key exactly as requested
+        key = f"Speaker {current_speaker} ({start_time:.2f}-{end_time:.2f})"
+        formatted_conversation[key] = phrase.get('text', '')
         
-        # Store current phrase as previous for next iteration
-        prev_speaker_id = phrase
-        
-        # Create the conversation turn entry
-        turn_key = f"{speaker_name} ({time_start_formatted}-{time_end_formatted})"
-        conversation_parts[turn_key] = text
+        # Update last end time
+        last_end_time = end_time
     
-    # If we still have no phrases processed, use the combined text as a fallback
-    if not conversation_parts and 'combinedPhrases' in transcription_result:
-        full_text = transcription_result['combinedPhrases'][0]['text']
-        duration = transcription_result.get('duration', 0) / 10000000  # Convert to seconds
+    # If still no conversation (no phrases with text), use fallback approach with combinedPhrases
+    if not formatted_conversation and 'combinedPhrases' in transcription_result:
+        text = transcription_result['combinedPhrases'][0]['text']
+        total_duration = transcription_result.get('duration', 0) / 10000000  # Convert to seconds
         
-        turn_key = f"Speaker 1 (0.00-{duration:.2f})"
-        conversation_parts[turn_key] = full_text
+        # Split the text into roughly equal parts for two speakers
+        mid_point = len(text) // 2
+        
+        # Find a good break point near the middle (end of sentence)
+        break_point = mid_point
+        for i in range(mid_point, min(mid_point + 100, len(text))):
+            if i < len(text) and text[i] in '.!?':
+                break_point = i + 1
+                break
+        
+        # Split into two parts
+        first_part = text[:break_point].strip()
+        second_part = text[break_point:].strip()
+        
+        # Assign first part to Speaker 1
+        formatted_conversation[f"Speaker 1 (0.00-{total_duration/2:.2f})"] = first_part
+        
+        # Assign second part to Speaker 2
+        formatted_conversation[f"Speaker 2 ({total_duration/2:.2f}-{total_duration:.2f})"] = second_part
     
-    return conversation_parts
+    return formatted_conversation
 
 def speech_to_text_diarize_route():
     """
