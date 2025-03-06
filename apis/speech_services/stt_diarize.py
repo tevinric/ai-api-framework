@@ -1,4 +1,3 @@
-import re
 from flask import jsonify, request, g, make_response
 from apis.utils.tokenService import TokenService
 from apis.utils.databaseService import DatabaseService
@@ -7,11 +6,11 @@ from apis.utils.balanceMiddleware import check_balance
 import logging
 import os
 import pytz
-import re
 from datetime import datetime
 import requests
 import json
 import uuid
+import tiktoken
 
 # CONFIGURE LOGGING
 logger = logging.getLogger(__name__)
@@ -20,34 +19,44 @@ logger = logging.getLogger(__name__)
 STT_API_KEY = os.environ.get("MS_STT_API_KEY")
 STT_ENDPOINT = os.environ.get("MS_STT_ENDPOINT")
 
+# Maximum tokens for GPT-4o-mini
+MAX_LLM_TOKENS = 128000
+# Token buffer for LLM responses (reserving space for system prompt + response)
+TOKEN_BUFFER = 10000
+# Maximum tokens per chunk for processing
+MAX_CHUNK_TOKENS = MAX_LLM_TOKENS - TOKEN_BUFFER
+
+# Initialize tokenizer for token counting
+def get_tokenizer():
+    try:
+        # This is for GPT-4 family models
+        return tiktoken.encoding_for_model("gpt-4")
+    except:
+        # Fallback to cl100k_base encoding which is used by many OpenAI models
+        return tiktoken.get_encoding("cl100k_base")
+
+def count_tokens(text):
+    """Count the number of tokens in the text using tiktoken"""
+    tokenizer = get_tokenizer()
+    return len(tokenizer.encode(text))
+
 def create_api_response(data, status_code=200):
     """Helper function to create consistent API responses"""
     response = make_response(jsonify(data))
     response.status_code = status_code
     return response
 
-def transcribe_audio_with_diarization(file_url):
-    """Transcribe audio using Microsoft Speech to Text API with diarization enabled"""
+def transcribe_audio(file_url):
+    """Transcribe audio using Microsoft Speech to Text API"""
     headers = {
         "Ocp-Apim-Subscription-Key": STT_API_KEY,
         "Accept": "application/json"
     }
 
-    # Enhanced configuration for diarization
     definition = json.dumps({
         "locales": ["en-US"],
         "profanityFilterMode": "Masked",
-        "timeToLive": "PT1H",  # Keep transcription available for 1 hour
-        "diarizationEnabled": True,
-        "speechFeatures": [
-            {
-                "feature": "Diarization"  # Explicitly specify diarization feature
-            }
-        ],
-        "properties": {
-            "diarizationMinSpeakers": 2,  # Set minimum number of speakers
-            "diarizationMaxSpeakers": 6   # Set maximum number of speakers
-        }
+        "channels": []
     })
 
     try:
@@ -58,9 +67,6 @@ def transcribe_audio_with_diarization(file_url):
             "audio": ("audio_file", audio_data),
             "definition": (None, definition, "application/json")
         }
-
-        # Log the request details for debugging
-        logger.info(f"Sending transcription request with definition: {definition}")
 
         # Call Microsoft Speech to Text API
         response = requests.post(STT_ENDPOINT, headers=headers, files=files)
@@ -77,187 +83,104 @@ def transcribe_audio_with_diarization(file_url):
             }
     
     except requests.RequestException as e:
-        logger.error(f"API request error: {str(e)}")
-        error_response = getattr(e, 'response', None)
-        error_detail = {
+        return None, {
             "error": f"Request failed: {str(e)}",
-            "response_text": getattr(error_response, 'text', 'No response text'),
-            "status_code": getattr(error_response, 'status_code', 'No status code')
+            "response_text": getattr(e.response, 'text', None),
+            "status_code": getattr(e.response, 'status_code', None)
         }
-        logger.error(f"Error details: {error_detail}")
-        return None, error_detail
 
-def format_diarized_conversation(transcription_result):
-    """
-    Format transcription result into a conversation format with timestamped speaker turns
+def split_transcript_into_chunks(transcript, max_tokens=MAX_CHUNK_TOKENS):
+    """Split transcript into chunks respecting sentence boundaries where possible"""
+    tokenizer = get_tokenizer()
+    tokens = tokenizer.encode(transcript)
     
-    Args:
-        transcription_result: The JSON result from the transcription service
-        
-    Returns:
-        dict: Formatted conversation with speaker turns in the format "Speaker X (start-end)"
-    """
-    formatted_conversation = {}
+    if len(tokens) <= max_tokens:
+        return [transcript]
     
-    # Check if we have the expected diarization data
-    if 'recognizedPhrases' in transcription_result:
-        # This is the format for batch transcription with diarization
-        recognized_phrases = transcription_result.get('recognizedPhrases', [])
-        
-        for phrase in recognized_phrases:
-            # Extract the best recognition result
-            nBest = phrase.get('nBest', [])
-            if not nBest:
-                continue
-                
-            best_result = nBest[0]
-            text = best_result.get('display', best_result.get('lexical', ''))
-            
-            if not text.strip():
-                continue
-                
-            # Extract speaker and timing information
-            speaker_id = best_result.get('speaker', phrase.get('speaker', 0))
-            
-            # Convert to human-readable speaker ID
-            speaker_label = f"Speaker {speaker_id + 1}"  # +1 because APIs often use 0-indexed speakers
-            
-            # Extract timing
-            offset_sec = phrase.get('offsetInTicks', 0) / 10000000  # Convert from 100ns to seconds
-            duration_sec = phrase.get('durationInTicks', 0) / 10000000
-            end_time = offset_sec + duration_sec
-            
-            # Format the key as requested
-            key = f"{speaker_label} ({offset_sec:.2f}-{end_time:.2f})"
-            formatted_conversation[key] = text
+    chunks = []
+    sentences = transcript.split('. ')
+    current_chunk = []
+    current_token_count = 0
     
-    elif 'phrases' in transcription_result:
-        # Alternative format with phrases array
-        phrases = transcription_result.get('phrases', [])
+    for sentence in sentences:
+        # Add period back except for the last sentence if it doesn't end with one
+        sentence_text = sentence + '. ' if not sentence.endswith('.') else sentence + ' '
+        sentence_token_count = len(tokenizer.encode(sentence_text))
         
-        # Sort phrases by offset to ensure proper order
-        phrases.sort(key=lambda x: x.get('offset', 0))
-        
-        for phrase in phrases:
-            if not phrase.get('text', '').strip():
-                continue
-                
-            # Extract speaker information - the key difference here!
-            speaker_id = phrase.get('speakerId', phrase.get('speaker', 0))
-            speaker_label = f"Speaker {speaker_id + 1}"
-            
-            # Extract time information
-            offset_ns = phrase.get('offset', 0)
-            duration_ns = phrase.get('duration', 0)
-            
-            # Convert to seconds (from 100-nanosecond units)
-            start_time = offset_ns / 10000000
-            end_time = (offset_ns + duration_ns) / 10000000
-            
-            # Format the key exactly as requested
-            key = f"{speaker_label} ({start_time:.2f}-{end_time:.2f})"
-            formatted_conversation[key] = phrase.get('text', '')
+        # If adding this sentence would exceed max_tokens, start a new chunk
+        if current_token_count + sentence_token_count > max_tokens and current_chunk:
+            chunks.append(''.join(current_chunk).strip())
+            current_chunk = [sentence_text]
+            current_token_count = sentence_token_count
+        else:
+            current_chunk.append(sentence_text)
+            current_token_count += sentence_token_count
     
-    elif 'results' in transcription_result and 'segments' in transcription_result.get('results', {}):
-        # Format for conversation transcription service
-        segments = transcription_result.get('results', {}).get('segments', [])
-        
-        for segment in segments:
-            text = segment.get('text', '')
-            if not text.strip():
-                continue
-                
-            # Extract speaker and timing information
-            speaker_id = segment.get('speaker', 0)
-            speaker_label = f"Speaker {speaker_id + 1}"
-            
-            # Extract timing
-            start_time = segment.get('startTimeInSeconds', 0)
-            end_time = segment.get('endTimeInSeconds', 0)
-            
-            # Format the key as requested
-            key = f"{speaker_label} ({start_time:.2f}-{end_time:.2f})"
-            formatted_conversation[key] = text
+    # Add the last chunk if it's not empty
+    if current_chunk:
+        chunks.append(''.join(current_chunk).strip())
     
-    # If still no conversation (no recognized phrases with text), try additional formats
-    if not formatted_conversation:
-        # Try to extract from combinedPhrases if available
-        if 'combinedPhrases' in transcription_result and transcription_result['combinedPhrases']:
-            try:
-                # Look for speaker information in combinedPhrases
-                for phrase in transcription_result['combinedPhrases']:
-                    text = phrase.get('text', '')
-                    if not text.strip():
-                        continue
-                        
-                    # Try to extract speaker ID
-                    speaker_id = phrase.get('speaker', 0)
-                    speaker_label = f"Speaker {speaker_id + 1}"
-                    
-                    # Try to extract timing
-                    offset_sec = phrase.get('offsetInSeconds', phrase.get('offset', 0) / 10000000)
-                    duration_sec = phrase.get('durationInSeconds', phrase.get('duration', 0) / 10000000)
-                    end_time = offset_sec + duration_sec
-                    
-                    # Format the key as requested
-                    key = f"{speaker_label} ({offset_sec:.2f}-{end_time:.2f})"
-                    formatted_conversation[key] = text
-            except Exception as e:
-                logger.error(f"Error processing combinedPhrases: {str(e)}")
-        
-        # Try to parse the specific V3 transcript format if available
-        if not formatted_conversation and 'transcript' in transcription_result:
-            transcript = transcription_result.get('transcript', {})
-            if 'segments' in transcript:
-                segments = transcript.get('segments', [])
-                for segment in segments:
-                    text = segment.get('text', '')
-                    if not text.strip():
-                        continue
-                    
-                    # Extract speaker ID
-                    speaker_id = segment.get('speakerId', 0)
-                    speaker_label = f"Speaker {speaker_id + 1}"
-                    
-                    # Extract timing
-                    start_time = segment.get('start', 0)
-                    end_time = segment.get('end', 0)
-                    
-                    # Format the key as requested
-                    key = f"{speaker_label} ({start_time:.2f}-{end_time:.2f})"
-                    formatted_conversation[key] = text
-                
-        # Final fallback if still no conversation - split by timing or sentence breaks
-        if not formatted_conversation and 'combinedPhrases' in transcription_result and transcription_result['combinedPhrases']:
-            full_text = transcription_result['combinedPhrases'][0].get('text', '')
-            total_duration = transcription_result.get('duration', 10000000000) / 10000000  # Default to 1000s if unknown
-            
-            # Try to detect speaker changes based on the text content
-            sentences = re.split(r'(?<=[.!?]) +', full_text)
-            current_speaker = 1
-            current_time = 0.0
-            
-            for sentence in sentences:
-                if not sentence.strip():
-                    continue
-                    
-                # Estimate duration based on length of sentence
-                approx_duration = len(sentence) * 0.07  # Rough estimate of speaking speed
-                end_time = current_time + approx_duration
-                
-                # Format the key as requested
-                key = f"Speaker {current_speaker} ({current_time:.2f}-{end_time:.2f})"
-                formatted_conversation[key] = sentence
-                
-                # Switch speakers and update time
-                current_speaker = 2 if current_speaker == 1 else 1
-                current_time = end_time
-    
-    return formatted_conversation
+    return chunks
 
-def speech_to_text_diarize_route():
+def process_transcript_with_llm(transcript, token, chunk_number=None, total_chunks=None):
+    """Process transcript with GPT-4o-mini to get diarized output with timestamps"""
+    system_prompt = """
+    You are a speech-to-text post-processor specialized in creating speaker-diarized transcripts with timestamps.
+    
+    TASK:
+    Analyze the provided transcript and convert it into a properly formatted transcript with:
+    1. Speaker identification (Speaker 1, Speaker 2, etc.)
+    2. Timestamps in [HH:MM:SS] format for each speaker turn
+    3. Natural paragraph breaks
+    
+    IMPORTANT FORMATTING RULES:
+    - Format each speaker turn as: "[HH:MM:SS] Speaker X: {spoken text}"
+    - Start timestamps at [00:00:00] and estimate progression based on spoken content
+    - Estimate approximately 150 words per minute when calculating timestamps
+    - Maintain the exact same content and meaning as the original transcript
+    - For multiple speakers, identify them consistently throughout the transcript
     """
-    Convert speech to text with speaker diarization
+    
+    if chunk_number is not None and total_chunks is not None:
+        system_prompt += f"""
+        
+        SPECIAL INSTRUCTIONS:
+        This is chunk {chunk_number} of {total_chunks}. Maintain consistent speaker numbering and logical timestamp continuation from previous chunks.
+        """
+    
+    try:
+        response = requests.post(
+            f"{request.url_root.rstrip('/')}/llm/gpt-4o-mini",
+            headers={"X-Token": token},
+            json={
+                "system_prompt": system_prompt,
+                "user_input": transcript,
+                "temperature": 0.2
+            }
+        )
+        
+        if response.status_code != 200:
+            logger.error(f"LLM API error: {response.text}")
+            return None, {
+                "error": "LLM Processing Error",
+                "message": f"Error from LLM API: {response.json().get('message', 'Unknown error')}",
+                "status_code": response.status_code
+            }
+        
+        result = response.json()
+        return result.get("message"), None
+        
+    except Exception as e:
+        logger.error(f"Error in LLM processing: {str(e)}")
+        return None, {
+            "error": "LLM Processing Error",
+            "message": f"Error processing with LLM: {str(e)}"
+        }
+
+def enhanced_speech_to_text_route():
+    """
+    Convert speech to text using Microsoft Speech to Text API and enhance with GPT-4o-mini
+    for speaker diarization and timestamps
     ---
     tags:
       - Speech Services
@@ -284,19 +207,19 @@ def speech_to_text_diarize_route():
       - application/json
     responses:
       200:
-        description: Audio transcribed successfully with diarization
+        description: Audio transcribed and enhanced successfully
         schema:
           type: object
           properties:
             message:
               type: string
-              example: Audio transcribed successfully with diarization
-            conversation:
-              type: object
-              description: Conversation formatted with speaker and timing information
-            transcription_details:
-              type: object
-              description: Full details of the transcription results
+              example: Audio processed successfully
+            raw_transcript:
+              type: string
+              description: Original transcript text
+            enhanced_transcript:
+              type: string
+              description: Enhanced transcript with speaker diarization and timestamps
       400:
         description: Bad request
       401:
@@ -379,8 +302,8 @@ def speech_to_text_diarize_route():
                 "message": "File URL not found in response"
             }, 500)
         
-        # Transcribe the audio file with diarization
-        transcription_result, error = transcribe_audio_with_diarization(file_url)
+        # Transcribe the audio file
+        transcription_result, error = transcribe_audio(file_url)
         
         if error:
             return create_api_response({
@@ -389,8 +312,59 @@ def speech_to_text_diarize_route():
                 "details": error
             }, 500)
         
-        # Format the result as a conversation
-        conversation_result = format_diarized_conversation(transcription_result)
+        # Extract the transcript text
+        raw_transcript = ""
+        if 'combinedPhrases' in transcription_result and transcription_result['combinedPhrases']:
+            # Extract full transcript from all combined phrases
+            phrases = [phrase["text"] for phrase in transcription_result["combinedPhrases"]]
+            raw_transcript = " ".join(phrases)
+        else:
+            return create_api_response({
+                "error": "Transcription Error",
+                "message": "No transcript content available in the response"
+            }, 500)
+        
+        # Process the transcript with GPT-4o-mini for speaker diarization
+        token_count = count_tokens(raw_transcript)
+        logger.info(f"Transcript token count: {token_count}")
+        
+        enhanced_transcript = ""
+        
+        if token_count <= MAX_CHUNK_TOKENS:
+            # Process the entire transcript at once
+            processed_transcript, error = process_transcript_with_llm(raw_transcript, token)
+            if error:
+                return create_api_response({
+                    "error": "LLM Processing Error",
+                    "message": f"Error enhancing transcript: {error.get('message', 'Unknown error')}",
+                    "details": error
+                }, 500)
+            
+            enhanced_transcript = processed_transcript
+        else:
+            # Split the transcript into chunks and process each one
+            chunks = split_transcript_into_chunks(raw_transcript)
+            total_chunks = len(chunks)
+            logger.info(f"Splitting transcript into {total_chunks} chunks")
+            
+            enhanced_chunks = []
+            for i, chunk in enumerate(chunks):
+                logger.info(f"Processing chunk {i+1}/{total_chunks}, token count: {count_tokens(chunk)}")
+                processed_chunk, error = process_transcript_with_llm(
+                    chunk, token, chunk_number=i+1, total_chunks=total_chunks
+                )
+                
+                if error:
+                    return create_api_response({
+                        "error": "LLM Processing Error",
+                        "message": f"Error enhancing transcript chunk {i+1}: {error.get('message', 'Unknown error')}",
+                        "details": error
+                    }, 500)
+                
+                enhanced_chunks.append(processed_chunk)
+            
+            # Combine the processed chunks
+            enhanced_transcript = "\n\n".join(enhanced_chunks)
         
         # Delete the uploaded file to avoid storage bloat
         delete_response = requests.delete(
@@ -404,20 +378,20 @@ def speech_to_text_diarize_route():
         
         # Prepare the response
         response_data = {
-            "message": "Audio transcribed successfully with diarization",
-            "conversation": conversation_result,  # This is now correctly formatted
-            "transcription_details": transcription_result
+            "message": "Audio processed successfully",
+            "raw_transcript": raw_transcript,
+            "enhanced_transcript": enhanced_transcript
         }
         
         return create_api_response(response_data, 200)
         
     except Exception as e:
-        logger.error(f"Error in speech to text diarization endpoint: {str(e)}")
+        logger.error(f"Error in enhanced speech to text endpoint: {str(e)}")
         return create_api_response({
             "error": "Server Error",
             "message": f"Error processing request: {str(e)}"
         }, 500)
 
 def register_speech_to_text_diarize_routes(app):
-    """Register speech to text diarization routes with the Flask app"""
-    app.route('/speech/stt_diarize', methods=['POST'])(api_logger(check_balance(speech_to_text_diarize_route)))
+    """Register enhanced speech to text routes with the Flask app"""
+    app.route('/speech/stt_diarize', methods=['POST'])(api_logger(check_balance(enhanced_speech_to_text_route)))
