@@ -858,7 +858,6 @@ def register_file_upload_routes(app):
     app.route('/get-file-url', methods=['POST'])(api_logger(get_file_url_route))
     app.route('/delete-file', methods=['DELETE'])(api_logger(delete_file_route))
 
-
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 apis\image_generation\dalle3.py
 
