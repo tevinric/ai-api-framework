@@ -177,6 +177,64 @@ def extract_text_from_xlsx(file_path):
         logger.error(f"Error extracting text from Excel: {str(e)}")
         raise
 
+def extract_token_info_from_llm_response(response_data):
+    """
+    Directly extract token usage information from LLM responses
+    This handles various formats that different LLM providers might use
+    """
+    token_info = {
+        "prompt_tokens": 0,
+        "completion_tokens": 0,
+        "total_tokens": 0
+    }
+    
+    if not response_data:
+        return token_info
+    
+    # If it's already a dictionary, try to extract token fields
+    if isinstance(response_data, dict):
+        # Try standard token fields
+        if "usage" in response_data and isinstance(response_data["usage"], dict):
+            usage = response_data["usage"]
+            if "prompt_tokens" in usage:
+                token_info["prompt_tokens"] = usage["prompt_tokens"]
+            if "completion_tokens" in usage:
+                token_info["completion_tokens"] = usage["completion_tokens"]
+            if "total_tokens" in usage:
+                token_info["total_tokens"] = usage["total_tokens"]
+            return token_info
+        
+        # Try direct token fields
+        token_field_mapping = {
+            "input_tokens": "prompt_tokens",
+            "prompt_tokens": "prompt_tokens",
+            "completion_tokens": "completion_tokens",
+            "output_tokens": "total_tokens",
+            "total_tokens": "total_tokens"
+        }
+        
+        for source_field, target_field in token_field_mapping.items():
+            if source_field in response_data and isinstance(response_data[source_field], (int, float)):
+                token_info[target_field] = response_data[source_field]
+        
+        # If we have prompt and completion but no total, calculate it
+        if token_info["prompt_tokens"] > 0 or token_info["completion_tokens"] > 0:
+            if token_info["total_tokens"] == 0:
+                token_info["total_tokens"] = token_info["prompt_tokens"] + token_info["completion_tokens"]
+        
+        return token_info
+    
+    # If it's a string that looks like JSON, try to parse it
+    if isinstance(response_data, str) and response_data.strip().startswith('{') and response_data.strip().endswith('}'):
+        try:
+            data = json.loads(response_data)
+            return extract_token_info_from_llm_response(data)
+        except json.JSONDecodeError:
+            return token_info
+    
+    # If we get here, we couldn't extract token info
+    return token_info
+
 def parse_llm_response_json(content):
     """
     Parse potential JSON in LLM responses and extract the actual content
@@ -672,9 +730,17 @@ def chunk_and_summarize(text, total_pages, llm_endpoint, summary_options):
             token_usage["prompt_tokens"] += result["usage"].get("prompt_tokens", 0)
             token_usage["completion_tokens"] += result["usage"].get("completion_tokens", 0)
             token_usage["total_tokens"] += result["usage"].get("total_tokens", 0)
-            logger.info(f"Token usage: {result['usage'].get('total_tokens', 0)} tokens for chunk {idx+1}")
+            logger.info(f"Token usage from 'usage' field: {result['usage'].get('total_tokens', 0)} tokens for chunk {idx+1}")
         else:
-            logger.warning(f"No token usage information in LLM response for chunk {idx+1}")
+            # Try to extract token information from other fields
+            extracted_tokens = extract_token_info_from_llm_response(result)
+            if extracted_tokens["total_tokens"] > 0:
+                token_usage["prompt_tokens"] += extracted_tokens["prompt_tokens"]
+                token_usage["completion_tokens"] += extracted_tokens["completion_tokens"]
+                token_usage["total_tokens"] += extracted_tokens["total_tokens"]
+                logger.info(f"Token usage extracted from response: {extracted_tokens['total_tokens']} tokens for chunk {idx+1}")
+            else:
+                logger.warning(f"No token usage information in LLM response for chunk {idx+1}")
         
         # Parse the response with improved error handling
         try:
@@ -842,6 +908,13 @@ def chunk_and_summarize(text, total_pages, llm_endpoint, summary_options):
                         token_usage["prompt_tokens"] += result["usage"].get("prompt_tokens", 0)
                         token_usage["completion_tokens"] += result["usage"].get("completion_tokens", 0)
                         token_usage["total_tokens"] += result["usage"].get("total_tokens", 0)
+                    else:
+                        # Try to extract token info from the response
+                        extracted_tokens = extract_token_info_from_llm_response(result)
+                        if extracted_tokens["total_tokens"] > 0:
+                            token_usage["prompt_tokens"] += extracted_tokens["prompt_tokens"]
+                            token_usage["completion_tokens"] += extracted_tokens["completion_tokens"]
+                            token_usage["total_tokens"] += extracted_tokens["total_tokens"]
                     
                     try:
                         if "choices" in result and result["choices"] and "message" in result["choices"][0]:
@@ -936,8 +1009,10 @@ def chunk_and_summarize(text, total_pages, llm_endpoint, summary_options):
         final_summary["summary"] = summary_text
         if key_points and not final_summary.get("key_points"):
             final_summary["key_points"] = key_points
+        if token_info and (token_info["prompt_tokens"] > 0 or token_info["completion_tokens"] > 0 or token_info["total_tokens"] > 0):
+            final_summary["tokens"] = token_info
     
-    logger.info(f"Final summary generated successfully, length: {len(final_summary.get('summary', ''))}")
+    logger.info(f"Final summary generated with token usage: {token_usage}")
     return final_summary
 
 def upload_summary_to_blob(summary_content, file_name, user_id, token):
@@ -1494,39 +1569,57 @@ def document_summarization_route():
         # Extract actual summary text, handling potential JSON wrapping
         summary_text = formatted_summary.get("summary", "")
         
+        # Extract token usage directly from original response if available
+        token_usage = formatted_summary.get("tokens", {})
+        
         # Handle case where summary is a JSON object
         if isinstance(summary_text, dict):
             logger.warning("Summary is a dictionary, extracting message field")
+            
+            # Extract token info if it exists in the summary dictionary
+            if "input_tokens" in summary_text:
+                token_usage["prompt_tokens"] = summary_text.get("input_tokens", 0)
+            if "prompt_tokens" in summary_text:
+                token_usage["prompt_tokens"] = summary_text.get("prompt_tokens", 0)
+            if "completion_tokens" in summary_text:
+                token_usage["completion_tokens"] = summary_text.get("completion_tokens", 0)
+            if "output_tokens" in summary_text:
+                token_usage["total_tokens"] = summary_text.get("output_tokens", 0)
+            if "total_tokens" in summary_text:
+                token_usage["total_tokens"] = summary_text.get("total_tokens", 0)
+                
             # If it has a message field, that's the actual summary
             if "message" in summary_text:
                 summary_text = summary_text["message"]
             # Otherwise stringify the whole object
             else:
                 summary_text = str(summary_text)
+                
         elif not isinstance(summary_text, str):
             logger.warning(f"Summary is not a string (type: {type(summary_text)}), converting")
             summary_text = str(summary_text)
         
         # Try to parse summary text if it looks like a JSON string
-        if summary_text.strip().startswith('{') and summary_text.strip().endswith('}'):
+        if isinstance(summary_text, str) and summary_text.strip().startswith('{') and summary_text.strip().endswith('}'):
             try:
                 summary_json = json.loads(summary_text)
-                if isinstance(summary_json, dict) and "message" in summary_json:
-                    logger.info("Found message field in JSON string summary, extracting")
-                    summary_text = summary_json["message"]
-                    
-                    # If there are token fields in the summary JSON, extract them
-                    token_info = {}
+                if isinstance(summary_json, dict):
+                    # Extract token info if it exists in the parsed JSON
                     if "input_tokens" in summary_json:
-                        token_info["prompt_tokens"] = summary_json.get("input_tokens", 0)
+                        token_usage["prompt_tokens"] = summary_json.get("input_tokens", 0)
+                    if "prompt_tokens" in summary_json:
+                        token_usage["prompt_tokens"] = summary_json.get("prompt_tokens", 0) 
                     if "completion_tokens" in summary_json:
-                        token_info["completion_tokens"] = summary_json.get("completion_tokens", 0)
+                        token_usage["completion_tokens"] = summary_json.get("completion_tokens", 0)
                     if "output_tokens" in summary_json:
-                        token_info["total_tokens"] = summary_json.get("output_tokens", 0)
+                        token_usage["total_tokens"] = summary_json.get("output_tokens", 0)
+                    if "total_tokens" in summary_json:
+                        token_usage["total_tokens"] = summary_json.get("total_tokens", 0)
                     
-                    # Update token info if we found any
-                    if token_info:
-                        formatted_summary["tokens"] = token_info
+                    # Extract the actual summary text
+                    if "message" in summary_json:
+                        logger.info("Found message field in JSON string summary, extracting")
+                        summary_text = summary_json["message"]
             except json.JSONDecodeError:
                 # Not valid JSON, just use as is
                 logger.info("Summary looks like JSON but isn't valid JSON, using as is")
@@ -1539,13 +1632,33 @@ def document_summarization_route():
             # Extract key points from the summary text
             key_points = extract_key_points_from_content(summary_text)
         
+        # Ensure we have a valid token_usage object
+        if not token_usage:
+            logger.warning("No token usage information found, creating default")
+            token_usage = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
+        
+        # Fill in any missing token fields
+        if "prompt_tokens" not in token_usage:
+            token_usage["prompt_tokens"] = 0
+        if "completion_tokens" not in token_usage:
+            token_usage["completion_tokens"] = 0
+        if "total_tokens" not in token_usage:
+            # Calculate total if we have other values
+            if token_usage["prompt_tokens"] > 0 or token_usage["completion_tokens"] > 0:
+                token_usage["total_tokens"] = token_usage["prompt_tokens"] + token_usage["completion_tokens"]
+            else:
+                token_usage["total_tokens"] = 0
+        
+        logger.info(f"Token usage: {token_usage}")
+        
         # Create response with proper structure
         response_data = {
             "message": "Document successfully summarized",
             "original_file_id": file_id,
             "summary_file_id": summary_file_id if summary_file_id else None,
             "summary": summary_text,
-            "key_points": key_points
+            "key_points": key_points,
+            "token_usage": token_usage  # Ensure token usage is included
         }
         
         # Add the appropriate page/slide/sheet count
@@ -1555,9 +1668,6 @@ def document_summarization_route():
             response_data["sheets_processed"] = formatted_summary.get("sheets_processed", 0)
         else:
             response_data["pages_processed"] = formatted_summary.get("pages_processed", 0)
-        
-        # Add token usage as a separate field
-        response_data["token_usage"] = formatted_summary.get("tokens", {})
         
         # Add document structure if included
         if summary_options['include_structure']:
@@ -1581,6 +1691,8 @@ def document_summarization_route():
                     response_data["summary"] = json_obj["message"]
             except:
                 pass
+            
+        logger.info(f"Final response data: {json.dumps(response_data, default=str)}")
         
         return create_api_response(response_data, 200)
         
