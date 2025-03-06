@@ -1,0 +1,11 @@
+SELECT TOP (1000) [id]
+      ,[endpoint_name]
+      ,[endpoint_path]
+      ,[description]
+      ,[created_at]
+      ,[modified_at]
+      ,[active]
+      ,[cost_old]
+      ,[cost]
+  FROM [AIAPISDEV].[dbo].[endpoints]
+  ORDER BY endpoint_name 
