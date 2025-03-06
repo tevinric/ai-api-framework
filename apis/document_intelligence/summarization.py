@@ -177,6 +177,80 @@ def extract_text_from_xlsx(file_path):
         logger.error(f"Error extracting text from Excel: {str(e)}")
         raise
 
+def extract_key_points_from_content(content, min_points=5):
+    """
+    Extract key points from content if the LLM didn't properly format them
+    This is a fallback mechanism to ensure we always have key points
+    """
+    logger.info(f"Attempting to extract key points from content of length {len(content)}")
+    
+    # If content is already a list of key points, return it
+    if isinstance(content, list):
+        logger.info(f"Content is already a list with {len(content)} items")
+        return content
+    
+    # If content is not a string, convert it
+    if not isinstance(content, str):
+        logger.warning(f"Content is not a string (type: {type(content)}), converting")
+        content = str(content)
+    
+    extracted_points = []
+    
+    # Look for bullet points or numbered lists
+    bullet_patterns = [
+        r'•\s*(.*?)(?=(?:•|\n\n|\Z))',  # Bullet points
+        r'^\s*\*\s*(.*?)$',              # Asterisk bullets
+        r'^\s*-\s*(.*?)$',               # Dash bullets
+        r'^\s*\d+\.\s*(.*?)$',           # Numbered points
+        r'Key Point\s*\d*\s*:\s*(.*?)$'  # "Key Point X:" format
+    ]
+    
+    for pattern in bullet_patterns:
+        matches = re.findall(pattern, content, re.MULTILINE)
+        if matches:
+            logger.info(f"Found {len(matches)} key points using pattern: {pattern}")
+            for match in matches:
+                if match.strip() and len(match.strip()) > 10:  # Minimum length to be considered a key point
+                    extracted_points.append(match.strip())
+    
+    # If we still don't have enough points, use sentences
+    if len(extracted_points) < min_points:
+        logger.info(f"Only found {len(extracted_points)} key points, extracting from sentences")
+        
+        # Split into sentences and use the most informative ones as key points
+        sentences = re.split(r'(?<=[.!?])\s+', content)
+        
+        # Filter for sentences that seem informative
+        informative_sentences = []
+        for sentence in sentences:
+            # Clean the sentence
+            clean_sentence = sentence.strip()
+            
+            # Only use sentences that are substantial but not too long
+            if 20 <= len(clean_sentence) <= 150 and clean_sentence.endswith(('.', '!', '?')):
+                informative_sentences.append(clean_sentence)
+        
+        # Add the most informative sentences to our key points
+        if informative_sentences:
+            # Sort by length (longer sentences often have more information)
+            informative_sentences.sort(key=len, reverse=True)
+            
+            # Add sentences until we have enough key points
+            for sentence in informative_sentences:
+                if sentence not in extracted_points:  # Avoid duplicates
+                    extracted_points.append(sentence)
+                    if len(extracted_points) >= min_points:
+                        break
+    
+    logger.info(f"Extracted {len(extracted_points)} key points")
+    
+    # If we still don't have any key points, create generic ones
+    if not extracted_points:
+        logger.warning("Could not extract any key points, using generic ones")
+        extracted_points = ["No specific key points could be identified in the document"]
+    
+    return extracted_points
+
 def chunk_text(text, max_chunk_size=12000, overlap=500):  # Increased overlap for better context
     """
     Split text into chunks of maximum size with overlap
@@ -245,71 +319,127 @@ def chunk_text(text, max_chunk_size=12000, overlap=500):  # Increased overlap fo
     return chunks
 
 def format_docx_summary(summary_data):
-    """Format summary data for docx - ensures no data is truncated"""
+    """Format summary data for docx - ensures proper structure returned"""
+    # Extract only what we need, ensuring summary is a string
+    summary_text = summary_data.get("summary", "")
+    if not isinstance(summary_text, str):
+        logger.warning("Summary is not a string, converting")
+        summary_text = str(summary_text)
+        
+    # Check for any missing data
+    if not summary_text and "content" in summary_data:
+        logger.warning("Missing summary field, using content field instead")
+        summary_text = summary_data["content"]
+        
+    # Make sure key_points is a list of strings
+    key_points = summary_data.get("key_points", [])
+    if not key_points:
+        logger.warning("No key points found in summary data, generating generic ones")
+        # Extract some key sentences from the summary as fallback key points
+        key_points = extract_key_points_from_content(summary_text)
+    
+    # Create formatted response with correct structure
     formatted = {
-        "summary": summary_data.get("summary", ""),
-        "key_points": summary_data.get("key_points", []),
+        "summary": summary_text,
+        "key_points": key_points,
         "document_structure": summary_data.get("document_structure", {}),
         "pages_processed": summary_data.get("pages_processed", 0),
         "tokens": summary_data.get("tokens", {})
     }
     
-    # Check for any missing data
-    if not formatted["summary"] and "content" in summary_data:
-        logger.warning("Missing summary field, using content field instead")
-        formatted["summary"] = summary_data["content"]
-        
     return formatted
 
 def format_pdf_summary(summary_data):
-    """Format summary data for PDF - ensures no data is truncated"""
+    """Format summary data for PDF - ensures proper structure returned"""
+    # Extract only what we need, ensuring summary is a string
+    summary_text = summary_data.get("summary", "")
+    if not isinstance(summary_text, str):
+        logger.warning("Summary is not a string, converting")
+        summary_text = str(summary_text)
+        
+    # Check for any missing data
+    if not summary_text and "content" in summary_data:
+        logger.warning("Missing summary field, using content field instead")
+        summary_text = summary_data["content"]
+        
+    # Make sure key_points is a list of strings
+    key_points = summary_data.get("key_points", [])
+    if not key_points:
+        logger.warning("No key points found in summary data, generating generic ones")
+        # Extract some key sentences from the summary as fallback key points
+        key_points = extract_key_points_from_content(summary_text)
+    
+    # Create formatted response with correct structure
     formatted = {
-        "summary": summary_data.get("summary", ""),
-        "key_points": summary_data.get("key_points", []),
+        "summary": summary_text,
+        "key_points": key_points,
         "document_structure": summary_data.get("document_structure", {}),
         "pages_processed": summary_data.get("pages_processed", 0),
         "tokens": summary_data.get("tokens", {})
     }
     
-    # Check for any missing data
-    if not formatted["summary"] and "content" in summary_data:
-        logger.warning("Missing summary field, using content field instead")
-        formatted["summary"] = summary_data["content"]
-        
     return formatted
 
 def format_pptx_summary(summary_data):
-    """Format summary data for PowerPoint - ensures no data is truncated"""
+    """Format summary data for PowerPoint - ensures proper structure returned"""
+    # Extract only what we need, ensuring summary is a string
+    summary_text = summary_data.get("summary", "")
+    if not isinstance(summary_text, str):
+        logger.warning("Summary is not a string, converting")
+        summary_text = str(summary_text)
+        
+    # Check for any missing data
+    if not summary_text and "content" in summary_data:
+        logger.warning("Missing summary field, using content field instead")
+        summary_text = summary_data["content"]
+        
+    # Make sure key_points is a list of strings
+    key_points = summary_data.get("key_points", [])
+    if not key_points:
+        logger.warning("No key points found in summary data, generating generic ones")
+        # Extract some key sentences from the summary as fallback key points
+        key_points = extract_key_points_from_content(summary_text)
+    
+    # Create formatted response with correct structure
     formatted = {
-        "summary": summary_data.get("summary", ""),
-        "key_points": summary_data.get("key_points", []),
+        "summary": summary_text,
+        "key_points": key_points,
         "slides_processed": summary_data.get("pages_processed", 0),
         "presentation_structure": summary_data.get("document_structure", {}),
         "tokens": summary_data.get("tokens", {})
     }
     
-    # Check for any missing data
-    if not formatted["summary"] and "content" in summary_data:
-        logger.warning("Missing summary field, using content field instead")
-        formatted["summary"] = summary_data["content"]
-        
     return formatted
 
 def format_xlsx_summary(summary_data):
-    """Format summary data for Excel - ensures no data is truncated"""
+    """Format summary data for Excel - ensures proper structure returned"""
+    # Extract only what we need, ensuring summary is a string
+    summary_text = summary_data.get("summary", "")
+    if not isinstance(summary_text, str):
+        logger.warning("Summary is not a string, converting")
+        summary_text = str(summary_text)
+        
+    # Check for any missing data
+    if not summary_text and "content" in summary_data:
+        logger.warning("Missing summary field, using content field instead")
+        summary_text = summary_data["content"]
+        
+    # Make sure key_points is a list of strings
+    key_points = summary_data.get("key_points", [])
+    if not key_points:
+        logger.warning("No key points found in summary data, generating generic ones")
+        # Extract some key sentences from the summary as fallback key points
+        key_points = extract_key_points_from_content(summary_text)
+    
+    # Create formatted response with correct structure
     formatted = {
-        "summary": summary_data.get("summary", ""),
-        "key_points": summary_data.get("key_points", []),
+        "summary": summary_text,
+        "key_points": key_points,
         "sheets_processed": summary_data.get("pages_processed", 0),
         "data_insights": summary_data.get("document_structure", {}),
         "tokens": summary_data.get("tokens", {})
     }
     
-    # Check for any missing data
-    if not formatted["summary"] and "content" in summary_data:
-        logger.warning("Missing summary field, using content field instead")
-        formatted["summary"] = summary_data["content"]
-        
     return formatted
 
 def chunk_and_summarize(text, total_pages, llm_endpoint, summary_options):
@@ -338,17 +468,20 @@ def chunk_and_summarize(text, total_pages, llm_endpoint, summary_options):
                 system_prompt = f"""You are a document summarization expert tasked with creating an intermediate summary of a portion of a document. 
                 This is chunk {idx+1} of {len(chunks)}. Focus on extracting the main points and key information only.
                 Be concise but thorough. The final summary will be created by combining these intermediary summaries.
-                IMPORTANT: Do NOT truncate or omit ANY information from the document. Your summary must be comprehensive and include ALL key points."""
+                IMPORTANT: Do NOT truncate or omit ANY information from the document. Your summary must be comprehensive and include ALL key points.
+                You MUST include at least 5-10 explicit key points in your response, formatted as a list."""
             else:
                 system_prompt = f"""You are a document summarization expert tasked with combining all previous summaries into a final coherent summary.
                 This is the final chunk {idx+1} of {len(chunks)}. Create a well-structured final summary that captures the key points from all chunks.
                 The length should be {summary_options.get('length', 'medium')} and the style should be {summary_options.get('style', 'concise')}.
-                IMPORTANT: Do NOT truncate or omit ANY information from the document. Your summary must be comprehensive and include ALL key points."""
+                IMPORTANT: Do NOT truncate or omit ANY information from the document. Your summary must be comprehensive and include ALL key points.
+                You MUST include at least 10-15 explicit key points in your response, formatted as a list."""
         else:
             # For documents that fit in a single chunk
             system_prompt = f"""You are a document summarization expert tasked with creating a comprehensive summary of a document.
             The summary should be {summary_options.get('length', 'medium')} in length and {summary_options.get('style', 'concise')} in style.
             IMPORTANT: Do NOT truncate or omit ANY information from the document. Your summary must be comprehensive and include ALL key points and important details.
+            You MUST include at least 10-15 explicit key points in your response, formatted as a list.
             The document has {total_pages} pages total."""
         
         # Prepare specific instructions based on document type and options
@@ -503,8 +636,11 @@ def chunk_and_summarize(text, total_pages, llm_endpoint, summary_options):
                 else:
                     summary_result["summary"] = f"Summary could not be generated for chunk {idx+1}."
             
-            if "key_points" not in summary_result:
-                summary_result["key_points"] = []
+            if "key_points" not in summary_result or not summary_result["key_points"]:
+                logger.warning("No key points found in LLM response, extracting from content")
+                # Try to extract key points from the summary
+                summary_text = summary_result.get("summary", "")
+                summary_result["key_points"] = extract_key_points_from_content(summary_text)
             
             if "document_structure" not in summary_result:
                 summary_result["document_structure"] = {}
@@ -557,6 +693,7 @@ def chunk_and_summarize(text, total_pages, llm_endpoint, summary_options):
             Create a well-structured final summary that integrates all the information.
             The length should be {summary_options.get('length', 'medium')} and the style should be {summary_options.get('style', 'concise')}.
             IMPORTANT: Do NOT truncate or omit ANY information from the document. Your summary must be comprehensive and include ALL key points.
+            CRITICAL: You MUST extract and list at least 10-15 key points from the document as bullet points.
             
             Respond in JSON format with the following structure:
             {{
@@ -598,10 +735,19 @@ def chunk_and_summarize(text, total_pages, llm_endpoint, summary_options):
                             content = result["choices"][0]["message"].get("content", "{}")
                             final_summary = json.loads(content)
                             
-                            # If the final summary doesn't include all key points, add them
+                            # If the final summary doesn't include enough key points, check and add them
                             existing_key_points = final_summary.get("key_points", [])
-                            if len(existing_key_points) < len(all_key_points):
-                                logger.warning(f"Final summary contains fewer key points ({len(existing_key_points)}) than collected ({len(all_key_points)}). Adding all key points.")
+                            if not existing_key_points:
+                                logger.warning(f"Final summary contains no key points. Extracting from summary or using collected points.")
+                                summary_text = final_summary.get("summary", "")
+                                extracted_points = extract_key_points_from_content(summary_text)
+                                
+                                if extracted_points:
+                                    final_summary["key_points"] = extracted_points
+                                else:
+                                    final_summary["key_points"] = all_key_points
+                            elif len(existing_key_points) < min(5, len(all_key_points)):
+                                logger.warning(f"Final summary contains too few key points ({len(existing_key_points)}). Adding all collected points.")
                                 final_summary["key_points"] = all_key_points
                                 
                         else:
@@ -642,6 +788,11 @@ def chunk_and_summarize(text, total_pages, llm_endpoint, summary_options):
     if not final_summary.get("summary"):
         logger.warning("Empty summary in final result, adding fallback text")
         final_summary["summary"] = "The document was processed, but no meaningful summary could be generated. Please check the document content or try again."
+    
+    # Ensure key points are present and valid
+    if not final_summary.get("key_points") or len(final_summary.get("key_points", [])) == 0:
+        logger.warning("No key points in final summary, generating from summary text")
+        final_summary["key_points"] = extract_key_points_from_content(final_summary.get("summary", ""))
     
     logger.info(f"Final summary generated successfully, length: {len(final_summary.get('summary', ''))}")
     return final_summary
@@ -1197,28 +1348,50 @@ def document_summarization_route():
                 logger.error(f"Error uploading summary file: {str(e)}")
                 # Continue with the process even if file upload fails
         
-        # Prepare response with formatted summary
+        # Ensure the summary is a string, not a dict
+        summary_text = formatted_summary.get("summary", "")
+        if isinstance(summary_text, dict):
+            logger.warning("Summary is still a dictionary, extracting text")
+            summary_text = str(summary_text.get("summary", ""))
+        elif not isinstance(summary_text, str):
+            logger.warning(f"Summary is not a string (type: {type(summary_text)}), converting")
+            summary_text = str(summary_text)
+
+        # Ensure key_points is a list of strings
+        key_points = formatted_summary.get("key_points", [])
+        if not key_points:
+            logger.warning("No key points in formatted summary, generating from summary text")
+            # Extract some key sentences from the summary as fallback key points
+            key_points = extract_key_points_from_content(summary_text)
+
+        # Create response with proper structure
         response_data = {
             "message": "Document successfully summarized",
             "original_file_id": file_id,
-            "summary": formatted_summary.get("summary", ""),
-            "key_points": formatted_summary.get("key_points", []),
-            "pages_processed": formatted_summary.get("pages_processed", 0),
-            "token_usage": formatted_summary.get("tokens", {})
+            "summary_file_id": summary_file_id if summary_file_id else None,
+            "summary": summary_text,
+            "key_points": key_points
         }
-        
+
+        # Add the appropriate page/slide/sheet count
+        if summary_options['document_type'] == 'pptx':
+            response_data["slides_processed"] = formatted_summary.get("slides_processed", 0)
+        elif summary_options['document_type'] == 'xlsx':
+            response_data["sheets_processed"] = formatted_summary.get("sheets_processed", 0)
+        else:
+            response_data["pages_processed"] = formatted_summary.get("pages_processed", 0)
+
+        # Add token usage as a separate field
+        response_data["token_usage"] = formatted_summary.get("tokens", {})
+
         # Add document structure if included
         if summary_options['include_structure']:
             if summary_options['document_type'] == 'pptx':
-                response_data["presentation_structure"] = formatted_summary.get("document_structure", {})
+                response_data["presentation_structure"] = formatted_summary.get("presentation_structure", {})
             elif summary_options['document_type'] == 'xlsx':
-                response_data["data_insights"] = formatted_summary.get("document_structure", {})
+                response_data["data_insights"] = formatted_summary.get("data_insights", {})
             else:
                 response_data["document_structure"] = formatted_summary.get("document_structure", {})
-        
-        # Add summary file ID if available
-        if summary_file_id:
-            response_data["summary_file_id"] = summary_file_id
         
         return create_api_response(response_data, 200)
         
