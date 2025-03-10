@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Documentation</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        @keyframes pulse-border {
+            0% {
+                box-shadow: 0 0 10px 2px rgba(0, 255, 255, 0.5);
+            }
+            50% {
+                box-shadow: 0 0 20px 4px rgba(0, 255, 255, 1);
+            }
+            100% {
+                box-shadow: 0 0 10px 2px rgba(0, 255, 255, 0.5);
+            }
+        }
+        .pulse-border {
+            animation: pulse-border 2s infinite;
+        }
+        body {
+            position: relative;
+            min-height: 100vh;
+        }
+        .header {
+            background-color: #F4A900;
+            color: #311C09;
+            font-weight: bold;
+        }
+        .header a {
+            color: #311C09;
+            font-weight: bold;
+        }
+        .header a:hover {
+            color: #000000;
+        }
+        .header .active {
+            color: #F4A900;
+            background-color: #311C09;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+        }
+        .header .faq-button {
+            background-color: #D9534F;
+            color: #FFFFFF;
+            font-weight: bold;
+            border-radius: 0.5rem;
+            padding: 0.5rem 1rem;
+        }
+        .header .faq-button:hover {
+            background-color: #C9302C;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200">
+    <div class="fixed top-0 left-0 w-full h-full bg-cover bg-center z-0" style="background-image: url('assets/images/main_background.gif');"></div>
+    <header class="header fixed w-full z-10 shadow-md">
+        <div class="container mx-auto flex justify-between items-center py-4 px-6">
+            <div class="text-lg font-semibold">LELAPA AI</div>
+            <nav class="space-x-4">
+                <a href="#" class="hover:text-black">HOME</a>
+                <a href="#" class="hover:text-black">ABOUT</a>
+                <a href="#" class="active hover:text-black">VULAVULA</a>
+                <a href="#" class="hover:text-black">PRICING</a>
+                <a href="#" class="hover:text-black">RESOURCES</a>
+                <a href="#" class="hover:text-black">CONTACT</a>
+                <a href="#" class="faq-button">FAQ</a>
+            </nav>
+        </div>
+    </header>
+    <div class="relative container mx-auto p-8 mt-32 bg-gray-800 bg-opacity-90 rounded-lg pulse-border z-20" style="max-width: 800px;">
+        <h1 class="text-4xl font-bold text-center mb-8">Welcome to the API Documentation</h1>
+        <p class="text-lg mb-8">This is the landing page for the API documentation.</p>
+        <section class="mb-8">
+            <h2 class="text-2xl font-semibold text-center mb-4">About the API Framework</h2>
+            <p class="text-lg text-justify">Our API framework allows you to seamlessly integrate AI capabilities into your applications. It provides a robust set of endpoints for various AI functionalities.</p>
+        </section>
+        <section class="mb-8">
+            <h2 class="text-2xl font-semibold text-center mb-4">How to Use</h2>
+            <p class="text-lg text-justify">To use the API, you need to send HTTP requests to the endpoints provided. Each endpoint requires specific parameters and returns responses in JSON format.</p>
+            <pre class="bg-gray-700 p-4 rounded-lg overflow-auto"><code class="text-green-400">GET /api/v1/resource?param=value</code></pre>
+        </section>
+        <section>
+            <h2 class="text-2xl font-semibold text-center mb-4">Register for an API Key</h2>
+            <p class="text-lg text-justify">To access the API, you need to register for an API key. Click the link below to register:</p>
+            <a href="https://forms.office.com/Pages/ResponsePage.aspx?id=uM6zjUZ0vEiLtJeAPFJ6N2xrQvNFNxxGn2IZUHwM9CxUQUkzUTlURE9JR0c0UVJGN0Q2RTRCU0pYVC4u" class="inline-block mt-4 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-500">MS Registration Form</a>
+        </section>
+    </div>
+</body>
+</html>

@@ -52,9 +52,9 @@ swagger = Swagger(app, config=swagger_config, template=swagger_template)
 token_service = TokenService()
 
 # Serve the index.html file
-# @app.route('/')
-# def index():
-#     return render_template('index.html')
+@app.route('/')
+def index():
+    return render_template('index.html')
 
 # TOKEN SERVICE ENDPOINTS
 ## GET TOKEN
@@ -126,5 +126,5 @@ from apis.document_intelligence.summarization import register_document_intellige
 register_document_intelligence_routes(app)
 
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)
     
