@@ -226,5 +226,5 @@ def admin_update_balance_route():
 
 def register_balance_routes(app):
     """Register balance-related routes with the Flask app"""
-    app.route('/check-balance', methods=['GET'])(api_logger(check_balance_route))
-    app.route('/admin/update-balance', methods=['POST'])(api_logger(admin_update_balance_route))
+    app.route('/usage/balance', methods=['GET'])(api_logger(check_balance_route))
+    app.route('/admin/balance', methods=['PUT'])(api_logger(admin_update_balance_route))

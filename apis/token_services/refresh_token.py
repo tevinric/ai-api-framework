@@ -227,4 +227,4 @@ def refresh_token_route():
 
 def register_refresh_token_routes(app):
     """Register refresh token routes with the Flask app"""
-    app.route('/refresh-token', methods=['POST'])(api_logger(refresh_token_route))
+    app.route('/token/refresh', methods=['GET'])(api_logger(refresh_token_route))

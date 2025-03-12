@@ -340,4 +340,4 @@ def admin_update_user_route():
 
 def register_admin_update_user_routes(app):
     """Register routes with the Flask app"""
-    app.route('/admin/update-user', methods=['POST'])(api_logger(admin_update_user_route))
+    app.route('/admin/user', methods=['PUT'])(api_logger(admin_update_user_route))

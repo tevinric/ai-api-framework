@@ -731,5 +731,5 @@ def update_endpoint(endpoint_id, update_data):
 def register_admin_endpoint_routes(app):
     """Register admin endpoint management routes with the Flask app"""
     app.route('/admin/endpoints', methods=['GET'])(api_logger(admin_get_endpoints_route))
-    app.route('/admin/add-endpoint', methods=['POST'])(api_logger(admin_add_endpoint_route))
-    app.route('/admin/update-endpoint', methods=['PUT'])(api_logger(admin_update_endpoint_route))
+    app.route('/admin/endpoint', methods=['POST'])(api_logger(admin_add_endpoint_route))
+    app.route('/admin/endpoint', methods=['PUT'])(api_logger(admin_update_endpoint_route))

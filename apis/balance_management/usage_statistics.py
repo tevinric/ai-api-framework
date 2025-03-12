@@ -722,5 +722,5 @@ def get_department_statistics(department, time_period):
 
 def register_usage_stats_routes(app):
     """Register usage statistics routes with the Flask app"""
-    app.route('/usage-by-user', methods=['POST'])(api_logger(usage_by_user_route))
-    app.route('/usage-by-department', methods=['POST'])(api_logger(usage_by_department_route))
+    app.route('/usage/user', methods=['GET'])(api_logger(usage_by_user_route))
+    app.route('/usage/department', methods=['GET'])(api_logger(usage_by_department_route))

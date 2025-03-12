@@ -254,4 +254,4 @@ def create_user_route():
 
 def register_create_user_routes(app):
     """Register routes with the Flask app"""
-    app.route('/admin/create-user', methods=['POST'])(api_logger(create_user_route))
+    app.route('/admin/user', methods=['POST'])(api_logger(create_user_route))

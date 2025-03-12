@@ -169,6 +169,6 @@ def get_token_details_route():
 
 def register_token_details_routes(app):
     """Register routes with the Flask app"""
-    app.route('/get-token-details', methods=['GET'])(api_logger(get_token_details_route))
+    app.route('/token/details', methods=['GET'])(api_logger(get_token_details_route))
 
 
