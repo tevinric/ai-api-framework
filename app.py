@@ -171,6 +171,9 @@ register_document_intelligence_routes(app)
 from apis.ocr.sa_id import register_sa_id_ocr_routes
 register_sa_id_ocr_routes(app)
 
+from apis.ocr.vehicle_license_disc import register_vehicle_license_disc_routes
+register_vehicle_license_disc_routes(app)
+
 if __name__ == '__main__':
     app.run(debug=True)
     
