@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OCR Services API Documentation</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo">
+                <a href="/">API Documentation</a>
+            </div>
+            <ul class="nav-links">
+                <li><a href="/docs/getting_started">Getting Started</a></li>
+                <li><a href="/docs/token_services">Token Services</a></li>
+                <li><a href="/docs/balance_management">Balance Management</a></li>
+                <li><a href="/docs/file_management">File Management</a></li>
+                <li><a href="/docs/llm">LLM Services</a></li>
+                <li><a href="/docs/image_generation">Image Generation</a></li>
+                <li><a href="/docs/speech_services">Speech Services</a></li>
+                <li><a href="/docs/ocr_services">OCR Services</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section class="documentation">
+            <h1>OCR Services API</h1>
+            
+            <article class="endpoint">
+                <h2>South African ID Document OCR</h2>
+                <p>Extract information from South African ID documents using OCR technology.</p>
+                
+                <h3>Endpoint</h3>
+                <code>POST /ocr/sa_id</code>
+                
+                <h3>Headers</h3>
+                <ul>
+                    <li><strong>X-Token:</strong> Your authentication token (required)</li>
+                    <li><strong>Content-Type:</strong> application/json</li>
+                </ul>
+                
+                <h3>Request Body</h3>
+                <pre>
+{
+    "file_id": "your-file-id"
+}
+                </pre>
+                
+                <p>The <code>file_id</code> parameter should be an ID of a previously uploaded file using the <code>/file</code> endpoint.</p>
+                
+                <h3>Supported File Types</h3>
+                <p>The following file formats are supported:</p>
+                <ul>
+                    <li>PNG (.png)</li>
+                    <li>JPEG (.jpg, .jpeg)</li>
+                    <li>PDF (.pdf) - Single page only</li>
+                    <li>TIFF (.tiff, .tif)</li>
+                </ul>
+                
+                <h3>Response</h3>
+                <p>Success (200 OK):</p>
+                <pre>
+{
+    "surname": "DOE",
+    "names": "JOHN",
+    "sex": "M",
+    "nationality": "RSA",
+    "identity_number": "0123456789012",
+    "date_of_birth": "01 JAN 1990",
+    "country_of_birth": "SOUTH AFRICA"
+}
+                </pre>
+                
+                <h3>Error Responses</h3>
+                <ul>
+                    <li><strong>400 Bad Request:</strong> Invalid parameters or unsupported file type</li>
+                    <li><strong>401 Unauthorized:</strong> Missing or invalid token</li>
+                    <li><strong>500 Server Error:</strong> Server processing error</li>
+                </ul>
+                
+                <h3>CURL Example</h3>
+                <pre>
+curl -X POST \
+  'https://your-api-domain.com/ocr/sa_id' \
+  -H 'X-Token: your-token-here' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "file_id": "12345678-1234-5678-1234-567812345678"
+}'
+                </pre>
+            </article>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 API Documentation</p>
+    </footer>
+</body>
+</html>
