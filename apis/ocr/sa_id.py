@@ -477,6 +477,23 @@ def sa_id_ocr_route():
                 "message": "Failed to extract data from ID document"
             }, 500)
         
+        # Delete the file after successful processing
+        try:
+            delete_file_endpoint = f"{request.url_root.rstrip('/')}/file"
+            delete_response = requests.delete(
+                delete_file_endpoint,
+                headers={'X-Token': token},
+                json={'file_id': file_id}
+            )
+            
+            if delete_response.status_code == 200:
+                logger.info(f"Successfully deleted file {file_id} after processing")
+            else:
+                logger.warning(f"Failed to delete file {file_id}: {delete_response.status_code}, {delete_response.text}")
+        except Exception as delete_error:
+            # Log but don't fail if deletion fails
+            logger.warning(f"Error deleting file {file_id}: {str(delete_error)}")
+        
         # Return the ID data
         return create_api_response(id_data, 200)
         
@@ -489,4 +506,4 @@ def sa_id_ocr_route():
 
 def register_sa_id_ocr_routes(app):
     """Register SA ID OCR routes with the Flask app"""
-    app.route('/ocr/sa_id_card', methods=['POST'])(api_logger(check_balance(sa_id_ocr_route)))
+    app.route('/ocr/sa_id', methods=['POST'])(api_logger(check_balance(sa_id_ocr_route)))
