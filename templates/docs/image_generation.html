@@ -458,7 +458,7 @@
                 <i class="fas fa-home"></i>Home
             </a>
             <a href="{{ url_for('getting_started') }}" class="nav-item">
-                <i class="fas fa-rocket"></i>Getting Started
+                <i class="fas fa-rocket"></i>Geting Started
             </a>
             <a href="/templates/docs/faq.html" class="nav-item">
                 <i class="fas fa-question-circle"></i>FAQ
@@ -473,7 +473,7 @@
     
     <aside class="sidebar">
         <div class="sidebar-category">Main</div>
-        <a href="{{ url_for('home') }}" class="sidebar-link">
+        <a href="{{ url_for('home') }}" class="sidebar-link active">
             <i class="fas fa-home"></i> Home
         </a>
         <a href="/apidocs/" class="sidebar-link">
@@ -488,13 +488,13 @@
         <a href="{{ url_for('token_services') }}" class="sidebar-link">
             <i class="fas fa-key"></i> Token Services
         </a>
-        <a href="/templates/docs/balance-management.html" class="sidebar-link">
+        <a href="{{ url_for('balance_management') }}" class="sidebar-link">
             <i class="fas fa-wallet"></i> Balance Management
         </a>
         <a href="{{ url_for('llm') }}" class="sidebar-link">
             <i class="fas fa-robot"></i> Language Models
         </a>
-        <a href="/templates/docs/image-generation.html" class="sidebar-link active">
+        <a href="{{ url_for('image_generation') }}" class="sidebar-link">
             <i class="fas fa-image"></i> Image Generation
         </a>
         <a href="/templates/docs/speech-services.html" class="sidebar-link">
@@ -521,7 +521,7 @@
             <i class="fas fa-history"></i> Changelog
         </a>
     </aside>
-    
+
     <main class="main-content">
         <section class="content-section">
             <h2>Image Generation</h2>
@@ -559,23 +559,7 @@
                         <div class="model-endpoint">POST /image-generation/dalle3</div>
                     </div>
                 </div>
-                
-                <div class="model-card">
-                    <div class="model-header">
-                        <h3>DALL-E 3 HD</h3>
-                        <span class="model-cost">5 credits</span>
-                    </div>
-                    <div class="model-body">
-                        <p class="model-description">High-definition version of DALL-E 3 for when you need maximum quality and detail in your generated images.</p>
-                        <ul class="model-features">
-                            <li>Higher resolution output</li>
-                            <li>Enhanced detail in complex scenes</li>
-                            <li>Improved texture rendering</li>
-                        </ul>
-                        <div class="model-endpoint">POST /image-generation/dalle3?deployment=dalle3-hd</div>
-                    </div>
-                </div>
-                
+                                
                 <div class="model-card">
                     <div class="model-header">
                         <h3>Stable Diffusion Ultra</h3>
@@ -599,7 +583,7 @@
             <h4>DALL-E 3 Parameters</h4>
             <ul>
                 <li><strong>prompt</strong> - Text description of the image to generate (required)</li>
-                <li><strong>deployment</strong> - Model deployment to use: dall-e-3 (default) or dalle3-hd</li>
+                <li><strong>deployment</strong> - Model deployment to use: dall-e-3 (default)</li>
                 <li><strong>size</strong> - Output image size: 1024x1024 (default), 1792x1024, or 1024x1792</li>
                 <li><strong>quality</strong> - Image quality: standard (default) or hd</li>
                 <li><strong>style</strong> - Image generation style: vivid (default) or natural</li>
@@ -617,9 +601,10 @@
             <h3>Model Selection Guide</h3>
             <p>When choosing which model to use, consider the following factors:</p>
             <ul>
-                <li><strong>Image quality requirements</strong> - For maximum quality, use DALL-E 3 HD</li>
+                <li><strong>Image quality requirements</strong> - For maximum quality, use Stable Diffusion Ultra</li>
                 <li><strong>Creative control</strong> - For more control over generation, use Stable Diffusion Ultra</li>
-                <li><strong>Budget considerations</strong> - Stable Diffusion Ultra offers a good balance of quality and cost</li>
+                <li><strong>Photorealism</strong> - For photo realistic images of humans, use Stable Diffusion Ultra</li>
+                <li><strong>Budget considerations</strong> - Dalle3 offers a good balance of quality and cost</li>
             </ul>
             
             <div class="info-box">
@@ -643,11 +628,6 @@
     
     <footer class="footer">
         <p>© 2025 TIH AI API Portal. Powered by the TIH AI Center of Excellence.</p>
-        <div class="social-links">
-            <a href="#" class="social-link"><i class="fab fa-github"></i></a>
-            <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
-            <a href="#" class="social-link"><i class="fab fa-linkedin"></i></a>
-        </div>
     </footer>
     
     <script>

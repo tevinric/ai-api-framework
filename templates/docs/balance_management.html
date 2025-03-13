@@ -495,11 +495,11 @@
                     <h4>Credit System</h4>
                     <p>Our API platform uses a credit-based system:</p>
                     <ul>
-                        <li>Each API endpoint consumes a specific number of credits per call</li>
+                        <li>Each API endpoint consumes a specific number of AI credits per call</li>
                         <li>Credits are allocated monthly based on your account tier</li>
-                        <li>Usage statistics help you monitor and optimize your credit consumption</li>
+                        <li>Usage statistics help you monitor and optimize your AI credit consumption</li>
                     </ul>
-                    <p>If you need additional credits, please contact our support team.</p>
+                    <p>If you need additional AI credits, please contact our support team.</p>
                 </div>
             </div>
             
@@ -509,7 +509,7 @@
                 <div class="endpoint">
                     <span class="endpoint-method method-get">GET</span>
                     <span class="endpoint-path">/usage/balance</span>
-                    <span class="endpoint-description">Check your current API call balance</span>
+                    <span class="endpoint-description">Check your current AI credit balance</span>
                 </div>
                 <div class="endpoint">
                     <span class="endpoint-method method-get">GET</span>
@@ -524,7 +524,7 @@
                 <div class="endpoint">
                     <span class="endpoint-method method-put">PUT</span>
                     <span class="endpoint-path">/admin/balance</span>
-                    <span class="endpoint-description">Update a user's API call balance (Admin only)</span>
+                    <span class="endpoint-description">Update a user's AI credit balance (Admin only)</span>
                 </div>
             </div>
             
@@ -532,78 +532,95 @@
             <p>You can check your current API credit balance using the <code>/usage/balance</code> endpoint. This provides information about your current balance, total allocated credits, and usage statistics.</p>
             
             <div class="code-block">
-# Example response from /usage/balance
-{
-  "user_id": "12345678-1234-5678-1234-567812345678",
-  "user_email": "user@example.com",
-  "current_balance": 2500,
-  "total_allocated": 3000,
-  "credits_used": 500,
-  "reset_date": "2025-04-01T00:00:00Z"
-}
+                <pre>
+                    <code>
+                        {
+                            "user_id": "12345678-1234-5678-1234-567812345678",
+                            "user_email": "user@example.com",
+                            "current_balance": 2500,
+                            "total_allocated": 3000,
+                            "credits_used": 500,
+                            "reset_date": "2025-04-01T00:00:00Z"
+                        }
+                    </code>
+                </pre>
+            </div>
             </div>
             
             <h3>Monitoring Usage Statistics</h3>
             <p>The usage statistics endpoints provide detailed information about API consumption for specific users or departments. You can filter statistics by time period to track usage trends.</p>
             
             <div class="code-block">
-# Example request to /usage/user
-{
-  "user_id": "12345678-1234-5678-1234-567812345678",
-  "time_period": "2025-03"
-}
+                <pre>
+                    <code>
+                        # Example request to /usage/user
+                        {
+                        
+                            "user_id": "12345678-1234-5678-1234-567812345678",
+                            "time_period": "2025-03"
+                        }
 
-# Example response
-{
-  "name": "John Doe",
-  "user_id": "12345678-1234-5678-1234-567812345678",
-  "company": "Acme Inc",
-  "department": "Engineering",
-  "tokens_generated": 42,
-  "endpoints_used": [
-    {
-      "endpoint_name": "GPT-4o",
-      "endpoint_id": "gpt-4o",
-      "number_calls": 20,
-      "number_successful_calls": 19,
-      "number_failed_calls": 1,
-      "average_response_time": 1250.5,
-      "credits_consumed": 40
-    },
-    {
-      "endpoint_name": "DALL-E 3",
-      "endpoint_id": "dall-e-3",
-      "number_calls": 5,
-      "number_successful_calls": 5,
-      "number_failed_calls": 0,
-      "average_response_time": 2500.3,
-      "credits_consumed": 15
-    }
-  ],
-  "credits_consumed": 55
-}
+                        # Example response
+                        {
+                            "name": "John Doe",
+                            "user_id": "12345678-1234-5678-1234-567812345678",
+                            "company": "TIH",
+                            "department": "Data Science",
+                            "tokens_generated": 42,
+                            "endpoints_used": [
+                                {
+                                    "endpoint_name": "GPT-4o",
+                                    "endpoint_id": "gpt-4o",
+                                    "number_calls": 20,
+                                    "number_successful_calls": 19,
+                                    "number_failed_calls": 1,
+                                    "average_response_time": 1250.5,
+                                    "credits_consumed": 40
+                                },
+                                {
+                                    "endpoint_name": "DALL-E 3",
+                                    "endpoint_id": "dall-e-3",
+                                    "number_calls": 5,
+                                    "number_successful_calls": 5,
+                                    "number_failed_calls": 0,
+                                    "average_response_time": 2500.3,
+                                    "credits_consumed": 15
+                                }
+                            ],
+                            "credits_consumed": 55
+                        }
+                    </code>
+                </pre>
             </div>
             
             <h3>Department Statistics</h3>
             <p>If you're a department manager or administrator, you can view usage statistics for your entire department, including a breakdown by user.</p>
             
             <div class="code-block">
-# Example request to /usage/department
-{
-  "department": "Engineering",
-  "time_period": "2025-03"
-}
+                <pre>
+                    <code>
+                        # Example request to /usage/department
+                        {
+                            "department": "Engineering",
+                            "time_period": "2025-03"
+                        }
+                    </code>
+                </pre>
             </div>
             
             <h3>Admin Functions</h3>
             <p>Administrators can update user balances using the <code>/admin/balance</code> endpoint. This requires admin privileges and a valid token.</p>
             
             <div class="code-block">
-# Example request to /admin/balance (admin only)
-{
-  "user_id": "12345678-1234-5678-1234-567812345678",
-  "new_balance": 5000
-}
+                <pre>
+                    <code>
+                        # Example request to /admin/balance (admin only)
+                        {
+                            "user_id": "12345678-1234-5678-1234-567812345678",
+                            "new_balance": 5000
+                        }
+                    </code>
+                </pre>
             </div>
             
             <p>For complete details and examples, please refer to our <a href="/apidocs/">Swagger Documentation</a> or download our <a href="/static/files/ai-api-postman-collection.json">Postman Collection</a>.</p>
@@ -612,11 +629,6 @@
     
     <footer class="footer">
         <p>© 2025 TIH AI API Portal. Powered by the TIH AI Center of Excellence.</p>
-        <div class="social-links">
-            <a href="#" class="social-link"><i class="fab fa-github"></i></a>
-            <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
-            <a href="#" class="social-link"><i class="fab fa-linkedin"></i></a>
-        </div>
     </footer>
     
     <script>
