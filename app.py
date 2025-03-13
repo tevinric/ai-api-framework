@@ -95,6 +95,11 @@ def image_generation():
 def speech_services():
     return render_template('docs/speech_services.html')
 
+## OCR SERVICES
+@app.route('/docs/ocr_services')
+def ocr_services():
+    return render_template('docs/ocr_services.html')
+
 # TOKEN SERVICE ENDPOINTS
 ## GET TOKEN
 from apis.token_services.get_token import register_routes as get_token_endpoint 
