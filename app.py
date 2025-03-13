@@ -75,6 +75,11 @@ def token_services():
 def balance_management():
     return render_template('docs/balance_management.html')
 
+## FILE MANAGEMENT
+@app.route('/docs/file_management')
+def file_management():
+    return render_template('docs/file_management.html')
+
 ## LLMS
 @app.route('/docs/llm')
 def llm():
@@ -84,6 +89,11 @@ def llm():
 @app.route('/docs/image_generation')
 def image_generation():
     return render_template('docs/image_generation.html')
+
+## SPEECH_SERVICE
+@app.route('/docs/speech_services')
+def speech_services():
+    return render_template('docs/speech_services.html')
 
 # TOKEN SERVICE ENDPOINTS
 ## GET TOKEN
