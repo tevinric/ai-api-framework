@@ -1,6 +1,3 @@
-from flask import Flask, request, jsonify
-from flasgger import Swagger
-
 import os
 import io
 import re
@@ -13,6 +10,9 @@ from azure.ai.documentintelligence.models import DocumentBarcodeKind
 from azure.core.exceptions import HttpResponseError
 
 from openai import AzureOpenAI
+
+from flask import Flask, request, jsonify
+from flasgger import Swagger
 
 app = Flask(__name__)
 swagger = Swagger(app)
@@ -83,9 +83,9 @@ def create_docint_poller(file_stream: io.BytesIO):
     except Exception as ex:
         print(f"An error occurred: {ex}")
         return None
-
+    
 def extract_document_content(file_stream: io.BytesIO):
-    """Extract bracode and/or content from South African Identity Documents using Azure Document Intelligence"""
+    """Extract bracode and/or content from vehicle license disc using Azure Document Intelligence"""
    
     try:
         poller = create_docint_poller(file_stream)
@@ -95,57 +95,68 @@ def extract_document_content(file_stream: io.BytesIO):
       
     except HttpResponseError as error:
         raise ValueError(f"Document processing error: {str(error)}") 
-
+    
 def create_json_barcode(raw_barcode: str):
    """Process content using Azure Document Intelligence"""
 
    try:
         if len(raw_barcode) > 0:
-            results = [x for x in raw_barcode.split('|')]
+            results = [x for x in raw_barcode.split('%')]
             # print(results)
 
-            id_json = {
-                "surname": results[0], 
-                "names": results[1],
-                "sex": results[2],
-                "nationality": results[3],
-                "identity_number": results[4],
-                "date_of_birth": results[5],
-                "country_of_birth": results[6],
+            vehicle_json = {
+                "veh_no": results[5], 
+                "veh_reg_no": results[6],
+                "veh_register_no": results[7],
+                "veh_description": results[8],
+                "veh_make": results[9],
+                "veh_model": results[10],
+                "veh_color": results[11],
+                "veh_vin_no": results[12],
+                "veh_engine_no": results[13],
+                "veh_expiry": results[14]
             }      
 
-        return json.dumps(id_json, indent=0)
+        return json.dumps(vehicle_json, indent=0)
    
    except Exception as ex:
         print(f"An error occurred: {ex}")
         return None
-
+       
 def create_json_gpt(text: str):
-    """Extract bracode and/or content from South African Identity Documents using Azure Document Intelligence"""
+    """Extract bracode and/or content from vehicle license disc using Azure Document Intelligence"""
     
     try:
         system_prompt = """
             You are an OCR extraction assistant. 
-            You are provided with the text from an OCR extraction and you must extract the requested key pieces of information 
-            from a South African Identity Document, which is either a Smart ID Card (front or back) or a Green ID Book.
-            Please ensure that the resulting JSON contains only plain characters and no special characters.
+            You are provided with the text from an OCR extraction from a South African vehicle license disc. You must extract the requested key pieces of information. 
+            The extracted information contains both English and Afrikaans labels for each of the values to be extracted.
+            Engine no./Enjinnr. is an alphanumeric value that is manufacturer specifc.
+            VIN Number/Vinaginemr is an alphanumeric value that is unique to each vehicle.
         """
 
         assistant_prompt = """
-            You are an OCR extraction assistant, which needs to extract data from a South African Identity Documents.
-            Please return the data in a specified JSON format.
+            You are an OCR extraction assistant, which needs to extract data from a South African vehicle license disc, and return the data in a specified JSON format.
         """
-        
+
         user_prompt = f"""    
             Please ensure that the resulting JSON contains only plain characters and no special characters from this text: '''{text}'''
-            Respond in the following JSON format: 
-            "Surname": "answer",
-            "Names": "answer",
-            "Sex": "answer",
-            "Nationality": "answer",
-            "RSA Identity Number": "answer",
-            "Date of Birth": "answer",
-            "Country of Birth": "answer"
+            Respond in the following JSON format, without additional code blocks or any new lines. 
+            {
+                "RSA NO.": "answer",
+                "License no./Lisensienr.": "answer",
+                "Veh. register no./Vrt.registerer.": "answer",
+                "VIN": "answer",
+                "Fees/Gelde": "answer",
+                "Engine no./Enjinnr.": "answer",
+                "GVM/PVM": "answer",
+                "Tare/Tarra": "answer",
+                "Make": "answer",
+                "Description/Beskrywing": "answer",
+                "Persons/Personne": "answer",
+                "Seated/Sittende": "answer",
+                "Date of expiry/Vervaldatum": "answer"
+            }                
         """
 
         client = create_openai_client()
@@ -157,28 +168,30 @@ def create_json_gpt(text: str):
                 {"role": "assistant", "content": assistant_prompt}, 
                 {"role": "user", "content": user_prompt}
             ],
-            temperature = 0.25
-            # response_format = {"type": "json_object"}
+            temperature = 0.3,
+            response_format = {"type": "json_object"}
         )
 
-        # print(response.choices[0].message.content)
         results = json.loads(response.choices[0].message.content)
         
-        id_json = {
-            "surname": results["Surname"], 
-            "names": results["Names"],
-            "sex": results["Sex"],
-            "nationality": results["Nationality"],
-            "identity_number": results["RSA Identity Number"],
-            "date_of_birth": results["Date of Birth"],
-            "country_of_birth": results["Country of Birth"],
+        vehicle_json = {
+            "veh_no": results["RSA NO."], 
+            "veh_reg_no": results["License no./Lisensienr."],
+            "veh_register_no": results["Veh. register no./Vrt.registerer."],
+            "veh_description": results["Description/Beskrywing"],
+            "veh_make": results["Make"],
+            "veh_model": "",
+            "veh_color": "",
+            "veh_vin_no": results["VIN"],
+            "veh_engine_no": results["Engine no./Enjinnr."],
+            "veh_expiry": results["Date of expiry/Vervaldatum"]
         }  
             
-        return json.dumps(id_json, indent=0)
+        return json.dumps(vehicle_json, indent=0)
     except Exception as ex:
         print(f"An error occurred: {ex}")
         return None
-    
+
 def process_data(result):
     """Extract bracode and/or content from vehicle license disc using Azure Document Intelligence"""
 
@@ -189,25 +202,27 @@ def process_data(result):
                         for barcode_idx, barcode in enumerate(page.barcodes):
                             if barcode.kind == DocumentBarcodeKind.PDF417:
                                 json_data = create_json_barcode(barcode.value)                                                
+                            else:
+                                print("not a PDF417 barcode! so need to ignore")        
                     else:
                         extracted_text = []
-                        if page.lines:                            
+                        if page.lines:
                             for line in page.lines:
                                 if line.content:
                                     extracted_text.append(line.content)
-                        
-                        cleaned_text = clean_text(" ".join(extracted_text))
-                        json_data = create_json_gpt(cleaned_text)          
+                                    cleaned_text = clean_text(" ".join(extracted_text))
+
+                        json_data = create_json_gpt(cleaned_text)
                     
             return json_data
         else:
             print("results are empty")
     except Exception as ex:
         print(f"An error occurred: {ex}")
-        return None                
+        return None            
 
 # MAIN FUNCTION WITH SWAGGER API DOCUMENTATION 
-def id_smart_card():   
+def veh_license_disc():   
 
     if 'file' not in request.files:
         return jsonify({"error": "No file provided"}), 400
@@ -231,17 +246,18 @@ def id_smart_card():
         response = process_data(extracted_content)
         
         return response, 200, {'Content-Type': 'application/json'}
-
+        
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 
-id_smart_card_swagger_doc = {
+# API SWAGGER DOCUMENTATION -> IMPORTED INTO THE MAIN FUNCTION
+vehicle_license_disc_swagger_doc = {
     'tags': ['OCR'],
-    'summary': 'Extract information from South African Identity Smart Card',
-    'description': '''Upload a picture of a South African Identity Smart Card and extract key fields using OCR. Only fields that are visibly recognizable will be extracted.
+    'summary': 'Extract information from South African Vehicle License Disc',
+    'description': '''Extract key fields from a South African Vehicle License Disc using Azure Document Intelligence and GPT-4. The system processes both English and Afrikaans text on the license disc.
 
 Required Headers:
 ```
@@ -254,12 +270,12 @@ Content-Type: multipart/form-data
 Sample CURL request:
 ```bash
 curl -X POST \\
-  'https://api.example.com/id_smart_card' \\
+  'https://api.example.com/vehicle_license_disc' \\
   -H 'Accept: application/json' \\
   -H 'Authorization: Bearer <your_access_token>' \\
   -H 'X-API-Key: <your_api_key>' \\
   -H 'Content-Type: multipart/form-data' \\
-  -F 'file=@/path/to/id_card.jpg'
+  -F 'file=@/path/to/license_disc.jpg'
 ```''',
     'security': [
         {'ApiKeyAuth': [], 'BearerAuth': []}
@@ -270,7 +286,7 @@ curl -X POST \\
             'in': 'formData',
             'type': 'file',
             'required': True,
-            'description': 'ID Smart Card image (Supported formats: PDF, PNG, JPG, JPEG, TIFF)'
+            'description': 'Vehicle license disc image (Supported formats: PDF, PNG, JPG, JPEG, TIFF)'
         }
     ],
     'responses': {
@@ -279,43 +295,73 @@ curl -X POST \\
             'schema': {
                 'type': 'object',
                 'properties': {
-                    'Surname': {
+                    'RSA NO.': {
                         'type': 'string',
-                        'description': 'Last name of the ID holder'
+                        'description': 'RSA identification number'
                     },
-                    'Names': {
+                    'License no./Lisensienr.': {
                         'type': 'string',
-                        'description': 'Given names of the ID holder'
+                        'description': 'Vehicle license number'
                     },
-                    'Sex': {
+                    'Veh. register no./Vrt.registerer.': {
                         'type': 'string',
-                        'description': 'Gender of the ID holder'
+                        'description': 'Vehicle registration number'
                     },
-                    'Nationality': {
+                    'VIN': {
                         'type': 'string',
-                        'description': 'Nationality of the ID holder'
+                        'description': 'Vehicle Identification Number'
                     },
-                    'RSA Identity Number': {
+                    'Fees/Gelde': {
                         'type': 'string',
-                        'description': '13-digit South African ID number'
+                        'description': 'License fees paid'
                     },
-                    'Date of Birth': {
+                    'Engine no./Enjinnr.': {
                         'type': 'string',
-                        'description': 'Birth date in DD/MM/YYYY format'
+                        'description': 'Unique engine number'
                     },
-                    'Country of Birth': {
+                    'GVM/PVM': {
                         'type': 'string',
-                        'description': 'Country where ID holder was born'
+                        'description': 'Gross Vehicle Mass in kg'
+                    },
+                    'Tare/Tarra': {
+                        'type': 'string',
+                        'description': 'Vehicle weight without load'
+                    },
+                    'Make': {
+                        'type': 'string',
+                        'description': 'Vehicle manufacturer'
+                    },
+                    'Description/Beskrywing': {
+                        'type': 'string',
+                        'description': 'Vehicle model and details'
+                    },
+                    'Persons/Personne': {
+                        'type': 'string',
+                        'description': 'Maximum number of persons'
+                    },
+                    'Seated/Sittende': {
+                        'type': 'string',
+                        'description': 'Number of seated persons'
+                    },
+                    'Date of expiry/Vervaldatum': {
+                        'type': 'string',
+                        'description': 'License expiry date'
                     }
                 },
                 'example': {
-                    'Surname': 'DOE',
-                    'Names': 'JOHN',
-                    'Sex': 'M',
-                    'Nationality': 'RSA',
-                    'RSA Identity Number': '1234567891011',
-                    'Date of Birth': 'DD MMM YYYY',
-                    'Country of Birth': 'SOUTH AFRICA'
+                    'RSA NO.': 'RSA123456',
+                    'License no./Lisensienr.': 'ABC123GP',
+                    'Veh. register no./Vrt.registerer.': 'REG123456',
+                    'VIN': 'VINX123456789',
+                    'Fees/Gelde': '1.1',
+                    'Engine no./Enjinnr.': 'ENG123456',
+                    'GVM/PVM': '2100',
+                    'Tare/Tarra': '1450',
+                    'Make': 'VEHICLE MAKE',
+                    'Description/Beskrywing': 'VEHICLE MODEL DESCRIPTION',
+                    'Persons/Personne': '5',
+                    'Seated/Sittende': '5',
+                    'Date of expiry/Vervaldatum': 'YYYY-MM-DD'
                 }
             }
         },
