@@ -23,8 +23,10 @@ def create_api_response(data, status_code=200):
 
 def llama_route():
     """
-    Llama-3-1-405B API endpoint for AI applications (2 AIC per call)
-    This endpoint consumes 2 AI Credit (AIC) per api call
+    Consumes 3 AI credits per call
+    
+    Meta Llama 405B parameter LLM model for text generation and general task completion.
+    
     ---
     tags:
       - LLM

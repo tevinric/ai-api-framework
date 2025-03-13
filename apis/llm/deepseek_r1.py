@@ -24,8 +24,10 @@ def create_api_response(data, status_code=200):
 # Remove the balance check decorator from here - we'll apply it in the registration
 def deepseek_r1_route():
     """
-    DeepSeek-R1 API endpoint for AI applications (1 AIC per call)
-    This endpoint consumes 1 AI Credit (AIC) per api call
+    Consumes 3 AI credits per call
+    
+    DeepSeek-R1 LLM model for text generation on complex tasks that required chain of though and deep reasoning.
+
     ---
     tags:
       - LLM

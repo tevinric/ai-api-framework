@@ -25,8 +25,9 @@ def create_api_response(data, status_code=200):
 
 def o1_mini_route():
     """
-    O1-mini API endpoint for AI applications (5 AIC per call)
-    This endpoint consumes 5 AI Credits (AIC) per api call
+    Consumes 5 AI credits per call
+    
+    OpenAI LLM model for text generation on complex tasks that required chain of though and deep reasoning.
     ---
     tags:
       - LLM

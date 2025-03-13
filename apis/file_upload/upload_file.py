@@ -28,7 +28,7 @@ def upload_file_route():
     Upload one or more files to Azure Blob Storage
     ---
     tags:
-      - File Upload
+      - File Management
     parameters:
       - name: X-Token
         in: header
@@ -222,7 +222,7 @@ def get_file_url_route():
     Get access URL for a previously uploaded file using its ID
     ---
     tags:
-      - File Upload
+      - File Management
     parameters:
       - name: X-Token
         in: header
@@ -384,7 +384,7 @@ def delete_file_route():
     Delete a previously uploaded file using its ID
     ---
     tags:
-      - File Upload
+      - File Management
     parameters:
       - name: X-Token
         in: header
@@ -552,6 +552,6 @@ def delete_file_route():
 
 def register_file_upload_routes(app):
     """Register file upload routes with the Flask app"""
-    app.route('/upload-file', methods=['POST'])(api_logger(upload_file_route))
-    app.route('/get-file-url', methods=['POST'])(api_logger(get_file_url_route))
-    app.route('/delete-file', methods=['DELETE'])(api_logger(delete_file_route))
+    app.route('/file', methods=['POST'])(api_logger(upload_file_route))
+    app.route('/file/url', methods=['GET'])(api_logger(get_file_url_route))
+    app.route('/file', methods=['DELETE'])(api_logger(delete_file_route))

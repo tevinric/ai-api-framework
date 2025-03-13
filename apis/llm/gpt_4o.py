@@ -26,8 +26,10 @@ def create_api_response(data, status_code=200):
 # Remove the balance check decorator from here - we'll apply it in the registration
 def gpt4o_route():
     """
-    GPT-4o API endpoint for AI applications (2 AIC per call)
-    This endpoint consumes 2 AI Credits (AIC) per api call
+    Consumes 2 AI credits per call
+    
+    OpenAI GPT-4o LLM model for text completion and content generation. 
+    
     ---
     tags:
       - LLM
