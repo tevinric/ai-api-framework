@@ -382,18 +382,18 @@
 <body>
     <header class="header">
         <div class="logo">
-            <i class="fas fa-brain"></i>
+            <img src="/static/images/Telesure-logo.png" alt="TIH AI API Platform Logo" style="height: 40px; margin-right: 0.5rem;">
             <h1>AI API Platform</h1>
         </div>
         <nav class="nav">
             <div class="menu-toggle" id="menu-toggle">
                 <i class="fas fa-bars"></i>
             </div>
-            <a href="/templates/index.html" class="nav-item">
+            <a href="{{ url_for('home') }}" class="nav-item">
                 <i class="fas fa-home"></i>Home
             </a>
-            <a href="/templates/docs/index.html" class="nav-item">
-                <i class="fas fa-book"></i>Documentation
+            <a href="{{ url_for('getting_started') }}" class="nav-item">
+                <i class="fas fa-rocket"></i>Geting Started
             </a>
             <a href="/templates/docs/faq.html" class="nav-item">
                 <i class="fas fa-question-circle"></i>FAQ
@@ -408,24 +408,25 @@
     
     <aside class="sidebar">
         <div class="sidebar-category">Main</div>
-        <a href="/templates/index.html" class="sidebar-link">
+        <a href="{{ url_for('home') }}" class="sidebar-link active">
             <i class="fas fa-home"></i> Home
         </a>
-        <a href="/templates/docs/index.html" class="sidebar-link">
+        <a href="/apidocs/" class="sidebar-link">
             <i class="fas fa-book"></i> API Documentation
         </a>
-        <a href="/templates/docs/getting-started.html" class="sidebar-link active">
+        <a href="{{ url_for('getting_started') }}" class="sidebar-link">
             <i class="fas fa-rocket"></i> Getting Started
         </a>
         
+        <!--SIDEBAR - ENDPOINTS -->
         <div class="sidebar-category">Endpoints</div>
-        <a href="/templates/docs/token-services.html" class="sidebar-link">
+        <a href="{{ url_for('token_services') }}" class="sidebar-link">
             <i class="fas fa-key"></i> Token Services
         </a>
         <a href="/templates/docs/balance-management.html" class="sidebar-link">
             <i class="fas fa-wallet"></i> Balance Management
         </a>
-        <a href="/templates/docs/llm.html" class="sidebar-link">
+        <a href="{{ url_for('llm') }}" class="sidebar-link">
             <i class="fas fa-robot"></i> Language Models
         </a>
         <a href="/templates/docs/image-generation.html" class="sidebar-link">
@@ -458,55 +459,98 @@
     
     <main class="main-content">
         <section class="content-section">
-            <h2>Getting Started with the AI API Platform</h2>
+            <h2>Getting Started with the TIH AI API Platform</h2>
             
             <p>This guide will walk you through the steps to start using our AI API Platform, from account setup to making your first API call.</p>
             
             <h3>Step 1: Request an API Key</h3>
-            <p>To use the API platform, you'll need an API key with appropriate permissions. Fill out the form below to request your API key:</p>
+            <p>To use the API platform, you'll need an API key with appropriate permissions. You may request an api key for yourself as an employee or for a service account. Fill out the form below to request your API key:</p>
             
             <div class="embed-container">
                 <h3>API Key Request Form</h3>
-                <div class="embed-placeholder">
-                    <!-- Microsoft Form will be embedded here -->
-                    <p>MS Form for API key signup will be embedded here.</p>
+                <div>
+                    <p>Register for an API key using our <a href="https://forms.office.com/Pages/ResponsePage.aspx?id=uM6zjUZ0vEiLtJeAPFJ6N2xrQvNFNxxGn2IZUHwM9CxUQUkzUTlURE9JR0c0UVJGN0Q2RTRCU0pYVC4u">registration form</a></p>
                 </div>
+
+                <h4>What happens after I register? </h4>
+                    <ul>
+                        <li>The AI CEO team recieves your request</li>
+                        <li>A user profile will be created for you using the details you have provided on the form</li>
+                        <li>Your unique user id and api key will be communicated to you by the AI CEO within 48 hours </li>
+                        <li>You must <b>NEVER</b> share your unqiue user id api key with anyone or store them in any code repository</li>
+                    </ul>
             </div>
             
             <div class="info-box">
                 <div class="info-box-icon"><i class="fas fa-info-circle"></i></div>
                 <div class="info-box-content">
-                    <h4>Account Types</h4>
-                    <p>We offer different account types with varying credit allocations:</p>
-                    <ul>
-                        <li><strong>Developer</strong> - For development and testing</li>
-                        <li><strong>Professional</strong> - For production applications with moderate usage</li>
-                        <li><strong>Enterprise</strong> - For high-volume production applications</li>
-                    </ul>
+                    <h4>User Types</h4>
+                    <p>We offer different user types with varying credit allocations:</p>
+                    <table style="border-collapse: collapse; width: 100%; font-size: 10px;">
+                        <thead>
+                            <tr>
+                                <th style="border: 1px solid #ddd; text-align: left; padding: 8px;">User Role</th>
+                                <th style="border: 1px solid #ddd; text-align: left; padding: 8px;">Description</th>
+                                <th style="border: 1px solid #ddd; text-align: left; padding: 8px;">Monthly AI Credits</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="border: 1px solid #ddd; padding: 8px;"><strong>Test/Trial</strong></td>
+                                <td style="border: 1px solid #ddd; padding: 8px;">Get started with using our APIs with a test/trial api key.</td>
+                                <td style="border: 1px solid #ddd; padding: 8px;">100</td>
+                            </tr>
+                            <tr>
+                                <td style="border: 1px solid #ddd; padding: 8px;"><strong>Developer</strong></td>
+                                <td style="border: 1px solid #ddd; padding: 8px;">Developer keys are to be used to develop applications using our APIs</td>
+                                <td style="border: 1px solid #ddd; padding: 8px;">999</td>
+                            </tr>
+                            <tr>
+                                <td style="border: 1px solid #ddd; padding: 8px;"><strong>Production Tier 3 - Basic</strong></td>
+                                <td style="border: 1px solid #ddd; padding: 8px;">A starter subscription for production applications with low volume requirements</td>
+                                <td style="border: 1px solid #ddd; padding: 8px;">5000</td>
+                            </tr>
+                            <tr>
+                                <td style="border: 1px solid #ddd; padding: 8px;"><strong>Production Tier 2 - Professional</strong></td>
+                                <td style="border: 1px solid #ddd; padding: 8px;">An intermediate subscription for production applications with medium volume requirements</td>
+                                <td style="border: 1px solid #ddd; padding: 8px;">10000</td>
+                            </tr>
+                            <tr>
+                                <td style="border: 1px solid #ddd; padding: 8px;"><strong>Production Tier 1 - Professional</strong></td>
+                                <td style="border: 1px solid #ddd; padding: 8px;">An premium subscription for production applications with high volume requirements</td>
+                                <td style="border: 1px solid #ddd; padding: 8px;">25000</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <br>
                     <p>Specify your requirements in the form above, and our team will set up your account accordingly.</p>
                 </div>
             </div>
             
             <h3>Step 2: Download Postman Collection</h3>
-            <p>The easiest way to get started with our API is to use our Postman collection, which includes all endpoints with examples:</p>
+            <p>The easiest way to get started with our API is to use our Postman collection, which includes all endpoints. You can call our API endpoints using any programming language through the collection:</p>
             
             <a href="/static/files/ai-api-postman-collection.json" class="download-btn">
                 <i class="fas fa-download"></i> Download Postman Collection
             </a>
+            <br>
+            <p>You can also view and test our endpoints on the <a href="/apidocs/">API Swagger documentation</a>
             
             <h3>Step 3: Generate Your First Token</h3>
             <p>Before making API calls, you need to generate an authentication token using your API key:</p>
             <ul>
                 <li>Use the <code>/token</code> endpoint with your API key in the header</li>
-                <li>Store the returned token securely</li>
+                <li>Securely store the returned token securely</li>
                 <li>Use this token in the <code>X-Token</code> header for subsequent API calls</li>
+                <li>Note: Each token is only valid for 1 hour (3599 seconds)</li>
+                <li><i>If you are using the Postman collection, the token must be added to the collection environment variables. </i></li>
             </ul>
-            <p>See our <a href="/templates/docs/token-services.html">Token Services</a> documentation for more details.</p>
+            <p>See our <a href="{{ url_for('token_services') }}">Token Services</a> documentation for more details.</p>
             
             <h3>Step 4: Explore Available Endpoints</h3>
             <p>Our platform offers a wide range of AI capabilities through different endpoints:</p>
             <ul>
-                <li><a href="/templates/docs/llm.html">Language Models</a> - Text generation and analysis</li>
+                <li><a href="{{ url_for('llm') }}">Language Models</a> - Text generation and analysis</li>
                 <li><a href="/templates/docs/image-generation.html">Image Generation</a> - Create images from text descriptions</li>
                 <li><a href="/templates/docs/speech-services.html">Speech Services</a> - Convert speech to text</li>
                 <li><a href="/templates/docs/document-intelligence.html">Document Intelligence</a> - Extract insights from documents</li>
@@ -527,12 +571,7 @@
     </main>
     
     <footer class="footer">
-        <p>© 2025 AI API Platform. All rights reserved.</p>
-        <div class="social-links">
-            <a href="#" class="social-link"><i class="fab fa-github"></i></a>
-            <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
-            <a href="#" class="social-link"><i class="fab fa-linkedin"></i></a>
-        </div>
+        <p>© 2025 TIH AI API Portal. Powered by the TIH AI Center of Excellence.</p>
     </footer>
     
     <script>

@@ -435,9 +435,8 @@
 <body>
     <header class="header">
         <div class="logo">
-            <img src="./assets/images/Telesure-logo.png" alt="TIH AI API Platform Logo" style="height: 40px; margin-right: 0.5rem;">
-            <i class="fas fa-brain"></i>
-            <h1>TIH AI API Platform</h1>
+            <img src="/static/images/Telesure-logo.png" alt="TIH AI API Platform Logo" style="height: 40px; margin-right: 0.5rem;">
+            <h1>AI API Platform</h1>
         </div>
         <nav class="nav">
             <div class="menu-toggle" id="menu-toggle">
@@ -472,6 +471,7 @@
             <i class="fas fa-rocket"></i> Getting Started
         </a>
         
+        <!--SIDEBAR - ENDPOINTS -->
         <div class="sidebar-category">Endpoints</div>
         <a href="{{ url_for('token_services') }}" class="sidebar-link">
             <i class="fas fa-key"></i> Token Services
@@ -479,7 +479,7 @@
         <a href="/templates/docs/balance-management.html" class="sidebar-link">
             <i class="fas fa-wallet"></i> Balance Management
         </a>
-        <a href="/templates/docs/llm.html" class="sidebar-link">
+        <a href="{{ url_for('llm') }}" class="sidebar-link">
             <i class="fas fa-robot"></i> Language Models
         </a>
         <a href="/templates/docs/image-generation.html" class="sidebar-link">
@@ -512,63 +512,60 @@
     
     <main class="main-content">
         <section class="hero">
-            <h2>Powerful AI APIs for Your Applications</h2>
-            <p>Our comprehensive suite of AI APIs empowers developers to integrate state-of-the-art language models, image generation, speech services, and document intelligence into their applications. With flexible authentication and straightforward integration, you can start building intelligent features in minutes.</p>
-            <a href="/templates/docs/getting-started.html" class="cta-btn">Get Started</a>
+            <h2>Integrate AI into your applications with our AI APIs </h2>
+            <p>The TIH AI Center of Excellence API Portal is a  comprehensive suite of AI APIs that will empower developers to integrate state-of-the-art language models, image generation, speech services, and document intelligence into their applications. With flexible authentication and straightforward integration, you can start building intelligent applications driven by AI in minutes.</p>
+            <a href="{{ url_for('getting_started') }}" class="cta-btn">Get Started</a>
             <a href="/apidocs/" class="cta-btn" style="margin-left: 1rem; background-color: #fff; color: var(--dark-color);">Swagger Docs</a>
         </section>
         
-        <a href="/static/files/ai-api-postman-collection.json" class="download-btn">
-            <i class="fas fa-download"></i> Download Postman Collection
-        </a>
         
-        <section class="features">
+        <section class="features" style="text-align: center;">
             <div class="feature-card">
-                <div class="feature-icon">
-                    <i class="fas fa-comments"></i>
-                </div>
-                <h3>Language Models</h3>
-                <p>Access powerful language models like GPT-4o, Deepseek, Llama, and more for text generation, content creation, and deep reasoning tasks.</p>
+            <div class="feature-icon">
+            <i class="fas fa-robot"></i>
+            </div>
+            <h3>Language Models</h3>
+            <p>Access powerful language models like GPT-4o, Deepseek, Llama, and more for text generation, content creation, and deep reasoning tasks.</p>
             </div>
             
             <div class="feature-card">
-                <div class="feature-icon">
-                    <i class="fas fa-image"></i>
-                </div>
-                <h3>Image Generation</h3>
-                <p>Create stunning images with DALL-E 3 and Stable Diffusion Ultra from text prompts for creative content and design.</p>
+            <div class="feature-icon">
+            <i class="fas fa-image"></i>
+            </div>
+            <h3>Image Generation</h3>
+            <p>Create stunning images with DALL-E 3 and Stable Diffusion Ultra from text prompts for creative content and design.</p>
             </div>
             
             <div class="feature-card">
-                <div class="feature-icon">
-                    <i class="fas fa-microphone"></i>
-                </div>
-                <h3>Speech Services</h3>
-                <p>Convert speech to text with advanced options including speaker diarization for multi-speaker transcription.</p>
+            <div class="feature-icon">
+            <i class="fas fa-microphone"></i>
+            </div>
+            <h3>Speech Services</h3>
+            <p>Convert speech to text with advanced options including speaker diarization for multi-speaker transcription.</p>
             </div>
             
             <div class="feature-card">
-                <div class="feature-icon">
-                    <i class="fas fa-file-alt"></i>
-                </div>
-                <h3>Document Intelligence</h3>
-                <p>Extract insights, summarize content, and process information from documents across various formats.</p>
+            <div class="feature-icon">
+            <i class="fas fa-file-alt"></i>
+            </div>
+            <h3>Doc Intelligence</h3>
+            <p>Extract insights, summarize content, and process information from documents across various formats.</p>
             </div>
             
             <div class="feature-card">
-                <div class="feature-icon">
-                    <i class="fas fa-key"></i>
-                </div>
-                <h3>Flexible Authentication</h3>
-                <p>Secure your API access with token-based authentication, including token generation and refresh capabilities.</p>
+            <div class="feature-icon">
+            <i class="fas fa-key"></i>
+            </div>
+            <h3>Flexible Authentication</h3>
+            <p>Secure your API access with token-based authentication, including token generation and refresh capabilities.</p>
             </div>
             
             <div class="feature-card">
-                <div class="feature-icon">
-                    <i class="fas fa-chart-line"></i>
-                </div>
-                <h3>Usage Monitoring</h3>
-                <p>Track your API usage, monitor balance consumption, and get detailed statistics for your account.</p>
+            <div class="feature-icon">
+            <i class="fas fa-chart-line"></i>
+            </div>
+            <h3>Usage Monitoring</h3>
+            <p>Track your API usage, monitor balance consumption, and get detailed statistics for your account.</p>
             </div>
         </section>
         
@@ -577,22 +574,23 @@
             <p>Start building with our AI API Platform in just a few steps:</p>
             
             <ol>
-                <li><strong>Sign up for an account</strong> - Request your API key to access our services.</li>
+                <li><strong>Register for an API key</strong> - Request your API key to access our services.</li>
                 <li><strong>Generate your first token</strong> - Using your API key, generate an authentication token to access the services.</li>
                 <li><strong>Make your first API call</strong> - Start with a simple request to one of our language models or other services.</li>
                 <li><strong>Monitor your usage</strong> - Keep track of your API calls and credit consumption through our balance management endpoints.</li>
             </ol>
             
-            <p>Check out our <a href="/templates/docs/getting-started.html">detailed getting started guide</a> for more information.</p>
+            <p>Check out our <a href="{{ url_for('getting_started') }}">detailed getting started guide</a> for more information.</p>
         </section>
+
+        <a href="/static/files/ai-api-postman-collection.json" class="download-btn">
+            <i class="fas fa-download"></i> Download Postman Collection
+        </a>
     </main>
     
     <footer class="footer">
-        <p>© 2025 AI API Platform. All rights reserved.</p>
+        <p>© 2025 TIH AI API Portal. Powered by the TIH AI Center of Excellence.</p>
         <div class="social-links">
-            <a href="#" class="social-link"><i class="fab fa-github"></i></a>
-            <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
-            <a href="#" class="social-link"><i class="fab fa-linkedin"></i></a>
         </div>
     </footer>
     

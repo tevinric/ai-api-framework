@@ -66,6 +66,11 @@ def getting_started():
 def token_services():
     return render_template('docs/token_services.html')
 
+@app.route('/docs/llm')
+def llm():
+    return render_template('docs/llm.html')
+
+
 
 # TOKEN SERVICE ENDPOINTS
 ## GET TOKEN
@@ -117,7 +122,6 @@ register_rag_query_routes(app)
 from apis.image_generation.dalle3 import register_image_generation_routes
 register_image_generation_routes(app)
 
-
 from apis.image_generation.stable_diffusion_ultra import register_stable_diffusion_ultra_routes
 register_stable_diffusion_ultra_routes(app)
 
@@ -139,3 +143,5 @@ register_document_intelligence_routes(app)
 if __name__ == '__main__':
     app.run(debug=True)
     
+
+

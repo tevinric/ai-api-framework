@@ -408,18 +408,18 @@
 <body>
     <header class="header">
         <div class="logo">
-            <i class="fas fa-brain"></i>
+            <img src="/static/images/Telesure-logo.png" alt="TIH AI API Platform Logo" style="height: 40px; margin-right: 0.5rem;">
             <h1>AI API Platform</h1>
         </div>
         <nav class="nav">
             <div class="menu-toggle" id="menu-toggle">
                 <i class="fas fa-bars"></i>
             </div>
-            <a href="/templates/index.html" class="nav-item">
+            <a href="{{ url_for('home') }}" class="nav-item">
                 <i class="fas fa-home"></i>Home
             </a>
-            <a href="/templates/docs/index.html" class="nav-item">
-                <i class="fas fa-book"></i>Documentation
+            <a href="{{ url_for('getting_started') }}" class="nav-item">
+                <i class="fas fa-rocket"></i>Geting Started
             </a>
             <a href="/templates/docs/faq.html" class="nav-item">
                 <i class="fas fa-question-circle"></i>FAQ
@@ -434,24 +434,25 @@
     
     <aside class="sidebar">
         <div class="sidebar-category">Main</div>
-        <a href="/templates/index.html" class="sidebar-link">
+        <a href="{{ url_for('home') }}" class="sidebar-link active">
             <i class="fas fa-home"></i> Home
         </a>
-        <a href="/templates/docs/index.html" class="sidebar-link">
+        <a href="/apidocs/" class="sidebar-link">
             <i class="fas fa-book"></i> API Documentation
         </a>
-        <a href="/templates/docs/getting-started.html" class="sidebar-link">
+        <a href="{{ url_for('getting_started') }}" class="sidebar-link">
             <i class="fas fa-rocket"></i> Getting Started
         </a>
         
+        <!--SIDEBAR - ENDPOINTS -->
         <div class="sidebar-category">Endpoints</div>
-        <a href="/templates/docs/token-services.html" class="sidebar-link active">
+        <a href="{{ url_for('token_services') }}" class="sidebar-link">
             <i class="fas fa-key"></i> Token Services
         </a>
         <a href="/templates/docs/balance-management.html" class="sidebar-link">
             <i class="fas fa-wallet"></i> Balance Management
         </a>
-        <a href="/templates/docs/llm.html" class="sidebar-link">
+        <a href="{{ url_for('llm') }}" class="sidebar-link">
             <i class="fas fa-robot"></i> Language Models
         </a>
         <a href="/templates/docs/image-generation.html" class="sidebar-link">
