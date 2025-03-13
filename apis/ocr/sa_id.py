@@ -81,11 +81,15 @@ def process_document_content(file_stream):
         if not document_intelligence_client:
             raise ValueError("Failed to create Document Intelligence client")
 
+        # Read the file stream into a bytes object
+        file_content = file_stream.read()
+        
+        # The API expects the file content directly as the 'body' parameter
         poller = document_intelligence_client.begin_analyze_document(
             "prebuilt-layout",
-            analyze_request=file_stream,
-            features=[DocumentAnalysisFeature.BARCODES],
-            content_type="application/octet-stream"
+            file_content,
+            content_type="application/octet-stream",
+            features=[DocumentAnalysisFeature.BARCODES]
         )
          
         result = poller.result()
@@ -227,7 +231,7 @@ def extract_id_data(result):
 
 def sa_id_ocr_route():
     """
-    Perform OCR on a South African ID Card (Smart Card)
+    Perform OCR on South African ID documents
     ---
     tags:
       - OCR
@@ -449,4 +453,4 @@ def sa_id_ocr_route():
 
 def register_sa_id_ocr_routes(app):
     """Register SA ID OCR routes with the Flask app"""
-    app.route('/ocr/sa_id_card', methods=['POST'])(api_logger(check_balance(sa_id_ocr_route)))
+    app.route('/ocr/sa_id', methods=['POST'])(api_logger(check_balance(sa_id_ocr_route)))
