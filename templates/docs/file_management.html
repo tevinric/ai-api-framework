@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Management - AI API Platform</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4a6fe3;
+            --secondary-color: #6c63ff;
+            --dark-color: #2a2c3b;
+            --light-color: #f5f6fa;
+            --text-color: #333;
+            --white-color: #ffffff;
+            --accent-color: #00d4ff;
+            --sidebar-width: 280px;
+            --header-height: 60px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--light-color);
+            color: var(--text-color);
+            position: relative;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('/static/images/ai-background.gif') center center;
+            background-size: cover;
+            opacity: 0.05;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        .header {
+            background-color: var(--dark-color);
+            color: var(--white-color);
+            padding: 0 2rem;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: var(--header-height);
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo i {
+            font-size: 1.8rem;
+            margin-right: 0.5rem;
+            color: var(--accent-color);
+        }
+        
+        .logo h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+        
+        .nav {
+            display: flex;
+            align-items: center;
+        }
+        
+        .nav-item {
+            margin-left: 1.5rem;
+            color: var(--white-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+            display: flex;
+            align-items: center;
+        }
+        
+        .nav-item:hover {
+            color: var(--accent-color);
+        }
+        
+        .nav-item i {
+            margin-right: 0.5rem;
+        }
+        
+        .swagger-btn {
+            background-color: var(--accent-color);
+            color: var(--dark-color);
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-weight: 600;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        
+        .swagger-btn:hover {
+            background-color: #00b8e6;
+            transform: translateY(-2px);
+            color: var(--dark-color);
+        }
+        
+        /* Mobile menu toggle */
+        .menu-toggle {
+            display: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            top: var(--header-height);
+            left: 0;
+            height: calc(100vh - var(--header-height));
+            width: var(--sidebar-width);
+            background-color: var(--white-color);
+            border-right: 1px solid rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+            z-index: 900;
+            padding: 1.5rem 0;
+            transition: transform 0.3s ease-in-out;
+        }
+        
+        .sidebar-category {
+            padding: 0.5rem 1.5rem;
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar-link {
+            display: block;
+            padding: 0.7rem 1.5rem;
+            padding-left: 2.5rem;
+            color: var(--text-color);
+            text-decoration: none;
+            transition: background-color 0.2s, color 0.2s;
+            font-size: 0.95rem;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar-link:hover {
+            background-color: rgba(106, 100, 255, 0.05);
+            color: var(--primary-color);
+        }
+        
+        .sidebar-link.active {
+            color: var(--primary-color);
+            background-color: rgba(106, 100, 255, 0.08);
+            border-left: 3px solid var(--primary-color);
+        }
+        
+        .sidebar-link i {
+            margin-right: 0.5rem;
+            width: 20px;
+            text-align: center;
+        }
+        
+        /* Main content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            margin-top: var(--header-height);
+            padding: 2rem;
+            min-height: calc(100vh - var(--header-height));
+        }
+        
+        /* Content sections */
+        .content-section {
+            background-color: var(--white-color);
+            border-radius: 8px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .content-section h2 {
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            color: var(--dark-color);
+            border-bottom: 2px solid var(--light-color);
+            padding-bottom: 0.5rem;
+        }
+        
+        .content-section h3 {
+            font-size: 1.3rem;
+            margin: 1.5rem 0 1rem;
+            color: var(--primary-color);
+        }
+        
+        .content-section p {
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+        
+        .content-section ul, 
+        .content-section ol {
+            margin-bottom: 1.5rem;
+            padding-left: 1.5rem;
+        }
+        
+        .content-section li {
+            margin-bottom: 0.5rem;
+            line-height: 1.6;
+        }
+        
+        /* Code blocks */
+        .api-endpoints {
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .endpoint {
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: flex-start;
+        }
+        
+        .endpoint-method {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: monospace;
+            font-weight: bold;
+            margin-right: 0.5rem;
+            min-width: 60px;
+            text-align: center;
+        }
+        
+        .method-get {
+            background-color: #e7f5ff;
+            color: #1971c2;
+        }
+        
+        .method-post {
+            background-color: #e3fafc;
+            color: #0c8599;
+        }
+        
+        .method-put {
+            background-color: #fff9db;
+            color: #e67700;
+        }
+        
+        .method-delete {
+            background-color: #fff5f5;
+            color: #e03131;
+        }
+        
+        .endpoint-path {
+            display: inline-block;
+            background-color: var(--dark-color);
+            color: var(--white-color);
+            padding: 0.3rem 0.7rem;
+            border-radius: 4px;
+            font-family: monospace;
+            margin-right: 0.5rem;
+        }
+        
+        .endpoint-description {
+            color: #666;
+            flex: 1;
+        }
+        
+        .code-block {
+            background-color: #2d2d2d;
+            color: #fff;
+            padding: 1rem;
+            border-radius: 6px;
+            font-family: monospace;
+            overflow-x: auto;
+            margin-bottom: 1.5rem;
+            line-height: 1.4;
+        }
+        
+        /* Info boxes */
+        .info-box {
+            display: flex;
+            background-color: #e7f5ff;
+            border-left: 4px solid #1971c2;
+            padding: 1.5rem;
+            border-radius: 6px;
+            margin-bottom: 2rem;
+        }
+        
+        .info-box-icon {
+            font-size: 1.8rem;
+            color: #1971c2;
+            margin-right: 1.5rem;
+        }
+        
+        .info-box-content h4 {
+            margin-bottom: 0.5rem;
+            color: #1971c2;
+        }
+        
+        .info-box-content p, .info-box-content li {
+            color: #495057;
+        }
+        
+        /* Footer */
+        .footer {
+            background-color: var(--dark-color);
+            color: var(--white-color);
+            text-align: center;
+            padding: 2rem;
+            margin-top: 3rem;
+            margin-left: var(--sidebar-width);
+        }
+        
+        .footer p {
+            margin-bottom: 1rem;
+        }
+        
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+        }
+        
+        .social-link {
+            color: var(--white-color);
+            font-size: 1.5rem;
+            transition: color 0.3s;
+        }
+        
+        .social-link:hover {
+            color: var(--accent-color);
+        }
+        
+        /* Responsive styles */
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+                box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+                z-index: 1001;
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .footer {
+                margin-left: 0;
+            }
+            
+            .menu-toggle {
+                display: block;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .header {
+                padding: 0 1rem;
+            }
+            
+            .nav-item:not(.swagger-btn) {
+                display: none;
+            }
+        }
+        
+        /* Dark overlay when sidebar is active on mobile */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        
+        @media (max-width: 992px) {
+            .sidebar-overlay.active {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <img src="/static/images/Telesure-logo.png" alt="TIH AI API Platform Logo" style="height: 40px; margin-right: 0.5rem;">
+            <h1>AI API Platform</h1>
+        </div>
+        <nav class="nav">
+            <div class="menu-toggle" id="menu-toggle">
+                <i class="fas fa-bars"></i>
+            </div>
+            <a href="/" class="nav-item">
+                <i class="fas fa-home"></i>Home
+            </a>
+            <a href="/docs/getting_started" class="nav-item">
+                <i class="fas fa-rocket"></i>Getting Started
+            </a>
+            <a href="/templates/docs/faq.html" class="nav-item">
+                <i class="fas fa-question-circle"></i>FAQ
+            </a>
+            <a href="/apidocs/" class="nav-item swagger-btn">
+                <i class="fas fa-book"></i>Swagger
+            </a>
+        </nav>
+    </header>
+    
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    
+    <aside class="sidebar">
+        <div class="sidebar-category">Main</div>
+        <a href="/" class="sidebar-link">
+            <i class="fas fa-home"></i> Home
+        </a>
+        <a href="/apidocs/" class="sidebar-link">
+            <i class="fas fa-book"></i> API Documentation
+        </a>
+        <a href="/docs/getting_started" class="sidebar-link">
+            <i class="fas fa-rocket"></i> Getting Started
+        </a>
+        
+        <!--SIDEBAR - ENDPOINTS -->
+        <div class="sidebar-category">Endpoints</div>
+        <a href="/docs/token_services" class="sidebar-link">
+            <i class="fas fa-key"></i> Token Services
+        </a>
+        <a href="/docs/balance_management" class="sidebar-link">
+            <i class="fas fa-wallet"></i> Balance Management
+        </a>
+        <a href="/docs/llm" class="sidebar-link">
+            <i class="fas fa-robot"></i> Language Models
+        </a>
+        <a href="/docs/image_generation" class="sidebar-link">
+            <i class="fas fa-image"></i> Image Generation
+        </a>
+        <a href="/templates/docs/speech-services.html" class="sidebar-link">
+            <i class="fas fa-microphone"></i> Speech Services
+        </a>
+        <a href="/templates/docs/file-management.html" class="sidebar-link active">
+            <i class="fas fa-file-alt"></i> File Management
+        </a>
+        <a href="/templates/docs/document-intelligence.html" class="sidebar-link">
+            <i class="fas fa-file-search"></i> Document Intelligence
+        </a>
+        <a href="/templates/docs/rag-query.html" class="sidebar-link">
+            <i class="fas fa-search"></i> RAG Query
+        </a>
+        
+        <div class="sidebar-category">Resources</div>
+        <a href="/templates/docs/faq.html" class="sidebar-link">
+            <i class="fas fa-question-circle"></i> FAQ
+        </a>
+        <a href="/templates/docs/rate-limits.html" class="sidebar-link">
+            <i class="fas fa-tachometer-alt"></i> Rate Limits
+        </a>
+        <a href="/templates/docs/changelog.html" class="sidebar-link">
+            <i class="fas fa-history"></i> Changelog
+        </a>
+    </aside>
+    
+    <main class="main-content">
+        <section class="content-section">
+            <h2>File Management</h2>
+            
+            <p>The File Management endpoints allow you to upload, access, and delete files used with our various AI services. These utilities are essential for processing audio files for transcription, documents for intelligence analysis, and other data that requires AI processing.</p>
+            
+            <div class="info-box">
+                <div class="info-box-icon"><i class="fas fa-info-circle"></i></div>
+                <div class="info-box-content">
+                    <h4>File Storage System</h4>
+                    <p>Our file management system uses Azure Blob Storage for secure and reliable file handling:</p>
+                    <ul>
+                        <li>Files are stored temporarily while being processed by our AI services</li>
+                        <li>User access is restricted to only their own files (except for administrators)</li>
+                        <li>Files used with certain services (like speech-to-text) are automatically deleted after processing</li>
+                        <li>All files are securely transmitted and stored using encryption</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <h3>Available Endpoints</h3>
+            
+            <div class="api-endpoints">
+                <div class="endpoint">
+                    <span class="endpoint-method method-post">POST</span>
+                    <span class="endpoint-path">/file</span>
+                    <span class="endpoint-description">Upload one or more files to the platform</span>
+                </div>
+                <div class="endpoint">
+                    <span class="endpoint-method method-get">GET</span>
+                    <span class="endpoint-path">/file/url</span>
+                    <span class="endpoint-description">Get access URL for a previously uploaded file</span>
+                </div>
+                <div class="endpoint">
+                    <span class="endpoint-method method-delete">DELETE</span>
+                    <span class="endpoint-path">/file</span>
+                    <span class="endpoint-description">Delete a previously uploaded file</span>
+                </div>
+            </div>
+            
+            <h3>Uploading Files</h3>
+            <p>To upload files to our platform, use the <code>/file</code> endpoint with a multipart form data request containing the file(s) you want to upload.</p>
+            
+            <div class="code-block">
+# Example request to upload a file
+POST /file
+Headers:
+  X-Token: your_token_here
+  Content-Type: multipart/form-data
+
+Form data:
+  files: [file1.pdf, file2.jpg, etc.]
+
+# Example response
+{
+  "message": "Files uploaded successfully",
+  "uploaded_files": [
+    {
+      "file_name": "document.pdf",
+      "file_id": "12345678-1234-5678-1234-567812345678",
+      "content_type": "application/pdf"
+    },
+    {
+      "file_name": "image.jpg",
+      "file_id": "87654321-8765-4321-8765-432187654321",
+      "content_type": "image/jpeg"
+    }
+  ]
+}
+            </div>
+            
+            <p>The <code>file_id</code> returned in the response is used to reference the file in other API calls.</p>
+            
+            <h3>Accessing Files</h3>
+            <p>To get the URL for a previously uploaded file, use the <code>/file/url</code> endpoint:</p>
+            
+            <div class="code-block">
+# Example request to get file URL
+GET /file/url
+Headers:
+  X-Token: your_token_here
+  Content-Type: application/json
+
+Body:
+{
+  "file_id": "12345678-1234-5678-1234-567812345678"
+}
+
+# Example response
+{
+  "file_name": "document.pdf",
+  "file_url": "https://storage-account.blob.core.windows.net/file-uploads/12345678-1234-5678-1234-567812345678.pdf",
+  "content_type": "application/pdf",
+  "upload_date": "2025-03-12T14:30:45.123Z"
+}
+            </div>
+            
+            <h3>Deleting Files</h3>
+            <p>To delete a file when it's no longer needed, use the <code>/file</code> endpoint with the DELETE method:</p>
+            
+            <div class="code-block">
+# Example request to delete a file
+DELETE /file
+Headers:
+  X-Token: your_token_here
+  Content-Type: application/json
+
+Body:
+{
+  "file_id": "12345678-1234-5678-1234-567812345678"
+}
+
+# Example response
+{
+  "message": "File deleted successfully",
+  "file_id": "12345678-1234-5678-1234-567812345678"
+}
+            </div>
+            
+            <h3>Supported File Types</h3>
+            <p>Our platform supports a wide range of file types, including but not limited to:</p>
+            <ul>
+                <li><strong>Documents:</strong> PDF, DOCX, TXT, RTF, CSV, JSON</li>
+                <li><strong>Images:</strong> JPEG, PNG, GIF, BMP, SVG</li>
+                <li><strong>Audio:</strong> MP3, WAV, M4A, FLAC, OGG</li>
+                <li><strong>Other:</strong> ZIP, XML, etc.</li>
+            </ul>
+            
+            <div class="info-box">
+                <div class="info-box-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                <div class="info-box-content">
+                    <h4>File Size Limits</h4>
+                    <p>Please note the following file size limitations:</p>
+                    <ul>
+                        <li>Maximum file size: 100MB per file</li>
+                        <li>For speech-to-text services: Maximum audio length of 2 hours</li>
+                        <li>For document intelligence: Maximum of 500 pages per document</li>
+                    </ul>
+                    <p>For larger files, consider splitting them into smaller chunks or contact our support team for assistance.</p>
+                </div>
+            </div>
+            
+            <h3>File Security</h3>
+            <p>We take the security of your files seriously:</p>
+            <ul>
+                <li>All files are encrypted both in transit and at rest</li>
+                <li>Access controls ensure users can only access their own files</li>
+                <li>Automatic file deletion after processing helps minimize data exposure</li>
+                <li>Regular security audits verify the integrity of our file storage system</li>
+            </ul>
+            
+            <p>For complete details and examples, please refer to our <a href="/apidocs/">Swagger Documentation</a> or download our <a href="/static/files/ai-api-postman-collection.json">Postman Collection</a>.</p>
+        </section>
+    </main>
+    
+    <footer class="footer">
+        <p>© 2025 TIH AI API Portal. Powered by the TIH AI Center of Excellence.</p>
+        <div class="social-links">
+            <a href="#" class="social-link"><i class="fab fa-github"></i></a>
+            <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
+            <a href="#" class="social-link"><i class="fab fa-linkedin"></i></a>
+        </div>
+    </footer>
+    
+    <script>
+        // Toggle sidebar on mobile
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuToggle = document.getElementById('menu-toggle');
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            
+            menuToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('active');
+                overlay.classList.toggle('active');
+            });
+            
+            overlay.addEventListener('click', function() {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            });
+            
+            // Highlight current page in sidebar
+            const currentPage = window.location.pathname;
+            const sidebarLinks = document.querySelectorAll('.sidebar-link');
+            
+            sidebarLinks.forEach(link => {
+                if (link.getAttribute('href') === currentPage) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
