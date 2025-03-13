@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speech Services - AI API Platform</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4a6fe3;
+            --secondary-color: #6c63ff;
+            --dark-color: #2a2c3b;
+            --light-color: #f5f6fa;
+            --text-color: #333;
+            --white-color: #ffffff;
+            --accent-color: #00d4ff;
+            --sidebar-width: 280px;
+            --header-height: 60px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--light-color);
+            color: var(--text-color);
+            position: relative;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('/static/images/ai-background.gif') center center;
+            background-size: cover;
+            opacity: 0.05;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        .header {
+            background-color: var(--dark-color);
+            color: var(--white-color);
+            padding: 0 2rem;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: var(--header-height);
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo i {
+            font-size: 1.8rem;
+            margin-right: 0.5rem;
+            color: var(--accent-color);
+        }
+        
+        .logo h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+        
+        .nav {
+            display: flex;
+            align-items: center;
+        }
+        
+        .nav-item {
+            margin-left: 1.5rem;
+            color: var(--white-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+            display: flex;
+            align-items: center;
+        }
+        
+        .nav-item:hover {
+            color: var(--accent-color);
+        }
+        
+        .nav-item i {
+            margin-right: 0.5rem;
+        }
+        
+        .swagger-btn {
+            background-color: var(--accent-color);
+            color: var(--dark-color);
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-weight: 600;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        
+        .swagger-btn:hover {
+            background-color: #00b8e6;
+            transform: translateY(-2px);
+            color: var(--dark-color);
+        }
+        
+        /* Mobile menu toggle */
+        .menu-toggle {
+            display: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            top: var(--header-height);
+            left: 0;
+            height: calc(100vh - var(--header-height));
+            width: var(--sidebar-width);
+            background-color: var(--white-color);
+            border-right: 1px solid rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+            z-index: 900;
+            padding: 1.5rem 0;
+            transition: transform 0.3s ease-in-out;
+        }
+        
+        .sidebar-category {
+            padding: 0.5rem 1.5rem;
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar-link {
+            display: block;
+            padding: 0.7rem 1.5rem;
+            padding-left: 2.5rem;
+            color: var(--text-color);
+            text-decoration: none;
+            transition: background-color 0.2s, color 0.2s;
+            font-size: 0.95rem;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar-link:hover {
+            background-color: rgba(106, 100, 255, 0.05);
+            color: var(--primary-color);
+        }
+        
+        .sidebar-link.active {
+            color: var(--primary-color);
+            background-color: rgba(106, 100, 255, 0.08);
+            border-left: 3px solid var(--primary-color);
+        }
+        
+        .sidebar-link i {
+            margin-right: 0.5rem;
+            width: 20px;
+            text-align: center;
+        }
+        
+        /* Main content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            margin-top: var(--header-height);
+            padding: 2rem;
+            min-height: calc(100vh - var(--header-height));
+        }
+        
+        /* Content sections */
+        .content-section {
+            background-color: var(--white-color);
+            border-radius: 8px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .content-section h2 {
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            color: var(--dark-color);
+            border-bottom: 2px solid var(--light-color);
+            padding-bottom: 0.5rem;
+        }
+        
+        .content-section h3 {
+            font-size: 1.3rem;
+            margin: 1.5rem 0 1rem;
+            color: var(--primary-color);
+        }
+        
+        .content-section h4 {
+            font-size: 1.1rem;
+            margin: 1.2rem 0 0.8rem;
+            color: var(--dark-color);
+        }
+        
+        .content-section p {
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+        
+        .content-section ul, 
+        .content-section ol {
+            margin-bottom: 1.5rem;
+            padding-left: 1.5rem;
+        }
+        
+        .content-section li {
+            margin-bottom: 0.5rem;
+            line-height: 1.6;
+        }
+        
+        /* Card layout for models */
+        .model-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .model-card {
+            background-color: var(--white-color);
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e0e0e0;
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .model-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .model-header {
+            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 1rem;
+            position: relative;
+        }
+        
+        .model-header h3 {
+            margin: 0;
+            font-size: 1.4rem;
+            color: white;
+        }
+        
+        .model-cost {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background-color: var(--dark-color);
+            color: white;
+            padding: 0.3rem 0.6rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .model-body {
+            padding: 1.5rem;
+        }
+        
+        .model-description {
+            margin-bottom: 1rem;
+            color: #666;
+        }
+        
+        .model-features {
+            padding-left: 1.2rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .model-features li {
+            margin-bottom: 0.5rem;
+        }
+        
+        .model-endpoint {
+            background-color: #f0f2f5;
+            padding: 0.7rem;
+            border-radius: 4px;
+            font-family: monospace;
+            margin-bottom: 1rem;
+        }
+        
+        /* Info boxes */
+        .info-box {
+            display: flex;
+            background-color: #e7f5ff;
+            border-left: 4px solid #1971c2;
+            padding: 1.5rem;
+            border-radius: 6px;
+            margin-bottom: 2rem;
+        }
+        
+        .info-box-icon {
+            font-size: 1.8rem;
+            color: #1971c2;
+            margin-right: 1.5rem;
+        }
+        
+        .info-box-content h4 {
+            margin-bottom: 0.5rem;
+            color: #1971c2;
+        }
+        
+        .info-box-content p, .info-box-content li {
+            color: #495057;
+        }
+        
+        /* Footer */
+        .footer {
+            background-color: var(--dark-color);
+            color: var(--white-color);
+            text-align: center;
+            padding: 2rem;
+            margin-top: 3rem;
+            margin-left: var(--sidebar-width);
+        }
+        
+        .footer p {
+            margin-bottom: 1rem;
+        }
+        
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+        }
+        
+        .social-link {
+            color: var(--white-color);
+            font-size: 1.5rem;
+            transition: color 0.3s;
+        }
+        
+        .social-link:hover {
+            color: var(--accent-color);
+        }
+        
+        /* Download button */
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background-color 0.3s, transform 0.2s;
+            margin-bottom: 2rem;
+        }
+        
+        .download-btn i {
+            margin-right: 0.5rem;
+        }
+        
+        .download-btn:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+        
+        /* Responsive styles */
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+                box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+                z-index: 1001;
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .footer {
+                margin-left: 0;
+            }
+            
+            .menu-toggle {
+                display: block;
+            }
+            
+            .model-cards {
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .header {
+                padding: 0 1rem;
+            }
+            
+            .nav-item:not(.swagger-btn) {
+                display: none;
+            }
+            
+            .model-cards {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Dark overlay when sidebar is active on mobile */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        
+        @media (max-width: 992px) {
+            .sidebar-overlay.active {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <img src="/static/images/Telesure-logo.png" alt="TIH AI API Platform Logo" style="height: 40px; margin-right: 0.5rem;">
+            <h1>AI API Platform</h1>
+        </div>
+        <nav class="nav">
+            <div class="menu-toggle" id="menu-toggle">
+                <i class="fas fa-bars"></i>
+            </div>
+            <a href="/" class="nav-item">
+                <i class="fas fa-home"></i>Home
+            </a>
+            <a href="/docs/getting_started" class="nav-item">
+                <i class="fas fa-rocket"></i>Getting Started
+            </a>
+            <a href="/templates/docs/faq.html" class="nav-item">
+                <i class="fas fa-question-circle"></i>FAQ
+            </a>
+            <a href="/apidocs/" class="nav-item swagger-btn">
+                <i class="fas fa-book"></i>Swagger
+            </a>
+        </nav>
+    </header>
+    
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    
+    <aside class="sidebar">
+        <div class="sidebar-category">Main</div>
+        <a href="/" class="sidebar-link">
+            <i class="fas fa-home"></i> Home
+        </a>
+        <a href="/apidocs/" class="sidebar-link">
+            <i class="fas fa-book"></i> API Documentation
+        </a>
+        <a href="/docs/getting_started" class="sidebar-link">
+            <i class="fas fa-rocket"></i> Getting Started
+        </a>
+        
+        <!--SIDEBAR - ENDPOINTS -->
+        <div class="sidebar-category">Endpoints</div>
+        <a href="/docs/token_services" class="sidebar-link">
+            <i class="fas fa-key"></i> Token Services
+        </a>
+        <a href="/docs/balance_management" class="sidebar-link">
+            <i class="fas fa-wallet"></i> Balance Management
+        </a>
+        <a href="/docs/llm" class="sidebar-link">
+            <i class="fas fa-robot"></i> Language Models
+        </a>
+        <a href="/docs/image_generation" class="sidebar-link">
+            <i class="fas fa-image"></i> Image Generation
+        </a>
+        <a href="/templates/docs/speech-services.html" class="sidebar-link active">
+            <i class="fas fa-microphone"></i> Speech Services
+        </a>
+        <a href="/templates/docs/file-management.html" class="sidebar-link">
+            <i class="fas fa-file-alt"></i> File Management
+        </a>
+        <a href="/templates/docs/document-intelligence.html" class="sidebar-link">
+            <i class="fas fa-file-search"></i> Document Intelligence
+        </a>
+        <a href="/templates/docs/rag-query.html" class="sidebar-link">
+            <i class="fas fa-search"></i> RAG Query
+        </a>
+        
+        <div class="sidebar-category">Resources</div>
+        <a href="/templates/docs/faq.html" class="sidebar-link">
+            <i class="fas fa-question-circle"></i> FAQ
+        </a>
+        <a href="/templates/docs/rate-limits.html" class="sidebar-link">
+            <i class="fas fa-tachometer-alt"></i> Rate Limits
+        </a>
+        <a href="/templates/docs/changelog.html" class="sidebar-link">
+            <i class="fas fa-history"></i> Changelog
+        </a>
+    </aside>
+    
+    <main class="main-content">
+        <section class="content-section">
+            <h2>Speech Services</h2>
+            
+            <p>Our API platform provides powerful speech-to-text conversion services using Microsoft's advanced speech recognition technology. These services enable you to transcribe audio content accurately and efficiently, with options for enhanced features like speaker diarization.</p>
+            
+            <a href="/static/files/ai-api-postman-collection.json" class="download-btn">
+                <i class="fas fa-download"></i> Download Postman Collection
+            </a>
+            
+            <div class="info-box">
+                <div class="info-box-icon"><i class="fas fa-info-circle"></i></div>
+                <div class="info-box-content">
+                    <h4>Authentication Required</h4>
+                    <p>All speech services endpoints require authentication using a token. You must include your token in the <code>X-Token</code> header for all requests.</p>
+                    <p>See the <a href="/docs/token_services">Token Services</a> documentation for details on token generation.</p>
+                </div>
+            </div>
+            
+            <h3>Available Services</h3>
+            
+            <div class="model-cards">
+                <div class="model-card">
+                    <div class="model-header">
+                        <h3>Basic Speech-to-Text</h3>
+                        <span class="model-cost">1 credit</span>
+                    </div>
+                    <div class="model-body">
+                        <p class="model-description">Convert audio recordings to text using Microsoft's high-accuracy speech recognition technology.</p>
+                        <ul class="model-features">
+                            <li>High-accuracy transcription</li>
+                            <li>Multiple language support</li>
+                            <li>Profanity filtering options</li>
+                        </ul>
+                        <div class="model-endpoint">POST /speech/stt</div>
+                    </div>
+                </div>
+                
+                <div class="model-card">
+                    <div class="model-header">
+                        <h3>Enhanced Speech-to-Text with Diarization</h3>
+                        <span class="model-cost">3 credits</span>
+                    </div>
+                    <div class="model-body">
+                        <p class="model-description">Advanced transcription with speaker identification and timestamps, perfect for meetings and interviews.</p>
+                        <ul class="model-features">
+                            <li>Speaker identification (Speaker 1, Speaker 2, etc.)</li>
+                            <li>Accurate timestamps for each speaker turn</li>
+                            <li>AI-enhanced formatting with natural paragraph breaks</li>
+                            <li>Handles long audio recordings with automatic chunking</li>
+                        </ul>
+                        <div class="model-endpoint">POST /speech/stt_diarize</div>
+                    </div>
+                </div>
+            </div>
+            
+            <h3>How It Works</h3>
+            
+            <p>Our speech services work in conjunction with our file management system to process audio files:</p>
+            
+            <ol>
+                <li>First, upload your audio file using the <code>/file</code> endpoint</li>
+                <li>Receive a <code>file_id</code> for your uploaded audio</li>
+                <li>Submit this <code>file_id</code> to the appropriate speech service endpoint</li>
+                <li>Receive the transcription results</li>
+            </ol>
+            
+            <p>The uploaded file is automatically deleted after processing to avoid storage bloat.</p>
+            
+            <h3>File Format Requirements</h3>
+            
+            <ul>
+                <li><strong>Supported formats:</strong> WAV, MP3, M4A, FLAC, OGG</li>
+                <li><strong>Maximum file size:</strong> 100MB</li>
+                <li><strong>Recommended sampling rate:</strong> 16kHz or higher</li>
+                <li><strong>Channels:</strong> Mono or stereo (diarization works best with clear audio)</li>
+            </ul>
+            
+            <h3>Example Usage</h3>
+            
+            <h4>Step 1: Upload Audio File</h4>
+            <div class="code-block">
+POST /file
+Header: X-Token: your_token_here
+Content-Type: multipart/form-data
+
+Form data:
+- files: [your_audio_file.mp3]
+
+Response:
+{
+  "message": "Files uploaded successfully",
+  "uploaded_files": [
+    {
+      "file_name": "meeting_recording.mp3",
+      "file_id": "a1b2c3d4-5678-90ab-cdef-1234567890ab",
+      "content_type": "audio/mpeg"
+    }
+  ]
+}
+            </div>
+            
+            <h4>Step 2: Submit for Transcription with Diarization</h4>
+            <div class="code-block">
+POST /speech/stt_diarize
+Header: X-Token: your_token_here
+Content-Type: application/json
+
+{
+  "file_id": "a1b2c3d4-5678-90ab-cdef-1234567890ab"
+}
+
+Response:
+{
+  "message": "Audio processed successfully",
+  "raw_transcript": "Hello everyone welcome to our weekly meeting. I'd like to discuss our progress on the Henderson project. Sure, I can provide an update on that. We've completed the initial analysis and are now moving into the implementation phase.",
+  "enhanced_transcript": "[00:00:00] Speaker 1: Hello everyone welcome to our weekly meeting. I'd like to discuss our progress on the Henderson project.\n\n[00:00:07] Speaker 2: Sure, I can provide an update on that. We've completed the initial analysis and are now moving into the implementation phase."
+}
+            </div>
+            
+            <div class="info-box">
+                <div class="info-box-icon"><i class="fas fa-lightbulb"></i></div>
+                <div class="info-box-content">
+                    <h4>Pro Tip</h4>
+                    <p>For best results with speaker diarization:</p>
+                    <ul>
+                        <li>Use high-quality audio recordings with minimal background noise</li>
+                        <li>Ensure speakers don't talk over each other frequently</li>
+                        <li>For longer recordings (>30 minutes), consider splitting the file into smaller segments</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <p>For complete details and examples, please refer to our <a href="/apidocs/">Swagger Documentation</a>.</p>
+        </section>
+    </main>
+    
+    <footer class="footer">
+        <p>© 2025 TIH AI API Portal. Powered by the TIH AI Center of Excellence.</p>
+        <div class="social-links">
+            <a href="#" class="social-link"><i class="fab fa-github"></i></a>
+            <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
+            <a href="#" class="social-link"><i class="fab fa-linkedin"></i></a>
+        </div>
+    </footer>
+    
+    <script>
+        // Toggle sidebar on mobile
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuToggle = document.getElementById('menu-toggle');
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            
+            menuToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('active');
+                overlay.classList.toggle('active');
+            });
+            
+            overlay.addEventListener('click', function() {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            });
+            
+            // Highlight current page in sidebar
+            const currentPage = window.location.pathname;
+            const sidebarLinks = document.querySelectorAll('.sidebar-link');
+            
+            sidebarLinks.forEach(link => {
+                if (link.getAttribute('href') === currentPage) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
