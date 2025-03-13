@@ -3,90 +3,625 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>API Documentation</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <title>AI API Platform</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        @keyframes pulse-border {
-            0% {
-                box-shadow: 0 0 10px 2px rgba(0, 255, 255, 0.5);
-            }
-            50% {
-                box-shadow: 0 0 20px 4px rgba(0, 255, 255, 1);
-            }
-            100% {
-                box-shadow: 0 0 10px 2px rgba(0, 255, 255, 0.5);
-            }
+        :root {
+            --primary-color: #4a6fe3;
+            --secondary-color: #6c63ff;
+            --dark-color: #2a2c3b;
+            --light-color: #f5f6fa;
+            --text-color: #333;
+            --white-color: #ffffff;
+            --accent-color: #00d4ff;
+            --sidebar-width: 280px;
+            --header-height: 60px;
         }
-        .pulse-border {
-            animation: pulse-border 2s infinite;
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
+        
         body {
+            background-color: var(--light-color);
+            color: var(--text-color);
             position: relative;
             min-height: 100vh;
+            overflow-x: hidden;
         }
+        
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('/static/images/ai-background.gif') center center;
+            background-size: cover;
+            opacity: 0.05;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
         .header {
-            background-color: #F4A900;
-            color: #311C09;
-            font-weight: bold;
+            background-color: var(--dark-color);
+            color: var(--white-color);
+            padding: 0 2rem;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: var(--header-height);
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        .header a {
-            color: #311C09;
-            font-weight: bold;
+        
+        .logo {
+            display: flex;
+            align-items: center;
         }
-        .header a:hover {
-            color: #000000;
+        
+        .logo i {
+            font-size: 1.8rem;
+            margin-right: 0.5rem;
+            color: var(--accent-color);
         }
-        .header .active {
-            color: #F4A900;
-            background-color: #311C09;
+        
+        .logo h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+        
+        .nav {
+            display: flex;
+            align-items: center;
+        }
+        
+        .nav-item {
+            margin-left: 1.5rem;
+            color: var(--white-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+            display: flex;
+            align-items: center;
+        }
+        
+        .nav-item:hover {
+            color: var(--accent-color);
+        }
+        
+        .nav-item i {
+            margin-right: 0.5rem;
+        }
+        
+        .swagger-btn {
+            background-color: var(--accent-color);
+            color: var(--dark-color);
             padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
+            border-radius: 4px;
+            font-weight: 600;
+            transition: background-color 0.3s, transform 0.2s;
         }
-        .header .faq-button {
-            background-color: #D9534F;
-            color: #FFFFFF;
-            font-weight: bold;
-            border-radius: 0.5rem;
-            padding: 0.5rem 1rem;
+        
+        .swagger-btn:hover {
+            background-color: #00b8e6;
+            transform: translateY(-2px);
+            color: var(--dark-color);
         }
-        .header .faq-button:hover {
-            background-color: #C9302C;
+        
+        /* Mobile menu toggle */
+        .menu-toggle {
+            display: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            top: var(--header-height);
+            left: 0;
+            height: calc(100vh - var(--header-height));
+            width: var(--sidebar-width);
+            background-color: var(--white-color);
+            border-right: 1px solid rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+            z-index: 900;
+            padding: 1.5rem 0;
+            transition: transform 0.3s ease-in-out;
+        }
+        
+        .sidebar-category {
+            padding: 0.5rem 1.5rem;
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar-link {
+            display: block;
+            padding: 0.7rem 1.5rem;
+            padding-left: 2.5rem;
+            color: var(--text-color);
+            text-decoration: none;
+            transition: background-color 0.2s, color 0.2s;
+            font-size: 0.95rem;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar-link:hover {
+            background-color: rgba(106, 100, 255, 0.05);
+            color: var(--primary-color);
+        }
+        
+        .sidebar-link.active {
+            color: var(--primary-color);
+            background-color: rgba(106, 100, 255, 0.08);
+            border-left: 3px solid var(--primary-color);
+        }
+        
+        .sidebar-link i {
+            margin-right: 0.5rem;
+            width: 20px;
+            text-align: center;
+        }
+        
+        .sidebar-submenu {
+            margin-left: 1rem;
+        }
+        
+        .sidebar-submenu .sidebar-link {
+            padding-left: 3rem;
+            font-size: 0.9rem;
+        }
+        
+        /* Main content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            margin-top: var(--header-height);
+            padding: 2rem;
+            min-height: calc(100vh - var(--header-height));
+        }
+        
+        /* Hero */
+        .hero {
+            background: linear-gradient(135deg, var(--dark-color) 0%, #3a3d50 100%);
+            color: var(--white-color);
+            padding: 3rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .hero h2 {
+            font-size: 2.3rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, var(--white-color), var(--accent-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .hero p {
+            font-size: 1.1rem;
+            max-width: 800px;
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+        
+        .cta-btn {
+            display: inline-block;
+            background-color: var(--accent-color);
+            color: var(--dark-color);
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        
+        .cta-btn:hover {
+            background-color: #00b8e6;
+            transform: translateY(-2px);
+        }
+        
+        /* Features */
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+        
+        .feature-card {
+            background-color: var(--white-color);
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .feature-icon {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+        
+        .feature-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--dark-color);
+        }
+        
+        .feature-card p {
+            color: #666;
+            line-height: 1.6;
+        }
+        
+        /* Content sections */
+        .content-section {
+            background-color: var(--white-color);
+            border-radius: 8px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .content-section h2 {
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            color: var(--dark-color);
+            border-bottom: 2px solid var(--light-color);
+            padding-bottom: 0.5rem;
+        }
+        
+        .content-section h3 {
+            font-size: 1.3rem;
+            margin: 1.5rem 0 1rem;
+            color: var(--primary-color);
+        }
+        
+        .content-section p {
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+        
+        .content-section ul, 
+        .content-section ol {
+            margin-bottom: 1.5rem;
+            padding-left: 1.5rem;
+        }
+        
+        .content-section li {
+            margin-bottom: 0.5rem;
+            line-height: 1.6;
+        }
+        
+        /* Download button */
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background-color 0.3s, transform 0.2s;
+            margin-bottom: 2rem;
+        }
+        
+        .download-btn i {
+            margin-right: 0.5rem;
+        }
+        
+        .download-btn:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+        
+        /* Footer */
+        .footer {
+            background-color: var(--dark-color);
+            color: var(--white-color);
+            text-align: center;
+            padding: 2rem;
+            margin-top: 3rem;
+            margin-left: var(--sidebar-width);
+        }
+        
+        .footer p {
+            margin-bottom: 1rem;
+        }
+        
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+        }
+        
+        .social-link {
+            color: var(--white-color);
+            font-size: 1.5rem;
+            transition: color 0.3s;
+        }
+        
+        .social-link:hover {
+            color: var(--accent-color);
+        }
+        
+        /* Responsive styles */
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+                box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+                z-index: 1001;
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .footer {
+                margin-left: 0;
+            }
+            
+            .menu-toggle {
+                display: block;
+            }
+            
+            .features {
+                grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .header {
+                padding: 0 1rem;
+            }
+            
+            .nav-item:not(.swagger-btn) {
+                display: none;
+            }
+            
+            .hero {
+                padding: 2rem;
+            }
+            
+            .hero h2 {
+                font-size: 1.8rem;
+            }
+        }
+        
+        /* Dark overlay when sidebar is active on mobile */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        
+        @media (max-width: 992px) {
+            .sidebar-overlay.active {
+                display: block;
+            }
         }
     </style>
 </head>
-<body class="bg-gray-900 text-gray-200">
-    <div class="fixed top-0 left-0 w-full h-full bg-cover bg-center z-0" style="background-image: url('assets/images/main_background.gif');"></div>
-    <header class="header fixed w-full z-10 shadow-md">
-        <div class="container mx-auto flex justify-between items-center py-4 px-6">
-            <div class="text-lg font-semibold">LELAPA AI</div>
-            <nav class="space-x-4">
-                <a href="#" class="hover:text-black">HOME</a>
-                <a href="#" class="hover:text-black">ABOUT</a>
-                <a href="#" class="active hover:text-black">VULAVULA</a>
-                <a href="#" class="hover:text-black">PRICING</a>
-                <a href="#" class="hover:text-black">RESOURCES</a>
-                <a href="#" class="hover:text-black">CONTACT</a>
-                <a href="#" class="faq-button">FAQ</a>
-            </nav>
+<body>
+    <header class="header">
+        <div class="logo">
+            <i class="fas fa-brain"></i>
+            <h1>AI API Platform</h1>
         </div>
+        <nav class="nav">
+            <div class="menu-toggle" id="menu-toggle">
+                <i class="fas fa-bars"></i>
+            </div>
+            <a href="/templates/index.html" class="nav-item">
+                <i class="fas fa-home"></i>Home
+            </a>
+            <a href="/templates/docs/getting-started.html" class="nav-item">
+                <i class="fas fa-rocket"></i>Get Started
+            </a>
+            <a href="/templates/docs/faq.html" class="nav-item">
+                <i class="fas fa-question-circle"></i>FAQ
+            </a>
+            <a href="/apidocs/" class="nav-item swagger-btn">
+                <i class="fas fa-book"></i>Swagger
+            </a>
+        </nav>
     </header>
-    <div class="relative container mx-auto p-8 mt-32 bg-gray-800 bg-opacity-90 rounded-lg pulse-border z-20" style="max-width: 800px;">
-        <h1 class="text-4xl font-bold text-center mb-8">Welcome to the API Documentation</h1>
-        <p class="text-lg mb-8">This is the landing page for the API documentation.</p>
-        <section class="mb-8">
-            <h2 class="text-2xl font-semibold text-center mb-4">About the API Framework</h2>
-            <p class="text-lg text-justify">Our API framework allows you to seamlessly integrate AI capabilities into your applications. It provides a robust set of endpoints for various AI functionalities.</p>
+    
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    
+    <aside class="sidebar">
+        <div class="sidebar-category">Main</div>
+        <a href="/templates/index.html" class="sidebar-link active">
+            <i class="fas fa-home"></i> Home
+        </a>
+        <a href="/templates/docs/index.html" class="sidebar-link">
+            <i class="fas fa-book"></i> API Documentation
+        </a>
+        <a href="/templates/docs/getting-started.html" class="sidebar-link">
+            <i class="fas fa-rocket"></i> Getting Started
+        </a>
+        
+        <div class="sidebar-category">Endpoints</div>
+        <a href="/templates/docs/token-services.html" class="sidebar-link">
+            <i class="fas fa-key"></i> Token Services
+        </a>
+        <a href="/templates/docs/balance-management.html" class="sidebar-link">
+            <i class="fas fa-wallet"></i> Balance Management
+        </a>
+        <a href="/templates/docs/llm.html" class="sidebar-link">
+            <i class="fas fa-robot"></i> Language Models
+        </a>
+        <a href="/templates/docs/image-generation.html" class="sidebar-link">
+            <i class="fas fa-image"></i> Image Generation
+        </a>
+        <a href="/templates/docs/speech-services.html" class="sidebar-link">
+            <i class="fas fa-microphone"></i> Speech Services
+        </a>
+        <a href="/templates/docs/file-management.html" class="sidebar-link">
+            <i class="fas fa-file-alt"></i> File Management
+        </a>
+        <a href="/templates/docs/document-intelligence.html" class="sidebar-link">
+            <i class="fas fa-file-search"></i> Document Intelligence
+        </a>
+        <a href="/templates/docs/rag-query.html" class="sidebar-link">
+            <i class="fas fa-search"></i> RAG Query
+        </a>
+        
+        <div class="sidebar-category">Resources</div>
+        <a href="/templates/docs/faq.html" class="sidebar-link">
+            <i class="fas fa-question-circle"></i> FAQ
+        </a>
+        <a href="/templates/docs/rate-limits.html" class="sidebar-link">
+            <i class="fas fa-tachometer-alt"></i> Rate Limits
+        </a>
+        <a href="/templates/docs/changelog.html" class="sidebar-link">
+            <i class="fas fa-history"></i> Changelog
+        </a>
+    </aside>
+    
+    <main class="main-content">
+        <section class="hero">
+            <h2>Powerful AI APIs for Your Applications</h2>
+            <p>Our comprehensive suite of AI APIs empowers developers to integrate state-of-the-art language models, image generation, speech services, and document intelligence into their applications. With flexible authentication and straightforward integration, you can start building intelligent features in minutes.</p>
+            <a href="/templates/docs/getting-started.html" class="cta-btn">Get Started</a>
+            <a href="/apidocs/" class="cta-btn" style="margin-left: 1rem; background-color: #fff; color: var(--dark-color);">Swagger Docs</a>
         </section>
-        <section class="mb-8">
-            <h2 class="text-2xl font-semibold text-center mb-4">How to Use</h2>
-            <p class="text-lg text-justify">To use the API, you need to send HTTP requests to the endpoints provided. Each endpoint requires specific parameters and returns responses in JSON format.</p>
-            <pre class="bg-gray-700 p-4 rounded-lg overflow-auto"><code class="text-green-400">GET /api/v1/resource?param=value</code></pre>
+        
+        <a href="/static/files/ai-api-postman-collection.json" class="download-btn">
+            <i class="fas fa-download"></i> Download Postman Collection
+        </a>
+        
+        <section class="features">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-comments"></i>
+                </div>
+                <h3>Language Models</h3>
+                <p>Access powerful language models like GPT-4o, Deepseek, Llama, and more for text generation, content creation, and deep reasoning tasks.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-image"></i>
+                </div>
+                <h3>Image Generation</h3>
+                <p>Create stunning images with DALL-E 3 and Stable Diffusion Ultra from text prompts for creative content and design.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-microphone"></i>
+                </div>
+                <h3>Speech Services</h3>
+                <p>Convert speech to text with advanced options including speaker diarization for multi-speaker transcription.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-file-alt"></i>
+                </div>
+                <h3>Document Intelligence</h3>
+                <p>Extract insights, summarize content, and process information from documents across various formats.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-key"></i>
+                </div>
+                <h3>Flexible Authentication</h3>
+                <p>Secure your API access with token-based authentication, including token generation and refresh capabilities.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <h3>Usage Monitoring</h3>
+                <p>Track your API usage, monitor balance consumption, and get detailed statistics for your account.</p>
+            </div>
         </section>
-        <section>
-            <h2 class="text-2xl font-semibold text-center mb-4">Register for an API Key</h2>
-            <p class="text-lg text-justify">To access the API, you need to register for an API key. Click the link below to register:</p>
-            <a href="https://forms.office.com/Pages/ResponsePage.aspx?id=uM6zjUZ0vEiLtJeAPFJ6N2xrQvNFNxxGn2IZUHwM9CxUQUkzUTlURE9JR0c0UVJGN0Q2RTRCU0pYVC4u" class="inline-block mt-4 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-500">MS Registration Form</a>
+        
+        <section class="content-section">
+            <h2>Getting Started</h2>
+            <p>Start building with our AI API Platform in just a few steps:</p>
+            
+            <ol>
+                <li><strong>Sign up for an account</strong> - Request your API key to access our services.</li>
+                <li><strong>Generate your first token</strong> - Using your API key, generate an authentication token to access the services.</li>
+                <li><strong>Make your first API call</strong> - Start with a simple request to one of our language models or other services.</li>
+                <li><strong>Monitor your usage</strong> - Keep track of your API calls and credit consumption through our balance management endpoints.</li>
+            </ol>
+            
+            <p>Check out our <a href="/templates/docs/getting-started.html">detailed getting started guide</a> for more information.</p>
         </section>
-    </div>
+    </main>
+    
+    <footer class="footer">
+        <p>© 2025 AI API Platform. All rights reserved.</p>
+        <div class="social-links">
+            <a href="#" class="social-link"><i class="fab fa-github"></i></a>
+            <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
+            <a href="#" class="social-link"><i class="fab fa-linkedin"></i></a>
+        </div>
+    </footer>
+    
+    <script>
+        // Toggle sidebar on mobile
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuToggle = document.getElementById('menu-toggle');
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            
+            menuToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('active');
+                overlay.classList.toggle('active');
+            });
+            
+            overlay.addEventListener('click', function() {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            });
+            
+            // Highlight current page in sidebar
+            const currentPage = window.location.pathname;
+            const sidebarLinks = document.querySelectorAll('.sidebar-link');
+            
+            sidebarLinks.forEach(link => {
+                if (link.getAttribute('href') === currentPage) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
 </body>
 </html>
