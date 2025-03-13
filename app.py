@@ -53,24 +53,37 @@ swagger = Swagger(app, config=swagger_config, template=swagger_template)
 token_service = TokenService()
 
 # HTML PAGES
+
+## HOME/LANDING
 @app.route('/')
 @app.route('/home')
 def home():
     return render_template('index.html')
 
+## GETTING STARTED
 @app.route('/docs/getting_started')
 def getting_started():
     return render_template('docs/getting_started.html')
 
+## TOKEN SERVICES
 @app.route('/docs/token_services')
 def token_services():
     return render_template('docs/token_services.html')
 
+## BALANCE MANAGEMENT
+@app.route('/docs/balance_management')
+def balance_management():
+    return render_template('docs/balance_management.html')
+
+## LLMS
 @app.route('/docs/llm')
 def llm():
     return render_template('docs/llm.html')
 
-
+## IMAGE_GENERATION
+@app.route('/docs/image_generation')
+def image_generation():
+    return render_template('docs/image_generation.html')
 
 # TOKEN SERVICE ENDPOINTS
 ## GET TOKEN

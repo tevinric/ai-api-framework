@@ -409,7 +409,7 @@
     <header class="header">
         <div class="logo">
             <img src="/static/images/Telesure-logo.png" alt="TIH AI API Platform Logo" style="height: 40px; margin-right: 0.5rem;">
-            <h1>TIH AI API Platform</h1>
+            <h1>AI API Platform</h1>
         </div>
         <nav class="nav">
             <div class="menu-toggle" id="menu-toggle">
@@ -449,13 +449,13 @@
         <a href="{{ url_for('token_services') }}" class="sidebar-link">
             <i class="fas fa-key"></i> Token Services
         </a>
-        <a href="/templates/docs/balance-management.html" class="sidebar-link">
+        <a href="{{ url_for('balance_management') }}" class="sidebar-link">
             <i class="fas fa-wallet"></i> Balance Management
         </a>
         <a href="{{ url_for('llm') }}" class="sidebar-link">
             <i class="fas fa-robot"></i> Language Models
         </a>
-        <a href="/templates/docs/image-generation.html" class="sidebar-link">
+        <a href="{{ url_for('image_generation') }}" class="sidebar-link">
             <i class="fas fa-image"></i> Image Generation
         </a>
         <a href="/templates/docs/speech-services.html" class="sidebar-link">
