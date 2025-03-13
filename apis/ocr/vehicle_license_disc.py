@@ -238,6 +238,7 @@ def extract_vehicle_data(result, token):
                             barcode_json["input_tokens"] = 0
                             barcode_json["completion_tokens"] = 0
                             barcode_json["output_tokens"] = 0
+                            barcode_json["extraction_method"] = "barcode analysis"
                             return barcode_json
                             
         # If no barcode found or valid barcode data extracted, fall back to OCR + GPT
@@ -259,6 +260,7 @@ def extract_vehicle_data(result, token):
             # Add document processing information
             vehicle_json["num_documents_processed"] = 1
             vehicle_json["num_pages_processed"] = len(result.pages)
+            vehicle_json["extraction_method"] = "image ocr"
             
         return vehicle_json
     except Exception as ex:
@@ -313,10 +315,10 @@ def vehicle_license_disc_route():
               description: Vehicle manufacturer
             veh_model:
               type: string
-              description: Vehicle model (may be empty if extracted from OCR)
+              description: Vehicle model
             veh_color:
               type: string
-              description: Vehicle color (may be empty if extracted from OCR)
+              description: Vehicle color
             veh_vin_no:
               type: string
               description: Vehicle Identification Number
@@ -326,6 +328,9 @@ def vehicle_license_disc_route():
             veh_expiry:
               type: string
               description: License expiry date
+            extraction_method:
+              type: string
+              description: Method used to extract the data (barcode analysis or image ocr)
             num_documents_processed:
               type: integer
               description: Number of documents processed
