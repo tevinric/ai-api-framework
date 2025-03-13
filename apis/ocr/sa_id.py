@@ -129,7 +129,7 @@ def create_json_barcode(raw_barcode):
         logger.error(f"Error processing barcode: {str(ex)}")
         return None
 
-def create_json_gpt(text):
+def create_json_gpt(text, token):
     """Extract ID information using GPT when barcode is unavailable"""
     if not text or len(text.strip()) == 0:
         logger.warning("No text content for GPT processing")
@@ -143,42 +143,45 @@ def create_json_gpt(text):
             Please ensure that the resulting JSON contains only plain characters and no special characters.
         """
 
-        assistant_prompt = """
-            You are an OCR extraction assistant, which needs to extract data from a South African Identity Documents.
-            Please return the data in a specified JSON format.
-        """
+        # Call the internal gpt-4o-mini API endpoint
+        llm_endpoint = f"{request.url_root.rstrip('/')}/llm/gpt-4o-mini"
         
-        user_prompt = f"""    
-            Please ensure that the resulting JSON contains only plain characters and no special characters from this text: '''{text}'''
-            Respond in the following JSON format: 
-            "Surname": "answer",
-            "Names": "answer",
-            "Sex": "answer",
-            "Nationality": "answer",
-            "RSA Identity Number": "answer",
-            "Date of Birth": "answer",
-            "Country of Birth": "answer"
-        """
-
-        client = get_openai_client()
-        if not client:
-            logger.error("Failed to create OpenAI client")
-            return None
+        payload = {
+            "system_prompt": system_prompt,
+            "user_input": f"""    
+                Please ensure that the resulting JSON contains only plain characters and no special characters from this text: '''{text}'''
+                Respond in the following JSON format: 
+                "Surname": "answer",
+                "Names": "answer",
+                "Sex": "answer",
+                "Nationality": "answer",
+                "RSA Identity Number": "answer",
+                "Date of Birth": "answer",
+                "Country of Birth": "answer"
+            """,
+            "temperature": 0.25,
+            "json_output": True
+        }
         
-        response = client.chat.completions.create(
-            model="gpt-4o", 
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "assistant", "content": assistant_prompt}, 
-                {"role": "user", "content": user_prompt}
-            ],
-            temperature=0.25
+        logger.info("Calling gpt-4o-mini API for ID data extraction")
+        llm_response = requests.post(
+            llm_endpoint,
+            headers={'X-Token': token},
+            json=payload
         )
-
-        result_content = response.choices[0].message.content
+        
+        if llm_response.status_code != 200:
+            logger.error(f"GPT API error: {llm_response.text}")
+            return None
+            
+        llm_result = llm_response.json()
+        result_content = llm_result.get("message", "{}")
         
         # Ensure the content is valid JSON
-        results = json.loads(result_content)
+        if isinstance(result_content, str):
+            results = json.loads(result_content)
+        else:
+            results = result_content  # Already a JSON object
         
         id_json = {
             "surname": results.get("Surname", ""), 
@@ -188,14 +191,19 @@ def create_json_gpt(text):
             "identity_number": results.get("RSA Identity Number", ""),
             "date_of_birth": results.get("Date of Birth", ""),
             "country_of_birth": results.get("Country of Birth", ""),
-        }  
+        }
             
+        # Store LLM token usage
+        id_json["input_tokens"] = llm_result.get("input_tokens", 0)
+        id_json["completion_tokens"] = llm_result.get("completion_tokens", 0)
+        id_json["output_tokens"] = llm_result.get("output_tokens", 0)
+        
         return id_json
     except Exception as ex:
         logger.error(f"Error processing text with GPT: {str(ex)}")
         return None
     
-def extract_id_data(result):
+def extract_id_data(result, token):
     """Extract barcode and/or content from South African ID document"""
     if not result:
         logger.error("No result from Document Intelligence")
@@ -209,6 +217,12 @@ def extract_id_data(result):
                     if hasattr(barcode, 'kind') and barcode.kind == DocumentBarcodeKind.PDF417:
                         barcode_json = create_json_barcode(barcode.value)
                         if barcode_json:
+                            # Add document processing information
+                            barcode_json["num_documents_processed"] = 1
+                            barcode_json["num_pages_processed"] = len(result.pages)
+                            barcode_json["input_tokens"] = 0
+                            barcode_json["completion_tokens"] = 0
+                            barcode_json["output_tokens"] = 0
                             return barcode_json
                             
         # If no barcode found or valid barcode data extracted, fall back to OCR + GPT
@@ -224,7 +238,14 @@ def extract_id_data(result):
             return None
             
         cleaned_text = clean_text(" ".join(extracted_text))
-        return create_json_gpt(cleaned_text)
+        id_json = create_json_gpt(cleaned_text, token)
+        
+        if id_json:
+            # Add document processing information
+            id_json["num_documents_processed"] = 1
+            id_json["num_pages_processed"] = len(result.pages)
+            
+        return id_json
     except Exception as ex:
         logger.error(f"Error extracting ID data: {str(ex)}")
         return None
@@ -281,6 +302,21 @@ def sa_id_ocr_route():
             country_of_birth:
               type: string
               description: Country where ID holder was born
+            num_documents_processed:
+              type: integer
+              description: Number of documents processed
+            num_pages_processed:
+              type: integer
+              description: Number of pages processed
+            input_tokens:
+              type: integer
+              description: Number of input tokens consumed (if GPT was used)
+            completion_tokens:
+              type: integer
+              description: Number of completion tokens consumed (if GPT was used)
+            output_tokens:
+              type: integer
+              description: Total number of tokens consumed (if GPT was used)
       400:
         description: Bad request
         schema:
@@ -433,7 +469,7 @@ def sa_id_ocr_route():
             }, 500)
         
         # Extract ID data from the document content
-        id_data = extract_id_data(extracted_content)
+        id_data = extract_id_data(extracted_content, token)
         
         if not id_data:
             return create_api_response({
@@ -453,4 +489,4 @@ def sa_id_ocr_route():
 
 def register_sa_id_ocr_routes(app):
     """Register SA ID OCR routes with the Flask app"""
-    app.route('/ocr/sa_id_card', methods=['POST'])(api_logger(check_balance(sa_id_ocr_route)))
+    app.route('/ocr/sa_id', methods=['POST'])(api_logger(check_balance(sa_id_ocr_route)))
