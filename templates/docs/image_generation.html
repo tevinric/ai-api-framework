@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Image Generation - AI API Platform</title>
-
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
@@ -208,6 +207,12 @@
             font-size: 1.3rem;
             margin: 1.5rem 0 1rem;
             color: var(--primary-color);
+        }
+        
+        .content-section h4 {
+            font-size: 1.1rem;
+            margin: 1.2rem 0 0.8rem;
+            color: var(--dark-color);
         }
         
         .content-section p {
@@ -437,3 +442,241 @@
                 display: block;
             }
         }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <img src="/static/images/Telesure-logo.png" alt="TIH AI API Platform Logo" style="height: 40px; margin-right: 0.5rem;">
+            <h1>AI API Platform</h1>
+        </div>
+        <nav class="nav">
+            <div class="menu-toggle" id="menu-toggle">
+                <i class="fas fa-bars"></i>
+            </div>
+            <a href="{{ url_for('home') }}" class="nav-item">
+                <i class="fas fa-home"></i>Home
+            </a>
+            <a href="{{ url_for('getting_started') }}" class="nav-item">
+                <i class="fas fa-rocket"></i>Getting Started
+            </a>
+            <a href="/templates/docs/faq.html" class="nav-item">
+                <i class="fas fa-question-circle"></i>FAQ
+            </a>
+            <a href="/apidocs/" class="nav-item swagger-btn">
+                <i class="fas fa-book"></i>Swagger
+            </a>
+        </nav>
+    </header>
+    
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    
+    <aside class="sidebar">
+        <div class="sidebar-category">Main</div>
+        <a href="{{ url_for('home') }}" class="sidebar-link">
+            <i class="fas fa-home"></i> Home
+        </a>
+        <a href="/apidocs/" class="sidebar-link">
+            <i class="fas fa-book"></i> API Documentation
+        </a>
+        <a href="{{ url_for('getting_started') }}" class="sidebar-link">
+            <i class="fas fa-rocket"></i> Getting Started
+        </a>
+        
+        <!--SIDEBAR - ENDPOINTS -->
+        <div class="sidebar-category">Endpoints</div>
+        <a href="{{ url_for('token_services') }}" class="sidebar-link">
+            <i class="fas fa-key"></i> Token Services
+        </a>
+        <a href="/templates/docs/balance-management.html" class="sidebar-link">
+            <i class="fas fa-wallet"></i> Balance Management
+        </a>
+        <a href="{{ url_for('llm') }}" class="sidebar-link">
+            <i class="fas fa-robot"></i> Language Models
+        </a>
+        <a href="/templates/docs/image-generation.html" class="sidebar-link active">
+            <i class="fas fa-image"></i> Image Generation
+        </a>
+        <a href="/templates/docs/speech-services.html" class="sidebar-link">
+            <i class="fas fa-microphone"></i> Speech Services
+        </a>
+        <a href="/templates/docs/file-management.html" class="sidebar-link">
+            <i class="fas fa-file-alt"></i> File Management
+        </a>
+        <a href="/templates/docs/document-intelligence.html" class="sidebar-link">
+            <i class="fas fa-file-search"></i> Document Intelligence
+        </a>
+        <a href="/templates/docs/rag-query.html" class="sidebar-link">
+            <i class="fas fa-search"></i> RAG Query
+        </a>
+        
+        <div class="sidebar-category">Resources</div>
+        <a href="/templates/docs/faq.html" class="sidebar-link">
+            <i class="fas fa-question-circle"></i> FAQ
+        </a>
+        <a href="/templates/docs/rate-limits.html" class="sidebar-link">
+            <i class="fas fa-tachometer-alt"></i> Rate Limits
+        </a>
+        <a href="/templates/docs/changelog.html" class="sidebar-link">
+            <i class="fas fa-history"></i> Changelog
+        </a>
+    </aside>
+    
+    <main class="main-content">
+        <section class="content-section">
+            <h2>Image Generation</h2>
+            
+            <p>Our API platform provides access to cutting-edge image generation models that can create high-quality images from text descriptions. These models are perfect for creative content generation, design exploration, and visual asset creation.</p>
+            
+            <a href="/static/files/ai-api-postman-collection.json" class="download-btn">
+                <i class="fas fa-download"></i> Download Postman Collection
+            </a>
+            
+            <div class="info-box">
+                <div class="info-box-icon"><i class="fas fa-info-circle"></i></div>
+                <div class="info-box-content">
+                    <h4>Authentication Required</h4>
+                    <p>All image generation endpoints require authentication using a token. You must include your token in the <code>X-Token</code> header for all requests.</p>
+                    <p>See the <a href="/templates/docs/token-services.html">Token Services</a> documentation for details on token generation.</p>
+                </div>
+            </div>
+            
+            <h3>Available Models</h3>
+            
+            <div class="model-cards">
+                <div class="model-card">
+                    <div class="model-header">
+                        <h3>DALL-E 3</h3>
+                        <span class="model-cost">3 credits</span>
+                    </div>
+                    <div class="model-body">
+                        <p class="model-description">OpenAI's most advanced image generation model, capable of creating detailed and accurate images from text prompts.</p>
+                        <ul class="model-features">
+                            <li>Exceptional text-to-image fidelity</li>
+                            <li>Advanced understanding of complex prompts</li>
+                            <li>Multiple size options including widescreen</li>
+                        </ul>
+                        <div class="model-endpoint">POST /image-generation/dalle3</div>
+                    </div>
+                </div>
+                
+                <div class="model-card">
+                    <div class="model-header">
+                        <h3>DALL-E 3 HD</h3>
+                        <span class="model-cost">5 credits</span>
+                    </div>
+                    <div class="model-body">
+                        <p class="model-description">High-definition version of DALL-E 3 for when you need maximum quality and detail in your generated images.</p>
+                        <ul class="model-features">
+                            <li>Higher resolution output</li>
+                            <li>Enhanced detail in complex scenes</li>
+                            <li>Improved texture rendering</li>
+                        </ul>
+                        <div class="model-endpoint">POST /image-generation/dalle3?deployment=dalle3-hd</div>
+                    </div>
+                </div>
+                
+                <div class="model-card">
+                    <div class="model-header">
+                        <h3>Stable Diffusion Ultra</h3>
+                        <span class="model-cost">2 credits</span>
+                    </div>
+                    <div class="model-body">
+                        <p class="model-description">A powerful open-source image generation model with excellent control and customization options.</p>
+                        <ul class="model-features">
+                            <li>Fine-grained control with negative prompts</li>
+                            <li>Deterministic generation with seed control</li>
+                            <li>Versatile style capabilities</li>
+                        </ul>
+                        <div class="model-endpoint">POST /image-generation/stable-diffusion-ultra</div>
+                    </div>
+                </div>
+            </div>
+            
+            <h3>Image Generation Parameters</h3>
+            <p>Our image generation endpoints support various parameters to customize your generated images:</p>
+            
+            <h4>DALL-E 3 Parameters</h4>
+            <ul>
+                <li><strong>prompt</strong> - Text description of the image to generate (required)</li>
+                <li><strong>deployment</strong> - Model deployment to use: dall-e-3 (default) or dalle3-hd</li>
+                <li><strong>size</strong> - Output image size: 1024x1024 (default), 1792x1024, or 1024x1792</li>
+                <li><strong>quality</strong> - Image quality: standard (default) or hd</li>
+                <li><strong>style</strong> - Image generation style: vivid (default) or natural</li>
+            </ul>
+            
+            <h4>Stable Diffusion Ultra Parameters</h4>
+            <ul>
+                <li><strong>prompt</strong> - Text description of the image to generate (required)</li>
+                <li><strong>negative_prompt</strong> - Text describing what to avoid in the generated image</li>
+                <li><strong>size</strong> - Output image size: 1024x1024 (default), 768x768, or 512x512</li>
+                <li><strong>output_format</strong> - Output format: png (default) or jpeg</li>
+                <li><strong>seed</strong> - Seed for reproducible generation, -1 (default) for random seed</li>
+            </ul>
+            
+            <h3>Model Selection Guide</h3>
+            <p>When choosing which model to use, consider the following factors:</p>
+            <ul>
+                <li><strong>Image quality requirements</strong> - For maximum quality, use DALL-E 3 HD</li>
+                <li><strong>Creative control</strong> - For more control over generation, use Stable Diffusion Ultra</li>
+                <li><strong>Budget considerations</strong> - Stable Diffusion Ultra offers a good balance of quality and cost</li>
+            </ul>
+            
+            <div class="info-box">
+                <div class="info-box-icon"><i class="fas fa-lightbulb"></i></div>
+                <div class="info-box-content">
+                    <h4>Pro Tip</h4>
+                    <p>When crafting prompts for image generation, be specific and detailed. Include information about:</p>
+                    <ul>
+                        <li>Subject matter (what you want to see)</li>
+                        <li>Style (photorealistic, cartoon, painting, etc.)</li>
+                        <li>Composition (close-up, wide shot, perspective)</li>
+                        <li>Lighting and color palette</li>
+                    </ul>
+                    <p>Example: "A photorealistic close-up portrait of a silver tabby cat with green eyes in a sunlit garden, soft focus background with colorful flowers, professional photography"</p>
+                </div>
+            </div>
+            
+            <p>For complete details and examples, please refer to our <a href="/apidocs/">Swagger Documentation</a>.</p>
+        </section>
+    </main>
+    
+    <footer class="footer">
+        <p>© 2025 TIH AI API Portal. Powered by the TIH AI Center of Excellence.</p>
+        <div class="social-links">
+            <a href="#" class="social-link"><i class="fab fa-github"></i></a>
+            <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
+            <a href="#" class="social-link"><i class="fab fa-linkedin"></i></a>
+        </div>
+    </footer>
+    
+    <script>
+        // Toggle sidebar on mobile
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuToggle = document.getElementById('menu-toggle');
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            
+            menuToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('active');
+                overlay.classList.toggle('active');
+            });
+            
+            overlay.addEventListener('click', function() {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            });
+            
+            // Highlight current page in sidebar
+            const currentPage = window.location.pathname;
+            const sidebarLinks = document.querySelectorAll('.sidebar-link');
+            
+            sidebarLinks.forEach(link => {
+                if (link.getAttribute('href') === currentPage) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
