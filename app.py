@@ -45,16 +45,27 @@ swagger_template = {
     }     
 }
 
+
 swagger = Swagger(app, config=swagger_config, template=swagger_template)
 
 
 # INITIALIZE THE TOKEN SERVICE
 token_service = TokenService()
 
-# Serve the index.html file
+# HTML PAGES
 @app.route('/')
-def index():
+@app.route('/home')
+def home():
     return render_template('index.html')
+
+@app.route('/docs/getting_started')
+def getting_started():
+    return render_template('docs/getting_started.html')
+
+@app.route('/docs/token_services')
+def token_services():
+    return render_template('docs/token_services.html')
+
 
 # TOKEN SERVICE ENDPOINTS
 ## GET TOKEN

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI API Platform</title>
+    <title>TIH AI API Portal</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
@@ -435,18 +435,19 @@
 <body>
     <header class="header">
         <div class="logo">
+            <img src="./assets/images/Telesure-logo.png" alt="TIH AI API Platform Logo" style="height: 40px; margin-right: 0.5rem;">
             <i class="fas fa-brain"></i>
-            <h1>AI API Platform</h1>
+            <h1>TIH AI API Platform</h1>
         </div>
         <nav class="nav">
             <div class="menu-toggle" id="menu-toggle">
                 <i class="fas fa-bars"></i>
             </div>
-            <a href="/templates/index.html" class="nav-item">
+            <a href="{{ url_for('home') }}" class="nav-item">
                 <i class="fas fa-home"></i>Home
             </a>
-            <a href="/templates/docs/getting-started.html" class="nav-item">
-                <i class="fas fa-rocket"></i>Get Started
+            <a href="{{ url_for('getting_started') }}" class="nav-item">
+                <i class="fas fa-rocket"></i>Geting Started
             </a>
             <a href="/templates/docs/faq.html" class="nav-item">
                 <i class="fas fa-question-circle"></i>FAQ
@@ -461,18 +462,18 @@
     
     <aside class="sidebar">
         <div class="sidebar-category">Main</div>
-        <a href="/templates/index.html" class="sidebar-link active">
+        <a href="{{ url_for('home') }}" class="sidebar-link active">
             <i class="fas fa-home"></i> Home
         </a>
-        <a href="/templates/docs/index.html" class="sidebar-link">
+        <a href="/apidocs/" class="sidebar-link">
             <i class="fas fa-book"></i> API Documentation
         </a>
-        <a href="/templates/docs/getting-started.html" class="sidebar-link">
+        <a href="{{ url_for('getting_started') }}" class="sidebar-link">
             <i class="fas fa-rocket"></i> Getting Started
         </a>
         
         <div class="sidebar-category">Endpoints</div>
-        <a href="/templates/docs/token-services.html" class="sidebar-link">
+        <a href="{{ url_for('token_services') }}" class="sidebar-link">
             <i class="fas fa-key"></i> Token Services
         </a>
         <a href="/templates/docs/balance-management.html" class="sidebar-link">
