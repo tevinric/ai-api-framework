@@ -227,7 +227,7 @@ def extract_id_data(result):
 
 def sa_id_ocr_route():
     """
-    Perform OCR on South African ID documents
+    Perform OCR on a South African ID Card (Smart Card)
     ---
     tags:
       - OCR
@@ -449,4 +449,4 @@ def sa_id_ocr_route():
 
 def register_sa_id_ocr_routes(app):
     """Register SA ID OCR routes with the Flask app"""
-    app.route('/ocr/sa_id', methods=['POST'])(api_logger(check_balance(sa_id_ocr_route)))
+    app.route('/ocr/sa_id_card', methods=['POST'])(api_logger(check_balance(sa_id_ocr_route)))

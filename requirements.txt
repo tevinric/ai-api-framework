@@ -16,3 +16,4 @@ python-pptx
 openpyxl
 python-docx
 pandas
+azure.ai.documentintelligence
