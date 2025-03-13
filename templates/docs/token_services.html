@@ -409,7 +409,7 @@
     <header class="header">
         <div class="logo">
             <img src="/static/images/Telesure-logo.png" alt="TIH AI API Platform Logo" style="height: 40px; margin-right: 0.5rem;">
-            <h1>AI API Platform</h1>
+            <h1>TIH AI API Platform</h1>
         </div>
         <nav class="nav">
             <div class="menu-toggle" id="menu-toggle">
@@ -487,7 +487,7 @@
         <section class="content-section">
             <h2>Token Services</h2>
             
-            <p>The Token Services endpoints allow you to generate, refresh, and manage authentication tokens for API access. These tokens are required for all other API calls.</p>
+            <p>The Token Services endpoints allow you to generate, refresh, and manage authentication tokens for API access. Valid tokens are required for authentication calls to ALL of our AI APIs.</p>
             
             <div class="info-box">
                 <div class="info-box-icon"><i class="fas fa-info-circle"></i></div>
@@ -495,10 +495,12 @@
                     <h4>Authentication Flow</h4>
                     <p>Our API uses a two-step authentication process:</p>
                     <ol>
-                        <li>First, you authenticate with your API key to generate a token</li>
+                        <li>First, you authenticate with your unqiue API key to generate a token</li>
                         <li>Then, you use this token for subsequent API calls</li>
                     </ol>
-                    <p>Tokens expire after a period (typically one hour) and can be refreshed before expiration.</p>
+                    <p>Tokens expire after 1 hour (3599 seconds) and can be refreshed before and after expiration.</p>
+                    <p>You can use the same token to call multiple AI endpoints in your application flow as long as your process remains within the token validity period.</p>
+
                 </div>
             </div>
             
@@ -513,7 +515,7 @@
                 <div class="endpoint">
                     <span class="endpoint-method method-get">GET</span>
                     <span class="endpoint-path">/token/details</span>
-                    <span class="endpoint-description">Get details about a token</span>
+                    <span class="endpoint-description">Get details about a previously generated token</span>
                 </div>
                 <div class="endpoint">
                     <span class="endpoint-method method-post">POST</span>
@@ -527,12 +529,8 @@
     </main>
     
     <footer class="footer">
-        <p>© 2025 AI API Platform. All rights reserved.</p>
-        <div class="social-links">
-            <a href="#" class="social-link"><i class="fab fa-github"></i></a>
-            <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
-            <a href="#" class="social-link"><i class="fab fa-linkedin"></i></a>
-        </div>
+        <p>© 2025 TIH AI API Portal. Powered by the TIH AI Center of Excellence.</p>
+
     </footer>
     
     <script>
