@@ -460,7 +460,7 @@ def document_read_route():
                     "pages": []
                 }
                 
-                # Process each requested page
+                                    # Process each requested page
                 for page in result.pages:
                     # Skip pages not in the requested range
                     if page.page_number not in pages_to_process:
@@ -488,6 +488,15 @@ def document_read_route():
                                 "type": "paragraph",
                                 "content": paragraph
                             })
+                    
+                    # Create page_text_all with all paragraphs from this page
+                    page_text_all = ""
+                    for text_item in page_info["text"]:
+                        if text_item["type"] == "paragraph" and text_item["content"].strip():
+                            page_text_all += text_item["content"] + "\n\n"
+                    
+                    # Add the consolidated page text
+                    page_info["page_text_all"] = page_text_all.strip()
                     
                     # If language detection was requested, include that
                     if options['language'] and hasattr(page, 'languages') and page.languages:
