@@ -76,6 +76,129 @@ def parse_page_range(page_range_str, total_pages):
         
     return page_numbers
 
+def process_text_into_paragraphs(lines, spans, tables):
+    """
+    Convert individual lines into paragraphs and identify tables.
+    
+    Args:
+        lines: List of line objects from Document Intelligence
+        spans: List of spans for the document
+        tables: List of tables found in the document
+        
+    Returns:
+        list: Structured text content with paragraphs and tables
+    """
+    if not lines:
+        return []
+    
+    # Step 1: Organize lines by their vertical position and identify tables
+    paragraphs = []
+    current_paragraph = []
+    previous_line = None
+    
+    # Track which spans are part of tables
+    table_spans = set()
+    if tables:
+        for table in tables:
+            for cell in table.cells:
+                if cell.spans_indices:
+                    for index in cell.spans_indices:
+                        table_spans.add(index)
+    
+    for line in lines:
+        # Skip the line if it's part of a table
+        if hasattr(line, 'spans_indices') and any(index in table_spans for index in line.spans_indices):
+            continue
+            
+        if previous_line is None:
+            # First line, start a new paragraph
+            current_paragraph.append(line.content)
+        else:
+            # Check if this line should be part of the current paragraph
+            # The heuristic can be adjusted based on your requirements
+            line_spacing = line.polygon[0].y - previous_line.polygon[2].y
+            avg_height = (previous_line.polygon[2].y - previous_line.polygon[0].y + 
+                          line.polygon[2].y - line.polygon[0].y) / 2
+            
+            # If the line spacing is small compared to the line height, it's likely part of the same paragraph
+            if line_spacing <= avg_height * 1.5:  # Threshold can be adjusted
+                current_paragraph.append(line.content)
+            else:
+                # This is a new paragraph
+                if current_paragraph:
+                    paragraphs.append({
+                        "type": "paragraph",
+                        "content": " ".join(current_paragraph)
+                    })
+                current_paragraph = [line.content]
+        
+        previous_line = line
+    
+    # Add the last paragraph if there's any
+    if current_paragraph:
+        paragraphs.append({
+            "type": "paragraph",
+            "content": " ".join(current_paragraph)
+        })
+    
+    # Step 2: Process tables if any
+    if tables:
+        # Sort paragraphs and tables by their vertical position
+        table_paragraphs = []
+        for table in tables:
+            table_obj = {
+                "type": "table",
+                "rows": len(table.row_count),
+                "columns": len(table.column_count),
+                "cells": []
+            }
+            
+            # Extract table cells
+            for row_idx in range(table.row_count):
+                table_row = []
+                for col_idx in range(table.column_count):
+                    cell_content = ""
+                    # Find the cell at this position
+                    for cell in table.cells:
+                        if cell.row_index == row_idx and cell.column_index == col_idx:
+                            # Get text from spans
+                            if hasattr(cell, 'spans_indices') and cell.spans_indices:
+                                cell_texts = []
+                                for span_idx in cell.spans_indices:
+                                    if span_idx < len(spans):
+                                        cell_texts.append(spans[span_idx].content)
+                                cell_content = " ".join(cell_texts)
+                            break
+                    table_row.append(cell_content)
+                table_obj["cells"].append(table_row)
+            
+            # Store table with position information
+            table_top = min(cell.polygon[0].y for cell in table.cells) if table.cells else 0
+            table_paragraphs.append((table_top, table_obj))
+        
+        # Merge paragraphs and tables based on vertical position
+        if table_paragraphs:
+            paragraph_positions = []
+            for i, para in enumerate(paragraphs):
+                # Estimate paragraph position (top)
+                para_top = 0  # This is a placeholder - you'd need actual position data
+                paragraph_positions.append((para_top, i, para))
+            
+            # Combine and sort all elements by vertical position
+            all_elements = paragraph_positions + table_paragraphs
+            all_elements.sort()
+            
+            # Rebuild paragraphs with tables in the right positions
+            result = []
+            for _, elem in all_elements:
+                if isinstance(elem, int):  # It's a paragraph index
+                    result.append(paragraphs[elem])
+                else:  # It's a table
+                    result.append(elem)
+            return result
+    
+    return paragraphs
+
 def document_read_route():
     """
     Extract printed and handwritten text from images and documents
@@ -174,10 +297,19 @@ def document_read_route():
                             properties:
                               type:
                                 type: string
-                                description: Type of text element (line or paragraph)
+                                description: Type of text element (paragraph or table)
                               content:
                                 type: string
-                                description: Text content
+                                description: Text content for paragraphs
+                              rows:
+                                type: integer
+                                description: Number of rows (for tables)
+                              columns:
+                                type: integer
+                                description: Number of columns (for tables)
+                              cells:
+                                type: array
+                                description: Table cells contents (for tables)
       400:
         description: Bad request
         schema:
@@ -372,12 +504,20 @@ def document_read_route():
                 
                 # Create analyzer options based on requested features
                 analyzer_options = {}
+                features = []
+                
                 if options['language']:
-                    analyzer_options["features"] = ["languages"]
+                    features.append("languages")
+                
+                # Add layout feature to detect tables
+                features.append("layout")
+                
+                if features:
+                    analyzer_options["features"] = features
                 
                 # Start the document analysis
                 poller = document_client.begin_analyze_document(
-                    "prebuilt-read",
+                    "prebuilt-layout",  # Use layout model to get paragraphs and tables
                     AnalyzeDocumentRequest(url_source=file_url),
                     **analyzer_options
                 )
@@ -413,10 +553,16 @@ def document_read_route():
                 }
                 
                 # Process each requested page
-                for page in result.pages:
+                for page_idx, page in enumerate(result.pages):
                     # Skip pages not in the requested range
                     if page.page_number not in pages_to_process:
                         continue
+                    
+                    # Get tables for this page
+                    page_tables = []
+                    if hasattr(result, 'tables'):
+                        page_tables = [table for table in result.tables if table.bounding_regions and 
+                                     any(region.page_number == page.page_number for region in table.bounding_regions)]
                     
                     page_info = {
                         "page_number": page.page_number,
@@ -424,15 +570,29 @@ def document_read_route():
                         "height": page.height,
                         "unit": page.unit,
                         "has_handwritten_content": False,  # Will update based on styles
-                        "text": []
                     }
                     
-                    # Add lines of text
-                    for line in page.lines:
-                        page_info["text"].append({
-                            "type": "line",
-                            "content": line.content
-                        })
+                    # Process text into paragraphs and tables
+                    spans = result.spans if hasattr(result, 'spans') else []
+                    page_info["text"] = process_text_into_paragraphs(
+                        page.lines, 
+                        spans,
+                        page_tables
+                    )
+                    
+                    # If Document Intelligence supports paragraphs directly, use them
+                    if hasattr(page, 'paragraphs') and page.paragraphs:
+                        paragraph_texts = []
+                        for para in page.paragraphs:
+                            paragraph_texts.append({
+                                "type": "paragraph",
+                                "content": para.content
+                            })
+                        
+                        # Replace our heuristic-based paragraphs with actual paragraphs
+                        # but keep the tables we detected
+                        tables = [item for item in page_info["text"] if item.get("type") == "table"]
+                        page_info["text"] = paragraph_texts + tables
                     
                     # If language detection was requested, include that
                     if options['language'] and hasattr(page, 'languages') and page.languages:
