@@ -1,36 +1,78 @@
-{
-    "completion_tokens": 177,
-    "input_tokens": 563,
-    "num_documents_processed": 1,
-    "num_pages_processed": 1,
-    "output_tokens": 740,
-    "veh_color": "",
-    "veh_description": "Hatchback",
-    "veh_engine_no": "GVMBVM",
-    "veh_expiry": "20250430",
-    "veh_make": "VOLKSWAGEN",
-    "veh_model": "",
-    "veh_no": "4025013FD5ZL",
-    "veh_reg_no": "LD72FFGP",
-    "veh_register_no": "JTH487K",
-    "veh_vin_no": "AAVZZZ6RZPU011398"
-}
+"""
+This code sample shows Prebuilt Read operations with the Azure AI Document Intelligence client library.
+The async versions of the samples require Python 3.8 or later.
 
-barcode:
-{
-    "completion_tokens": 0,
-    "input_tokens": 0,
-    "num_documents_processed": 1,
-    "num_pages_processed": 1,
-    "output_tokens": 0,
-    "veh_color": "Red / Rooi",
-    "veh_description": "Hatch back / Luikrug",
-    "veh_engine_no": "F223K415",
-    "veh_expiry": "2024-07-31",
-    "veh_make": "MINI",
-    "veh_model": "MINI HATCH F56",
-    "veh_no": "40240483VLC7",
-    "veh_reg_no": "PRIGP",
-    "veh_register_no": "CCX805X",
-    "veh_vin_no": "WMWXR920X02M98425"
-}
+To learn more, please visit the documentation - Quickstart: Document Intelligence (formerly Form Recognizer) SDKs
+https://learn.microsoft.com/azure/ai-services/document-intelligence/quickstarts/get-started-sdks-rest-api?pivots=programming-language-python
+"""
+
+from azure.core.credentials import AzureKeyCredential
+from azure.ai.documentintelligence import DocumentIntelligenceClient
+from azure.ai.documentintelligence.models import AnalyzeDocumentRequest
+import numpy as np
+
+"""
+Remember to remove the key from your code when you're done, and never post it publicly. For production, use
+secure methods to store and access your credentials. For more information, see 
+https://docs.microsoft.com/en-us/azure/cognitive-services/cognitive-services-security?tabs=command-line%2Ccsharp#environment-variables-and-application-configuration
+"""
+endpoint = "AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT"
+key = "AZURE_DOCUMENT_INTELLIGENCE_KEY"
+
+def format_bounding_box(bounding_box):
+    if not bounding_box:
+        return "N/A"
+    reshaped_bounding_box = np.array(bounding_box).reshape(-1, 2)
+    return ", ".join(["[{}, {}]".format(x, y) for x, y in reshaped_bounding_box])
+
+def analyze_read():
+    # sample document
+    formUrl = "https://raw.githubusercontent.com/Azure-Samples/cognitive-services-REST-api-samples/master/curl/form-recognizer/sample-layout.pdf"
+
+    document_intelligence_client  = DocumentIntelligenceClient(
+        endpoint=endpoint, credential=AzureKeyCredential(key)
+    )
+    
+    poller = document_intelligence_client.begin_analyze_document(
+        "prebuilt-read", AnalyzeDocumentRequest(url_source=formUrl)
+    )
+    result = poller.result()
+
+    print ("Document contains content: ", result.content)
+
+    for idx, style in enumerate(result.styles):
+        print(
+            "Document contains {} content".format(
+                "handwritten" if style.is_handwritten else "no handwritten"
+            )
+        )
+
+    for page in result.pages:
+        print("----Analyzing Read from page #{}----".format(page.page_number))
+        print(
+            "Page has width: {} and height: {}, measured with unit: {}".format(
+                page.width, page.height, page.unit
+            )
+        )
+
+        for line_idx, line in enumerate(page.lines):
+            print(
+                "...Line # {} has text content '{}' within bounding box '{}'".format(
+                    line_idx,
+                    line.content,
+                    format_bounding_box(line.polygon),
+                )
+            )
+
+        for word in page.words:
+            print(
+                "...Word '{}' has a confidence of {}".format(
+                    word.content, word.confidence
+                )
+            )
+
+    print("----------------------------------------")
+
+
+if __name__ == "__main__":
+    analyze_read()
