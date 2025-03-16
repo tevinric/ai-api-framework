@@ -716,6 +716,9 @@ def document_layout_route():
                                     else:
                                         table_obj["formatted"] = format_table_text(table)
                                     
+                                    # Always include a markdown version of the table as table_summary
+                                    table_obj["table_summary"] = format_table_markdown(table)
+                                    
                                     page_tables.append(table_obj)
                                 except Exception as e:
                                     logger.error(f"Error processing table: {str(e)}")
