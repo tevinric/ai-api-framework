@@ -15,38 +15,47 @@ class BalanceService:
 
     @staticmethod
     def initialize_monthly_balance(user_id):
-        """Initialize or reset monthly balance for a user"""
+        """Initialize or reset monthly balance for a user using custom aic_balance if available"""
         conn = None
         cursor = None
         try:
             conn = DatabaseService.get_connection()
             cursor = conn.cursor()
-
-            # Check if user exists first
-            cursor.execute("SELECT id, scope FROM users WHERE id = ?", [user_id])
+    
+            # Check if user exists and get their aic_balance and scope
+            cursor.execute("SELECT id, scope, aic_balance FROM users WHERE id = ?", [user_id])
             user = cursor.fetchone()
             if not user:
                 logger.error(f"User {user_id} not found")
                 return False
-
+    
             user_scope = user[1]
-
-            # Get scope's monthly balance
-            cursor.execute("SELECT monthly_balance FROM scope_balance_config WHERE scope = ?", [user_scope])
-            scope_config = cursor.fetchone()
+            custom_balance = user[2]  # Get the user's custom aic_balance
+    
+            # Determine which balance to use
+            monthly_balance = None
             
-            if not scope_config:
-                logger.error(f"No balance config found for scope {user_scope}")
-                # Create a default entry with 100 balance
-                monthly_balance = 100
-                cursor.execute(
-                    "INSERT INTO scope_balance_config (scope, monthly_balance, description) VALUES (?, ?, ?)", 
-                    [user_scope, monthly_balance, f"Default for scope {user_scope}"]
-                )
-                conn.commit()
+            # If user has a custom balance set, use it
+            if custom_balance is not None:
+                monthly_balance = custom_balance
+                logger.info(f"Using custom balance {monthly_balance} for user {user_id}")
             else:
-                monthly_balance = scope_config[0]
-
+                # Otherwise get scope's monthly balance
+                cursor.execute("SELECT monthly_balance FROM scope_balance_config WHERE scope = ?", [user_scope])
+                scope_config = cursor.fetchone()
+                
+                if not scope_config:
+                    logger.error(f"No balance config found for scope {user_scope}")
+                    # Create a default entry with 100 balance
+                    monthly_balance = 100
+                    cursor.execute(
+                        "INSERT INTO scope_balance_config (scope, monthly_balance, description) VALUES (?, ?, ?)", 
+                        [user_scope, monthly_balance, f"Default for scope {user_scope}"]
+                    )
+                    conn.commit()
+                else:
+                    monthly_balance = scope_config[0]
+    
             # Get or create balance record for current month
             current_month = BalanceService.get_first_day_of_month()
             
@@ -62,7 +71,7 @@ class BalanceService:
                 logger.info(f"Balance already exists for user {user_id} for {current_month}")
                 return True
             else:
-                # Create new balance record
+                # Create new balance record with custom or scope-based balance
                 cursor.execute(
                     """
                     INSERT INTO user_balances (user_id, balance_month, current_balance, last_updated)
@@ -73,7 +82,7 @@ class BalanceService:
                 conn.commit()
                 logger.info(f"Created new balance of {monthly_balance} for user {user_id} for {current_month}")
                 return True
-
+    
         except Exception as e:
             logger.error(f"Error initializing monthly balance: {str(e)}")
             if conn:
@@ -84,10 +93,7 @@ class BalanceService:
                 cursor.close()
             if conn:
                 conn.close()
-
-# Fixed version of the check_and_deduct_balance function in apis/utils/balanceService.py
-# Fixed version of the check_and_deduct_balance function in apis/utils/balanceService.py
-
+        
     @staticmethod
     def check_and_deduct_balance(user_id, endpoint_id, deduction_amount=None):
         """Check if user has sufficient balance and deduct if they do"""
