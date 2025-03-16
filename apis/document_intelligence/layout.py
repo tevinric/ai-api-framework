@@ -804,6 +804,6 @@ def document_layout_route():
         "results": results
     }, 200)
 
-def register_document_intelligence_routes(app):
+def register_document_intelligence_layout_routes(app):
     """Register document intelligence routes with the Flask app"""
     app.route('/docint/layout', methods=['POST'])(api_logger(check_balance(document_layout_route)))
