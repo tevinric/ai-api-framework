@@ -229,17 +229,11 @@ def get_file_url_route():
         type: string
         required: true
         description: Valid token for authentication
-      - name: body
-        in: body
+      - name: file_id
+        in: query
+        type: string
         required: true
-        schema:
-          type: object
-          required:
-            - file_id
-          properties:
-            file_id:
-              type: string
-              description: Unique file identifier
+        description: Unique file identifier
     produces:
       - application/json
     responses:
@@ -299,15 +293,13 @@ def get_file_url_route():
     g.user_id = token_details["user_id"]
     g.token_id = token_details["id"]
     
-    # Get request data
-    data = request.get_json()
-    if not data or 'file_id' not in data:
+    # Get file_id from query parameter instead of request body
+    file_id = request.args.get('file_id')
+    if not file_id:
         return create_api_response({
             "error": "Bad Request",
-            "message": "file_id is required in the request body"
+            "message": "file_id is required as a query parameter"
         }, 400)
-    
-    file_id = data['file_id']
     
     # Query database for file information
     db_conn = None
@@ -391,17 +383,11 @@ def delete_file_route():
         type: string
         required: true
         description: Valid token for authentication
-      - name: body
-        in: body
+      - name: file_id
+        in: query
+        type: string
         required: true
-        schema:
-          type: object
-          required:
-            - file_id
-          properties:
-            file_id:
-              type: string
-              description: Unique file identifier
+        description: Unique file identifier
     produces:
       - application/json
     responses:
@@ -452,15 +438,13 @@ def delete_file_route():
     g.user_id = token_details["user_id"]
     g.token_id = token_details["id"]
     
-    # Get request data
-    data = request.get_json()
-    if not data or 'file_id' not in data:
+    # Get file_id from query parameter instead of request body
+    file_id = request.args.get('file_id')
+    if not file_id:
         return create_api_response({
             "error": "Bad Request",
-            "message": "file_id is required in the request body"
+            "message": "file_id is required as a query parameter"
         }, 400)
-    
-    file_id = data['file_id']
     
     # Query database for file information
     db_conn = None
