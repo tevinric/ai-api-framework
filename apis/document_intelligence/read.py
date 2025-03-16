@@ -296,10 +296,8 @@ def document_read_route():
     
     # Get Document Intelligence configuration
     doc_intelligence_config = get_document_intelligence_config()
-    endpoint = os.environ.get("AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT")
-    api_key = os.environ.get("AZURE_DOCUMENT_INTELLIGENCE_KEY")
-    
-    
+    endpoint = doc_intelligence_config.get('endpoint')
+    api_key = doc_intelligence_config.get('api_key')
     
     if not endpoint or not api_key:
         return create_api_response({
@@ -330,12 +328,22 @@ def document_read_route():
             # Get file URL from the file ID
             headers = {"X-Token": token}
             logger.info(f"Getting file URL for file ID: {file_id}")
-            # Make a request to the get-file-url endpoint to retrieve the file URL
-            file_url_response = requests.post(
-                f"{request.url_root.rstrip('/')}/get-file-url",
-                headers=headers,
-                json={"file_id": file_id}
+            # Make a request to the file/url endpoint using GET method
+            # The endpoint expects file_id as a query parameter
+            file_url_endpoint = f"{request.url_root.rstrip('/')}/file/url?file_id={file_id}"
+            logger.info(f"Requesting file URL from endpoint: {file_url_endpoint}")
+            
+            file_url_response = requests.get(
+                file_url_endpoint,
+                headers=headers
             )
+            
+            # Log the response details for debugging
+            logger.info(f"File URL response status: {file_url_response.status_code}")
+            if file_url_response.status_code != 200:
+                logger.error(f"File URL response error: {file_url_response.text}")
+            else:
+                logger.info(f"File URL response: {file_url_response.text[:100]}...")
             
             if file_url_response.status_code != 200:
                 logger.error(f"Error retrieving file URL: Status {file_url_response.status_code}, Response: {file_url_response.text[:500]}")
