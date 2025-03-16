@@ -30,7 +30,7 @@ def upload_file_route():
     tags:
       - File Management
     summary: Upload one or more files to Azure Blob Storage
-    description: Uploads one or more files to Azure Blob Storage and stores metadata in the database
+    description: Uploads one or more files to Azure Blob Storage and stores metadata in the database. Executable files (.exe, .bat, .cmd, .sh, .ps1, .dll, .msi, etc.) are not allowed.
     parameters:
       - name: X-Token
         in: header
@@ -41,7 +41,7 @@ def upload_file_route():
         in: formData
         type: file
         required: true
-        description: Files to upload (can be multiple)
+        description: Files to upload (can be multiple). Executable files are not permitted.
     consumes:
       - multipart/form-data
     produces:
@@ -82,6 +82,13 @@ def upload_file_route():
               enum:
                 - No files part in the request
                 - No files selected for upload
+                - File type .exe is not allowed for security reasons
+                - File type .bat is not allowed for security reasons
+                - File type .cmd is not allowed for security reasons
+                - File type .sh is not allowed for security reasons
+                - File type .ps1 is not allowed for security reasons
+                - File type .dll is not allowed for security reasons
+                - File type .msi is not allowed for security reasons
       401:
         description: Authentication error
         schema:
@@ -107,7 +114,6 @@ def upload_file_route():
             message:
               type: string
               example: Error uploading files
-
     """
     # Get token from X-Token header
     token = request.headers.get('X-Token')
@@ -156,6 +162,21 @@ def upload_file_route():
             "error": "Bad Request",
             "message": "No files selected for upload"
         }, 400)
+    
+    # Define list of forbidden file extensions (executable files)
+    forbidden_extensions = [
+        '.exe', '.bat', '.cmd', '.sh', '.ps1', '.msi', '.dll', '.com', '.vbs', 
+        '.js', '.jse', '.wsf', '.wsh', '.msc', '.scr', '.reg', '.hta', '.pif'
+    ]
+    
+    # Check each file for forbidden extensions
+    for file in files:
+        _, file_extension = os.path.splitext(file.filename.lower())
+        if file_extension in forbidden_extensions:
+            return create_api_response({
+                "error": "Bad Request",
+                "message": f"File type {file_extension} is not allowed for security reasons"
+            }, 400)
     
     try:
         # Ensure container exists
