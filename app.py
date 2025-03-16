@@ -168,6 +168,10 @@ register_speech_to_text_diarize_routes(app)
 from apis.document_intelligence.summarization import register_document_intelligence_routes
 register_document_intelligence_routes(app)
 
+from apis.document_intelligence.read import register_document_intelligence_routes
+register_document_intelligence_routes(app)
+
+
 from apis.ocr.sa_id import register_sa_id_ocr_routes
 register_sa_id_ocr_routes(app)
 

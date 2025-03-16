@@ -296,8 +296,10 @@ def document_read_route():
     
     # Get Document Intelligence configuration
     doc_intelligence_config = get_document_intelligence_config()
-    endpoint = doc_intelligence_config.get('endpoint')
-    api_key = doc_intelligence_config.get('api_key')
+    endpoint = os.environ.get("AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT")
+    api_key = os.environ.get("AZURE_DOCUMENT_INTELLIGENCE_KEY")
+    
+    
     
     if not endpoint or not api_key:
         return create_api_response({
