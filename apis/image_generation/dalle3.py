@@ -331,7 +331,7 @@ def custom_image_generation_route():
         from flask import current_app
 
         # Create a new request to the upload-file endpoint
-        upload_url = f"{request.url_root.rstrip('/')}/upload-file"
+        upload_url = f"{request.url_root.rstrip('/')}/file"
         
         # Make the POST request to upload-file endpoint
         upload_response = requests.post(

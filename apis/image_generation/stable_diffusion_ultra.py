@@ -324,7 +324,7 @@ def stable_diffusion_ultra_route():
         files = {'files': (image_name, io.BytesIO(image_data), content_type)}
         
         # Create a new request to the upload-file endpoint
-        upload_url = f"{request.url_root.rstrip('/')}/upload-file"
+        upload_url = f"{request.url_root.rstrip('/')}/file"
         
         # Make the POST request to upload-file endpoint
         upload_response = requests.post(
