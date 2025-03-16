@@ -78,7 +78,9 @@ def check_balance_route():
 
 def admin_update_balance_route():
     """
-    Update user's API call balance (Admin only)
+    Update user's API call balance for the current Calendar Period (Admin only). 
+    
+    The endpoint will update the user balance for the current Calendar Period only. If the user balance needs to updated permanently then it is recommended to update the user's balance via the admin PUT user endpoint.
     ---
     tags:
       - Admin Functions
