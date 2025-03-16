@@ -76,61 +76,51 @@ def parse_page_range(page_range_str, total_pages):
         
     return page_numbers
 
-def process_text_into_paragraphs(lines, tables=None):
+def group_lines_into_paragraphs(lines):
     """
-    Convert individual lines into paragraphs.
+    Group sequential lines into paragraphs.
     
     Args:
-        lines: List of line objects from Document Intelligence
-        tables: List of tables found in the document (optional)
+        lines (list): List of line content strings
         
     Returns:
-        list: Structured text content with paragraphs
+        list: List of paragraph content strings
     """
     if not lines:
         return []
     
-    # Step 1: Organize lines by their vertical position
     paragraphs = []
     current_paragraph = []
-    previous_line = None
     
     for line in lines:
         # Skip empty lines
-        if not line.content.strip():
+        if not line.strip():
+            if current_paragraph:
+                # End of paragraph
+                paragraphs.append(" ".join(current_paragraph))
+                current_paragraph = []
             continue
-            
-        if previous_line is None:
-            # First line, start a new paragraph
-            current_paragraph.append(line.content)
-        else:
-            # Check if this line should be part of the current paragraph
-            # Since we might not always have reliable polygon data, use a simple heuristic:
-            # If the line ends with sentence-ending punctuation, it's likely the end of a paragraph
-            if (previous_line.content.rstrip().endswith(('.', '!', '?', ':', ';')) and 
-                previous_line.content.strip() != previous_line.content.strip('.')):
-                # End of paragraph detected
-                if current_paragraph:
-                    paragraphs.append({
-                        "type": "paragraph",
-                        "content": " ".join(current_paragraph)
-                    })
-                current_paragraph = [line.content]
-            else:
-                # Same paragraph continues
-                current_paragraph.append(line.content)
         
-        previous_line = line
+        # Check if this line is likely the start of a new paragraph
+        if current_paragraph and (
+            line.strip().startswith(('-', '•', '*', '>', '1.', '2.')) or  # List markers
+            line.strip()[0:1].isupper() and ( # First char is uppercase AND
+                # Previous line ends with sentence-ending punctuation
+                current_paragraph[-1].rstrip().endswith(('.', '!', '?')) or
+                # Previous line is very short (potential header)
+                len(current_paragraph[-1].strip()) < 25
+            )
+        ):
+            # End the current paragraph and start a new one
+            paragraphs.append(" ".join(current_paragraph))
+            current_paragraph = [line]
+        else:
+            # Continue current paragraph
+            current_paragraph.append(line)
     
     # Add the last paragraph if there's any
     if current_paragraph:
-        paragraphs.append({
-            "type": "paragraph",
-            "content": " ".join(current_paragraph)
-        })
-    
-    # Step 2: Process tables if any - but for now, skip as it's causing issues
-    # We'll improve this in later iterations
+        paragraphs.append(" ".join(current_paragraph))
     
     return paragraphs
 
@@ -232,19 +222,10 @@ def document_read_route():
                             properties:
                               type:
                                 type: string
-                                description: Type of text element (paragraph or table)
+                                description: Type of text element (paragraph)
                               content:
                                 type: string
-                                description: Text content for paragraphs
-                              rows:
-                                type: integer
-                                description: Number of rows (for tables)
-                              columns:
-                                type: integer
-                                description: Number of columns (for tables)
-                              cells:
-                                type: array
-                                description: Table cells contents (for tables)
+                                description: Text content
       400:
         description: Bad request
         schema:
@@ -439,17 +420,12 @@ def document_read_route():
                 
                 # Create analyzer options based on requested features
                 analyzer_options = {}
-                features = []
-                
                 if options['language']:
-                    features.append("languages")
-                
-                if features:
-                    analyzer_options["features"] = features
+                    analyzer_options["features"] = ["languages"]
                 
                 # Start the document analysis
                 poller = document_client.begin_analyze_document(
-                    "prebuilt-document",  # Use document model to get paragraphs and tables
+                    "prebuilt-read",
                     AnalyzeDocumentRequest(url_source=file_url),
                     **analyzer_options
                 )
@@ -485,63 +461,10 @@ def document_read_route():
                 }
                 
                 # Process each requested page
-                for page_idx, page in enumerate(result.pages):
+                for page in result.pages:
                     # Skip pages not in the requested range
                     if page.page_number not in pages_to_process:
                         continue
-                    
-                    # Get tables for this page and process them if available
-                    if hasattr(result, 'tables') and result.tables:
-                        page_tables = []
-                        for table in result.tables:
-                            # Check if this table belongs to the current page
-                            if (hasattr(table, 'bounding_regions') and 
-                                any(region.page_number == page.page_number for region in table.bounding_regions)):
-                                
-                                # Create a table structure
-                                try:
-                                    table_obj = {
-                                        "type": "table",
-                                        "rows": table.row_count,
-                                        "columns": table.column_count,
-                                        "cells": []
-                                    }
-                                    
-                                    # Extract table content organized by rows and columns
-                                    row_data = {}
-                                    for cell in table.cells:
-                                        if not hasattr(cell, 'content') or not cell.content.strip():
-                                            continue
-                                            
-                                        row_idx = cell.row_index
-                                        col_idx = cell.column_index
-                                        
-                                        if row_idx not in row_data:
-                                            row_data[row_idx] = {}
-                                            
-                                        row_data[row_idx][col_idx] = cell.content
-                                    
-                                    # Convert the dictionary to a list of rows
-                                    for row_idx in range(table.row_count):
-                                        row = []
-                                        if row_idx in row_data:
-                                            for col_idx in range(table.column_count):
-                                                cell_content = row_data[row_idx].get(col_idx, "")
-                                                row.append(cell_content)
-                                        else:
-                                            # Empty row
-                                            row = [""] * table.column_count
-                                            
-                                        table_obj["cells"].append(row)
-                                    
-                                    # Add table to the page content
-                                    if "text" not in page_info:
-                                        page_info["text"] = []
-                                    page_info["text"].append(table_obj)
-                                    
-                                except Exception as e:
-                                    logger.error(f"Error processing table: {str(e)}")
-                                    # Continue with other tables if there's an error with this one
                     
                     page_info = {
                         "page_number": page.page_number,
@@ -549,21 +472,22 @@ def document_read_route():
                         "height": page.height,
                         "unit": page.unit,
                         "has_handwritten_content": False,  # Will update based on styles
+                        "text": []
                     }
                     
-                    # Check if Document Intelligence returned paragraphs directly
-                    if hasattr(page, 'paragraphs') and page.paragraphs:
-                        # Use the paragraphs provided by the API
-                        page_info["text"] = []
-                        for para in page.paragraphs:
-                            if para.content.strip():  # Skip empty paragraphs
-                                page_info["text"].append({
-                                    "type": "paragraph",
-                                    "content": para.content
-                                })
-                    else:
-                        # Fall back to our line-based paragraph detection
-                        page_info["text"] = process_text_into_paragraphs(page.lines)
+                    # Extract all line content
+                    line_contents = [line.content for line in page.lines if line.content.strip()]
+                    
+                    # Group lines into paragraphs
+                    paragraphs = group_lines_into_paragraphs(line_contents)
+                    
+                    # Add paragraphs to the response
+                    for paragraph in paragraphs:
+                        if paragraph.strip():  # Skip empty paragraphs
+                            page_info["text"].append({
+                                "type": "paragraph",
+                                "content": paragraph
+                            })
                     
                     # If language detection was requested, include that
                     if options['language'] and hasattr(page, 'languages') and page.languages:
