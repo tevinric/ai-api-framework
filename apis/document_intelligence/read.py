@@ -415,6 +415,21 @@ def document_read_route():
                 })
                 continue
             
+            # Check if the file has a supported extension
+            supported_extensions = ['.jpg', '.jpeg', '.jpe', '.jif', '.jfi', '.jfif', '.png', '.tif', '.tiff', '.pdf']
+            file_extension = os.path.splitext(file_name.lower())[1] if file_name else ''
+            
+            if not file_extension or file_extension not in supported_extensions:
+                logger.warning(f"Unsupported file type: {file_extension} for file: {file_name}")
+                results.append({
+                    "file_id": file_id,
+                    "file_name": file_name if file_name else "Unknown",
+                    "error": f"Unsupported file type. Only {', '.join(supported_extensions)} files are supported."
+                })
+                continue
+            
+            logger.info(f"File type validation passed for file: {file_name} with extension: {file_extension}")
+            
             # Call Document Intelligence to analyze the document
             try:
                 logger.info(f"Sending document to Document Intelligence service: {file_url}")
