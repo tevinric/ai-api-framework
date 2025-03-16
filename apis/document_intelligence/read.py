@@ -106,7 +106,8 @@ def group_lines_into_paragraphs(lines):
             line.strip().startswith(('-', '•', '*', '>', '1.', '2.')) or  # List markers
             line.strip()[0:1].isupper() and ( # First char is uppercase AND
                 # Previous line ends with sentence-ending punctuation
-                current_paragraph[-1].rstrip().endswith(('.', '!', '?')) or
+                (current_paragraph[-1].rstrip().endswith(('.', '!', '?')) and 
+                 not current_paragraph[-1].rstrip().endswith('Fig.')) or  # Skip Fig. abbreviations
                 # Previous line is very short (potential header)
                 len(current_paragraph[-1].strip()) < 25
             )
@@ -456,9 +457,15 @@ def document_read_route():
                     "file_name": file_name,
                     "total_pages": document_page_count,
                     "processed_pages": len(pages_to_process),
-                    "has_handwritten_content": any(style.is_handwritten for style in result.styles if style.is_handwritten),
+                    "has_handwritten_content": False,  # Will update if handwritten content is detected
                     "pages": []
                 }
+                
+                # Check for handwritten content if styles are available
+                if hasattr(result, 'styles') and result.styles:
+                    document_result["has_handwritten_content"] = any(
+                        style.is_handwritten for style in result.styles if hasattr(style, 'is_handwritten')
+                    )
                 
                                     # Process each requested page
                 for page in result.pages:
@@ -508,25 +515,20 @@ def document_read_route():
                             for lang in page.languages
                         ]
                     
-                    # Check if page has handwritten content
-                    for style in result.styles:
-                        if style.is_handwritten and style.page_number == page.page_number:
-                            page_info["has_handwritten_content"] = True
-                            break
+                    # Check if page has handwritten content (safely)
+                    if hasattr(result, 'styles') and result.styles:
+                        for style in result.styles:
+                            if (hasattr(style, 'is_handwritten') and 
+                                style.is_handwritten and 
+                                hasattr(style, 'page_number') and
+                                style.page_number == page.page_number):
+                                page_info["has_handwritten_content"] = True
+                                break
                     
                     # Add to results
                     document_result["pages"].append(page_info)
                 
-                # Post-process to create a consolidated text field
-                document_text_all = ""
-                for page in document_result["pages"]:
-                    for text_item in page["text"]:
-                        if text_item["type"] == "paragraph" and text_item["content"].strip():
-                            document_text_all += text_item["content"] + "\n\n"
-                
-                # Trim any extra newlines at the end
-                document_result["document_text_all"] = document_text_all.strip()
-                
+
                 # Add to overall results
                 results.append(document_result)
                 total_documents += 1
