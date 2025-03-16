@@ -508,6 +508,16 @@ def document_read_route():
                     # Add to results
                     document_result["pages"].append(page_info)
                 
+                # Post-process to create a consolidated text field
+                document_text_all = ""
+                for page in document_result["pages"]:
+                    for text_item in page["text"]:
+                        if text_item["type"] == "paragraph" and text_item["content"].strip():
+                            document_text_all += text_item["content"] + "\n\n"
+                
+                # Trim any extra newlines at the end
+                document_result["document_text_all"] = document_text_all.strip()
+                
                 # Add to overall results
                 results.append(document_result)
                 total_documents += 1
