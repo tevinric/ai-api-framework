@@ -1163,9 +1163,324 @@ def list_vectorstores_route():
             "message": f"Error retrieving vectorstores: {str(e)}"
         }, 500)
 
+def create_vectorstore_from_string_route():
+    """
+    Create a FAISS vectorstore directly from a text string
+    ---
+    tags:
+      - RAG
+    parameters:
+      - name: X-Token
+        in: header
+        type: string
+        required: true
+        description: Authentication token
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+            - content
+          properties:
+            content:
+              type: string
+              description: Text content to create vectorstore from
+            content_source:
+              type: string
+              description: Source identifier for the content (e.g. "API Response", "Manual Input")
+              default: "User Input"
+            vectorstore_name:
+              type: string
+              description: Optional name for the vectorstore
+            chunk_size:
+              type: integer
+              default: 500
+              description: Size of text chunks for splitting documents (smaller default for strings)
+            chunk_overlap:
+              type: integer
+              default: 100
+              description: Overlap between chunks
+            metadata:
+              type: object
+              description: Additional metadata to store with the content
+    produces:
+      - application/json
+    responses:
+      200:
+        description: Vectorstore created successfully
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              example: "Vectorstore created successfully"
+            vectorstore_id:
+              type: string
+              example: "12345678-1234-1234-1234-123456789012"
+            path:
+              type: string
+              example: "user123-12345678-1234-1234-1234-123456789012"
+            chunk_count:
+              type: integer
+              example: 5
+      400:
+        description: Bad request
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: "Bad Request"
+            message:
+              type: string
+              example: "Missing required field: content"
+      401:
+        description: Authentication error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: "Authentication Error"
+            message:
+              type: string
+              example: "Token has expired"
+      500:
+        description: Server error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: "Server Error"
+            message:
+              type: string
+              example: "Error creating vectorstore"
+    """
+    # Get token from X-Token header
+    token = request.headers.get('X-Token')
+    if not token:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "Missing X-Token header"
+        }, 401)
+    
+    # Validate token from database
+    token_details = DatabaseService.get_token_details_by_value(token)
+    if not token_details:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "Invalid token - not found in database"
+        }, 401)
+    
+    # Store token ID and user ID in g for logging and balance check
+    g.token_id = token_details["id"]
+    g.user_id = token_details["user_id"]
+    
+    # Check if token is expired
+    now = datetime.now(pytz.UTC)
+    expiration_time = token_details["token_expiration_time"]
+    
+    # Ensure expiration_time is timezone-aware
+    if expiration_time.tzinfo is None:
+        johannesburg_tz = pytz.timezone('Africa/Johannesburg')
+        expiration_time = johannesburg_tz.localize(expiration_time)
+        
+    if now > expiration_time:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "Token has expired"
+        }, 401)
+    
+    # Get user details
+    user_id = token_details["user_id"]
+    user_details = DatabaseService.get_user_by_id(user_id)
+    if not user_details:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "User associated with token not found"
+        }, 401)
+    
+    # Get request data
+    data = request.get_json()
+    if not data:
+        return create_api_response({
+            "error": "Bad Request",
+            "message": "Request body is required"
+        }, 400)
+    
+    # Validate required fields
+    if 'content' not in data or not data['content']:
+        return create_api_response({
+            "error": "Bad Request",
+            "message": "Missing required field: content must be a non-empty string"
+        }, 400)
+    
+    # Extract parameters with defaults optimized for string content
+    content = data.get('content')
+    content_source = data.get('content_source', 'User Input')
+    vectorstore_name = data.get('vectorstore_name', f"string-vs-{datetime.now().strftime('%Y%m%d-%H%M%S')}")
+    
+    # Use smaller chunk sizes for string content by default
+    chunk_size = int(data.get('chunk_size', 500))
+    chunk_overlap = int(data.get('chunk_overlap', 100))
+    
+    # Get additional metadata
+    metadata = data.get('metadata', {})
+    
+    # Add source to metadata
+    metadata['source'] = content_source
+    
+    try:
+        # Create a temporary working directory
+        temp_dir = tempfile.mkdtemp()
+        
+        # Ensure container exists
+        ensure_container_exists(VECTORSTORE_CONTAINER)
+        
+        # Create Document object from string
+        from langchain_core.documents import Document
+        
+        doc = Document(
+            page_content=content,
+            metadata=metadata
+        )
+        
+        # Create text splitter
+        # For string input, RecursiveCharacterTextSplitter works well with smaller chunks
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+            length_function=len,
+            separators=["\n\n", "\n", ". ", " ", ""]
+        )
+        
+        # Split document into chunks
+        chunks = text_splitter.split_documents([doc])
+        
+        # If content is very small, don't chunk it
+        if not chunks and content.strip():
+            chunks = [doc]
+        
+        logger.info(f"Split content into {len(chunks)} chunks")
+        
+        if not chunks:
+            return create_api_response({
+                "error": "Processing Error",
+                "message": "Content was empty or could not be processed into chunks"
+            }, 400)
+        
+        # Generate vectorstore ID
+        vectorstore_id = str(uuid.uuid4())
+        vectorstore_path = f"{user_id}-{vectorstore_id}"
+        
+        # Initialize embeddings
+        embeddings = AzureOpenAIEmbeddings(
+            azure_deployment=os.environ.get("AZURE_OPENAI_EMBEDDING_DEPLOYMENT", "coe-chatbot-embedding3large"),
+            api_key=os.environ.get("OPENAI_API_KEY"),
+            azure_endpoint=os.environ.get("OPENAI_API_ENDPOINT")
+        )
+        
+        # Create FAISS index
+        vectorstore = FAISS.from_documents(chunks, embeddings)
+        
+        # Create a temporary path to save the vectorstore
+        temp_vs_path = os.path.join(temp_dir, "vectorstore")
+        vectorstore.save_local(temp_vs_path)
+        
+        # Upload to Azure Blob Storage
+        blob_service_client = get_azure_blob_client()
+        container_client = blob_service_client.get_container_client(VECTORSTORE_CONTAINER)
+        
+        # Upload each file in the vectorstore directory
+        for root, dirs, files in os.walk(temp_vs_path):
+            for file in files:
+                local_file_path = os.path.join(root, file)
+                # Get relative path from temp_vs_path
+                rel_path = os.path.relpath(local_file_path, temp_vs_path)
+                # Construct blob path
+                blob_path = f"{vectorstore_path}/{rel_path}"
+                
+                # Upload blob
+                with open(local_file_path, "rb") as data_file:
+                    container_client.upload_blob(name=blob_path, data=data_file, overwrite=True)
+        
+        # Store metadata in database
+        conn = None
+        cursor = None
+        try:
+            conn = DatabaseService.get_connection()
+            cursor = conn.cursor()
+            
+            # Insert vectorstore metadata
+            query = """
+            INSERT INTO vectorstores (
+                id, 
+                user_id, 
+                name, 
+                path, 
+                file_count,
+                document_count,
+                chunk_count,
+                chunk_size,
+                chunk_overlap,
+                created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, DATEADD(HOUR, 2, GETUTCDATE()))
+            """
+            
+            cursor.execute(query, [
+                vectorstore_id,
+                user_id,
+                vectorstore_name,
+                vectorstore_path,
+                1,  # file_count (virtual file)
+                1,  # document_count (one string input)
+                len(chunks),
+                chunk_size,
+                chunk_overlap
+            ])
+            
+            conn.commit()
+            
+        except Exception as e:
+            logger.error(f"Error storing vectorstore metadata: {str(e)}")
+            raise
+        finally:
+            if cursor:
+                cursor.close()
+            if conn:
+                conn.close()
+        
+        # Return success response
+        return create_api_response({
+            "message": "Vectorstore created successfully from string content",
+            "vectorstore_id": vectorstore_id,
+            "path": vectorstore_path,
+            "name": vectorstore_name,
+            "content_length": len(content),
+            "chunk_count": len(chunks),
+            "content_source": content_source
+        }, 200)
+        
+    except Exception as e:
+        logger.error(f"Error creating vectorstore from string: {str(e)}")
+        return create_api_response({
+            "error": "Server Error",
+            "message": f"Error creating vectorstore: {str(e)}"
+        }, 500)
+    finally:
+        # Clean up temporary directory
+        try:
+            shutil.rmtree(temp_dir)
+        except Exception as e:
+            logger.error(f"Error cleaning up temporary directory: {str(e)}")
+
 def register_vectorstore_routes(app):
     """Register vectorstore routes with the Flask app"""
     app.route('/rag/vectorstore', methods=['POST'])(api_logger(check_balance(create_vectorstore_route)))
     app.route('/rag/vectorstore', methods=['DELETE'])(api_logger(check_balance(delete_vectorstore_route)))
     app.route('/rag/vectorstore/load', methods=['POST'])(api_logger(check_balance(load_vectorstore_route)))
     app.route('/rag/vectorstore/list', methods=['GET'])(api_logger(check_balance(list_vectorstores_route)))
+    app.route('/rag/vectorstore/string', methods=['POST'])(api_logger(check_balance(create_vectorstore_from_string_route)))
