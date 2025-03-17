@@ -1,3 +1,44 @@
+from flask import jsonify, request, g, make_response
+from apis.utils.tokenService import TokenService
+from apis.utils.databaseService import DatabaseService
+from apis.utils.logMiddleware import api_logger
+from apis.utils.balanceMiddleware import check_balance
+from apis.utils.config import get_azure_blob_client, ensure_container_exists
+import logging
+import pytz
+import os
+import uuid
+import tempfile
+import requests
+import shutil
+from datetime import datetime
+from langchain_openai import AzureOpenAIEmbeddings
+from langchain_community.vectorstores import FAISS
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_community.document_loaders import (
+    TextLoader,
+    PyPDFLoader,
+    Docx2txtLoader,
+    CSVLoader,
+    UnstructuredExcelLoader
+)
+
+# CONFIGURE LOGGING
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Define container for vectorstores
+VECTORSTORE_CONTAINER = "vectorstores"
+STORAGE_ACCOUNT = os.environ.get("AZURE_STORAGE_ACCOUNT")
+BASE_BLOB_URL = f"https://{STORAGE_ACCOUNT}.blob.core.windows.net/{VECTORSTORE_CONTAINER}"
+
+def create_api_response(data, status_code=200):
+    """Helper function to create consistent API responses"""
+    response = make_response(jsonify(data))
+    response.status_code = status_code
+    return response
+
+
 def consume_vectorstore_route():
     """
     Consume a vectorstore with a query - RAG-based conversational assistant
@@ -298,7 +339,7 @@ def consume_vectorstore_route():
             try:
                 # Initialize embeddings
                 embeddings = AzureOpenAIEmbeddings(
-                    azure_deployment=os.environ.get("AZURE_OPENAI_EMBEDDING_DEPLOYMENT", "coe-chatbot-embedding3large"),
+                    azure_deployment=os.environ.get("AZURE_OPENAI_EMBEDDING_DEPLOYMENT", "text-embedding-3-large"),
                     api_key=os.environ.get("OPENAI_API_KEY"),
                     azure_endpoint=os.environ.get("OPENAI_API_ENDPOINT")
                 )

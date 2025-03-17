@@ -335,7 +335,7 @@ def create_vectorstore_route():
         
         # Initialize embeddings
         embeddings = AzureOpenAIEmbeddings(
-            azure_deployment=os.environ.get("AZURE_OPENAI_EMBEDDING_DEPLOYMENT", "coe-chatbot-embedding3large"),
+            azure_deployment=os.environ.get("AZURE_OPENAI_EMBEDDING_DEPLOYMENT", "text-embedding-3-large"),
             api_key=os.environ.get("OPENAI_API_KEY"),
             azure_endpoint=os.environ.get("OPENAI_API_ENDPOINT")
         )

@@ -180,6 +180,13 @@ register_sa_id_ocr_routes(app)
 from apis.ocr.vehicle_license_disc import register_vehicle_license_disc_routes
 register_vehicle_license_disc_routes(app)
 
+
+from apis.rag.vectorstore import register_vectorstore_routes
+register_vectorstore_routes(app)
+
+from apis.rag.consume_vectorstore import register_consume_vectorstore_routes
+register_consume_vectorstore_routes(app)
+
 if __name__ == '__main__':
     app.run(debug=True)
     
