@@ -928,7 +928,7 @@ def load_vectorstore_route():
             try:
                 # Initialize embeddings
                 embeddings = AzureOpenAIEmbeddings(
-                    azure_deployment=os.environ.get("AZURE_OPENAI_EMBEDDING_DEPLOYMENT", "coe-chatbot-embedding3large"),
+                    azure_deployment=os.environ.get("AZURE_OPENAI_EMBEDDING_DEPLOYMENT", "text-embedding-3-large"),
                     api_key=os.environ.get("OPENAI_API_KEY"),
                     azure_endpoint=os.environ.get("OPENAI_API_ENDPOINT")
                 )
@@ -1377,7 +1377,7 @@ def create_vectorstore_from_string_route():
         
         # Initialize embeddings
         embeddings = AzureOpenAIEmbeddings(
-            azure_deployment=os.environ.get("AZURE_OPENAI_EMBEDDING_DEPLOYMENT", "coe-chatbot-embedding3large"),
+            azure_deployment=os.environ.get("AZURE_OPENAI_EMBEDDING_DEPLOYMENT", "text-embedding-3-large"),
             api_key=os.environ.get("OPENAI_API_KEY"),
             azure_endpoint=os.environ.get("OPENAI_API_ENDPOINT")
         )
@@ -1479,8 +1479,8 @@ def create_vectorstore_from_string_route():
 
 def register_vectorstore_routes(app):
     """Register vectorstore routes with the Flask app"""
-    app.route('/rag/vectorstore', methods=['POST'])(api_logger(check_balance(create_vectorstore_route)))
-    app.route('/rag/vectorstore', methods=['DELETE'])(api_logger(check_balance(delete_vectorstore_route)))
-    app.route('/rag/vectorstore/load', methods=['POST'])(api_logger(check_balance(load_vectorstore_route)))
-    app.route('/rag/vectorstore/list', methods=['GET'])(api_logger(check_balance(list_vectorstores_route)))
+    app.route('/rag/vectorstore/document', methods=['POST'])(api_logger(check_balance(create_vectorstore_route)))
     app.route('/rag/vectorstore/string', methods=['POST'])(api_logger(check_balance(create_vectorstore_from_string_route)))
+    app.route('/rag/vectorstore/load', methods=['POST'])(api_logger(check_balance(load_vectorstore_route)))
+    app.route('/rag/vectorstore', methods=['DELETE'])(api_logger(check_balance(delete_vectorstore_route)))
+    app.route('/rag/vectorstore/list', methods=['GET'])(api_logger(check_balance(list_vectorstores_route)))

@@ -18,3 +18,4 @@ python-docx
 pandas
 azure.ai.documentintelligence
 faiss_cpu
+pymupdf
