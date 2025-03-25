@@ -100,6 +100,11 @@ def speech_services():
 def ocr_services():
     return render_template('docs/ocr_services.html')
 
+## DOCUMENT INTELLIGENCE
+@app.route('/docs/document_intelligence')
+def document_intelligence():
+    return render_template('docs/document_intelligence.html')
+
 # TOKEN SERVICE ENDPOINTS
 ## GET TOKEN
 from apis.token_services.get_token import register_routes as get_token_endpoint 

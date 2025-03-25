@@ -490,8 +490,11 @@
         <a href="{{ url_for('file_management') }}" class="sidebar-link">
             <i class="fas fa-file-alt"></i> File Management
         </a>
-        <a href="/templates/docs/document-intelligence.html" class="sidebar-link">
-            <i class="fas fa-file-search"></i> Document Intelligence
+        <a href="{{ url_for('document_intelligence') }}" class="sidebar-link">
+            <i class="fa fa-book"></i> Document Intelligence
+        </a>
+        <a href="{{ url_for('ocr') }}" class="sidebar-link">
+            <i class="fa fa-book"></i> OCR
         </a>
         <a href="/templates/docs/rag-query.html" class="sidebar-link">
             <i class="fas fa-search"></i> RAG Query
