@@ -3,100 +3,899 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OCR Services API Documentation</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <title>OCR Services - AI API Platform</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4a6fe3;
+            --secondary-color: #6c63ff;
+            --dark-color: #2a2c3b;
+            --light-color: #f5f6fa;
+            --text-color: #333;
+            --white-color: #ffffff;
+            --accent-color: #00d4ff;
+            --sidebar-width: 280px;
+            --header-height: 60px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--light-color);
+            color: var(--text-color);
+            position: relative;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            opacity: 0.05;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        .header {
+            background-color: var(--dark-color);
+            color: var(--white-color);
+            padding: 0 2rem;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: var(--header-height);
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo i {
+            font-size: 1.8rem;
+            margin-right: 0.5rem;
+            color: var(--accent-color);
+        }
+        
+        .logo h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+        
+        .nav {
+            display: flex;
+            align-items: center;
+        }
+        
+        .nav-item {
+            margin-left: 1.5rem;
+            color: var(--white-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+            display: flex;
+            align-items: center;
+        }
+        
+        .nav-item:hover {
+            color: var(--accent-color);
+        }
+        
+        .nav-item i {
+            margin-right: 0.5rem;
+        }
+        
+        .swagger-btn {
+            background-color: var(--accent-color);
+            color: var(--dark-color);
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-weight: 600;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        
+        .swagger-btn:hover {
+            background-color: #00b8e6;
+            transform: translateY(-2px);
+            color: var(--dark-color);
+        }
+        
+        /* Mobile menu toggle */
+        .menu-toggle {
+            display: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            top: var(--header-height);
+            left: 0;
+            height: calc(100vh - var(--header-height));
+            width: var(--sidebar-width);
+            background-color: var(--white-color);
+            border-right: 1px solid rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+            z-index: 900;
+            padding: 1.5rem 0;
+            transition: transform 0.3s ease-in-out;
+        }
+        
+        .sidebar-category {
+            padding: 0.5rem 1.5rem;
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar-link {
+            display: block;
+            padding: 0.7rem 1.5rem;
+            padding-left: 2.5rem;
+            color: var(--text-color);
+            text-decoration: none;
+            transition: background-color 0.2s, color 0.2s;
+            font-size: 0.95rem;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar-link:hover {
+            background-color: rgba(106, 100, 255, 0.05);
+            color: var(--primary-color);
+        }
+        
+        .sidebar-link.active {
+            color: var(--primary-color);
+            background-color: rgba(106, 100, 255, 0.08);
+            border-left: 3px solid var(--primary-color);
+        }
+        
+        .sidebar-link i {
+            margin-right: 0.5rem;
+            width: 20px;
+            text-align: center;
+        }
+        
+        /* Main content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            margin-top: var(--header-height);
+            padding: 2rem;
+            min-height: calc(100vh - var(--header-height));
+        }
+        
+        /* Content sections */
+        .content-section {
+            background-color: var(--white-color);
+            border-radius: 8px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .content-section h2 {
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            color: var(--dark-color);
+            border-bottom: 2px solid var(--light-color);
+            padding-bottom: 0.5rem;
+        }
+        
+        .content-section h3 {
+            font-size: 1.3rem;
+            margin: 1.5rem 0 1rem;
+            color: var(--primary-color);
+        }
+        
+        .content-section p {
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+        
+        .content-section ul, 
+        .content-section ol {
+            margin-bottom: 1.5rem;
+            padding-left: 1.5rem;
+        }
+        
+        .content-section li {
+            margin-bottom: 0.5rem;
+            line-height: 1.6;
+        }
+        
+        /* Code blocks */
+        .api-endpoints {
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .endpoint {
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: flex-start;
+        }
+        
+        .endpoint-method {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: monospace;
+            font-weight: bold;
+            margin-right: 0.5rem;
+            min-width: 60px;
+            text-align: center;
+        }
+        
+        .method-get {
+            background-color: #e7f5ff;
+            color: #1971c2;
+        }
+        
+        .method-post {
+            background-color: #e3fafc;
+            color: #0c8599;
+        }
+        
+        .method-put {
+            background-color: #fff9db;
+            color: #e67700;
+        }
+        
+        .method-delete {
+            background-color: #fff5f5;
+            color: #e03131;
+        }
+        
+        .endpoint-path {
+            display: inline-block;
+            background-color: var(--dark-color);
+            color: var(--white-color);
+            padding: 0.3rem 0.7rem;
+            border-radius: 4px;
+            font-family: monospace;
+            margin-right: 0.5rem;
+        }
+        
+        .endpoint-description {
+            color: #666;
+            flex: 1;
+        }
+        
+        .code-block {
+            background-color: #2d2d2d;
+            color: #fff;
+            padding: 1rem;
+            border-radius: 6px;
+            font-family: monospace;
+            overflow-x: auto;
+            margin-bottom: 1.5rem;
+            line-height: 1.4;
+        }
+        
+        /* Info boxes */
+        .info-box {
+            display: flex;
+            background-color: #e7f5ff;
+            border-left: 4px solid #1971c2;
+            padding: 1.5rem;
+            border-radius: 6px;
+            margin-bottom: 2rem;
+        }
+        
+        .info-box-icon {
+            font-size: 1.8rem;
+            color: #1971c2;
+            margin-right: 1.5rem;
+        }
+        
+        .info-box-content h4 {
+            margin-bottom: 0.5rem;
+            color: #1971c2;
+        }
+        
+        .info-box-content p, .info-box-content li {
+            color: #495057;
+        }
+        
+        /* Footer */
+        .footer {
+            background-color: var(--dark-color);
+            color: var(--white-color);
+            text-align: center;
+            padding: 2rem;
+            margin-top: 3rem;
+            margin-left: var(--sidebar-width);
+        }
+        
+        .footer p {
+            margin-bottom: 1rem;
+        }
+        
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+        }
+        
+        .social-link {
+            color: var(--white-color);
+            font-size: 1.5rem;
+            transition: color 0.3s;
+        }
+        
+        .social-link:hover {
+            color: var(--accent-color);
+        }
+        
+        /* Tab styles */
+        .tabs {
+            display: flex;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .tab {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border: 1px solid transparent;
+            border-radius: 4px 4px 0 0;
+            margin-right: 0.5rem;
+            transition: all 0.2s;
+        }
+        
+        .tab.active {
+            background-color: var(--white-color);
+            border-color: #ddd;
+            border-bottom-color: var(--white-color);
+            margin-bottom: -1px;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 1rem;
+            background-color: var(--white-color);
+            border-radius: 0 0 4px 4px;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Image styles for example images */
+        .example-image {
+            max-width: 100%;
+            height: auto;
+            margin: 1rem 0;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Two-column layout for ID card data */
+        .document-data-columns {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .document-data-item {
+            background-color: #f8f9fa;
+            padding: 1rem;
+            border-radius: 4px;
+            border-left: 3px solid var(--primary-color);
+        }
+        
+        .document-data-label {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            color: var(--dark-color);
+        }
+        
+        .document-data-value {
+            color: #555;
+        }
+        
+        /* Download button */
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background-color 0.3s, transform 0.2s;
+            margin-bottom: 2rem;
+        }
+        
+        .download-btn i {
+            margin-right: 0.5rem;
+        }
+        
+        .download-btn:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+        
+        /* Responsive styles */
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+                box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+                z-index: 1001;
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .footer {
+                margin-left: 0;
+            }
+            
+            .menu-toggle {
+                display: block;
+            }
+            
+            .document-data-columns {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .header {
+                padding: 0 1rem;
+            }
+            
+            .nav-item:not(.swagger-btn) {
+                display: none;
+            }
+        }
+        
+        /* Dark overlay when sidebar is active on mobile */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        
+        @media (max-width: 992px) {
+            .sidebar-overlay.active {
+                display: block;
+            }
+        }
+    </style>
 </head>
 <body>
-    <header>
-        <nav>
-            <div class="logo">
-                <a href="/">API Documentation</a>
+    <header class="header">
+        <div class="logo">
+            <img src="/static/images/Telesure-logo.png" alt="TIH AI API Platform Logo" style="height: 40px; margin-right: 0.5rem;">
+            <h1>AI API Platform</h1>
+        </div>
+        <nav class="nav">
+            <div class="menu-toggle" id="menu-toggle">
+                <i class="fas fa-bars"></i>
             </div>
-            <ul class="nav-links">
-                <li><a href="/docs/getting_started">Getting Started</a></li>
-                <li><a href="/docs/token_services">Token Services</a></li>
-                <li><a href="/docs/balance_management">Balance Management</a></li>
-                <li><a href="/docs/file_management">File Management</a></li>
-                <li><a href="/docs/llm">LLM Services</a></li>
-                <li><a href="/docs/image_generation">Image Generation</a></li>
-                <li><a href="/docs/speech_services">Speech Services</a></li>
-                <li><a href="/docs/ocr_services">OCR Services</a></li>
-            </ul>
+            <a href="{{ url_for('home') }}" class="nav-item">
+                <i class="fas fa-home"></i>Home
+            </a>
+            <a href="{{ url_for('getting_started') }}" class="nav-item">
+                <i class="fas fa-rocket"></i>Getting Started
+            </a>
+            <a href="/templates/docs/faq.html" class="nav-item">
+                <i class="fas fa-question-circle"></i>FAQ
+            </a>
+            <a href="/apidocs/" class="nav-item swagger-btn">
+                <i class="fas fa-book"></i>Swagger
+            </a>
         </nav>
     </header>
-
-    <main>
-        <section class="documentation">
-            <h1>OCR Services API</h1>
+    
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    
+    <aside class="sidebar">
+        <div class="sidebar-category">Main</div>
+        <a href="{{ url_for('home') }}" class="sidebar-link">
+            <i class="fas fa-home"></i> Home
+        </a>
+        <a href="/apidocs/" class="sidebar-link">
+            <i class="fas fa-book"></i> API Documentation
+        </a>
+        <a href="{{ url_for('getting_started') }}" class="sidebar-link">
+            <i class="fas fa-rocket"></i> Getting Started
+        </a>
+        
+        <div class="sidebar-category">Endpoints</div>
+        <a href="{{ url_for('token_services') }}" class="sidebar-link">
+            <i class="fas fa-key"></i> Token Services
+        </a>
+        <a href="{{ url_for('balance_management') }}" class="sidebar-link">
+            <i class="fas fa-wallet"></i> Balance Management
+        </a>
+        <a href="{{ url_for('llm') }}" class="sidebar-link">
+            <i class="fas fa-robot"></i> Language Models
+        </a>
+        <a href="{{ url_for('image_generation') }}" class="sidebar-link">
+            <i class="fas fa-image"></i> Image Generation
+        </a>
+        <a href="{{ url_for('speech_services') }}" class="sidebar-link">
+            <i class="fas fa-microphone"></i> Speech Services
+        </a>
+        <a href="{{ url_for('file_management') }}" class="sidebar-link">
+            <i class="fas fa-file-alt"></i> File Management
+        </a>
+        <a href="/templates/docs/document-intelligence.html" class="sidebar-link">
+            <i class="fas fa-file-search"></i> Document Intelligence
+        </a>
+        <a href="/templates/docs/ocr-services.html" class="sidebar-link active">
+            <i class="fas fa-id-card"></i> OCR Services
+        </a>
+        <a href="/templates/docs/rag-query.html" class="sidebar-link">
+            <i class="fas fa-search"></i> RAG Query
+        </a>
+        
+        <div class="sidebar-category">Resources</div>
+        <a href="/templates/docs/faq.html" class="sidebar-link">
+            <i class="fas fa-question-circle"></i> FAQ
+        </a>
+        <a href="/templates/docs/rate-limits.html" class="sidebar-link">
+            <i class="fas fa-tachometer-alt"></i> Rate Limits
+        </a>
+        <a href="/templates/docs/changelog.html" class="sidebar-link">
+            <i class="fas fa-history"></i> Changelog
+        </a>
+    </aside>
+    
+    <main class="main-content">
+        <section class="content-section">
+            <h2>OCR Services</h2>
             
-            <article class="endpoint">
-                <h2>South African ID Document OCR</h2>
-                <p>Extract information from South African ID documents using OCR technology.</p>
+            <p>Our OCR (Optical Character Recognition) services provide specialized document extraction capabilities for South African ID documents and vehicle license discs. These services extract structured data from document images and return it in a standardized JSON format.</p>
+            
+            <a href="/static/files/ai-api-postman-collection.json" class="download-btn">
+                <i class="fas fa-download"></i> Download Postman Collection
+            </a>
+            
+            <div class="info-box">
+                <div class="info-box-icon"><i class="fas fa-info-circle"></i></div>
+                <div class="info-box-content">
+                    <h4>Authentication Required</h4>
+                    <p>All OCR services require authentication using a token. You must include your token in the <code>X-Token</code> header for all requests.</p>
+                    <p>See the <a href="{{ url_for('token_services') }}">Token Services</a> documentation for details on token generation.</p>
+                </div>
+            </div>
+            
+            <div class="tabs">
+                <div class="tab active" data-tab="sa-id">South African ID</div>
+                <div class="tab" data-tab="vehicle-license">Vehicle License Disc</div>
+            </div>
+            
+            <!-- South African ID Tab -->
+            <div id="sa-id" class="tab-content active">
+                <h3>South African ID Document OCR</h3>
+                <p>This endpoint extracts information from South African ID documents (both green ID books and smart ID cards) using advanced OCR technology. The service can extract data from the barcode (when present) or directly from the image using machine learning.</p>
                 
-                <h3>Endpoint</h3>
-                <code>POST /ocr/sa_id</code>
+                <h4>Endpoint</h4>
+                <div class="api-endpoints">
+                    <div class="endpoint">
+                        <span class="endpoint-method method-post">POST</span>
+                        <span class="endpoint-path">/ocr/sa_id_card</span>
+                        <span class="endpoint-description">Extract information from South African ID documents</span>
+                    </div>
+                </div>
                 
-                <h3>Headers</h3>
-                <ul>
-                    <li><strong>X-Token:</strong> Your authentication token (required)</li>
-                    <li><strong>Content-Type:</strong> application/json</li>
-                </ul>
+                <h4>How It Works</h4>
+                <ol>
+                    <li>First, upload your ID document image using the <code>/file</code> endpoint</li>
+                    <li>Receive a <code>file_id</code> for your uploaded image</li>
+                    <li>Submit this <code>file_id</code> to the OCR endpoint</li>
+                    <li>Receive structured ID information in response</li>
+                </ol>
+                <p>The uploaded file is automatically deleted after processing to maintain document security.</p>
                 
-                <h3>Request Body</h3>
-                <pre>
+                <h4>Request Parameters</h4>
+                <div class="code-block">
+                    <pre>
 {
-    "file_id": "your-file-id"
+    "file_id": "your-file-id"  // ID of previously uploaded ID document image
 }
-                </pre>
+                    </pre>
+                </div>
                 
-                <p>The <code>file_id</code> parameter should be an ID of a previously uploaded file using the <code>/file</code> endpoint.</p>
-                
-                <h3>Supported File Types</h3>
-                <p>The following file formats are supported:</p>
+                <h4>Supported File Types</h4>
                 <ul>
-                    <li>PNG (.png)</li>
-                    <li>JPEG (.jpg, .jpeg)</li>
-                    <li>PDF (.pdf) - Single page only</li>
-                    <li>TIFF (.tiff, .tif)</li>
+                    <li><strong>Images</strong> (.jpg, .jpeg, .png)</li>
+                    <li><strong>PDF</strong> (.pdf) - Single page containing the ID document</li>
+                    <li><strong>TIFF</strong> (.tiff, .tif)</li>
                 </ul>
                 
-                <h3>Response</h3>
-                <p>Success (200 OK):</p>
-                <pre>
+                <h4>Example Response</h4>
+                <div class="code-block">
+                    <pre>
 {
-    "surname": "DOE",
-    "names": "JOHN",
+    "surname": "SMITH",
+    "names": "JOHN JAMES",
     "sex": "M",
     "nationality": "RSA",
-    "identity_number": "0123456789012",
-    "date_of_birth": "01 JAN 1990",
-    "country_of_birth": "SOUTH AFRICA"
+    "identity_number": "8001015009087",
+    "date_of_birth": "01 JAN 1980",
+    "country_of_birth": "SOUTH AFRICA",
+    "num_documents_processed": 1,
+    "num_pages_processed": 1,
+    "input_tokens": 120,
+    "completion_tokens": 45,
+    "output_tokens": 165
 }
-                </pre>
+                    </pre>
+                </div>
                 
-                <h3>Error Responses</h3>
+                <h4>Response Fields</h4>
+                <div class="document-data-columns">
+                    <div class="document-data-item">
+                        <div class="document-data-label">surname</div>
+                        <div class="document-data-value">Last name of the ID holder</div>
+                    </div>
+                    <div class="document-data-item">
+                        <div class="document-data-label">names</div>
+                        <div class="document-data-value">Given names of the ID holder</div>
+                    </div>
+                    <div class="document-data-item">
+                        <div class="document-data-label">sex</div>
+                        <div class="document-data-value">Gender (M or F)</div>
+                    </div>
+                    <div class="document-data-item">
+                        <div class="document-data-label">nationality</div>
+                        <div class="document-data-value">Nationality (usually RSA)</div>
+                    </div>
+                    <div class="document-data-item">
+                        <div class="document-data-label">identity_number</div>
+                        <div class="document-data-value">South African ID number (13 digits)</div>
+                    </div>
+                    <div class="document-data-item">
+                        <div class="document-data-label">date_of_birth</div>
+                        <div class="document-data-value">Birth date in DD MMM YYYY format</div>
+                    </div>
+                    <div class="document-data-item">
+                        <div class="document-data-label">country_of_birth</div>
+                        <div class="document-data-value">Country where ID holder was born</div>
+                    </div>
+                </div>
+                
+                <div class="info-box">
+                    <div class="info-box-icon"><i class="fas fa-lightbulb"></i></div>
+                    <div class="info-box-content">
+                        <h4>Pro Tips for ID Document OCR</h4>
+                        <ul>
+                            <li>For best results, ensure the ID document is well-lit and the entire document is visible in the image</li>
+                            <li>Position the document against a dark background for better contrast</li>
+                            <li>Barcode extraction (when available) is more accurate than image OCR</li>
+                            <li>For Smart ID cards, scan both sides but submit the side with the ID number and personal details</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Vehicle License Disc Tab -->
+            <div id="vehicle-license" class="tab-content">
+                <h3>Vehicle License Disc OCR</h3>
+                <p>This endpoint extracts information from South African vehicle license discs using OCR technology. The service can extract data from the barcode (when present) or directly from the license disc image using machine learning.</p>
+                
+                <h4>Endpoint</h4>
+                <div class="api-endpoints">
+                    <div class="endpoint">
+                        <span class="endpoint-method method-post">POST</span>
+                        <span class="endpoint-path">/ocr/vehicle_license_disc</span>
+                        <span class="endpoint-description">Extract information from South African vehicle license discs</span>
+                    </div>
+                </div>
+                
+                <h4>How It Works</h4>
+                <ol>
+                    <li>First, upload your license disc image using the <code>/file</code> endpoint</li>
+                    <li>Receive a <code>file_id</code> for your uploaded image</li>
+                    <li>Submit this <code>file_id</code> to the OCR endpoint</li>
+                    <li>Receive structured vehicle license information in response</li>
+                </ol>
+                <p>The uploaded file is automatically deleted after processing to maintain document security.</p>
+                
+                <h4>Request Parameters</h4>
+                <div class="code-block">
+                    <pre>
+{
+    "file_id": "your-file-id"  // ID of previously uploaded license disc image
+}
+                    </pre>
+                </div>
+                
+                <h4>Supported File Types</h4>
                 <ul>
-                    <li><strong>400 Bad Request:</strong> Invalid parameters or unsupported file type</li>
-                    <li><strong>401 Unauthorized:</strong> Missing or invalid token</li>
-                    <li><strong>500 Server Error:</strong> Server processing error</li>
+                    <li><strong>Images</strong> (.jpg, .jpeg, .png)</li>
+                    <li><strong>PDF</strong> (.pdf) - Single page containing the license disc</li>
+                    <li><strong>TIFF</strong> (.tiff, .tif)</li>
                 </ul>
                 
-                <h3>CURL Example</h3>
-                <pre>
-curl -X POST \
-  'https://your-api-domain.com/ocr/sa_id' \
-  -H 'X-Token: your-token-here' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "file_id": "12345678-1234-5678-1234-567812345678"
-}'
-                </pre>
-            </article>
+                <h4>Example Response</h4>
+                <div class="code-block">
+                    <pre>
+{
+    "veh_no": "12345678",
+    "veh_reg_no": "ABC123GP",
+    "veh_register_no": "1234567890123",
+    "veh_description": "TOYOTA COROLLA 1.8 GLS",
+    "veh_make": "TOYOTA",
+    "veh_model": "COROLLA",
+    "veh_color": "WHITE",
+    "veh_vin_no": "ABCD12345XYZ67890",
+    "veh_engine_no": "1AB2345678",
+    "veh_expiry": "2025-12-31",
+    "extraction_method": "barcode analysis",
+    "num_documents_processed": 1,
+    "num_pages_processed": 1,
+    "input_tokens": 0,
+    "completion_tokens": 0,
+    "output_tokens": 0
+}
+                    </pre>
+                </div>
+                
+                <h4>Response Fields</h4>
+                <div class="document-data-columns">
+                    <div class="document-data-item">
+                        <div class="document-data-label">veh_no</div>
+                        <div class="document-data-value">RSA identification number</div>
+                    </div>
+                    <div class="document-data-item">
+                        <div class="document-data-label">veh_reg_no</div>
+                        <div class="document-data-value">Vehicle license number (license plate)</div>
+                    </div>
+                    <div class="document-data-item">
+                        <div class="document-data-label">veh_register_no</div>
+                        <div class="document-data-value">Vehicle registration number</div>
+                    </div>
+                    <div class="document-data-item">
+                        <div class="document-data-label">veh_description</div>
+                        <div class="document-data-value">Vehicle model and details</div>
+                    </div>
+                    <div class="document-data-item">
+                        <div class="document-data-label">veh_make</div>
+                        <div class="document-data-value">Vehicle manufacturer</div>
+                    </div>
+                    <div class="document-data-item">
+                        <div class="document-data-label">veh_model</div>
+                        <div class="document-data-value">Vehicle model</div>
+                    </div>
+                    <div class="document-data-item">
+                        <div class="document-data-label">veh_color</div>
+                        <div class="document-data-value">Vehicle color</div>
+                    </div>
+                    <div class="document-data-item">
+                        <div class="document-data-label">veh_vin_no</div>
+                        <div class="document-data-value">Vehicle Identification Number</div>
+                    </div>
+                    <div class="document-data-item">
+                        <div class="document-data-label">veh_engine_no</div>
+                        <div class="document-data-value">Engine number</div>
+                    </div>
+                    <div class="document-data-item">
+                        <div class="document-data-label">veh_expiry</div>
+                        <div class="document-data-value">License expiry date</div>
+                    </div>
+                    <div class="document-data-item">
+                        <div class="document-data-label">extraction_method</div>
+                        <div class="document-data-value">Method used to extract data (barcode analysis or image ocr)</div>
+                    </div>
+                </div>
+                
+                <div class="info-box">
+                    <div class="info-box-icon"><i class="fas fa-lightbulb"></i></div>
+                    <div class="info-box-content">
+                        <h4>Pro Tips for License Disc OCR</h4>
+                        <ul>
+                            <li>For best results, capture the entire license disc including the barcode</li>
+                            <li>Ensure the barcode (PDF417) is clearly visible for more accurate extraction</li>
+                            <li>Remove the license disc from the windshield to avoid glare and reflections</li>
+                            <li>Position the disc against a dark background for better contrast</li>
+                            <li>When <code>extraction_method</code> is "barcode analysis", the data is extracted directly from the PDF417 barcode and is highly accurate</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <h4>Example Usage Scenarios</h4>
+                <ul>
+                    <li><strong>Vehicle Insurance</strong> - Quickly capture vehicle details for insurance quotes or policy registration</li>
+                    <li><strong>Fleet Management</strong> - Automated extraction of vehicle details for fleet registration and management</li>
+                    <li><strong>Vehicle Sales</strong> - Streamline the process of capturing vehicle information for sales listings</li>
+                    <li><strong>Roadside Assistance</strong> - Quick extraction of vehicle details for roadside assistance services</li>
+                </ul>
+            </div>
         </section>
     </main>
-
-    <footer>
-        <p>&copy; 2024 API Documentation</p>
+    
+    <footer class="footer">
+        <p>© 2025 TIH AI API Portal. Powered by the TIH AI Center of Excellence.</p>
     </footer>
+    
+    <script>
+        // Toggle sidebar on mobile
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuToggle = document.getElementById('menu-toggle');
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            
+            menuToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('active');
+                overlay.classList.toggle('active');
+            });
+            
+            overlay.addEventListener('click', function() {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            });
+            
+            // Tab functionality
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // Remove active class from all tabs and contents
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tabContents.forEach(c => c.classList.remove('active'));
+                    
+                    // Add active class to clicked tab
+                    this.classList.add('active');
+                    
+                    // Show corresponding content
+                    const tabId = this.getAttribute('data-tab');
+                    document.getElementById(tabId).classList.add('active');
+                });
+            });
+            
+            // Highlight current page in sidebar
+            const currentPage = window.location.pathname;
+            const sidebarLinks = document.querySelectorAll('.sidebar-link');
+            
+            sidebarLinks.forEach(link => {
+                if (link.getAttribute('href') === currentPage) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
 </body>
 </html>
