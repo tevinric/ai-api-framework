@@ -85,6 +85,11 @@ def file_management():
 def llm():
     return render_template('docs/llm.html')
 
+## LLM CONVERSATION
+@app.route('/docs/llm_conversation')
+def llm_conversation():
+    return render_template('docs/llm_conversation.html')
+
 ## IMAGE_GENERATION
 @app.route('/docs/image_generation')
 def image_generation():
