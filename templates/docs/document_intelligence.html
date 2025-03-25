@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Intelligence - AI API Platform</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4a6fe3;
+            --secondary-color: #6c63ff;
+            --dark-color: #2a2c3b;
+            --light-color: #f5f6fa;
+            --text-color: #333;
+            --white-color: #ffffff;
+            --accent-color: #00d4ff;
+            --sidebar-width: 280px;
+            --header-height: 60px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--light-color);
+            color: var(--text-color);
+            position: relative;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            opacity: 0.05;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        .header {
+            background-color: var(--dark-color);
+            color: var(--white-color);
+            padding: 0 2rem;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: var(--header-height);
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo i {
+            font-size: 1.8rem;
+            margin-right: 0.5rem;
+            color: var(--accent-color);
+        }
+        
+        .logo h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+        
+        .nav {
+            display: flex;
+            align-items: center;
+        }
+        
+        .nav-item {
+            margin-left: 1.5rem;
+            color: var(--white-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+            display: flex;
+            align-items: center;
+        }
+        
+        .nav-item:hover {
+            color: var(--accent-color);
+        }
+        
+        .nav-item i {
+            margin-right: 0.5rem;
+        }
+        
+        .swagger-btn {
+            background-color: var(--accent-color);
+            color: var(--dark-color);
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-weight: 600;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        
+        .swagger-btn:hover {
+            background-color: #00b8e6;
+            transform: translateY(-2px);
+            color: var(--dark-color);
+        }
+        
+        /* Mobile menu toggle */
+        .menu-toggle {
+            display: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            top: var(--header-height);
+            left: 0;
+            height: calc(100vh - var(--header-height));
+            width: var(--sidebar-width);
+            background-color: var(--white-color);
+            border-right: 1px solid rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+            z-index: 900;
+            padding: 1.5rem 0;
+            transition: transform 0.3s ease-in-out;
+        }
+        
+        .sidebar-category {
+            padding: 0.5rem 1.5rem;
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar-link {
+            display: block;
+            padding: 0.7rem 1.5rem;
+            padding-left: 2.5rem;
+            color: var(--text-color);
+            text-decoration: none;
+            transition: background-color 0.2s, color 0.2s;
+            font-size: 0.95rem;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar-link:hover {
+            background-color: rgba(106, 100, 255, 0.05);
+            color: var(--primary-color);
+        }
+        
+        .sidebar-link.active {
+            color: var(--primary-color);
+            background-color: rgba(106, 100, 255, 0.08);
+            border-left: 3px solid var(--primary-color);
+        }
+        
+        .sidebar-link i {
+            margin-right: 0.5rem;
+            width: 20px;
+            text-align: center;
+        }
+        
+        /* Main content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            margin-top: var(--header-height);
+            padding: 2rem;
+            min-height: calc(100vh - var(--header-height));
+        }
+        
+        /* Content sections */
+        .content-section {
+            background-color: var(--white-color);
+            border-radius: 8px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .content-section h2 {
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            color: var(--dark-color);
+            border-bottom: 2px solid var(--light-color);
+            padding-bottom: 0.5rem;
+        }
+        
+        .content-section h3 {
+            font-size: 1.3rem;
+            margin: 1.5rem 0 1rem;
+            color: var(--primary-color);
+        }
+        
+        .content-section p {
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+        
+        .content-section ul, 
+        .content-section ol {
+            margin-bottom: 1.5rem;
+            padding-left: 1.5rem;
+        }
+        
+        .content-section li {
+            margin-bottom: 0.5rem;
+            line-height: 1.6;
+        }
+        
+        /* Code blocks */
+        .api-endpoints {
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .endpoint {
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: flex-start;
+        }
+        
+        .endpoint-method {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: monospace;
+            font-weight: bold;
+            margin-right: 0.5rem;
+            min-width: 60px;
+            text-align: center;
+        }
+        
+        .method-get {
+            background-color: #e7f5ff;
+            color: #1971c2;
+        }
+        
+        .method-post {
+            background-color: #e3fafc;
+            color: #0c8599;
+        }
+        
+        .method-put {
+            background-color: #fff9db;
+            color: #e67700;
+        }
+        
+        .method-delete {
+            background-color: #fff5f5;
+            color: #e03131;
+        }
+        
+        .endpoint-path {
+            display: inline-block;
+            background-color: var(--dark-color);
+            color: var(--white-color);
+            padding: 0.3rem 0.7rem;
+            border-radius: 4px;
+            font-family: monospace;
+            margin-right: 0.5rem;
+        }
+        
+        .endpoint-description {
+            color: #666;
+            flex: 1;
+        }
+        
+        .code-block {
+            background-color: #2d2d2d;
+            color: #fff;
+            padding: 1rem;
+            border-radius: 6px;
+            font-family: monospace;
+            overflow-x: auto;
+            margin-bottom: 1.5rem;
+            line-height: 1.4;
+        }
+        
+        /* Info boxes */
+        .info-box {
+            display: flex;
+            background-color: #e7f5ff;
+            border-left: 4px solid #1971c2;
+            padding: 1.5rem;
+            border-radius: 6px;
+            margin-bottom: 2rem;
+        }
+        
+        .info-box-icon {
+            font-size: 1.8rem;
+            color: #1971c2;
+            margin-right: 1.5rem;
+        }
+        
+        .info-box-content h4 {
+            margin-bottom: 0.5rem;
+            color: #1971c2;
+        }
+        
+        .info-box-content p, .info-box-content li {
+            color: #495057;
+        }
+        
+        /* Footer */
+        .footer {
+            background-color: var(--dark-color);
+            color: var(--white-color);
+            text-align: center;
+            padding: 2rem;
+            margin-top: 3rem;
+            margin-left: var(--sidebar-width);
+        }
+        
+        .footer p {
+            margin-bottom: 1rem;
+        }
+        
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+        }
+        
+        .social-link {
+            color: var(--white-color);
+            font-size: 1.5rem;
+            transition: color 0.3s;
+        }
+        
+        .social-link:hover {
+            color: var(--accent-color);
+        }
+        
+        /* Tab styles */
+        .tabs {
+            display: flex;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .tab {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border: 1px solid transparent;
+            border-radius: 4px 4px 0 0;
+            margin-right: 0.5rem;
+            transition: all 0.2s;
+        }
+        
+        .tab.active {
+            background-color: var(--white-color);
+            border-color: #ddd;
+            border-bottom-color: var(--white-color);
+            margin-bottom: -1px;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 1rem;
+            background-color: var(--white-color);
+            border-radius: 0 0 4px 4px;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Download button */
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background-color 0.3s, transform 0.2s;
+            margin-bottom: 2rem;
+        }
+        
+        .download-btn i {
+            margin-right: 0.5rem;
+        }
+        
+        .download-btn:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+        
+        /* Responsive styles */
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+                box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+                z-index: 1001;
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .footer {
+                margin-left: 0;
+            }
+            
+            .menu-toggle {
+                display: block;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .header {
+                padding: 0 1rem;
+            }
+            
+            .nav-item:not(.swagger-btn) {
+                display: none;
+            }
+        }
+        
+        /* Dark overlay when sidebar is active on mobile */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        
+        @media (max-width: 992px) {
+            .sidebar-overlay.active {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <img src="/static/images/Telesure-logo.png" alt="TIH AI API Platform Logo" style="height: 40px; margin-right: 0.5rem;">
+            <h1>AI API Platform</h1>
+        </div>
+        <nav class="nav">
+            <div class="menu-toggle" id="menu-toggle">
+                <i class="fas fa-bars"></i>
+            </div>
+            <a href="{{ url_for('home') }}" class="nav-item">
+                <i class="fas fa-home"></i>Home
+            </a>
+            <a href="{{ url_for('getting_started') }}" class="nav-item">
+                <i class="fas fa-rocket"></i>Getting Started
+            </a>
+            <a href="/templates/docs/faq.html" class="nav-item">
+                <i class="fas fa-question-circle"></i>FAQ
+            </a>
+            <a href="/apidocs/" class="nav-item swagger-btn">
+                <i class="fas fa-book"></i>Swagger
+            </a>
+        </nav>
+    </header>
+    
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    
+    <aside class="sidebar">
+        <div class="sidebar-category">Main</div>
+        <a href="{{ url_for('home') }}" class="sidebar-link">
+            <i class="fas fa-home"></i> Home
+        </a>
+        <a href="/apidocs/" class="sidebar-link">
+            <i class="fas fa-book"></i> API Documentation
+        </a>
+        <a href="{{ url_for('getting_started') }}" class="sidebar-link">
+            <i class="fas fa-rocket"></i> Getting Started
+        </a>
+        
+        <div class="sidebar-category">Endpoints</div>
+        <a href="{{ url_for('token_services') }}" class="sidebar-link">
+            <i class="fas fa-key"></i> Token Services
+        </a>
+        <a href="{{ url_for('balance_management') }}" class="sidebar-link">
+            <i class="fas fa-wallet"></i> Balance Management
+        </a>
+        <a href="{{ url_for('llm') }}" class="sidebar-link">
+            <i class="fas fa-robot"></i> Language Models
+        </a>
+        <a href="{{ url_for('image_generation') }}" class="sidebar-link">
+            <i class="fas fa-image"></i> Image Generation
+        </a>
+        <a href="{{ url_for('speech_services') }}" class="sidebar-link">
+            <i class="fas fa-microphone"></i> Speech Services
+        </a>
+        <a href="{{ url_for('file_management') }}" class="sidebar-link">
+            <i class="fas fa-file-alt"></i> File Management
+        </a>
+        <a href="/templates/docs/document-intelligence.html" class="sidebar-link active">
+            <i class="fas fa-file-search"></i> Document Intelligence
+        </a>
+        <a href="/templates/docs/rag-query.html" class="sidebar-link">
+            <i class="fas fa-search"></i> RAG Query
+        </a>
+        
+        <div class="sidebar-category">Resources</div>
+        <a href="/templates/docs/faq.html" class="sidebar-link">
+            <i class="fas fa-question-circle"></i> FAQ
+        </a>
+        <a href="/templates/docs/rate-limits.html" class="sidebar-link">
+            <i class="fas fa-tachometer-alt"></i> Rate Limits
+        </a>
+        <a href="/templates/docs/changelog.html" class="sidebar-link">
+            <i class="fas fa-history"></i> Changelog
+        </a>
+    </aside>
+    
+    <main class="main-content">
+        <section class="content-section">
+            <h2>Document Intelligence</h2>
+            
+            <p>The Document Intelligence API provides powerful tools for extracting information, analyzing layout, and summarizing documents. These services help you transform unstructured document data into structured information that can be easily processed and analyzed.</p>
+            
+            <a href="/static/files/ai-api-postman-collection.json" class="download-btn">
+                <i class="fas fa-download"></i> Download Postman Collection
+            </a>
+            
+            <div class="info-box">
+                <div class="info-box-icon"><i class="fas fa-info-circle"></i></div>
+                <div class="info-box-content">
+                    <h4>Authentication Required</h4>
+                    <p>All Document Intelligence endpoints require authentication using a token. You must include your token in the <code>X-Token</code> header for all requests.</p>
+                    <p>See the <a href="{{ url_for('token_services') }}">Token Services</a> documentation for details on token generation.</p>
+                </div>
+            </div>
+            
+            <div class="tabs">
+                <div class="tab active" data-tab="layout">Layout Analysis</div>
+                <div class="tab" data-tab="read">Document Reading</div>
+                <div class="tab" data-tab="summarization">Document Summarization</div>
+            </div>
+            
+            <!-- Layout Analysis Tab -->
+            <div id="layout" class="tab-content active">
+                <h3>Layout Analysis</h3>
+                <p>The Layout Analysis endpoint extracts structured information from documents, including tables, checkboxes, and text layout. This service is useful for forms, invoices, and documents with complex formatting.</p>
+                
+                <h4>Endpoint</h4>
+                <div class="api-endpoints">
+                    <div class="endpoint">
+                        <span class="endpoint-method method-post">POST</span>
+                        <span class="endpoint-path">/docint/layout</span>
+                        <span class="endpoint-description">Extract tables, checkboxes, and text from forms and documents</span>
+                    </div>
+                </div>
+                
+                <h4>Request Parameters</h4>
+                <ul>
+                    <li><strong>file_ids</strong> (required) - Array of file IDs to process (uploaded via /file endpoint)</li>
+                    <li><strong>include_barcode</strong> (optional) - Enable barcode detection (default: false)</li>
+                    <li><strong>include_language</strong> (optional) - Include language identification (default: false)</li>
+                    <li><strong>include_keyvalue_pairs</strong> (optional) - Include key-value pairs extraction (default: false)</li>
+                    <li><strong>output_format</strong> (optional) - Output format for tables and structured content (text or markdown, default: text)</li>
+                    <li><strong>page_selection</strong> (optional) - Page selection strategy (all_pages or range, default: all_pages)</li>
+                    <li><strong>page_range</strong> (optional) - Page range to process (e.g., "1,3-6"), only used if page_selection is "range"</li>
+                </ul>
+                
+                <h4>Supported File Types</h4>
+                <ul>
+                    <li><strong>PDF</strong> (.pdf)</li>
+                    <li><strong>Images</strong> (.jpg, .jpeg, .png, .tiff, .tif)</li>
+                </ul>
+                
+                <h4>Example Request</h4>
+                <div class="code-block">
+                    <pre>
+POST /docint/layout
+Headers:
+  X-Token: your_token_here
+  Content-Type: application/json
+
+{
+  "file_ids": ["81f2d4b2-f79c-4d33-b319-e25e658a0fcd"],
+  "include_barcode": true,
+  "include_keyvalue_pairs": true,
+  "output_format": "markdown",
+  "page_selection": "range",
+  "page_range": "1-3"
+}
+                    </pre>
+                </div>
+                
+                <h4>Example Response</h4>
+                <div class="code-block">
+                    <pre>
+{
+  "message": "Documents successfully processed",
+  "documents_processed": 1,
+  "pages_processed": 3,
+  "results": [
+    {
+      "file_id": "81f2d4b2-f79c-4d33-b319-e25e658a0fcd",
+      "file_name": "invoice.pdf",
+      "total_pages": 5,
+      "processed_pages": 3,
+      "has_handwritten_content": false,
+      "pages": [
+        {
+          "page_number": 1,
+          "width": 612,
+          "height": 792,
+          "unit": "pixel",
+          "has_handwritten_content": false,
+          "text": [
+            {
+              "type": "paragraph",
+              "content": "INVOICE #12345",
+              "role": "title"
+            },
+            {
+              "type": "paragraph",
+              "content": "Date: March 15, 2025",
+              "role": null
+            }
+          ],
+          "tables": [
+            {
+              "row_count": 3,
+              "column_count": 4,
+              "cells": [...],
+              "formatted": "| Item | Quantity | Price | Total |\n| --- | --- | --- | --- |\n| Product A | 2 | $10.00 | $20.00 |\n| Product B | 3 | $15.00 | $45.00 |",
+              "table_summary": "| Item | Quantity | Price | Total |\n| --- | --- | --- | --- |\n| Product A | 2 | $10.00 | $20.00 |\n| Product B | 3 | $15.00 | $45.00 |"
+            }
+          ],
+          "selection_marks": [
+            {
+              "state": "selected",
+              "confidence": 0.99
+            }
+          ],
+          "barcodes": [
+            {
+              "value": "INV-12345",
+              "type": "QR_CODE",
+              "confidence": 0.98
+            }
+          ],
+          "page_text_all": "INVOICE #12345\n\nDate: March 15, 2025\n\n| Item | Quantity | Price | Total |\n| --- | --- | --- | --- |\n| Product A | 2 | $10.00 | $20.00 |\n| Product B | 3 | $15.00 | $45.00 |"
+        }
+      ],
+      "key_value_pairs": [
+        "**Invoice Number**: 12345",
+        "**Date**: March 15, 2025",
+        "**Customer**: ACME Corp",
+        "**Total Amount**: $65.00"
+      ]
+    }
+  ]
+}
+                    </pre>
+                </div>
+            </div>
+            
+            <!-- Document Reading Tab -->
+            <div id="read" class="tab-content">
+                <h3>Document Reading</h3>
+                <p>The Document Reading endpoint focuses on extracting clean, structured text from documents. This service is optimized for text-heavy documents and provides high-quality text extraction with formatting.</p>
+                
+                <h4>Endpoint</h4>
+                <div class="api-endpoints">
+                    <div class="endpoint">
+                        <span class="endpoint-method method-post">POST</span>
+                        <span class="endpoint-path">/docint/read</span>
+                        <span class="endpoint-description">Extract printed and handwritten text from images and documents</span>
+                    </div>
+                </div>
+                
+                <h4>Request Parameters</h4>
+                <ul>
+                    <li><strong>file_ids</strong> (required) - Array of file IDs to process (uploaded via /file endpoint)</li>
+                    <li><strong>barcode_detection</strong> (optional) - Enable barcode detection (default: false)</li>
+                    <li><strong>language</strong> (optional) - Include language identification (default: false)</li>
+                    <li><strong>page_selection</strong> (optional) - Page selection strategy (all_pages or range, default: all_pages)</li>
+                    <li><strong>page_range</strong> (optional) - Page range to process (e.g., "1,3-6"), only used if page_selection is "range"</li>
+                </ul>
+                
+                <h4>Supported File Types</h4>
+                <ul>
+                    <li><strong>PDF</strong> (.pdf)</li>
+                    <li><strong>Images</strong> (.jpg, .jpeg, .png, .tiff, .tif)</li>
+                </ul>
+                
+                <h4>Example Request</h4>
+                <div class="code-block">
+                    <pre>
+POST /docint/read
+Headers:
+  X-Token: your_token_here
+  Content-Type: application/json
+
+{
+  "file_ids": ["f7d23a1e-8c5b-4f9a-b102-3d4e91c8a7b2"],
+  "language": true,
+  "page_selection": "all_pages"
+}
+                    </pre>
+                </div>
+                
+                <h4>Example Response</h4>
+                <div class="code-block">
+                    <pre>
+{
+  "message": "Documents successfully processed",
+  "documents_processed": 1,
+  "pages_processed": 2,
+  "results": [
+    {
+      "file_id": "f7d23a1e-8c5b-4f9a-b102-3d4e91c8a7b2",
+      "file_name": "contract.pdf",
+      "total_pages": 2,
+      "processed_pages": 2,
+      "has_handwritten_content": true,
+      "pages": [
+        {
+          "page_number": 1,
+          "width": 595,
+          "height": 842,
+          "unit": "pixel",
+          "has_handwritten_content": false,
+          "text": [
+            {
+              "type": "paragraph",
+              "content": "SERVICE AGREEMENT"
+            },
+            {
+              "type": "paragraph",
+              "content": "This agreement is made on March 20, 2025, between Client A ('Client') and Service Provider B ('Provider')."
+            },
+            {
+              "type": "paragraph",
+              "content": "The Provider agrees to deliver the following services to the Client:"
+            }
+          ],
+          "page_text_all": "SERVICE AGREEMENT\n\nThis agreement is made on March 20, 2025, between Client A ('Client') and Service Provider B ('Provider').\n\nThe Provider agrees to deliver the following services to the Client:",
+          "detected_languages": [
+            {
+              "language": "en",
+              "confidence": 0.99
+            }
+          ]
+        },
+        {
+          "page_number": 2,
+          "width": 595,
+          "height": 842,
+          "unit": "pixel",
+          "has_handwritten_content": true,
+          "text": [
+            {
+              "type": "paragraph",
+              "content": "SIGNATURES"
+            },
+            {
+              "type": "paragraph",
+              "content": "Client: ________________"
+            },
+            {
+              "type": "paragraph",
+              "content": "Provider: ________________"
+            },
+            {
+              "type": "paragraph",
+              "content": "Date: March 20, 2025"
+            }
+          ],
+          "page_text_all": "SIGNATURES\n\nClient: ________________\n\nProvider: ________________\n\nDate: March 20, 2025",
+          "detected_languages": [
+            {
+              "language": "en",
+              "confidence": 0.98
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+                    </pre>
+                </div>
+            </div>
+            
+            <!-- Document Summarization Tab -->
+            <div id="summarization" class="tab-content">
+                <h3>Document Summarization</h3>
+                <p>The Document Summarization endpoint analyzes and summarizes document content. It provides key points, document structure, and concise summaries of lengthy documents.</p>
+                
+                <h4>Endpoint</h4>
+                <div class="api-endpoints">
+                    <div class="endpoint">
+                        <span class="endpoint-method method-post">POST</span>
+                        <span class="endpoint-path">/docint/summarization</span>
+                        <span class="endpoint-description">Summarize documents using AI (PDF, DOCX, PPTX, XLSX)</span>
+                    </div>
+                </div>
+                
+                <h4>Request Parameters</h4>
+                <ul>
+                    <li><strong>file_id</strong> (required) - ID of the uploaded file to summarize</li>
+                    <li><strong>length</strong> (optional) - Desired summary length (short, medium, long, very_long, default: medium)</li>
+                    <li><strong>style</strong> (optional) - Style of the summary (concise, detailed, creative, technical, narrative, bullet_points, default: concise)</li>
+                    <li><strong>include_structure</strong> (optional) - Whether to include document structure in the summary (default: true)</li>
+                    <li><strong>temperature</strong> (optional) - Creativity level (0.0 = deterministic, 1.0 = creative, default: 0.3)</li>
+                    <li><strong>include_file_upload</strong> (optional) - Whether to create and upload a text file with the summary (default: true)</li>
+                </ul>
+                
+                <h4>Supported File Types</h4>
+                <ul>
+                    <li><strong>PDF</strong> (.pdf)</li>
+                    <li><strong>Microsoft Word</strong> (.docx)</li>
+                    <li><strong>Microsoft PowerPoint</strong> (.pptx)</li>
+                    <li><strong>Microsoft Excel</strong> (.xlsx, .xls)</li>
+                </ul>
+                
+                <h4>Example Request</h4>
+                <div class="code-block">
+                    <pre>
+POST /docint/summarization
+Headers:
+  X-Token: your_token_here
+  Content-Type: application/json
+
+{
+  "file_id": "a9c8e7d6-5b4a-3c2d-1e0f-9g8h7i6j5k4l",
+  "length": "medium",
+  "style": "concise",
+  "include_structure": true,
+  "temperature": 0.3
+}
+                    </pre>
+                </div>
+                
+                <h4>Example Response</h4>
+                <div class="code-block">
+                    <pre>
+{
+  "message": "Document successfully summarized",
+  "original_file_id": "a9c8e7d6-5b4a-3c2d-1e0f-9g8h7i6j5k4l",
+  "summary_file_id": "b1c2d3e4-f5g6-7h8i-9j0k-l1m2n3o4p5q6",
+  "summary": "This report analyzes the financial performance of XYZ Corporation for Q1 2025. The company saw revenue growth of 12% year-over-year, reaching $45.2 million. Profit margins improved from 18% to 22% due to operational efficiencies and cost reduction initiatives. The company's cloud services division was the top performer, growing 30% and accounting for 40% of total revenue. Challenges remain in the hardware division, which saw a 5% decline in sales. Management forecasts continued growth in the coming quarters, with an emphasis on expanding cloud services offerings and restructuring the hardware division.",
+  "key_points": [
+    "Revenue grew 12% year-over-year to $45.2 million in Q1 2025",
+    "Profit margins improved from 18% to 22%",
+    "Cloud services division grew 30%, accounting for 40% of revenue",
+    "Hardware division declined by 5%",
+    "Management forecasts continued growth in coming quarters",
+    "Strategic focus on expanding cloud services and restructuring hardware division",
+    "Cost reduction initiatives yielded 8% decrease in operational expenses",
+    "R&D investment increased by 15% to develop new cloud offerings",
+    "International markets now represent 35% of total revenue",
+    "Customer retention rate improved to 94% from 91% in previous year"
+  ],
+  "document_structure": {
+    "Executive Summary": "Overview of financial performance and key highlights",
+    "Revenue Analysis": "Detailed breakdown of revenue by division and region",
+    "Profit Analysis": "Examination of profit margins and cost structures",
+    "Division Performance": "Individual performance of Cloud, Hardware, and Services divisions",
+    "Market Analysis": "Review of market trends and competitive landscape",
+    "Forecast": "Financial projections for upcoming quarters",
+    "Strategic Initiatives": "Key strategic priorities for the business"
+  },
+  "pages_processed": 24,
+  "token_usage": {
+    "prompt_tokens": 15420,
+    "completion_tokens": 2145,
+    "total_tokens": 17565
+  }
+}
+                    </pre>
+                </div>
+                
+                <h4>Special Handling for Document Types</h4>
+                <p>The summarization endpoint adapts its processing based on document type:</p>
+                <ul>
+                    <li><strong>PDF</strong> - Extracts text across all pages, preserving document structure</li>
+                    <li><strong>DOCX</strong> - Extracts text, tables, and embedded content</li>
+                    <li><strong>PPTX</strong> - Processes slides to capture presentation flow and content</li>
+                    <li><strong>XLSX</strong> - Extracts data from worksheets, focusing on trends and key metrics</li>
+                </ul>
+                
+                <div class="info-box">
+                    <div class="info-box-icon"><i class="fas fa-lightbulb"></i></div>
+                    <div class="info-box-content">
+                        <h4>Pro Tip</h4>
+                        <p>For optimal summarization:</p>
+                        <ul>
+                            <li>Set <code>length</code> to <code>medium</code> for most business documents</li>
+                            <li>Use <code>style: "technical"</code> for scientific or technical papers</li>
+                            <li>For presentations, <code>style: "bullet_points"</code> works best</li>
+                            <li>Set <code>temperature</code> lower (0.1-0.3) for more factual summaries, higher (0.6-0.8) for more creative ones</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <footer class="footer">
+        <p>© 2025 TIH AI API Portal. Powered by the TIH AI Center of Excellence.</p>
+    </footer>
+    
+    <script>
+        // Toggle sidebar on mobile
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuToggle = document.getElementById('menu-toggle');
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            
+            menuToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('active');
+                overlay.classList.toggle('active');
+            });
+            
+            overlay.addEventListener('click', function() {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            });
+            
+            // Tab functionality
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // Remove active class from all tabs and contents
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tabContents.forEach(c => c.classList.remove('active'));
+                    
+                    // Add active class to clicked tab
+                    this.classList.add('active');
+                    
+                    // Show corresponding content
+                    const tabId = this.getAttribute('data-tab');
+                    document.getElementById(tabId).classList.add('active');
+                });
+            });
+            
+            // Highlight current page in sidebar
+            const currentPage = window.location.pathname;
+            const sidebarLinks = document.querySelectorAll('.sidebar-link');
+            
+            sidebarLinks.forEach(link => {
+                if (link.getAttribute('href') === currentPage) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
