@@ -110,6 +110,11 @@ def ocr_services():
 def document_intelligence():
     return render_template('docs/document_intelligence.html')
 
+## RAG
+@app.route('/docs/rag')
+def rag():
+    return render_template('docs/rag.html')
+
 # TOKEN SERVICE ENDPOINTS
 ## GET TOKEN
 from apis.token_services.get_token import register_routes as get_token_endpoint 
