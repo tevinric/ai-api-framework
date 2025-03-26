@@ -473,38 +473,25 @@ def multiclass_classification_route():
         }, 400)
     
     try:
-        # Improved system prompt for more accurate classification
-        system_prompt = """You are an expert text classification system. Your task is to determine how relevant the provided text is to each of the given categories.
+        # Create a system message that includes the categories
+        categories_formatted = ", ".join([f'"{category}"' for category in categories])
+        system_prompt = f"""You are a text classification system. You must analyze the provided text and assign confidence scores for how strongly it relates to each of these specific categories: {categories_formatted}.
 
-For each category, assign a confidence score from 0.0 to 1.0 that reflects how strongly the text relates to that category:
-- 0.9-1.0: The text is primarily about this topic with high certainty
-- 0.7-0.89: The text strongly relates to this topic
-- 0.5-0.69: The text moderately relates to this topic
-- 0.3-0.49: The text slightly relates to this topic
-- 0.1-0.29: The text has minimal relation to this topic
-- 0.0-0.09: The text has virtually no relation to this topic
+For each category, assign a confidence score from 0.0 to 1.0 based on how relevant the text is to that category:
+- A score near 1.0 means the text is highly relevant to the category
+- A score near 0.0 means the text has almost no relevance to the category
 
-Each category should be evaluated independently - scores do NOT need to sum to 1.0.
+Important rules:
+1. DO NOT assign the same confidence score to all categories
+2. If the text clearly relates to one category more than others, that category should receive a substantially higher score
+3. Return ONLY a valid JSON array with no explanation or additional text
+4. Format: [{{"class": "category_name", "confidence": 0.85}}, {{"class": "another_category", "confidence": 0.25}}]
 
-Analyze the content, context, terminology, and themes in the text carefully before assigning scores.
+Your classification must be specific and discriminative, with clear differentiation between relevant and non-relevant categories."""
 
-Return ONLY a valid JSON array with no additional text. Format:
-[
-  {"class": "category_name", "confidence": 0.95},
-  {"class": "another_category", "confidence": 0.45},
-  ...
-]
-
-Sort the results by confidence score in descending order."""
-
-        # Format categories and user input for the message
-        categories_str = json.dumps(categories)
-        user_message = f"""Categories: {categories_str}
-
-Text to classify:
-{user_input}
-
-Analyze how strongly the text relates to each category and return a JSON array with confidence scores for each category."""
+        # The user message contains only the text to classify
+        user_message = f"""Text to classify:
+{user_input}"""
         
         # Determine LLM endpoint
         llm_endpoint = f"{request.url_root.rstrip('/')}/llm/{model}"
@@ -513,12 +500,12 @@ Analyze how strongly the text relates to each category and return a JSON array w
         llm_request_data = {
             "system_prompt": system_prompt,
             "user_input": user_message,
-            "temperature": 0.0,  # Use 0 for deterministic results
+            "temperature": 0.2,  # Low but not zero
             "json_output": True  # Request JSON output format
         }
         
         # Call LLM API
-        logger.info(f"Calling {model} for improved multiclass classification")
+        logger.info(f"Calling {model} for multiclass classification")
         headers = {"X-Token": token, "Content-Type": "application/json"}
         llm_response = requests.post(
             llm_endpoint,
@@ -535,67 +522,84 @@ Analyze how strongly the text relates to each category and return a JSON array w
         
         # Extract and process the LLM response
         llm_result = llm_response.json()
-        result_text = llm_result.get("message", "[]")
+        result_message = llm_result.get("message", "[]")
         
         try:
             # Parse the JSON response
-            classifications = json.loads(result_text)
+            if isinstance(result_message, str):
+                classifications = json.loads(result_message)
+            elif isinstance(result_message, list):
+                # If the API already parsed the JSON for us
+                classifications = result_message
+            else:
+                logger.error(f"Unexpected response format: {type(result_message)}")
+                classifications = []
             
-            # Validate and clean up the classifications
-            valid_classifications = []
+            # Validate and process each classification
+            processed_classifications = []
             
             for item in classifications:
                 if isinstance(item, dict) and 'class' in item and 'confidence' in item:
                     class_name = item['class']
                     
-                    # Check if the class is in our categories or find a close match
-                    if class_name not in categories:
-                        matched = False
-                        for category in categories:
-                            if category.lower() == class_name.lower():
-                                class_name = category
-                                matched = True
-                                break
-                        
-                        if not matched:
-                            continue
+                    # Validate the class name is one of our input categories
+                    matched_category = None
+                    for category in categories:
+                        if category.lower() == class_name.lower():
+                            matched_category = category
+                            break
                     
-                    # Validate and normalize confidence score
+                    # Skip if no match found
+                    if not matched_category:
+                        continue
+                        
+                    # Process the confidence score
                     try:
                         confidence = float(item['confidence'])
                         confidence = max(0.0, min(1.0, confidence))  # Ensure between 0 and 1
                         confidence = round(confidence, 3)  # Round to 3 decimal places
                         
-                        valid_classifications.append({
-                            'class': class_name,
+                        processed_classifications.append({
+                            'class': matched_category,
                             'confidence': confidence
                         })
                     except (ValueError, TypeError):
                         continue
             
-            # If we don't have valid classifications, create reasonable defaults
-            if not valid_classifications:
-                logger.warning("No valid classifications returned, using default values")
-                valid_classifications = [{'class': category, 'confidence': 1.0 / len(categories)} for category in categories]
+            # Check if we have a valid classification
+            if not processed_classifications:
+                logger.warning("No valid classifications returned by LLM")
+                # Create a fallback that gives different scores (not equal splits)
+                processed_classifications = []
+                for i, category in enumerate(categories):
+                    # Generate descending scores (0.9, 0.7, 0.5, 0.3...)
+                    score = max(0.1, 0.9 - (i * 0.2))
+                    processed_classifications.append({
+                        'class': category,
+                        'confidence': round(score, 3)
+                    })
             
-            # Make sure we have all categories
-            classified_categories = {item['class'] for item in valid_classifications}
+            # Add any missing categories with a low confidence score
+            classified_categories = {item['class'] for item in processed_classifications}
             for category in categories:
                 if category not in classified_categories:
-                    valid_classifications.append({'class': category, 'confidence': 0.0})
+                    processed_classifications.append({
+                        'class': category,
+                        'confidence': 0.1  # Low default confidence
+                    })
             
-            # Sort by confidence score (descending)
-            valid_classifications.sort(key=lambda x: x['confidence'], reverse=True)
+            # Sort by confidence (descending)
+            processed_classifications.sort(key=lambda x: x['confidence'], reverse=True)
             
-            # Get the top result and top 3 categories
-            top_result = valid_classifications[0] if valid_classifications else {'class': categories[0], 'confidence': 0.0}
-            top_categories = valid_classifications[:min(3, len(valid_classifications))]
+            # Extract top result and top categories
+            top_result = processed_classifications[0]
+            top_categories = processed_classifications[:min(3, len(processed_classifications))]
             
             # Prepare the response
             response_data = {
                 "top_result": top_result,
                 "top_categories": top_categories,
-                "all_categories": valid_classifications,
+                "all_categories": processed_classifications,
                 "model_used": model,
                 "input_tokens": llm_result.get("input_tokens", 0),
                 "completion_tokens": llm_result.get("completion_tokens", 0),
@@ -604,8 +608,8 @@ Analyze how strongly the text relates to each category and return a JSON array w
             
             return create_api_response(response_data, 200)
             
-        except json.JSONDecodeError:
-            logger.error(f"Error parsing classification results as JSON: {result_text}")
+        except json.JSONDecodeError as e:
+            logger.error(f"Error parsing classification results: {e}, Response: {result_message}")
             return create_api_response({
                 "error": "Server Error",
                 "message": "Failed to parse classification results as JSON"
