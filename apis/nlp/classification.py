@@ -497,79 +497,154 @@ def multiclass_classification_route():
         }, 400)
     
     try:
-        # Create system message for multiclass classification with enhanced instructions for maximum accuracy
-        system_prompt = """You are an expert text classification system. Your task is to analyze the provided text content and classify it into the provided categories with accurate probability scores.
+        # Create a two-step approach for more accurate probability distributions
+        # Step 1: First we'll ask the model to rank and score each category separately
+        system_prompt_step1 = """You are an expert text classifier. Analyze the provided text and score each category on a scale of 0-100 based on how well the text fits that category.
 
-IMPORTANT GUIDELINES FOR ACCURATE CLASSIFICATION:
+Rules:
+1. Score MUST be between 0-100 where:
+   - 0: No relation whatsoever
+   - 1-20: Minimal relation
+   - 21-50: Moderate relation
+   - 51-80: Strong relation
+   - 81-100: Perfect match
+2. You MUST give very different scores when categories clearly differ in relevance
+3. Provide brief reasoning for each score
+4. Respond in valid JSON with this format:
+   [{"category": "name", "score": number, "reasoning": "text"}, {...}]
 
-1. Analyze the text thoroughly for themes, topics, keywords, tone, and subject matter.
-
-2. For each category, determine how strongly the text relates to that category based on:
-   - Direct mentions of topics related to the category
-   - Implied themes or context related to the category
-   - Semantic similarity between text content and category concept
-
-3. Probability distribution rules:
-   - Assign a probability score (0.0 to 1.0) to each category
-   - The probability scores MUST sum to exactly 1.0 (100%)
-   - Assign higher probabilities (0.8-0.95) to categories that strongly match the content
-   - Assign very low probabilities (0.01-0.05) to categories that barely relate to the content
-   - Only distribute probabilities evenly when the text genuinely relates equally to multiple categories
-   - A text strongly about one topic should have a high probability for that category and low for others
-
-4. Respond ONLY in valid JSON format with an array of objects, each containing 'class' and 'probability'.
-
-Examples of good probability distributions:
-1. For text clearly about basketball: [{"class": "sports", "probability": 0.92}, {"class": "entertainment", "probability": 0.06}, {"class": "technology", "probability": 0.01}, {"class": "politics", "probability": 0.01}]
-2. For text equally about politics and technology: [{"class": "politics", "probability": 0.48}, {"class": "technology", "probability": 0.47}, {"class": "sports", "probability": 0.03}, {"class": "entertainment", "probability": 0.02}]
-3. For text predominantly about entertainment with some technology elements: [{"class": "entertainment", "probability": 0.78}, {"class": "technology", "probability": 0.19}, {"class": "sports", "probability": 0.02}, {"class": "politics", "probability": 0.01}]"""
+IMPORTANT: Do not distribute scores evenly! If one category is clearly the best match, give it a much higher score than the others."""
         
         # Create detailed user message with category list and text to classify
-        categories_list = ', '.join(categories)
-        user_message = f"""CATEGORIES TO CLASSIFY INTO:
+        categories_list = '\n'.join([f"- {cat}" for cat in categories])
+        user_message_step1 = f"""CATEGORIES TO SCORE:
 {categories_list}
 
-TEXT TO ANALYZE AND CLASSIFY:
+TEXT TO ANALYZE:
 {user_input}
 
-Please provide an accurate probability distribution that reflects how strongly the text relates to each category. The probabilities must sum to exactly 1.0."""
+For each category, provide a score (0-100) indicating how well the text matches that category. Use your expert judgment to provide a wide range of scores that accurately reflects the text's relationship to each category."""
+
+        # Prepare payload for first LLM request
+        llm_request_data_step1 = {
+            "system_prompt": system_prompt_step1,
+            "user_input": user_message_step1,
+            "temperature": 0.0,
+            "json_output": True
+        }
         
         # Determine which LLM endpoint to call based on model selection
         llm_endpoint = f"{request.url_root.rstrip('/')}/llm/{model}"
         
-        # Prepare payload for LLM request with optimized parameters for accuracy
-        llm_request_data = {
-            "system_prompt": system_prompt,
-            "user_input": user_message,
-            "temperature": 0.0,  # Zero temperature for maximum consistency
-            "json_output": True  # Request JSON output format
-        }
-        
-        # Call selected LLM API (using GPT-4o is recommended for better accuracy)
-        logger.info(f"Calling {model} for multiclass classification")
-        
-        # If user didn't specify model and text is longer than 200 chars, use gpt-4o for better accuracy
-        if model == 'gpt-4o-mini' and len(user_input) > 200 and 'model' not in data:
-            logger.info("Text length > 200 chars, suggesting gpt-4o for better classification accuracy")
-            # This is just a recommendation, we'll still use the specified or default model
-        
+        # Call LLM API for step 1 - scoring
+        logger.info(f"Calling {model} for step 1: category scoring")
         headers = {"X-Token": token, "Content-Type": "application/json"}
-        llm_response = requests.post(
-            llm_endpoint,
+        llm_response_step1 = requests.post(
+            f"{request.url_root.rstrip('/')}/llm/{model}",
             headers=headers,
-            json=llm_request_data
+            json=llm_request_data_step1
         )
         
-        if llm_response.status_code != 200:
-            logger.error(f"Error from LLM API: {llm_response.text}")
+        if llm_response_step1.status_code != 200:
+            logger.error(f"Error from LLM API in step 1: {llm_response_step1.text}")
             return create_api_response({
                 "error": "Server Error",
-                "message": f"Error from LLM API: {llm_response.text[:200]}"
+                "message": f"Error from LLM API: {llm_response_step1.text[:200]}"
             }, 500)
         
         # Extract response and token usage
-        llm_result = llm_response.json()
-        result_text = llm_result.get("message", "[]")
+        llm_result_step1 = llm_response_step1.json()
+        result_text_step1 = llm_result_step1.get("message", "[]")
+        
+        try:
+            # Parse the scores
+            scores_result = json.loads(result_text_step1)
+            
+            # Validate and extract scores
+            category_scores = {}
+            category_reasonings = {}
+            
+            for item in scores_result:
+                if isinstance(item, dict) and 'category' in item and 'score' in item:
+                    cat_name = item['category']
+                    # Find matching category from our list (case-insensitive)
+                    matching_cat = next((c for c in categories if c.lower() == cat_name.lower()), None)
+                    if not matching_cat and 'reasoning' in item:
+                        # Try to find in original categories list
+                        for c in categories:
+                            if c.lower() in cat_name.lower() or cat_name.lower() in c.lower():
+                                matching_cat = c
+                                break
+                    
+                    # If we found a match or it's already in our categories
+                    if matching_cat or cat_name in categories:
+                        use_cat = matching_cat if matching_cat else cat_name
+                        try:
+                            score = float(item['score'])
+                            # Ensure score is between 0-100
+                            score = max(0.1, min(100.0, score))  # Minimum 0.1 to avoid division by zero
+                            category_scores[use_cat] = score
+                            if 'reasoning' in item:
+                                category_reasonings[use_cat] = item['reasoning']
+                        except (ValueError, TypeError):
+                            logger.warning(f"Invalid score value: {item['score']}")
+            
+            # Make sure we have scores for all categories
+            for cat in categories:
+                if cat not in category_scores:
+                    # Assign minimum score for missing categories
+                    category_scores[cat] = 0.1
+            
+            # Handle the case where all scores are the same
+            all_same = len(set(category_scores.values())) == 1
+            if all_same:
+                # Apply a curve - 1st category gets highest score, then linear decrease
+                sorted_cats = sorted(categories)
+                for i, cat in enumerate(sorted_cats):
+                    # Simple linear decay from 100 to 10
+                    category_scores[cat] = 100 - (i * (90 / max(1, len(categories) - 1)))
+            
+            # Convert scores to probabilities
+            total_score = sum(category_scores.values())
+            probabilities = {cat: score/total_score for cat, score in category_scores.items()}
+            
+            # Create sorted results array
+            results = [{"class": cat, "probability": prob} for cat, prob in probabilities.items()]
+            results.sort(key=lambda x: x["probability"], reverse=True)
+            
+            # Apply exponential skewing to make distribution more extreme
+            # This will make high probabilities higher and low probabilities lower
+            if len(results) > 1 and results[0]["probability"] < 0.8:
+                # Square the probabilities and renormalize
+                for result in results:
+                    result["probability"] = result["probability"] ** 2
+                
+                # Renormalize to ensure sum is 1.0
+                total_prob = sum(r["probability"] for r in results)
+                for result in results:
+                    result["probability"] = result["probability"] / total_prob
+            
+            # Round to 4 decimal places
+            for result in results:
+                result["probability"] = round(result["probability"], 4)
+            
+            # Get top 3 classifications
+            top_classifications = results[:min(3, len(results))]
+            
+            # Calculate total token usage
+            input_tokens = llm_result_step1.get("input_tokens", 0)
+            completion_tokens = llm_result_step1.get("completion_tokens", 0)
+            output_tokens = llm_result_step1.get("output_tokens", 0)
+            
+            # Prepare the response
+            response_data = {
+                "classifications": results,
+                "top_classifications": top_classifications,
+                "model_used": model,
+                "input_tokens": input_tokens,
+                "completion_tokens": completion_tokens,
+                "output_tokens": output_tokens
+            }
         
         # Parse the JSON result, handling potential JSON parsing errors
         try:
