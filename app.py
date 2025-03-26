@@ -204,6 +204,9 @@ register_consume_vectorstore_routes(app)
 from apis.llm_conversation.conversation import register_llm_conversation_routes
 register_llm_conversation_routes(app)
 
+from apis.nlp.classification import register_nlp_routes
+register_nlp_routes(app)
+
 if __name__ == '__main__':
     app.run(debug=True)
     
