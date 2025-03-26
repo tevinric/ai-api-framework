@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NLP Services - AI API Platform</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4a6fe3;
+            --secondary-color: #6c63ff;
+            --dark-color: #2a2c3b;
+            --light-color: #f5f6fa;
+            --text-color: #333;
+            --white-color: #ffffff;
+            --accent-color: #00d4ff;
+            --sidebar-width: 280px;
+            --header-height: 60px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--light-color);
+            color: var(--text-color);
+            position: relative;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            opacity: 0.05;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        .header {
+            background-color: var(--dark-color);
+            color: var(--white-color);
+            padding: 0 2rem;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: var(--header-height);
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo i {
+            font-size: 1.8rem;
+            margin-right: 0.5rem;
+            color: var(--accent-color);
+        }
+        
+        .logo h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+        
+        .nav {
+            display: flex;
+            align-items: center;
+        }
+        
+        .nav-item {
+            margin-left: 1.5rem;
+            color: var(--white-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+            display: flex;
+            align-items: center;
+        }
+        
+        .nav-item:hover {
+            color: var(--accent-color);
+        }
+        
+        .nav-item i {
+            margin-right: 0.5rem;
+        }
+        
+        .swagger-btn {
+            background-color: var(--accent-color);
+            color: var(--dark-color);
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-weight: 600;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        
+        .swagger-btn:hover {
+            background-color: #00b8e6;
+            transform: translateY(-2px);
+            color: var(--dark-color);
+        }
+        
+        /* Mobile menu toggle */
+        .menu-toggle {
+            display: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            top: var(--header-height);
+            left: 0;
+            height: calc(100vh - var(--header-height));
+            width: var(--sidebar-width);
+            background-color: var(--white-color);
+            border-right: 1px solid rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+            z-index: 900;
+            padding: 1.5rem 0;
+            transition: transform 0.3s ease-in-out;
+        }
+        
+        .sidebar-category {
+            padding: 0.5rem 1.5rem;
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar-link {
+            display: block;
+            padding: 0.7rem 1.5rem;
+            padding-left: 2.5rem;
+            color: var(--text-color);
+            text-decoration: none;
+            transition: background-color 0.2s, color 0.2s;
+            font-size: 0.95rem;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar-link:hover {
+            background-color: rgba(106, 100, 255, 0.05);
+            color: var(--primary-color);
+        }
+        
+        .sidebar-link.active {
+            color: var(--primary-color);
+            background-color: rgba(106, 100, 255, 0.08);
+            border-left: 3px solid var(--primary-color);
+        }
+        
+        .sidebar-link i {
+            margin-right: 0.5rem;
+            width: 20px;
+            text-align: center;
+        }
+        
+        /* Main content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            margin-top: var(--header-height);
+            padding: 2rem;
+            min-height: calc(100vh - var(--header-height));
+        }
+        
+        /* Content sections */
+        .content-section {
+            background-color: var(--white-color);
+            border-radius: 8px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .content-section h2 {
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            color: var(--dark-color);
+            border-bottom: 2px solid var(--light-color);
+            padding-bottom: 0.5rem;
+        }
+        
+        .content-section h3 {
+            font-size: 1.3rem;
+            margin: 1.5rem 0 1rem;
+            color: var(--primary-color);
+        }
+        
+        .content-section p {
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+        
+        .content-section ul, 
+        .content-section ol {
+            margin-bottom: 1.5rem;
+            padding-left: 1.5rem;
+        }
+        
+        .content-section li {
+            margin-bottom: 0.5rem;
+            line-height: 1.6;
+        }
+        
+        /* Code blocks */
+        .api-endpoints {
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .endpoint {
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: flex-start;
+        }
+        
+        .endpoint-method {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: monospace;
+            font-weight: bold;
+            margin-right: 0.5rem;
+            min-width: 60px;
+            text-align: center;
+        }
+        
+        .method-get {
+            background-color: #e7f5ff;
+            color: #1971c2;
+        }
+        
+        .method-post {
+            background-color: #e3fafc;
+            color: #0c8599;
+        }
+        
+        .method-put {
+            background-color: #fff9db;
+            color: #e67700;
+        }
+        
+        .method-delete {
+            background-color: #fff5f5;
+            color: #e03131;
+        }
+        
+        .endpoint-path {
+            display: inline-block;
+            background-color: var(--dark-color);
+            color: var(--white-color);
+            padding: 0.3rem 0.7rem;
+            border-radius: 4px;
+            font-family: monospace;
+            margin-right: 0.5rem;
+        }
+        
+        .endpoint-description {
+            color: #666;
+            flex: 1;
+        }
+        
+        .code-block {
+            background-color: #2d2d2d;
+            color: #fff;
+            padding: 1rem;
+            border-radius: 6px;
+            font-family: monospace;
+            overflow-x: auto;
+            margin-bottom: 1.5rem;
+            line-height: 1.4;
+        }
+        
+        /* Info boxes */
+        .info-box {
+            display: flex;
+            background-color: #e7f5ff;
+            border-left: 4px solid #1971c2;
+            padding: 1.5rem;
+            border-radius: 6px;
+            margin-bottom: 2rem;
+        }
+        
+        .info-box-icon {
+            font-size: 1.8rem;
+            color: #1971c2;
+            margin-right: 1.5rem;
+        }
+        
+        .info-box-content h4 {
+            margin-bottom: 0.5rem;
+            color: #1971c2;
+        }
+        
+        .info-box-content p, .info-box-content li {
+            color: #495057;
+        }
+        
+        /* Tab styles */
+        .tabs {
+            display: flex;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .tab {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border: 1px solid transparent;
+            border-radius: 4px 4px 0 0;
+            margin-right: 0.5rem;
+            transition: all 0.2s;
+        }
+        
+        .tab.active {
+            background-color: var(--white-color);
+            border-color: #ddd;
+            border-bottom-color: var(--white-color);
+            margin-bottom: -1px;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 1rem;
+            background-color: var(--white-color);
+            border-radius: 0 0 4px 4px;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Feature cards */
+        .feature-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .feature-card {
+            background-color: var(--white-color);
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .feature-card h4 {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+        }
+        
+        .feature-card h4 i {
+            margin-right: 0.5rem;
+            font-size: 1.5rem;
+        }
+        
+        .feature-card p {
+            color: #666;
+            line-height: 1.5;
+        }
+        
+        /* Download button */
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background-color 0.3s, transform 0.2s;
+            margin-bottom: 2rem;
+        }
+        
+        .download-btn i {
+            margin-right: 0.5rem;
+        }
+        
+        .download-btn:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+        
+        /* Footer */
+        .footer {
+            background-color: var(--dark-color);
+            color: var(--white-color);
+            text-align: center;
+            padding: 2rem;
+            margin-top: 3rem;
+            margin-left: var(--sidebar-width);
+        }
+        
+        .footer p {
+            margin-bottom: 1rem;
+        }
+        
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+        }
+        
+        .social-link {
+            color: var(--white-color);
+            font-size: 1.5rem;
+            transition: color 0.3s;
+        }
+        
+        .social-link:hover {
+            color: var(--accent-color);
+        }
+        
+        /* Responsive styles */
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+                box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+                z-index: 1001;
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .footer {
+                margin-left: 0;
+            }
+            
+            .menu-toggle {
+                display: block;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .header {
+                padding: 0 1rem;
+            }
+            
+            .nav-item:not(.swagger-btn) {
+                display: none;
+            }
+        }
+        
+        /* Dark overlay when sidebar is active on mobile */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        
+        @media (max-width: 992px) {
+            .sidebar-overlay.active {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <img src="/static/images/Telesure-logo.png" alt="TIH AI API Platform Logo" style="height: 40px; margin-right: 0.5rem;">
+            <h1>AI API Platform</h1>
+        </div>
+        <nav class="nav">
+            <div class="menu-toggle" id="menu-toggle">
+                <i class="fas fa-bars"></i>
+            </div>
+            <a href="{{ url_for('home') }}" class="nav-item">
+                <i class="fas fa-home"></i>Home
+            </a>
+            <a href="{{ url_for('getting_started') }}" class="nav-item">
+                <i class="fas fa-rocket"></i>Getting Started
+            </a>
+            <a href="/templates/docs/faq.html" class="nav-item">
+                <i class="fas fa-question-circle"></i>FAQ
+            </a>
+            <a href="/apidocs/" class="nav-item swagger-btn">
+                <i class="fas fa-book"></i>Swagger
+            </a>
+        </nav>
+    </header>
+    
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    
+    <!-- RENDER THE SIDEBAR TEMPLATE-->
+    <aside class="sidebar">
+        {% include 'sidebar.html' %}
+    </aside>    
+
+    <main class="main-content">
+        <section class="content-section">
+            <h2>Natural Language Processing (NLP) Services</h2>
+            
+            <p>Our NLP services provide powerful text analysis capabilities, allowing you to extract meaningful insights from text data. These services include text classification and sentiment analysis, with options for both basic and advanced analysis.</p>
+            
+            <a href="/static/files/ai-api-postman-collection.json" class="download-btn">
+                <i class="fas fa-download"></i> Download Postman Collection
+            </a>
+            
+            <div class="info-box">
+                <div class="info-box-icon"><i class="fas fa-info-circle"></i></div>
+                <div class="info-box-content">
+                    <h4>Authentication Required</h4>
+                    <p>All NLP services require authentication using a token. You must include your token in the <code>X-Token</code> header for all requests.</p>
+                    <p>See the <a href="{{ url_for('token_services') }}">Token Services</a> documentation for details on token generation.</p>
+                </div>
+            </div>
+            
+            <div class="tabs">
+                <div class="tab active" data-tab="classification">Text Classification</div>
+                <div class="tab" data-tab="sentiment">Sentiment Analysis</div>
+            </div>
+            
+            <!-- Text Classification Tab -->
+            <div id="classification" class="tab-content active">
+                <h3>Text Classification</h3>
+                <p>Our text classification services allow you to categorize text into predefined categories. This is useful for content categorization, topic identification, intent recognition, and more.</p>
+                
+                <h4>Available Endpoints</h4>
+                <div class="api-endpoints">
+                    <div class="endpoint">
+                        <span class="endpoint-method method-post">POST</span>
+                        <span class="endpoint-path">/nlp/classify</span>
+                        <span class="endpoint-description">Simple classification of text into one of the provided categories</span>
+                    </div>
+                    <div class="endpoint">
+                        <span class="endpoint-method method-post">POST</span>
+                        <span class="endpoint-path">/nlp/classify/multi</span>
+                        <span class="endpoint-description">Multi-class classification with confidence scores for each category</span>
+                    </div>
+                </div>
+                
+                <h4>Simple Classification</h4>
+                <p>The Simple Classification endpoint categorizes text into a single class from a provided list of categories.</p>
+                
+                <h5>Request Parameters</h5>
+                <ul>
+                    <li><strong>categories</strong> (required) - Array of categories to classify into</li>
+                    <li><strong>user_input</strong> (required) - Text to classify</li>
+                    <li><strong>model</strong> (optional) - LLM model to use (gpt-4o-mini or gpt-4o, default: gpt-4o-mini)</li>
+                </ul>
+                
+                <h5>Example Request</h5>
+                <div class="code-block">
+                    <pre>
+POST /nlp/classify
+Headers:
+  X-Token: your_token_here
+  Content-Type: application/json
+
+{
+  "categories": ["sports", "politics", "technology", "entertainment"],
+  "user_input": "Apple announced its latest iPhone with improved AI capabilities at yesterday's event in Cupertino. The new device features enhanced processing power and camera quality.",
+  "model": "gpt-4o-mini"
+}
+                    </pre>
+                </div>
+                
+                <h5>Example Response</h5>
+                <div class="code-block">
+                    <pre>
+{
+  "result_class": "technology",
+  "model_used": "gpt-4o-mini",
+  "input_tokens": 125,
+  "completion_tokens": 42,
+  "output_tokens": 167
+}
+                    </pre>
+                </div>
+                
+                <h4>Multi-Class Classification</h4>
+                <p>The Multi-Class Classification endpoint provides confidence scores for all provided categories, allowing for more nuanced classification.</p>
+                
+                <h5>Request Parameters</h5>
+                <ul>
+                    <li><strong>categories</strong> (required) - Array of categories to classify into</li>
+                    <li><strong>user_input</strong> (required) - Text to classify</li>
+                    <li><strong>model</strong> (optional) - LLM model to use (gpt-4o-mini or gpt-4o, default: gpt-4o-mini)</li>
+                </ul>
+                
+                <h5>Example Request</h5>
+                <div class="code-block">
+                    <pre>
+POST /nlp/classify/multi
+Headers:
+  X-Token: your_token_here
+  Content-Type: application/json
+
+{
+  "categories": ["sports", "politics", "technology", "entertainment"],
+  "user_input": "Apple announced its latest iPhone with improved AI capabilities at yesterday's event in Cupertino. The new device features enhanced processing power and camera quality.",
+  "model": "gpt-4o-mini"
+}
+                    </pre>
+                </div>
+                
+                <h5>Example Response</h5>
+                <div class="code-block">
+                    <pre>
+{
+  "top_result": "technology",
+  "top_3_classes": ["technology", "entertainment", "politics"],
+  "all_classes": [
+    {"category": "technology", "confidence": 0.95},
+    {"category": "entertainment", "confidence": 0.45},
+    {"category": "politics", "confidence": 0.15},
+    {"category": "sports", "confidence": 0.05}
+  ],
+  "model_used": "gpt-4o-mini",
+  "input_tokens": 145,
+  "completion_tokens": 87,
+  "output_tokens": 232
+}
+                    </pre>
+                </div>
+                
+                <div class="info-box">
+                    <div class="info-box-icon"><i class="fas fa-lightbulb"></i></div>
+                    <div class="info-box-content">
+                        <h4>Pro Tip: Text Classification</h4>
+                        <p>For optimal classification results:</p>
+                        <ul>
+                            <li>Use distinct, non-overlapping categories when possible</li>
+                            <li>Provide sufficient context in your input text</li>
+                            <li>For complex classification tasks, use the gpt-4o model</li>
+                            <li>For multiclass classification, confidence scores don't need to sum to 1.0 - they represent each category's relevance independently</li>
+                            <li>The <code>top_3_classes</code> array provides a quick way to identify the most relevant categories</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sentiment Analysis Tab -->
+            <div id="sentiment" class="tab-content">
+                <h3>Sentiment Analysis</h3>
+                <p>Our sentiment analysis services analyze text to determine the emotional tone and attitude expressed. This is useful for brand monitoring, customer feedback analysis, social media monitoring, and more.</p>
+                
+                <h4>Available Endpoints</h4>
+                <div class="api-endpoints">
+                    <div class="endpoint">
+                        <span class="endpoint-method method-post">POST</span>
+                        <span class="endpoint-path">/nlp/sentiment</span>
+                        <span class="endpoint-description">Basic sentiment analysis (positive, neutral, negative)</span>
+                    </div>
+                    <div class="endpoint">
+                        <span class="endpoint-method method-post">POST</span>
+                        <span class="endpoint-path">/nlp/sentiment/advanced</span>
+                        <span class="endpoint-description">Advanced emotion analysis with multiple emotion categories</span>
+                    </div>
+                </div>
+                
+                <h4>Basic Sentiment Analysis</h4>
+                <p>The Basic Sentiment Analysis endpoint categorizes text into positive, neutral, or negative sentiment with confidence scores.</p>
+                
+                <h5>Request Parameters</h5>
+                <ul>
+                    <li><strong>user_input</strong> (required) - Text to analyze for sentiment</li>
+                    <li><strong>model</strong> (optional) - LLM model to use (gpt-4o-mini or gpt-4o, default: gpt-4o-mini)</li>
+                </ul>
+                
+                <h5>Example Request</h5>
+                <div class="code-block">
+                    <pre>
+POST /nlp/sentiment
+Headers:
+  X-Token: your_token_here
+  Content-Type: application/json
+
+{
+  "user_input": "I absolutely love this product! It's the best purchase I've made this year and has significantly improved my daily workflow.",
+  "model": "gpt-4o-mini"
+}
+                    </pre>
+                </div>
+                
+                <h5>Example Response</h5>
+                <div class="code-block">
+                    <pre>
+{
+  "top_sentiment": "positive",
+  "all_sentiments": [
+    {"sentiment": "positive", "confidence": 0.95},
+    {"sentiment": "neutral", "confidence": 0.05},
+    {"sentiment": "negative", "confidence": 0.00}
+  ],
+  "model_used": "gpt-4o-mini",
+  "input_tokens": 98,
+  "completion_tokens": 68,
+  "output_tokens": 166
+}
+                    </pre>
+                </div>
+                
+                <h4>Advanced Emotion Analysis</h4>
+                <p>The Advanced Emotion Analysis endpoint provides more granular analysis of emotions present in text, detecting multiple emotional states with confidence scores.</p>
+                
+                <h5>Request Parameters</h5>
+                <ul>
+                    <li><strong>user_input</strong> (required) - Text to analyze for emotions</li>
+                    <li><strong>model</strong> (optional) - LLM model to use (gpt-4o-mini or gpt-4o, default: gpt-4o-mini)</li>
+                </ul>
+                
+                <h5>Example Request</h5>
+                <div class="code-block">
+                    <pre>
+POST /nlp/sentiment/advanced
+Headers:
+  X-Token: your_token_here
+  Content-Type: application/json
+
+{
+  "user_input": "I was initially anxious about the presentation, but after receiving such positive feedback from my colleagues, I'm feeling incredibly proud and relieved!",
+  "model": "gpt-4o-mini"
+}
+                    </pre>
+                </div>
+                
+                <h5>Example Response</h5>
+                <div class="code-block">
+                    <pre>
+{
+  "top_emotion": "pride",
+  "top_3_emotions": ["pride", "relief", "happiness"],
+  "all_emotions": [
+    {"emotion": "pride", "confidence": 0.85},
+    {"emotion": "relief", "confidence": 0.80},
+    {"emotion": "happiness", "confidence": 0.75},
+    {"emotion": "anxiety", "confidence": 0.40},
+    {"emotion": "satisfaction", "confidence": 0.35}
+  ],
+  "model_used": "gpt-4o-mini",
+  "input_tokens": 115,
+  "completion_tokens": 95,
+  "output_tokens": 210
+}
+                    </pre>
+                </div>
+                
+                <h5>Supported Emotions</h5>
+                <p>The advanced emotion analysis can detect a wide range of emotions, including:</p>
+                <div class="feature-cards">
+                    <div class="feature-card">
+                        <h4><i class="fas fa-smile"></i> Primary Emotions</h4>
+                        <p>happiness, sadness, anger, fear, surprise, disgust</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><i class="fas fa-heart"></i> Positive Emotions</h4>
+                        <p>joy, excitement, contentment, satisfaction, relief, pride, optimism, love, affection, compassion, gratitude, admiration</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><i class="fas fa-frown"></i> Negative Emotions</h4>
+                        <p>grief, disappointment, regret, shame, guilt, remorse, frustration, irritation, rage, contempt, jealousy, envy, anxiety, worry, nervousness, dread, horror, panic</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><i class="fas fa-star-half-alt"></i> Complex Emotions</h4>
+                        <p>hope, anticipation, curiosity, interest, awe, wonder, trust, confidence, doubt, uncertainty, skepticism, nostalgia, longing, yearning, desire, craving</p>
+                    </div>
+                </div>
+                
+                <div class="info-box">
+                    <div class="info-box-icon"><i class="fas fa-lightbulb"></i></div>
+                    <div class="info-box-content">
+                        <h4>Pro Tip: Sentiment Analysis</h4>
+                        <p>For optimal sentiment analysis results:</p>
+                        <ul>
+                            <li>Provide sufficient context in your input text</li>
+                            <li>For nuanced emotion analysis, use the advanced endpoint</li>
+                            <li>If you need to detect ambivalent or mixed emotions, use the advanced endpoint and look for multiple emotions with high confidence scores</li>
+                            <li>The basic sentiment endpoint is faster and more efficient for simple positive/negative/neutral classification</li>
+                            <li>For analyzing customer feedback or reviews, consider using gpt-4o for better accuracy in detecting subtle emotional cues</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <h3>Credit Usage</h3>
+            <p>NLP services consume AI credits based on the model used:</p>
+            <ul>
+                <li>Using <strong>gpt-4o-mini</strong>: 0.5 credits per call</li>
+                <li>Using <strong>gpt-4o</strong>: 2 credits per call</li>
+            </ul>
+            
+            <h3>Use Cases</h3>
+            <div class="feature-cards">
+                <div class="feature-card">
+                    <h4><i class="fas fa-chart-pie"></i> Content Categorization</h4>
+                    <p>Automatically categorize articles, news, or support tickets into predefined topics.</p>
+                </div>
+                <div class="feature-card">
+                    <h4><i class="fas fa-comments"></i> Customer Feedback Analysis</h4>
+                    <p>Analyze customer reviews and feedback to identify sentiment and specific emotions.</p>
+                </div>
+                <div class="feature-card">
+                    <h4><i class="fas fa-bullhorn"></i> Social Media Monitoring</h4>
+                    <p>Track brand mentions and categorize them by sentiment or topic category.</p>
+                </div>
+                <div class="feature-card">
+                    <h4><i class="fas fa-robot"></i> Chatbot Enhancement</h4>
+                    <p>Improve chatbot responses by understanding user intent and emotional state.</p>
+                </div>
+            </div>
+            
+            <p>For complete details and examples, please refer to our <a href="/apidocs/">Swagger Documentation</a>.</p>
+        </section>
+    </main>
+    
+    <footer class="footer">
+        <p>© 2025 TIH AI API Portal. Powered by the TIH AI Center of Excellence.</p>
+    </footer>
+    
+    <script>
+        // Toggle sidebar on mobile
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuToggle = document.getElementById('menu-toggle');
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            
+            menuToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('active');
+                overlay.classList.toggle('active');
+            });
+            
+            overlay.addEventListener('click', function() {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            });
+            
+            // Tab functionality
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // Remove active class from all tabs and contents
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tabContents.forEach(c => c.classList.remove('active'));
+                    
+                    // Add active class to clicked tab
+                    this.classList.add('active');
+                    
+                    // Show corresponding content
+                    const tabId = this.getAttribute('data-tab');
+                    document.getElementById(tabId).classList.add('active');
+                });
+            });
+            
+            // Highlight current page in sidebar
+            const currentPage = window.location.pathname;
+            const sidebarLinks = document.querySelectorAll('.sidebar-link');
+            
+            sidebarLinks.forEach(link => {
+                if (link.getAttribute('href') === currentPage) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
