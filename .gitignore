@@ -7,3 +7,15 @@ apis/admin/__pycache__/
 apis/balance_management/__pycache__/
 apis/utils/__pycache__/
 apis/image_generation/__pycache__/
+apis/admin/__pycache__/
+apis/balance_management/__pycache__/
+apis/document_intelligence/__pycache__/
+apis/endpoint_management/__pycache__/
+apis/file_upload/__pycache__/
+apis/llm/__pycache__/
+apis/llm_conversation/__pycache__/
+apis/ocr/__pycache__/
+apis/rag/__pycache__/
+apis/speech_services/__pycache__/
+apis/token_services/__pycache__/
+apis/utils/__pycache__/
