@@ -115,6 +115,11 @@ def document_intelligence():
 def rag():
     return render_template('docs/rag.html')
 
+## NLP
+@app.route('/docs/nlp')
+def nlp():
+    return render_template('docs/nlp.html')
+
 # TOKEN SERVICE ENDPOINTS
 ## GET TOKEN
 from apis.token_services.get_token import register_routes as get_token_endpoint 
@@ -203,6 +208,9 @@ register_consume_vectorstore_routes(app)
 
 from apis.llm_conversation.conversation import register_llm_conversation_routes
 register_llm_conversation_routes(app)
+
+from apis.nlp.sentiment_analysis import register_sentiment_routes
+register_sentiment_routes(app)
 
 from apis.nlp.classification import register_nlp_routes
 register_nlp_routes(app)
