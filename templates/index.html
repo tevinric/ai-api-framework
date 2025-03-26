@@ -14,6 +14,7 @@
             --text-color: #333;
             --white-color: #ffffff;
             --accent-color: #00d4ff;
+            --accent-gradient: linear-gradient(90deg, #00d4ff 0%, #6c63ff 100%);
             --sidebar-width: 280px;
             --header-height: 60px;
         }
@@ -40,8 +41,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-size: cover;
-            opacity: 0.05;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%234a6fe3' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
             z-index: -1;
             pointer-events: none;
         }
@@ -56,7 +56,7 @@
             width: 100%;
             height: var(--header-height);
             z-index: 1000;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -107,13 +107,15 @@
             padding: 0.5rem 1rem;
             border-radius: 4px;
             font-weight: 600;
-            transition: background-color 0.3s, transform 0.2s;
+            transition: all 0.3s;
+            box-shadow: 0 4px 10px rgba(0, 212, 255, 0.3);
         }
         
         .swagger-btn:hover {
             background-color: #00b8e6;
             transform: translateY(-2px);
             color: var(--dark-color);
+            box-shadow: 0 6px 15px rgba(0, 212, 255, 0.4);
         }
         
         /* Mobile menu toggle */
@@ -190,7 +192,7 @@
         .main-content {
             margin-left: var(--sidebar-width);
             margin-top: var(--header-height);
-            padding: 2rem;
+            padding: 0;
             min-height: calc(100vh - var(--header-height));
         }
         
@@ -198,68 +200,238 @@
         .hero {
             background: linear-gradient(135deg, var(--dark-color) 0%, #3a3d50 100%);
             color: var(--white-color);
-            padding: 3rem;
-            border-radius: 8px;
-            margin-bottom: 2rem;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            padding: 5rem 3rem;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        .hero::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%236c63ff' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        
+        .hero-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
         }
         
         .hero h2 {
-            font-size: 2.3rem;
-            margin-bottom: 1rem;
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+            max-width: 700px;
             background: linear-gradient(to right, var(--white-color), var(--accent-color));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            animation: fadeInUp 0.8s ease-out;
         }
         
         .hero p {
-            font-size: 1.1rem;
-            max-width: 800px;
-            margin-bottom: 1.5rem;
-            line-height: 1.6;
+            font-size: 1.2rem;
+            max-width: 700px;
+            margin-bottom: 2rem;
+            line-height: 1.7;
+            color: rgba(255, 255, 255, 0.9);
+            animation: fadeInUp 1s ease-out;
+        }
+        
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            animation: fadeInUp 1.2s ease-out;
         }
         
         .cta-btn {
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
             background-color: var(--accent-color);
             color: var(--dark-color);
             padding: 0.75rem 1.5rem;
             border-radius: 4px;
             font-weight: 600;
             text-decoration: none;
-            transition: background-color 0.3s, transform 0.2s;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
         }
         
         .cta-btn:hover {
             background-color: #00b8e6;
-            transform: translateY(-2px);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 212, 255, 0.4);
         }
         
-        /* Features */
+        .cta-btn-secondary {
+            background-color: transparent;
+            color: var(--white-color);
+            border: 2px solid var(--white-color);
+            box-shadow: none;
+        }
+        
+        .cta-btn-secondary:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--white-color);
+            box-shadow: 0 4px 15px rgba(255, 255, 255, 0.2);
+        }
+        
+        .cta-btn i {
+            margin-right: 0.5rem;
+        }
+        
+        /* Features highlights */
+        .features-highlight {
+            padding: 2rem 3rem;
+            background-color: var(--white-color);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .features-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .highlight-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .highlight-icon {
+            font-size: 1.5rem;
+            width: 3.5rem;
+            height: 3.5rem;
+            border-radius: 50%;
+            background: var(--accent-gradient);
+            color: var(--white-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .highlight-text h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.2rem;
+            color: var(--dark-color);
+        }
+        
+        .highlight-text p {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        /* Services section */
+        .services-section {
+            padding: 5rem 3rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .services-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        .section-header h2 {
+            font-size: 2.5rem;
+            color: var(--dark-color);
+            margin-bottom: 1rem;
+            position: relative;
+            display: inline-block;
+        }
+        
+        .section-header h2::after {
+            content: "";
+            position: absolute;
+            left: 50%;
+            bottom: -10px;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: var(--accent-gradient);
+            border-radius: 2px;
+        }
+        
+        .section-header p {
+            color: #666;
+            font-size: 1.1rem;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        
+        /* Features grid */
         .features {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 2rem;
-            margin-bottom: 3rem;
+            margin-bottom: 4rem;
         }
         
         .feature-card {
             background-color: var(--white-color);
             padding: 2rem;
             border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-            transition: transform 0.3s, box-shadow 0.3s;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .feature-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--accent-gradient);
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
         
         .feature-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            transform: translateY(-10px);
+            box-shadow: 0 15px 35px rgba(106, 100, 255, 0.1);
+        }
+        
+        .feature-card:hover::before {
+            opacity: 0.03;
         }
         
         .feature-icon {
             font-size: 2.5rem;
             color: var(--primary-color);
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .feature-card:hover .feature-icon {
+            color: var(--secondary-color);
+            transform: scale(1.1);
         }
         
         .feature-card h3 {
@@ -271,6 +443,195 @@
         .feature-card p {
             color: #666;
             line-height: 1.6;
+            margin-bottom: 1rem;
+            flex-grow: 1;
+        }
+        
+        .feature-link {
+            display: inline-flex;
+            align-items: center;
+            color: var(--primary-color);
+            font-weight: 600;
+            text-decoration: none;
+            margin-top: auto;
+            transition: all 0.3s ease;
+        }
+        
+        .feature-link i {
+            margin-left: 0.5rem;
+            transition: transform 0.3s ease;
+        }
+        
+        .feature-link:hover {
+            color: var(--secondary-color);
+        }
+        
+        .feature-link:hover i {
+            transform: translateX(5px);
+        }
+        
+        /* Getting started section */
+        .getting-started-section {
+            padding: 5rem 3rem;
+            background-color: #f8faff;
+            position: relative;
+        }
+        
+        .getting-started-section::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%234a6fe3' fill-opacity='0.05' fill-rule='evenodd'%3E%3Ccircle cx='3' cy='3' r='3'/%3E%3Ccircle cx='13' cy='13' r='3'/%3E%3C/g%3E%3C/svg%3E");
+            opacity: 0.8;
+        }
+        
+        .steps-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+        }
+        
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+        
+        .step-card {
+            background-color: var(--white-color);
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease;
+            position: relative;
+        }
+        
+        .step-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .step-number {
+            position: absolute;
+            top: -20px;
+            left: 20px;
+            width: 40px;
+            height: 40px;
+            background: var(--accent-gradient);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(106, 100, 255, 0.3);
+        }
+        
+        .step-card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            color: var(--dark-color);
+            padding-top: 0.5rem;
+        }
+        
+        .step-card p {
+            color: #666;
+            margin-bottom: 1rem;
+        }
+        
+        .step-card .step-icon {
+            color: var(--primary-color);
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        /* Code sample */
+        .code-sample {
+            background-color: #2d2d2d;
+            color: #fff;
+            padding: 1.5rem;
+            border-radius: 6px;
+            font-family: monospace;
+            overflow-x: auto;
+            margin-top: 1rem;
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+        
+        .code-comment {
+            color: #75715e;
+        }
+        
+        .code-keyword {
+            color: #f92672;
+        }
+        
+        .code-string {
+            color: #a6e22e;
+        }
+        
+        /* API metrics section */
+        .api-metrics {
+            padding: 3rem;
+            background-color: var(--dark-color);
+            color: var(--white-color);
+        }
+        
+        .metrics-container {
+            display: flex;
+            justify-content: space-around;
+            max-width: 1200px;
+            margin: 0 auto;
+            flex-wrap: wrap;
+            gap: 2rem;
+        }
+        
+        .metric-item {
+            text-align: center;
+            flex: 1;
+            min-width: 150px;
+        }
+        
+        .metric-number {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(to right, var(--white-color), var(--accent-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .metric-label {
+            font-size: 1rem;
+            opacity: 0.8;
+        }
+        
+        /* CTA section */
+        .cta-section {
+            padding: 5rem 3rem;
+            text-align: center;
+            background-color: var(--white-color);
+        }
+        
+        .cta-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .cta-section h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+            color: var(--dark-color);
+        }
+        
+        .cta-section p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            color: #666;
         }
         
         /* Content sections */
@@ -278,38 +639,8 @@
             background-color: var(--white-color);
             border-radius: 8px;
             padding: 2rem;
-            margin-bottom: 2rem;
+            margin: 2rem 3rem;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-        }
-        
-        .content-section h2 {
-            font-size: 1.8rem;
-            margin-bottom: 1.5rem;
-            color: var(--dark-color);
-            border-bottom: 2px solid var(--light-color);
-            padding-bottom: 0.5rem;
-        }
-        
-        .content-section h3 {
-            font-size: 1.3rem;
-            margin: 1.5rem 0 1rem;
-            color: var(--primary-color);
-        }
-        
-        .content-section p {
-            margin-bottom: 1rem;
-            line-height: 1.6;
-        }
-        
-        .content-section ul, 
-        .content-section ol {
-            margin-bottom: 1.5rem;
-            padding-left: 1.5rem;
-        }
-        
-        .content-section li {
-            margin-bottom: 0.5rem;
-            line-height: 1.6;
         }
         
         /* Download button */
@@ -322,8 +653,9 @@
             border-radius: 4px;
             font-weight: 600;
             text-decoration: none;
-            transition: background-color 0.3s, transform 0.2s;
+            transition: all 0.3s;
             margin-bottom: 2rem;
+            box-shadow: 0 4px 15px rgba(74, 111, 227, 0.3);
         }
         
         .download-btn i {
@@ -332,7 +664,8 @@
         
         .download-btn:hover {
             background-color: var(--secondary-color);
-            transform: translateY(-2px);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(74, 111, 227, 0.4);
         }
         
         /* Footer */
@@ -340,29 +673,78 @@
             background-color: var(--dark-color);
             color: var(--white-color);
             text-align: center;
-            padding: 2rem;
+            padding: 3rem;
             margin-top: 3rem;
             margin-left: var(--sidebar-width);
+            position: relative;
+        }
+        
+        .footer::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%234a6fe3' fill-opacity='0.05' fill-rule='evenodd'%3E%3Ccircle cx='3' cy='3' r='3'/%3E%3Ccircle cx='13' cy='13' r='3'/%3E%3C/g%3E%3C/svg%3E");
+            opacity: 0.1;
+            pointer-events: none;
         }
         
         .footer p {
             margin-bottom: 1rem;
+            position: relative;
         }
         
         .social-links {
             display: flex;
             justify-content: center;
             gap: 1rem;
+            position: relative;
         }
         
         .social-link {
             color: var(--white-color);
             font-size: 1.5rem;
-            transition: color 0.3s;
+            transition: all 0.3s;
         }
         
         .social-link:hover {
             color: var(--accent-color);
+            transform: translateY(-3px);
+        }
+        
+        /* Animation keyframes */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+            100% {
+                transform: scale(1);
+            }
         }
         
         /* Responsive styles */
@@ -390,7 +772,11 @@
             }
             
             .features {
-                grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            }
+            
+            .features-container {
+                flex-direction: column;
             }
         }
         
@@ -404,11 +790,33 @@
             }
             
             .hero {
-                padding: 2rem;
+                padding: 3rem 1.5rem;
             }
             
             .hero h2 {
-                font-size: 1.8rem;
+                font-size: 2rem;
+            }
+            
+            .services-section,
+            .getting-started-section {
+                padding: 3rem 1.5rem;
+            }
+            
+            .section-header h2 {
+                font-size: 2rem;
+            }
+            
+            .features-highlight {
+                padding: 1.5rem;
+            }
+            
+            .metrics-container {
+                flex-direction: column;
+                gap: 2rem;
+            }
+            
+            .metric-item {
+                flex: auto;
             }
         }
         
@@ -445,7 +853,7 @@
                 <i class="fas fa-home"></i>Home
             </a>
             <a href="{{ url_for('getting_started') }}" class="nav-item">
-                <i class="fas fa-rocket"></i>Geting Started
+                <i class="fas fa-rocket"></i>Getting Started
             </a>
             <a href="/templates/docs/faq.html" class="nav-item">
                 <i class="fas fa-question-circle"></i>FAQ
@@ -465,86 +873,240 @@
     
     <main class="main-content">
         <section class="hero">
-            <h2>Integrate AI into your applications with our AI APIs </h2>
-            <p>The TIH AI Center of Excellence API Portal is a  comprehensive suite of AI APIs that will empower developers to integrate state-of-the-art language models, image generation, speech services, and document intelligence into their applications. With flexible authentication and straightforward integration, you can start building intelligent applications driven by AI in minutes.</p>
-            <a href="{{ url_for('getting_started') }}" class="cta-btn">Get Started</a>
-            <a href="/apidocs/" class="cta-btn" style="margin-left: 1rem; background-color: #fff; color: var(--dark-color);">Swagger Docs</a>
-        </section>
-        
-        
-        <section class="features" style="text-align: center;">
-            <div class="feature-card">
-            <div class="feature-icon">
-            <i class="fas fa-robot"></i>
-            </div>
-            <h3>Language Models</h3>
-            <p>Access powerful language models like GPT-4o, Deepseek, Llama, and more for text generation, content creation, and deep reasoning tasks.</p>
-            </div>
-            
-            <div class="feature-card">
-            <div class="feature-icon">
-            <i class="fas fa-image"></i>
-            </div>
-            <h3>Image Generation</h3>
-            <p>Create stunning images with DALL-E 3 and Stable Diffusion Ultra from text prompts for creative content and design.</p>
-            </div>
-            
-            <div class="feature-card">
-            <div class="feature-icon">
-            <i class="fas fa-microphone"></i>
-            </div>
-            <h3>Speech Services</h3>
-            <p>Convert speech to text with advanced options including speaker diarization for multi-speaker transcription.</p>
-            </div>
-            
-            <div class="feature-card">
-            <div class="feature-icon">
-            <i class="fas fa-file-alt"></i>
-            </div>
-            <h3>Doc Intelligence</h3>
-            <p>Extract insights, summarize content, and process information from documents across various formats.</p>
-            </div>
-            
-            <div class="feature-card">
-            <div class="feature-icon">
-            <i class="fas fa-key"></i>
-            </div>
-            <h3>Flexible Authentication</h3>
-            <p>Secure your API access with token-based authentication, including token generation and refresh capabilities.</p>
-            </div>
-            
-            <div class="feature-card">
-            <div class="feature-icon">
-            <i class="fas fa-chart-line"></i>
-            </div>
-            <h3>Usage Monitoring</h3>
-            <p>Track your API usage, monitor balance consumption, and get detailed statistics for your account.</p>
+            <div class="hero-container">
+                <h2>Supercharge Your Applications with Advanced AI APIs</h2>
+                <p>The TIH AI Center of Excellence API Portal provides a comprehensive suite of AI services designed to transform your applications. From advanced language models to image generation, speech processing, document intelligence, and more—all accessible through simple, powerful APIs designed for developers.</p>
+                <div class="cta-buttons">
+                    <a href="{{ url_for('getting_started') }}" class="cta-btn">
+                        <i class="fas fa-rocket"></i> Get Started
+                    </a>
+                    <a href="/apidocs/" class="cta-btn cta-btn-secondary">
+                        <i class="fas fa-book"></i> Explore API Docs
+                    </a>
+                </div>
             </div>
         </section>
         
-        <section class="content-section">
-            <h2>Getting Started</h2>
-            <p>Start building with our AI API Platform in just a few steps:</p>
-            
-            <ol>
-                <li><strong>Register for an API key</strong> - Request your API key to access our services.</li>
-                <li><strong>Generate your first token</strong> - Using your API key, generate an authentication token to access the services.</li>
-                <li><strong>Make your first API call</strong> - Start with a simple request to one of our language models or other services.</li>
-                <li><strong>Monitor your usage</strong> - Keep track of your API calls and credit consumption through our balance management endpoints.</li>
-            </ol>
-            
-            <p>Check out our <a href="{{ url_for('getting_started') }}">detailed getting started guide</a> for more information.</p>
+        <section class="features-highlight">
+            <div class="features-container">
+                <div class="highlight-item">
+                    <div class="highlight-icon">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <div class="highlight-text">
+                        <h3>Fast Integration</h3>
+                        <p>Simple API calls with consistent response formats</p>
+                    </div>
+                </div>
+                <div class="highlight-item">
+                    <div class="highlight-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <div class="highlight-text">
+                        <h3>Secure Access</h3>
+                        <p>Token-based authentication with robust security</p>
+                    </div>
+                </div>
+                <div class="highlight-item">
+                    <div class="highlight-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="highlight-text">
+                        <h3>Usage Monitoring</h3>
+                        <p>Track API consumption and balance management</p>
+                    </div>
+                </div>
+            </div>
         </section>
-
-        <a href="/static/files/ai-api-postman-collection.json" class="download-btn">
-            <i class="fas fa-download"></i> Download Postman Collection
-        </a>
+        
+        <section class="services-section">
+            <div class="services-container">
+                <div class="section-header">
+                    <h2>Our AI Services</h2>
+                    <p>Explore our comprehensive suite of AI APIs designed to power the next generation of intelligent applications</p>
+                </div>
+                
+                <div class="features">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <h3>Language Models</h3>
+                        <p>Access cutting-edge language models including GPT-4o, GPT-4o-mini, Deepseek-R1, Llama, and O1-mini for text generation, content creation, summarization, and complex reasoning tasks.</p>
+                        <a href="{{ url_for('llm') }}" class="feature-link">Learn more <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-comments"></i>
+                        </div>
+                        <h3>Conversational AI</h3>
+                        <p>Build sophisticated AI chat applications with multi-turn conversations that maintain context. Choose from different assistant types optimized for coding, creative tasks, research, and business use cases.</p>
+                        <a href="{{ url_for('llm_conversation') }}" class="feature-link">Learn more <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-image"></i>
+                        </div>
+                        <h3>Image Generation</h3>
+                        <p>Create stunning AI-generated images with DALL-E 3 and Stable Diffusion Ultra. Convert text descriptions into high-quality visuals for creative content, design projects, and marketing materials.</p>
+                        <a href="{{ url_for('image_generation') }}" class="feature-link">Learn more <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-microphone"></i>
+                        </div>
+                        <h3>Speech Services</h3>
+                        <p>Convert speech to text with advanced features like speaker diarization for multi-speaker recordings. Perfect for transcription, meeting notes, and voice-enabled applications.</p>
+                        <a href="{{ url_for('speech_services') }}" class="feature-link">Learn more <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-book"></i>
+                        </div>
+                        <h3>Document Intelligence</h3>
+                        <p>Extract insights from documents with layout analysis, intelligent reading, and summarization capabilities. Process PDFs, Word documents, and more with high-precision content extraction.</p>
+                        <a href="{{ url_for('document_intelligence') }}" class="feature-link">Learn more <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-eye"></i>
+                        </div>
+                        <h3>OCR Services</h3>
+                        <p>Specialized document extraction for South African ID documents and vehicle license discs. Extract structured data from document images with high accuracy and reliability.</p>
+                        <a href="{{ url_for('ocr_services') }}" class="feature-link">Learn more <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-language"></i>
+                        </div>
+                        <h3>NLP Services</h3>
+                        <p>Powerful text analysis including classification and sentiment analysis. Categorize content, detect emotions, and extract meaningful insights from text data with confidence scores.</p>
+                        <a href="{{ url_for('nlp') }}" class="feature-link">Learn more <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-search"></i>
+                        </div>
+                        <h3>RAG Query</h3>
+                        <p>Build AI applications that can answer questions based on your specific documents and content. Combine vector search with language models for accurate, context-aware responses grounded in your data.</p>
+                        <a href="{{ url_for('rag') }}" class="feature-link">Learn more <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                        <h3>File Management</h3>
+                        <p>Upload, access, and manage files for use with AI services. Securely handle documents, images, audio files, and other content for processing by our AI endpoints.</p>
+                        <a href="{{ url_for('file_management') }}" class="feature-link">Learn more <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section class="api-metrics">
+            <div class="metrics-container">
+                <div class="metric-item">
+                    <div class="metric-number">9+</div>
+                    <div class="metric-label">AI Services</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-number">25+</div>
+                    <div class="metric-label">API Endpoints</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-number">5</div>
+                    <div class="metric-label">LLM Models</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-number">99.9%</div>
+                    <div class="metric-label">Uptime</div>
+                </div>
+            </div>
+        </section>
+        
+        <section class="getting-started-section">
+            <div class="steps-container">
+                <div class="section-header">
+                    <h2>Getting Started</h2>
+                    <p>Follow these simple steps to start building with our AI API Platform</p>
+                </div>
+                
+                <div class="steps-grid">
+                    <div class="step-card">
+                        <div class="step-number">1</div>
+                        <div class="step-icon"><i class="fas fa-key"></i></div>
+                        <h3>Register for an API Key</h3>
+                        <p>Request your unique API key through our registration form to gain access to all services.</p>
+                    </div>
+                    
+                    <div class="step-card">
+                        <div class="step-number">2</div>
+                        <div class="step-icon"><i class="fas fa-lock"></i></div>
+                        <h3>Generate a Token</h3>
+                        <p>Use your API key to generate an authentication token for secure API access.</p>
+                        <div class="code-sample">
+                            <span class="code-comment">// Example token generation</span><br>
+                            <span class="code-keyword">POST</span> /token<br>
+                            Headers: {<br>
+                              X-API-Key: <span class="code-string">your_api_key</span><br>
+                            }
+                        </div>
+                    </div>
+                    
+                    <div class="step-card">
+                        <div class="step-number">3</div>
+                        <div class="step-icon"><i class="fas fa-code"></i></div>
+                        <h3>Make Your First API Call</h3>
+                        <p>Start with a simple request to one of our language models or other services.</p>
+                        <div class="code-sample">
+                            <span class="code-comment">// Example LLM API call</span><br>
+                            <span class="code-keyword">POST</span> /llm/gpt-4o-mini<br>
+                            Headers: {<br>
+                              X-Token: <span class="code-string">your_token</span><br>
+                            }<br>
+                            Body: {<br>
+                              <span class="code-string">"system_prompt"</span>: <span class="code-string">"You are a helpful assistant."</span>,<br>
+                              <span class="code-string">"user_input"</span>: <span class="code-string">"Tell me about AI APIs."</span><br>
+                            }
+                        </div>
+                    </div>
+                    
+                    <div class="step-card">
+                        <div class="step-number">4</div>
+                        <div class="step-icon"><i class="fas fa-chart-bar"></i></div>
+                        <h3>Monitor Your Usage</h3>
+                        <p>Track your API credit consumption and balance through our monitoring endpoints.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section class="cta-section">
+            <div class="cta-container">
+                <h2>Ready to Get Started?</h2>
+                <p>Download our Postman Collection for quick integration or explore our API documentation to learn more.</p>
+                <div class="cta-buttons">
+                    <a href="/static/files/ai-api-postman-collection.json" class="cta-btn">
+                        <i class="fas fa-download"></i> Download Postman Collection
+                    </a>
+                    <a href="/apidocs/" class="cta-btn cta-btn-secondary">
+                        <i class="fas fa-book"></i> Explore API Docs
+                    </a>
+                </div>
+            </div>
+        </section>
     </main>
     
     <footer class="footer">
         <p>© 2025 TIH AI API Portal. Powered by the TIH AI Center of Excellence.</p>
-        <div class="social-links">
-        </div>
     </footer>
     
     <script>
@@ -573,6 +1135,26 @@
                     link.classList.add('active');
                 }
             });
+            
+            // Add scroll animation for elements
+            const animateOnScroll = function() {
+                const elements = document.querySelectorAll('.feature-card, .step-card, .section-header');
+                
+                elements.forEach(element => {
+                    const elementPosition = element.getBoundingClientRect().top;
+                    const screenPosition = window.innerHeight / 1.2;
+                    
+                    if (elementPosition < screenPosition) {
+                        element.style.animation = 'fadeInUp 0.6s ease-out forwards';
+                    }
+                });
+            };
+            
+            // Run on load
+            animateOnScroll();
+            
+            // Run on scroll
+            window.addEventListener('scroll', animateOnScroll);
         });
     </script>
 </body>
