@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Conversation - AI API Platform</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4a6fe3;
+            --secondary-color: #6c63ff;
+            --dark-color: #2a2c3b;
+            --light-color: #f5f6fa;
+            --text-color: #333;
+            --white-color: #ffffff;
+            --accent-color: #00d4ff;
+            --sidebar-width: 280px;
+            --header-height: 60px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--light-color);
+            color: var(--text-color);
+            position: relative;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            opacity: 0.05;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        .header {
+            background-color: var(--dark-color);
+            color: var(--white-color);
+            padding: 0 2rem;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: var(--header-height);
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo i {
+            font-size: 1.8rem;
+            margin-right: 0.5rem;
+            color: var(--accent-color);
+        }
+        
+        .logo h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+        
+        .nav {
+            display: flex;
+            align-items: center;
+        }
+        
+        .nav-item {
+            margin-left: 1.5rem;
+            color: var(--white-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+            display: flex;
+            align-items: center;
+        }
+        
+        .nav-item:hover {
+            color: var(--accent-color);
+        }
+        
+        .nav-item i {
+            margin-right: 0.5rem;
+        }
+        
+        .swagger-btn {
+            background-color: var(--accent-color);
+            color: var(--dark-color);
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-weight: 600;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        
+        .swagger-btn:hover {
+            background-color: #00b8e6;
+            transform: translateY(-2px);
+            color: var(--dark-color);
+        }
+        
+        /* Mobile menu toggle */
+        .menu-toggle {
+            display: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            top: var(--header-height);
+            left: 0;
+            height: calc(100vh - var(--header-height));
+            width: var(--sidebar-width);
+            background-color: var(--white-color);
+            border-right: 1px solid rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+            z-index: 900;
+            padding: 1.5rem 0;
+            transition: transform 0.3s ease-in-out;
+        }
+        
+        .sidebar-category {
+            padding: 0.5rem 1.5rem;
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar-link {
+            display: block;
+            padding: 0.7rem 1.5rem;
+            padding-left: 2.5rem;
+            color: var(--text-color);
+            text-decoration: none;
+            transition: background-color 0.2s, color 0.2s;
+            font-size: 0.95rem;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar-link:hover {
+            background-color: rgba(106, 100, 255, 0.05);
+            color: var(--primary-color);
+        }
+        
+        .sidebar-link.active {
+            color: var(--primary-color);
+            background-color: rgba(106, 100, 255, 0.08);
+            border-left: 3px solid var(--primary-color);
+        }
+        
+        .sidebar-link i {
+            margin-right: 0.5rem;
+            width: 20px;
+            text-align: center;
+        }
+        
+        /* Main content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            margin-top: var(--header-height);
+            padding: 2rem;
+            min-height: calc(100vh - var(--header-height));
+        }
+        
+        /* Content sections */
+        .content-section {
+            background-color: var(--white-color);
+            border-radius: 8px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .content-section h2 {
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            color: var(--dark-color);
+            border-bottom: 2px solid var(--light-color);
+            padding-bottom: 0.5rem;
+        }
+        
+        .content-section h3 {
+            font-size: 1.3rem;
+            margin: 1.5rem 0 1rem;
+            color: var(--primary-color);
+        }
+        
+        .content-section p {
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+        
+        .content-section ul, 
+        .content-section ol {
+            margin-bottom: 1.5rem;
+            padding-left: 1.5rem;
+        }
+        
+        .content-section li {
+            margin-bottom: 0.5rem;
+            line-height: 1.6;
+        }
+        
+        /* Code blocks */
+        .api-endpoints {
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .endpoint {
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: flex-start;
+        }
+        
+        .endpoint-method {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: monospace;
+            font-weight: bold;
+            margin-right: 0.5rem;
+            min-width: 60px;
+            text-align: center;
+        }
+        
+        .method-get {
+            background-color: #e7f5ff;
+            color: #1971c2;
+        }
+        
+        .method-post {
+            background-color: #e3fafc;
+            color: #0c8599;
+        }
+        
+        .method-put {
+            background-color: #fff9db;
+            color: #e67700;
+        }
+        
+        .method-delete {
+            background-color: #fff5f5;
+            color: #e03131;
+        }
+        
+        .endpoint-path {
+            display: inline-block;
+            background-color: var(--dark-color);
+            color: var(--white-color);
+            padding: 0.3rem 0.7rem;
+            border-radius: 4px;
+            font-family: monospace;
+            margin-right: 0.5rem;
+        }
+        
+        .endpoint-description {
+            color: #666;
+            flex: 1;
+        }
+        
+        .code-block {
+            background-color: #2d2d2d;
+            color: #fff;
+            padding: 1rem;
+            border-radius: 6px;
+            font-family: monospace;
+            overflow-x: auto;
+            margin-bottom: 1.5rem;
+            line-height: 1.4;
+        }
+        
+        /* Info boxes */
+        .info-box {
+            display: flex;
+            background-color: #e7f5ff;
+            border-left: 4px solid #1971c2;
+            padding: 1.5rem;
+            border-radius: 6px;
+            margin-bottom: 2rem;
+        }
+        
+        .info-box-icon {
+            font-size: 1.8rem;
+            color: #1971c2;
+            margin-right: 1.5rem;
+        }
+        
+        .info-box-content h4 {
+            margin-bottom: 0.5rem;
+            color: #1971c2;
+        }
+        
+        .info-box-content p, .info-box-content li {
+            color: #495057;
+        }
+        
+        /* Tab styles */
+        .tabs {
+            display: flex;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .tab {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border: 1px solid transparent;
+            border-radius: 4px 4px 0 0;
+            margin-right: 0.5rem;
+            transition: all 0.2s;
+        }
+        
+        .tab.active {
+            background-color: var(--white-color);
+            border-color: #ddd;
+            border-bottom-color: var(--white-color);
+            margin-bottom: -1px;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 1rem;
+            background-color: var(--white-color);
+            border-radius: 0 0 4px 4px;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Card layout for assistants */
+        .assistant-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .assistant-card {
+            background-color: #f8f9fa;
+            padding: 1rem;
+            border-radius: 6px;
+            border-left: 3px solid var(--primary-color);
+        }
+        
+        .assistant-card h4 {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--dark-color);
+        }
+        
+        .assistant-card p {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 0;
+        }
+        
+        /* Conversation flow diagram */
+        .conversation-flow {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .flow-step {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+        
+        .flow-step:not(:last-child):after {
+            content: "";
+            position: absolute;
+            top: 2rem;
+            left: 1.5rem;
+            height: calc(100% + 0.5rem);
+            width: 2px;
+            background-color: #ddd;
+        }
+        
+        .flow-step-number {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 3rem;
+            height: 3rem;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 50%;
+            font-weight: 600;
+            margin-right: 1rem;
+            z-index: 1;
+        }
+        
+        .flow-step-content {
+            flex: 1;
+        }
+        
+        .flow-step-content h4 {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--dark-color);
+        }
+        
+        .flow-step-content p {
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Download button */
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background-color 0.3s, transform 0.2s;
+            margin-bottom: 2rem;
+        }
+        
+        .download-btn i {
+            margin-right: 0.5rem;
+        }
+        
+        .download-btn:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+        
+        /* Footer */
+        .footer {
+            background-color: var(--dark-color);
+            color: var(--white-color);
+            text-align: center;
+            padding: 2rem;
+            margin-top: 3rem;
+            margin-left: var(--sidebar-width);
+        }
+        
+        .footer p {
+            margin-bottom: 1rem;
+        }
+        
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+        }
+        
+        .social-link {
+            color: var(--white-color);
+            font-size: 1.5rem;
+            transition: color 0.3s;
+        }
+        
+        .social-link:hover {
+            color: var(--accent-color);
+        }
+        
+        /* Responsive styles */
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+                box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+                z-index: 1001;
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .footer {
+                margin-left: 0;
+            }
+            
+            .menu-toggle {
+                display: block;
+            }
+            
+            .assistant-cards {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .header {
+                padding: 0 1rem;
+            }
+            
+            .nav-item:not(.swagger-btn) {
+                display: none;
+            }
+        }
+        
+        /* Dark overlay when sidebar is active on mobile */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        
+        @media (max-width: 992px) {
+            .sidebar-overlay.active {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <img src="/static/images/Telesure-logo.png" alt="TIH AI API Platform Logo" style="height: 40px; margin-right: 0.5rem;">
+            <h1>AI API Platform</h1>
+        </div>
+        <nav class="nav">
+            <div class="menu-toggle" id="menu-toggle">
+                <i class="fas fa-bars"></i>
+            </div>
+            <a href="{{ url_for('home') }}" class="nav-item">
+                <i class="fas fa-home"></i>Home
+            </a>
+            <a href="{{ url_for('getting_started') }}" class="nav-item">
+                <i class="fas fa-rocket"></i>Getting Started
+            </a>
+            <a href="/templates/docs/faq.html" class="nav-item">
+                <i class="fas fa-question-circle"></i>FAQ
+            </a>
+            <a href="/apidocs/" class="nav-item swagger-btn">
+                <i class="fas fa-book"></i>Swagger
+            </a>
+        </nav>
+    </header>
+    
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    
+    <!-- RENDER THE SIDEBAR TEMPLATE-->
+    <aside class="sidebar">
+        {% include 'sidebar.html' %}
+    </aside>    
+    
+    <main class="main-content">
+        <section class="content-section">
+            <h2>LLM Conversation</h2>
+            
+            <p>The LLM Conversation API enables multi-turn conversations with our language models. Unlike single prompt-response interactions, these endpoints maintain conversation history and context, allowing for more natural, interactive dialogues with AI models.</p>
+            
+            <a href="/static/files/ai-api-postman-collection.json" class="download-btn">
+                <i class="fas fa-download"></i> Download Postman Collection
+            </a>
+            
+            <div class="info-box">
+                <div class="info-box-icon"><i class="fas fa-info-circle"></i></div>
+                <div class="info-box-content">
+                    <h4>Authentication Required</h4>
+                    <p>All LLM Conversation endpoints require authentication using a token. You must include your token in the <code>X-Token</code> header for all requests.</p>
+                    <p>See the <a href="{{ url_for('token_services') }}">Token Services</a> documentation for details on token generation.</p>
+                </div>
+            </div>
+            
+            <h3>Conversation Flow</h3>
+            <p>A typical conversation with the LLM follows this process:</p>
+            
+            <div class="conversation-flow">
+                <div class="flow-step">
+                    <div class="flow-step-number">1</div>
+                    <div class="flow-step-content">
+                        <h4>Create a New Conversation</h4>
+                        <p>Start by sending an initial message to the <code>/llm/conversation/chat</code> endpoint. This creates a new conversation with a unique ID and returns the AI's first response.</p>
+                    </div>
+                </div>
+                <div class="flow-step">
+                    <div class="flow-step-number">2</div>
+                    <div class="flow-step-content">
+                        <h4>Continue the Conversation</h4>
+                        <p>Use the <code>/llm/conversation/continue</code> endpoint with the conversation ID to send follow-up messages. The AI will respond while maintaining context from previous messages.</p>
+                    </div>
+                </div>
+                <div class="flow-step">
+                    <div class="flow-step-number">3</div>
+                    <div class="flow-step-content">
+                        <h4>Delete the Conversation (Optional)</h4>
+                        <p>When the conversation is complete, you can delete it using the <code>/llm/conversation</code> DELETE endpoint if desired.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <h3>Available Endpoints</h3>
+            
+            <div class="api-endpoints">
+                <div class="endpoint">
+                    <span class="endpoint-method method-post">POST</span>
+                    <span class="endpoint-path">/llm/conversation/chat</span>
+                    <span class="endpoint-description">Create a new LLM conversation</span>
+                </div>
+                <div class="endpoint">
+                    <span class="endpoint-method method-post">POST</span>
+                    <span class="endpoint-path">/llm/conversation/continue</span>
+                    <span class="endpoint-description">Continue an existing conversation</span>
+                </div>
+                <div class="endpoint">
+                    <span class="endpoint-method method-delete">DELETE</span>
+                    <span class="endpoint-path">/llm/conversation</span>
+                    <span class="endpoint-description">Delete a previously created conversation</span>
+                </div>
+            </div>
+            
+            <div class="tabs">
+                <div class="tab active" data-tab="create">Create Conversation</div>
+                <div class="tab" data-tab="continue">Continue Conversation</div>
+                <div class="tab" data-tab="delete">Delete Conversation</div>
+            </div>
+            
+            <!-- Create Conversation Tab -->
+            <div id="create" class="tab-content active">
+                <h3>Create a New Conversation</h3>
+                <p>This endpoint creates a new conversation with the specified language model and assistant type. The conversation is stored on the server with a unique ID that you'll use for continuing the conversation.</p>
+                
+                <h4>Available Language Models</h4>
+                <p>You can select from the following language models:</p>
+                <ul>
+                    <li><strong>gpt-4o</strong> - OpenAI's most advanced model (2 credits)</li>
+                    <li><strong>gpt-4o-mini</strong> - Lighter version, cost-effective (0.5 credits)</li>
+                    <li><strong>gpt-o1-mini</strong> - Advanced reasoning model (5 credits)</li>
+                    <li><strong>deepseek-r1</strong> - Specialized for deep reasoning (3 credits)</li>
+                    <li><strong>llama</strong> - Meta's large language model (3 credits)</li>
+                </ul>
+                
+                <h4>Assistant Types</h4>
+                <div class="assistant-cards">
+                    <div class="assistant-card">
+                        <h4>General</h4>
+                        <p>A helpful, friendly assistant for general purpose tasks</p>
+                    </div>
+                    <div class="assistant-card">
+                        <h4>Coding</h4>
+                        <p>Specialized in providing code solutions and explanations</p>
+                    </div>
+                    <div class="assistant-card">
+                        <h4>Creative</h4>
+                        <p>Focused on creative writing, storytelling, and idea generation</p>
+                    </div>
+                    <div class="assistant-card">
+                        <h4>Research</h4>
+                        <p>Provides thorough, well-structured information and analysis</p>
+                    </div>
+                    <div class="assistant-card">
+                        <h4>Business</h4>
+                        <p>Helps with professional communication, strategy, and analysis</p>
+                    </div>
+                </div>
+                
+                <h4>Request Parameters</h4>
+                <ul>
+                    <li><strong>llm</strong> (required) - LLM model to use (from the list above)</li>
+                    <li><strong>assistant_type</strong> (optional) - Type of assistant to use (default: general)</li>
+                    <li><strong>user_message</strong> (required) - Initial message from the user</li>
+                    <li><strong>temperature</strong> (optional) - Controls randomness (0=focused, 1=creative, default: 0.7)</li>
+                </ul>
+                
+                <h4>Example Request</h4>
+                <div class="code-block">
+                    <pre>
+POST /llm/conversation/chat
+Headers:
+  X-Token: your_token_here
+  Content-Type: application/json
+
+{
+  "llm": "gpt-4o-mini",
+  "assistant_type": "coding",
+  "user_message": "Can you help me write a Python function that calculates the Fibonacci sequence?",
+  "temperature": 0.5
+}
+                    </pre>
+                </div>
+                
+                <h4>Example Response</h4>
+                <div class="code-block">
+                    <pre>
+{
+  "conversation_id": "a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6",
+  "assistant_message": "Certainly! I'd be happy to help you write a Python function to calculate the Fibonacci sequence. Here's an implementation:\n\n```python\ndef fibonacci(n):\n    \"\"\"Calculate the Fibonacci sequence up to the nth term.\n    \n    Args:\n        n: The number of Fibonacci sequence elements to generate\n        \n    Returns:\n        A list containing the Fibonacci sequence up to the nth term\n    \"\"\"\n    if n <= 0:\n        return []\n    elif n == 1:\n        return [0]\n    elif n == 2:\n        return [0, 1]\n    \n    fib_sequence = [0, 1]\n    for i in range(2, n):\n        fib_sequence.append(fib_sequence[i-1] + fib_sequence[i-2])\n    \n    return fib_sequence\n\n# Example usage\nprint(fibonacci(10))  # Output: [0, 1, 1, 2, 3, 5, 8, 13, 21, 34]\n```\n\nThis function creates a list containing the Fibonacci sequence up to the nth term. It handles edge cases (n ≤ 0, n = 1, n = 2) separately, then builds the sequence iteratively for larger values of n by adding the two previous elements.\n\nWould you like me to explain how the function works in more detail or modify it in any way?",
+  "model_used": "gpt-4o-mini",
+  "assistant_used": "coding",
+  "input_tokens": 105,
+  "completion_tokens": 462,
+  "output_tokens": 567
+}
+                    </pre>
+                </div>
+                
+                <h4>Response Fields</h4>
+                <ul>
+                    <li><strong>conversation_id</strong> - Unique identifier for continuing this conversation</li>
+                    <li><strong>assistant_message</strong> - The AI's response to the user's message</li>
+                    <li><strong>model_used</strong> - The LLM model that was used</li>
+                    <li><strong>assistant_used</strong> - The assistant type that was used</li>
+                    <li><strong>input_tokens</strong> - Number of input tokens used</li>
+                    <li><strong>completion_tokens</strong> - Number of completion tokens used</li>
+                    <li><strong>output_tokens</strong> - Total number of tokens used</li>
+                </ul>
+            </div>
+            
+            <!-- Continue Conversation Tab -->
+            <div id="continue" class="tab-content">
+                <h3>Continue an Existing Conversation</h3>
+                <p>This endpoint allows you to send follow-up messages in an existing conversation. The system maintains conversation history, enabling the AI to understand context from previous exchanges.</p>
+                
+                <h4>Request Parameters</h4>
+                <ul>
+                    <li><strong>conversation_id</strong> (required) - ID of the conversation to continue</li>
+                    <li><strong>user_message</strong> (required) - Follow-up message from the user</li>
+                </ul>
+                
+                <h4>Example Request</h4>
+                <div class="code-block">
+                    <pre>
+POST /llm/conversation/continue
+Headers:
+  X-Token: your_token_here
+  Content-Type: application/json
+
+{
+  "conversation_id": "a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6",
+  "user_message": "Can you modify the function to be recursive instead of iterative?"
+}
+                    </pre>
+                </div>
+                
+                <h4>Example Response</h4>
+                <div class="code-block">
+                    <pre>
+{
+  "conversation_id": "a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6",
+  "assistant_message": "Certainly! Here's a recursive implementation of the Fibonacci sequence function:\n\n```python\ndef fibonacci_recursive(n):\n    \"\"\"Calculate the Fibonacci sequence up to the nth term using recursion.\n    \n    Args:\n        n: The number of Fibonacci sequence elements to generate\n        \n    Returns:\n        A list containing the Fibonacci sequence up to the nth term\n    \"\"\"\n    # Helper function to calculate the nth Fibonacci number\n    def fib(n):\n        if n <= 0:\n            return 0\n        elif n == 1:\n            return 1\n        else:\n            return fib(n-1) + fib(n-2)\n    \n    # Generate the sequence\n    result = []\n    for i in range(n):\n        result.append(fib(i))\n    \n    return result\n\n# Example usage\nprint(fibonacci_recursive(10))  # Output: [0, 1, 1, 2, 3, 5, 8, 13, 21, 34]\n```\n\nThis recursive implementation uses a helper function `fib(n)` that calculates the nth Fibonacci number using the classic recursive definition. Then the main function builds a list by calling this helper function for each index.\n\nNote that this recursive approach is less efficient than the iterative approach for large values of n due to redundant calculations. For a more efficient recursive implementation, you could use memoization (caching previously calculated values).\n\nWould you like me to also provide a memoized recursive implementation for better performance?",
+  "model_used": "gpt-4o-mini",
+  "assistant_used": "coding",
+  "input_tokens": 725,
+  "completion_tokens": 538,
+  "output_tokens": 1263
+}
+                    </pre>
+                </div>
+                
+                <h4>Context Window</h4>
+                <p>The conversation API automatically manages the context window for you. For longer conversations, the system keeps the most recent exchanges (up to the last 6 messages) to maintain conversation flow while staying within token limits.</p>
+                
+                <div class="info-box">
+                    <div class="info-box-icon"><i class="fas fa-lightbulb"></i></div>
+                    <div class="info-box-content">
+                        <h4>Pro Tip: Context Management</h4>
+                        <p>For long-running conversations:</p>
+                        <ul>
+                            <li>Be aware that very long conversation histories may eventually lose earlier context</li>
+                            <li>If important information from earlier in the conversation needs to be referenced, consider restating it</li>
+                            <li>For complex topics that may exceed context windows, break conversations into smaller, focused sessions</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Delete Conversation Tab -->
+            <div id="delete" class="tab-content">
+                <h3>Delete a Conversation</h3>
+                <p>This endpoint allows you to delete a conversation when it's no longer needed. This can help manage storage and keep your conversation history organized.</p>
+                
+                <h4>Request Parameters</h4>
+                <p>The <code>conversation_id</code> parameter is passed as a query parameter in the URL.</p>
+                
+                <h4>Example Request</h4>
+                <div class="code-block">
+                    <pre>
+DELETE /llm/conversation?conversation_id=a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6
+Headers:
+  X-Token: your_token_here
+                    </pre>
+                </div>
+                
+                <h4>Example Response</h4>
+                <div class="code-block">
+                    <pre>
+{
+  "message": "Conversation deleted successfully",
+  "conversation_id": "a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6"
+}
+                    </pre>
+                </div>
+                
+                <div class="info-box">
+                    <div class="info-box-icon"><i class="fas fa-info-circle"></i></div>
+                    <div class="info-box-content">
+                        <h4>Note</h4>
+                        <p>Deleting a conversation is optional. The system maintains conversations for a limited time, but they will eventually expire. Consider deleting conversations that contain sensitive information or are no longer needed.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <h3>Use Cases</h3>
+            <p>The conversation API is ideal for applications that require ongoing dialogue with AI:</p>
+            <ul>
+                <li><strong>Customer Support Chatbots</strong> - Create AI assistants that can understand customer inquiries in context</li>
+                <li><strong>Educational Tutoring</strong> - Build step-by-step learning experiences with maintained context</li>
+                <li><strong>Interactive Documentation</strong> - Implement documentation helpers that remember previous questions</li>
+                <li><strong>Creative Writing Assistants</strong> - Develop tools for collaborative storytelling or content creation</li>
+                <li><strong>Code Pair Programming</strong> - Create coding assistants that maintain context across multiple iterations</li>
+            </ul>
+            
+            <div class="info-box">
+                <div class="info-box-icon"><i class="fas fa-lightbulb"></i></div>
+                <div class="info-box-content">
+                    <h4>Pro Tip: Model Selection</h4>
+                    <p>Choose the appropriate model and assistant type based on your use case:</p>
+                    <ul>
+                        <li>For code-heavy conversations, use the <code>coding</code> assistant type</li>
+                        <li>For general questions and support, <code>gpt-4o-mini</code> with the <code>general</code> assistant offers a good balance of quality and cost</li>
+                        <li>For complex reasoning tasks, consider <code>deepseek-r1</code> or <code>gpt-o1-mini</code></li>
+                        <li>Adjust <code>temperature</code> based on need: lower (0.2-0.5) for factual responses, higher (0.7-0.9) for creative content</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <footer class="footer">
+        <p>© 2025 TIH AI API Portal. Powered by the TIH AI Center of Excellence.</p>
+    </footer>
+    
+    <script>
+        // Toggle sidebar on mobile
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuToggle = document.getElementById('menu-toggle');
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            
+            menuToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('active');
+                overlay.classList.toggle('active');
+            });
+            
+            overlay.addEventListener('click', function() {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            });
+            
+            // Tab functionality
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // Remove active class from all tabs and contents
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tabContents.forEach(c => c.classList.remove('active'));
+                    
+                    // Add active class to clicked tab
+                    this.classList.add('active');
+                    
+                    // Show corresponding content
+                    const tabId = this.getAttribute('data-tab');
+                    document.getElementById(tabId).classList.add('active');
+                });
+            });
+            
+            // Highlight current page in sidebar
+            const currentPage = window.location.pathname;
+            const sidebarLinks = document.querySelectorAll('.sidebar-link');
+            
+            sidebarLinks.forEach(link => {
+                if (link.getAttribute('href') === currentPage) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

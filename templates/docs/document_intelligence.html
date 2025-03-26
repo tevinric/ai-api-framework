@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OCR Services - AI API Platform</title>
+    <title>Document Intelligence - AI API Platform</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
@@ -386,40 +386,6 @@
             display: block;
         }
         
-        /* Image styles for example images */
-        .example-image {
-            max-width: 100%;
-            height: auto;
-            margin: 1rem 0;
-            border-radius: 4px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-        
-        /* Two-column layout for ID card data */
-        .document-data-columns {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 1.5rem;
-        }
-        
-        .document-data-item {
-            background-color: #f8f9fa;
-            padding: 1rem;
-            border-radius: 4px;
-            border-left: 3px solid var(--primary-color);
-        }
-        
-        .document-data-label {
-            font-weight: 600;
-            margin-bottom: 0.25rem;
-            color: var(--dark-color);
-        }
-        
-        .document-data-value {
-            color: #555;
-        }
-        
         /* Download button */
         .download-btn {
             display: inline-flex;
@@ -465,10 +431,6 @@
             
             .menu-toggle {
                 display: block;
-            }
-            
-            .document-data-columns {
-                grid-template-columns: 1fr;
             }
         }
         
@@ -531,13 +493,13 @@
     <!-- RENDER THE SIDEBAR TEMPLATE-->
     <aside class="sidebar">
         {% include 'sidebar.html' %}
-    </aside>    
-
+    </aside>
+    
     <main class="main-content">
         <section class="content-section">
-            <h2>OCR Services</h2>
+            <h2>Document Intelligence</h2>
             
-            <p>Our OCR (Optical Character Recognition) services provide specialized document extraction capabilities for South African ID documents and vehicle license discs. These services extract structured data from document images and return it in a standardized JSON format.</p>
+            <p>The Document Intelligence API provides powerful tools for extracting information, analyzing layout, and summarizing documents. These services help you transform unstructured document data into structured information that can be easily processed and analyzed.</p>
             
             <a href="/static/files/ai-api-postman-collection.json" class="download-btn">
                 <i class="fas fa-download"></i> Download Postman Collection
@@ -547,246 +509,377 @@
                 <div class="info-box-icon"><i class="fas fa-info-circle"></i></div>
                 <div class="info-box-content">
                     <h4>Authentication Required</h4>
-                    <p>All OCR services require authentication using a token. You must include your token in the <code>X-Token</code> header for all requests.</p>
+                    <p>All Document Intelligence endpoints require authentication using a token. You must include your token in the <code>X-Token</code> header for all requests.</p>
                     <p>See the <a href="{{ url_for('token_services') }}">Token Services</a> documentation for details on token generation.</p>
                 </div>
             </div>
             
             <div class="tabs">
-                <div class="tab active" data-tab="sa-id">South African ID</div>
-                <div class="tab" data-tab="vehicle-license">Vehicle License Disc</div>
+                <div class="tab active" data-tab="layout">Layout Analysis</div>
+                <div class="tab" data-tab="read">Document Reading</div>
+                <div class="tab" data-tab="summarization">Document Summarization</div>
             </div>
             
-            <!-- South African ID Tab -->
-            <div id="sa-id" class="tab-content active">
-                <h3>South African ID Document OCR</h3>
-                <p>This endpoint extracts information from South African ID documents (both green ID books and smart ID cards) using advanced OCR technology. The service can extract data from the barcode (when present) or directly from the image using machine learning.</p>
+            <!-- Layout Analysis Tab -->
+            <div id="layout" class="tab-content active">
+                <h3>Layout Analysis</h3>
+                <p>The Layout Analysis endpoint extracts structured information from documents, including tables, checkboxes, and text layout. This service is useful for forms, invoices, and documents with complex formatting.</p>
                 
                 <h4>Endpoint</h4>
                 <div class="api-endpoints">
                     <div class="endpoint">
                         <span class="endpoint-method method-post">POST</span>
-                        <span class="endpoint-path">/ocr/sa_id_card</span>
-                        <span class="endpoint-description">Extract information from South African ID documents</span>
+                        <span class="endpoint-path">/docint/layout</span>
+                        <span class="endpoint-description">Extract tables, checkboxes, and text from forms and documents</span>
                     </div>
                 </div>
                 
-                <h4>How It Works</h4>
-                <ol>
-                    <li>First, upload your ID document image using the <code>/file</code> endpoint</li>
-                    <li>Receive a <code>file_id</code> for your uploaded image</li>
-                    <li>Submit this <code>file_id</code> to the OCR endpoint</li>
-                    <li>Receive structured ID information in response</li>
-                </ol>
-                <p>The uploaded file is automatically deleted after processing to maintain document security.</p>
-                
                 <h4>Request Parameters</h4>
-                <div class="code-block">
-                    <pre>
-{
-    "file_id": "your-file-id"  // ID of previously uploaded ID document image
-}
-                    </pre>
-                </div>
+                <ul>
+                    <li><strong>file_ids</strong> (required) - Array of file IDs to process (uploaded via /file endpoint)</li>
+                    <li><strong>include_barcode</strong> (optional) - Enable barcode detection (default: false)</li>
+                    <li><strong>include_language</strong> (optional) - Include language identification (default: false)</li>
+                    <li><strong>include_keyvalue_pairs</strong> (optional) - Include key-value pairs extraction (default: false)</li>
+                    <li><strong>output_format</strong> (optional) - Output format for tables and structured content (text or markdown, default: text)</li>
+                    <li><strong>page_selection</strong> (optional) - Page selection strategy (all_pages or range, default: all_pages)</li>
+                    <li><strong>page_range</strong> (optional) - Page range to process (e.g., "1,3-6"), only used if page_selection is "range"</li>
+                </ul>
                 
                 <h4>Supported File Types</h4>
                 <ul>
-                    <li><strong>Images</strong> (.jpg, .jpeg, .png)</li>
-                    <li><strong>PDF</strong> (.pdf) - Single page containing the ID document</li>
-                    <li><strong>TIFF</strong> (.tiff, .tif)</li>
+                    <li><strong>PDF</strong> (.pdf)</li>
+                    <li><strong>Images</strong> (.jpg, .jpeg, .png, .tiff, .tif)</li>
                 </ul>
+                
+                <h4>Example Request</h4>
+                <div class="code-block">
+                    <pre>
+POST /docint/layout
+Headers:
+  X-Token: your_token_here
+  Content-Type: application/json
+
+{
+  "file_ids": ["81f2d4b2-f79c-4d33-b319-e25e658a0fcd"],
+  "include_barcode": true,
+  "include_keyvalue_pairs": true,
+  "output_format": "markdown",
+  "page_selection": "range",
+  "page_range": "1-3"
+}
+                    </pre>
+                </div>
                 
                 <h4>Example Response</h4>
                 <div class="code-block">
                     <pre>
 {
-    "surname": "SMITH",
-    "names": "JOHN JAMES",
-    "sex": "M",
-    "nationality": "RSA",
-    "identity_number": "8001015009087",
-    "date_of_birth": "01 JAN 1980",
-    "country_of_birth": "SOUTH AFRICA",
-    "num_documents_processed": 1,
-    "num_pages_processed": 1,
-    "input_tokens": 120,
-    "completion_tokens": 45,
-    "output_tokens": 165
+  "message": "Documents successfully processed",
+  "documents_processed": 1,
+  "pages_processed": 3,
+  "results": [
+    {
+      "file_id": "81f2d4b2-f79c-4d33-b319-e25e658a0fcd",
+      "file_name": "invoice.pdf",
+      "total_pages": 5,
+      "processed_pages": 3,
+      "has_handwritten_content": false,
+      "pages": [
+        {
+          "page_number": 1,
+          "width": 612,
+          "height": 792,
+          "unit": "pixel",
+          "has_handwritten_content": false,
+          "text": [
+            {
+              "type": "paragraph",
+              "content": "INVOICE #12345",
+              "role": "title"
+            },
+            {
+              "type": "paragraph",
+              "content": "Date: March 15, 2025",
+              "role": null
+            }
+          ],
+          "tables": [
+            {
+              "row_count": 3,
+              "column_count": 4,
+              "cells": [...],
+              "formatted": "| Item | Quantity | Price | Total |\n| --- | --- | --- | --- |\n| Product A | 2 | $10.00 | $20.00 |\n| Product B | 3 | $15.00 | $45.00 |",
+              "table_summary": "| Item | Quantity | Price | Total |\n| --- | --- | --- | --- |\n| Product A | 2 | $10.00 | $20.00 |\n| Product B | 3 | $15.00 | $45.00 |"
+            }
+          ],
+          "selection_marks": [
+            {
+              "state": "selected",
+              "confidence": 0.99
+            }
+          ],
+          "barcodes": [
+            {
+              "value": "INV-12345",
+              "type": "QR_CODE",
+              "confidence": 0.98
+            }
+          ],
+          "page_text_all": "INVOICE #12345\n\nDate: March 15, 2025\n\n| Item | Quantity | Price | Total |\n| --- | --- | --- | --- |\n| Product A | 2 | $10.00 | $20.00 |\n| Product B | 3 | $15.00 | $45.00 |"
+        }
+      ],
+      "key_value_pairs": [
+        "**Invoice Number**: 12345",
+        "**Date**: March 15, 2025",
+        "**Customer**: ACME Corp",
+        "**Total Amount**: $65.00"
+      ]
+    }
+  ]
 }
                     </pre>
                 </div>
-                
-                <h4>Response Fields</h4>
-                <div class="document-data-columns">
-                    <div class="document-data-item">
-                        <div class="document-data-label">surname</div>
-                        <div class="document-data-value">Last name of the ID holder</div>
-                    </div>
-                    <div class="document-data-item">
-                        <div class="document-data-label">names</div>
-                        <div class="document-data-value">Given names of the ID holder</div>
-                    </div>
-                    <div class="document-data-item">
-                        <div class="document-data-label">sex</div>
-                        <div class="document-data-value">Gender (M or F)</div>
-                    </div>
-                    <div class="document-data-item">
-                        <div class="document-data-label">nationality</div>
-                        <div class="document-data-value">Nationality (usually RSA)</div>
-                    </div>
-                    <div class="document-data-item">
-                        <div class="document-data-label">identity_number</div>
-                        <div class="document-data-value">South African ID number (13 digits)</div>
-                    </div>
-                    <div class="document-data-item">
-                        <div class="document-data-label">date_of_birth</div>
-                        <div class="document-data-value">Birth date in DD MMM YYYY format</div>
-                    </div>
-                    <div class="document-data-item">
-                        <div class="document-data-label">country_of_birth</div>
-                        <div class="document-data-value">Country where ID holder was born</div>
-                    </div>
-                </div>
-                
-                <div class="info-box">
-                    <div class="info-box-icon"><i class="fas fa-lightbulb"></i></div>
-                    <div class="info-box-content">
-                        <h4>Pro Tips for ID Document OCR</h4>
-                        <ul>
-                            <li>For best results, ensure the ID document is well-lit and the entire document is visible in the image</li>
-                            <li>Position the document against a dark background for better contrast</li>
-                            <li>Barcode extraction (when available) is more accurate than image OCR</li>
-                            <li>For Smart ID cards, scan both sides but submit the side with the ID number and personal details</li>
-                        </ul>
-                    </div>
-                </div>
             </div>
             
-            <!-- Vehicle License Disc Tab -->
-            <div id="vehicle-license" class="tab-content">
-                <h3>Vehicle License Disc OCR</h3>
-                <p>This endpoint extracts information from South African vehicle license discs using OCR technology. The service can extract data from the barcode (when present) or directly from the license disc image using machine learning.</p>
+            <!-- Document Reading Tab -->
+            <div id="read" class="tab-content">
+                <h3>Document Reading</h3>
+                <p>The Document Reading endpoint focuses on extracting clean, structured text from documents. This service is optimized for text-heavy documents and provides high-quality text extraction with formatting.</p>
                 
                 <h4>Endpoint</h4>
                 <div class="api-endpoints">
                     <div class="endpoint">
                         <span class="endpoint-method method-post">POST</span>
-                        <span class="endpoint-path">/ocr/vehicle_license_disc</span>
-                        <span class="endpoint-description">Extract information from South African vehicle license discs</span>
+                        <span class="endpoint-path">/docint/read</span>
+                        <span class="endpoint-description">Extract printed and handwritten text from images and documents</span>
                     </div>
                 </div>
                 
-                <h4>How It Works</h4>
-                <ol>
-                    <li>First, upload your license disc image using the <code>/file</code> endpoint</li>
-                    <li>Receive a <code>file_id</code> for your uploaded image</li>
-                    <li>Submit this <code>file_id</code> to the OCR endpoint</li>
-                    <li>Receive structured vehicle license information in response</li>
-                </ol>
-                <p>The uploaded file is automatically deleted after processing to maintain document security.</p>
-                
                 <h4>Request Parameters</h4>
-                <div class="code-block">
-                    <pre>
-{
-    "file_id": "your-file-id"  // ID of previously uploaded license disc image
-}
-                    </pre>
-                </div>
+                <ul>
+                    <li><strong>file_ids</strong> (required) - Array of file IDs to process (uploaded via /file endpoint)</li>
+                    <li><strong>barcode_detection</strong> (optional) - Enable barcode detection (default: false)</li>
+                    <li><strong>language</strong> (optional) - Include language identification (default: false)</li>
+                    <li><strong>page_selection</strong> (optional) - Page selection strategy (all_pages or range, default: all_pages)</li>
+                    <li><strong>page_range</strong> (optional) - Page range to process (e.g., "1,3-6"), only used if page_selection is "range"</li>
+                </ul>
                 
                 <h4>Supported File Types</h4>
                 <ul>
-                    <li><strong>Images</strong> (.jpg, .jpeg, .png)</li>
-                    <li><strong>PDF</strong> (.pdf) - Single page containing the license disc</li>
-                    <li><strong>TIFF</strong> (.tiff, .tif)</li>
+                    <li><strong>PDF</strong> (.pdf)</li>
+                    <li><strong>Images</strong> (.jpg, .jpeg, .png, .tiff, .tif)</li>
                 </ul>
+                
+                <h4>Example Request</h4>
+                <div class="code-block">
+                    <pre>
+POST /docint/read
+Headers:
+  X-Token: your_token_here
+  Content-Type: application/json
+
+{
+  "file_ids": ["f7d23a1e-8c5b-4f9a-b102-3d4e91c8a7b2"],
+  "language": true,
+  "page_selection": "all_pages"
+}
+                    </pre>
+                </div>
                 
                 <h4>Example Response</h4>
                 <div class="code-block">
                     <pre>
 {
-    "veh_no": "12345678",
-    "veh_reg_no": "ABC123GP",
-    "veh_register_no": "1234567890123",
-    "veh_description": "TOYOTA COROLLA 1.8 GLS",
-    "veh_make": "TOYOTA",
-    "veh_model": "COROLLA",
-    "veh_color": "WHITE",
-    "veh_vin_no": "ABCD12345XYZ67890",
-    "veh_engine_no": "1AB2345678",
-    "veh_expiry": "2025-12-31",
-    "extraction_method": "barcode analysis",
-    "num_documents_processed": 1,
-    "num_pages_processed": 1,
-    "input_tokens": 0,
-    "completion_tokens": 0,
-    "output_tokens": 0
+  "message": "Documents successfully processed",
+  "documents_processed": 1,
+  "pages_processed": 2,
+  "results": [
+    {
+      "file_id": "f7d23a1e-8c5b-4f9a-b102-3d4e91c8a7b2",
+      "file_name": "contract.pdf",
+      "total_pages": 2,
+      "processed_pages": 2,
+      "has_handwritten_content": true,
+      "pages": [
+        {
+          "page_number": 1,
+          "width": 595,
+          "height": 842,
+          "unit": "pixel",
+          "has_handwritten_content": false,
+          "text": [
+            {
+              "type": "paragraph",
+              "content": "SERVICE AGREEMENT"
+            },
+            {
+              "type": "paragraph",
+              "content": "This agreement is made on March 20, 2025, between Client A ('Client') and Service Provider B ('Provider')."
+            },
+            {
+              "type": "paragraph",
+              "content": "The Provider agrees to deliver the following services to the Client:"
+            }
+          ],
+          "page_text_all": "SERVICE AGREEMENT\n\nThis agreement is made on March 20, 2025, between Client A ('Client') and Service Provider B ('Provider').\n\nThe Provider agrees to deliver the following services to the Client:",
+          "detected_languages": [
+            {
+              "language": "en",
+              "confidence": 0.99
+            }
+          ]
+        },
+        {
+          "page_number": 2,
+          "width": 595,
+          "height": 842,
+          "unit": "pixel",
+          "has_handwritten_content": true,
+          "text": [
+            {
+              "type": "paragraph",
+              "content": "SIGNATURES"
+            },
+            {
+              "type": "paragraph",
+              "content": "Client: ________________"
+            },
+            {
+              "type": "paragraph",
+              "content": "Provider: ________________"
+            },
+            {
+              "type": "paragraph",
+              "content": "Date: March 20, 2025"
+            }
+          ],
+          "page_text_all": "SIGNATURES\n\nClient: ________________\n\nProvider: ________________\n\nDate: March 20, 2025",
+          "detected_languages": [
+            {
+              "language": "en",
+              "confidence": 0.98
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+                    </pre>
+                </div>
+            </div>
+            
+            <!-- Document Summarization Tab -->
+            <div id="summarization" class="tab-content">
+                <h3>Document Summarization</h3>
+                <p>The Document Summarization endpoint analyzes and summarizes document content. It provides key points, document structure, and concise summaries of lengthy documents.</p>
+                
+                <h4>Endpoint</h4>
+                <div class="api-endpoints">
+                    <div class="endpoint">
+                        <span class="endpoint-method method-post">POST</span>
+                        <span class="endpoint-path">/docint/summarization</span>
+                        <span class="endpoint-description">Summarize documents using AI (PDF, DOCX, PPTX, XLSX)</span>
+                    </div>
+                </div>
+                
+                <h4>Request Parameters</h4>
+                <ul>
+                    <li><strong>file_id</strong> (required) - ID of the uploaded file to summarize</li>
+                    <li><strong>length</strong> (optional) - Desired summary length (short, medium, long, very_long, default: medium)</li>
+                    <li><strong>style</strong> (optional) - Style of the summary (concise, detailed, creative, technical, narrative, bullet_points, default: concise)</li>
+                    <li><strong>include_structure</strong> (optional) - Whether to include document structure in the summary (default: true)</li>
+                    <li><strong>temperature</strong> (optional) - Creativity level (0.0 = deterministic, 1.0 = creative, default: 0.3)</li>
+                    <li><strong>include_file_upload</strong> (optional) - Whether to create and upload a text file with the summary (default: true)</li>
+                </ul>
+                
+                <h4>Supported File Types</h4>
+                <ul>
+                    <li><strong>PDF</strong> (.pdf)</li>
+                    <li><strong>Microsoft Word</strong> (.docx)</li>
+                    <li><strong>Microsoft PowerPoint</strong> (.pptx)</li>
+                    <li><strong>Microsoft Excel</strong> (.xlsx, .xls)</li>
+                </ul>
+                
+                <h4>Example Request</h4>
+                <div class="code-block">
+                    <pre>
+POST /docint/summarization
+Headers:
+  X-Token: your_token_here
+  Content-Type: application/json
+
+{
+  "file_id": "a9c8e7d6-5b4a-3c2d-1e0f-9g8h7i6j5k4l",
+  "length": "medium",
+  "style": "concise",
+  "include_structure": true,
+  "temperature": 0.3
 }
                     </pre>
                 </div>
                 
-                <h4>Response Fields</h4>
-                <div class="document-data-columns">
-                    <div class="document-data-item">
-                        <div class="document-data-label">veh_no</div>
-                        <div class="document-data-value">RSA identification number</div>
-                    </div>
-                    <div class="document-data-item">
-                        <div class="document-data-label">veh_reg_no</div>
-                        <div class="document-data-value">Vehicle license number (license plate)</div>
-                    </div>
-                    <div class="document-data-item">
-                        <div class="document-data-label">veh_register_no</div>
-                        <div class="document-data-value">Vehicle registration number</div>
-                    </div>
-                    <div class="document-data-item">
-                        <div class="document-data-label">veh_description</div>
-                        <div class="document-data-value">Vehicle model and details</div>
-                    </div>
-                    <div class="document-data-item">
-                        <div class="document-data-label">veh_make</div>
-                        <div class="document-data-value">Vehicle manufacturer</div>
-                    </div>
-                    <div class="document-data-item">
-                        <div class="document-data-label">veh_model</div>
-                        <div class="document-data-value">Vehicle model</div>
-                    </div>
-                    <div class="document-data-item">
-                        <div class="document-data-label">veh_color</div>
-                        <div class="document-data-value">Vehicle color</div>
-                    </div>
-                    <div class="document-data-item">
-                        <div class="document-data-label">veh_vin_no</div>
-                        <div class="document-data-value">Vehicle Identification Number</div>
-                    </div>
-                    <div class="document-data-item">
-                        <div class="document-data-label">veh_engine_no</div>
-                        <div class="document-data-value">Engine number</div>
-                    </div>
-                    <div class="document-data-item">
-                        <div class="document-data-label">veh_expiry</div>
-                        <div class="document-data-value">License expiry date</div>
-                    </div>
-                    <div class="document-data-item">
-                        <div class="document-data-label">extraction_method</div>
-                        <div class="document-data-value">Method used to extract data (barcode analysis or image ocr)</div>
-                    </div>
+                <h4>Example Response</h4>
+                <div class="code-block">
+                    <pre>
+{
+  "message": "Document successfully summarized",
+  "original_file_id": "a9c8e7d6-5b4a-3c2d-1e0f-9g8h7i6j5k4l",
+  "summary_file_id": "b1c2d3e4-f5g6-7h8i-9j0k-l1m2n3o4p5q6",
+  "summary": "This report analyzes the financial performance of XYZ Corporation for Q1 2025. The company saw revenue growth of 12% year-over-year, reaching $45.2 million. Profit margins improved from 18% to 22% due to operational efficiencies and cost reduction initiatives. The company's cloud services division was the top performer, growing 30% and accounting for 40% of total revenue. Challenges remain in the hardware division, which saw a 5% decline in sales. Management forecasts continued growth in the coming quarters, with an emphasis on expanding cloud services offerings and restructuring the hardware division.",
+  "key_points": [
+    "Revenue grew 12% year-over-year to $45.2 million in Q1 2025",
+    "Profit margins improved from 18% to 22%",
+    "Cloud services division grew 30%, accounting for 40% of revenue",
+    "Hardware division declined by 5%",
+    "Management forecasts continued growth in coming quarters",
+    "Strategic focus on expanding cloud services and restructuring hardware division",
+    "Cost reduction initiatives yielded 8% decrease in operational expenses",
+    "R&D investment increased by 15% to develop new cloud offerings",
+    "International markets now represent 35% of total revenue",
+    "Customer retention rate improved to 94% from 91% in previous year"
+  ],
+  "document_structure": {
+    "Executive Summary": "Overview of financial performance and key highlights",
+    "Revenue Analysis": "Detailed breakdown of revenue by division and region",
+    "Profit Analysis": "Examination of profit margins and cost structures",
+    "Division Performance": "Individual performance of Cloud, Hardware, and Services divisions",
+    "Market Analysis": "Review of market trends and competitive landscape",
+    "Forecast": "Financial projections for upcoming quarters",
+    "Strategic Initiatives": "Key strategic priorities for the business"
+  },
+  "pages_processed": 24,
+  "token_usage": {
+    "prompt_tokens": 15420,
+    "completion_tokens": 2145,
+    "total_tokens": 17565
+  }
+}
+                    </pre>
                 </div>
+                
+                <h4>Special Handling for Document Types</h4>
+                <p>The summarization endpoint adapts its processing based on document type:</p>
+                <ul>
+                    <li><strong>PDF</strong> - Extracts text across all pages, preserving document structure</li>
+                    <li><strong>DOCX</strong> - Extracts text, tables, and embedded content</li>
+                    <li><strong>PPTX</strong> - Processes slides to capture presentation flow and content</li>
+                    <li><strong>XLSX</strong> - Extracts data from worksheets, focusing on trends and key metrics</li>
+                </ul>
                 
                 <div class="info-box">
                     <div class="info-box-icon"><i class="fas fa-lightbulb"></i></div>
                     <div class="info-box-content">
-                        <h4>Pro Tips for License Disc OCR</h4>
+                        <h4>Pro Tip</h4>
+                        <p>For optimal summarization:</p>
                         <ul>
-                            <li>For best results, capture the entire license disc including the barcode</li>
-                            <li>Ensure the barcode (PDF417) is clearly visible for more accurate extraction</li>
-                            <li>Remove the license disc from the windshield to avoid glare and reflections</li>
-                            <li>Position the disc against a dark background for better contrast</li>
-                            <li>When <code>extraction_method</code> is "barcode analysis", the data is extracted directly from the PDF417 barcode and is highly accurate</li>
+                            <li>Set <code>length</code> to <code>medium</code> for most business documents</li>
+                            <li>Use <code>style: "technical"</code> for scientific or technical papers</li>
+                            <li>For presentations, <code>style: "bullet_points"</code> works best</li>
+                            <li>Set <code>temperature</code> lower (0.1-0.3) for more factual summaries, higher (0.6-0.8) for more creative ones</li>
                         </ul>
                     </div>
                 </div>
-                
             </div>
         </section>
     </main>

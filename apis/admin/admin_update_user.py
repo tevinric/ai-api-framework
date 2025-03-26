@@ -18,56 +18,60 @@ def create_api_response(data, status_code=200):
 
 def admin_update_user_route():
     """
-    Update existing user details (Admin only endpoint)
-    ---
-    tags:
-      - Admin Functions
-    parameters:
-      - name: API-Key
-        in: header
-        type: string
-        required: true
-        description: Admin API Key for authentication
-      - name: token
-        in: query
-        type: string
-        required: true
-        description: A valid token for verification
-      - name: body
-        in: body
-        required: true
-        schema:
-          type: object
-          required:
-            - id
-          properties:
-            id:
-              type: string
-              description: UUID of the user to update
-            user_name:
-              type: string
-              description: Updated username (optional)
-            user_email:
-              type: string
-              description: Updated email address (optional)
-            common_name:
-              type: string
-              description: Updated common name (optional)
-            company:
-              type: string
-              description: Updated company name (optional)
-            department:
-              type: string
-              description: Updated department name (optional)
-            scope:
-              type: integer
-              description: Updated permission scope (optional, 1-5)
-            active:
-              type: boolean
-              description: Updated active status (optional)
-            comment:
-              type: string
-              description: Updated comment (optional)
+Update existing user details (Admin only endpoint)
+---
+tags:
+  - Admin Functions
+parameters:
+  - name: API-Key
+    in: header
+    type: string
+    required: true
+    description: Admin API Key for authentication
+  - name: token
+    in: query
+    type: string
+    required: true
+    description: A valid token for verification
+  - name: body
+    in: body
+    required: true
+    schema:
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          type: string
+          description: UUID of the user to update
+        user_name:
+          type: string
+          description: Updated username (optional)
+        user_email:
+          type: string
+          description: Updated email address (optional)
+        common_name:
+          type: string
+          description: Updated common name (optional)
+        company:
+          type: string
+          description: Updated company name (optional)
+        department:
+          type: string
+          description: Updated department name (optional)
+        scope:
+          type: integer
+          description: Updated permission scope (optional, 1-5)
+        active:
+          type: boolean
+          description: Updated active status (optional)
+        comment:
+          type: string
+          description: Updated comment (optional)
+        aic_balance:
+          type: number
+          format: decimal
+          description: Custom monthly balance for the user (optional)
     produces:
       - application/json
     responses:
@@ -240,7 +244,7 @@ def admin_update_user_route():
     
     # Prepare update data (only include fields that are provided AND different from current values)
     update_data = {}
-    valid_fields = ['user_name', 'user_email', 'common_name', 'company', 'department', 'scope', 'active', 'comment']
+    valid_fields = ['user_name', 'user_email', 'common_name', 'company', 'department', 'scope', 'active', 'comment','aic_balance']
     
     for field in valid_fields:
         if field in data and data[field] is not None:
@@ -262,7 +266,23 @@ def admin_update_user_route():
                     "error": "Bad Request",
                     "message": "Scope must be between 0 and 5"
                 }, 400)
-                
+
+            # Validation for aic_balance
+            if field == 'aic_balance':
+                try:
+                    balance = float(data[field])
+                    if balance < 0:
+                        return create_api_response({
+                            "error": "Bad Request",
+                            "message": "Custom balance must be a non-negative number"
+                        }, 400)
+                    update_data[field] = balance
+                except (ValueError, TypeError):
+                    return create_api_response({
+                        "error": "Bad Request",
+                        "message": "Custom balance must be a valid number"
+                    }, 400)
+            
             update_data[field] = data[field]
     
     # If no fields to update, return early

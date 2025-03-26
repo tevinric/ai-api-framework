@@ -29,22 +29,17 @@ def usage_by_user_route():
         type: string
         required: true
         description: Valid token for authentication
-      - name: body
-        in: body
+      - name: user_id
+        in: query
+        type: string
         required: true
-        schema:
-          type: object
-          required:
-            - user_id
-            - time_period
-          properties:
-            user_id:
-              type: string
-              description: ID of the user to get statistics for
-            time_period:
-              type: string
-              description: Time period for statistics, either "all" or in format "YYYY-MM"
-              example: "2024-03"
+        description: ID of the user to get statistics for
+      - name: time_period
+        in: query
+        type: string
+        required: true
+        description: Time period for statistics, either "all" or in format "YYYY-MM"
+        example: "2024-03"
     produces:
       - application/json
     responses:
@@ -183,25 +178,22 @@ def usage_by_user_route():
     # Get user ID of authenticated user
     authenticated_user_id = token_details["user_id"]
     
-    # Get request data
-    data = request.get_json()
-    if not data:
+    # Get parameters from query string instead of request body
+    user_id = request.args.get('user_id')
+    time_period = request.args.get('time_period')
+    
+    # Validate required parameters
+    if not user_id or not time_period:
+        missing_params = []
+        if not user_id:
+            missing_params.append('user_id')
+        if not time_period:
+            missing_params.append('time_period')
+            
         return create_api_response({
             "error": "Bad Request",
-            "message": "Request body is required"
+            "message": f"Missing required parameters: {', '.join(missing_params)}"
         }, 400)
-    
-    # Validate required fields
-    required_fields = ['user_id', 'time_period']
-    missing_fields = [field for field in required_fields if field not in data]
-    if missing_fields:
-        return create_api_response({
-            "error": "Bad Request",
-            "message": f"Missing required fields: {', '.join(missing_fields)}"
-        }, 400)
-    
-    user_id = data.get('user_id')
-    time_period = data.get('time_period')
     
     # Check if user_id matches authenticated user, or user is an admin
     if user_id != authenticated_user_id:
@@ -264,22 +256,17 @@ def usage_by_department_route():
         type: string
         required: true
         description: Valid token for authentication
-      - name: body
-        in: body
+      - name: department
+        in: query
+        type: string
         required: true
-        schema:
-          type: object
-          required:
-            - department
-            - time_period
-          properties:
-            department:
-              type: string
-              description: Department to get statistics for
-            time_period:
-              type: string
-              description: Time period for statistics, either "all" or in format "YYYY-MM"
-              example: "2024-03"
+        description: Department to get statistics for
+      - name: time_period
+        in: query
+        type: string
+        required: true
+        description: Time period for statistics, either "all" or in format "YYYY-MM"
+        example: "2024-03"
     produces:
       - application/json
     responses:
@@ -451,25 +438,22 @@ def usage_by_department_route():
     
     user_department = authenticated_user.get("department")
     
-    # Get request data
-    data = request.get_json()
-    if not data:
+    # Get parameters from query string instead of request body
+    requested_department = request.args.get('department')
+    time_period = request.args.get('time_period')
+    
+    # Validate required parameters
+    if not requested_department or not time_period:
+        missing_params = []
+        if not requested_department:
+            missing_params.append('department')
+        if not time_period:
+            missing_params.append('time_period')
+            
         return create_api_response({
             "error": "Bad Request",
-            "message": "Request body is required"
+            "message": f"Missing required parameters: {', '.join(missing_params)}"
         }, 400)
-    
-    # Validate required fields
-    required_fields = ['department', 'time_period']
-    missing_fields = [field for field in required_fields if field not in data]
-    if missing_fields:
-        return create_api_response({
-            "error": "Bad Request",
-            "message": f"Missing required fields: {', '.join(missing_fields)}"
-        }, 400)
-    
-    requested_department = data.get('department')
-    time_period = data.get('time_period')
     
     # Check if user is requesting their own department or is an admin
     if requested_department != user_department:

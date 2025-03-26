@@ -85,6 +85,11 @@ def file_management():
 def llm():
     return render_template('docs/llm.html')
 
+## LLM CONVERSATION
+@app.route('/docs/llm_conversation')
+def llm_conversation():
+    return render_template('docs/llm_conversation.html')
+
 ## IMAGE_GENERATION
 @app.route('/docs/image_generation')
 def image_generation():
@@ -99,6 +104,21 @@ def speech_services():
 @app.route('/docs/ocr_services')
 def ocr_services():
     return render_template('docs/ocr_services.html')
+
+## DOCUMENT INTELLIGENCE
+@app.route('/docs/document_intelligence')
+def document_intelligence():
+    return render_template('docs/document_intelligence.html')
+
+## RAG
+@app.route('/docs/rag')
+def rag():
+    return render_template('docs/rag.html')
+
+## NLP
+@app.route('/docs/nlp')
+def nlp():
+    return render_template('docs/nlp.html')
 
 # TOKEN SERVICE ENDPOINTS
 ## GET TOKEN
@@ -168,11 +188,32 @@ register_speech_to_text_diarize_routes(app)
 from apis.document_intelligence.summarization import register_document_intelligence_routes
 register_document_intelligence_routes(app)
 
+from apis.document_intelligence.read import register_document_intelligence_read_routes
+register_document_intelligence_read_routes(app)
+
+from apis.document_intelligence.layout import register_document_intelligence_layout_routes
+register_document_intelligence_layout_routes(app)
+
 from apis.ocr.sa_id import register_sa_id_ocr_routes
 register_sa_id_ocr_routes(app)
 
 from apis.ocr.vehicle_license_disc import register_vehicle_license_disc_routes
 register_vehicle_license_disc_routes(app)
+
+from apis.rag.vectorstore import register_vectorstore_routes
+register_vectorstore_routes(app)
+
+from apis.rag.consume_vectorstore import register_consume_vectorstore_routes
+register_consume_vectorstore_routes(app)
+
+from apis.llm_conversation.conversation import register_llm_conversation_routes
+register_llm_conversation_routes(app)
+
+from apis.nlp.sentiment_analysis import register_sentiment_routes
+register_sentiment_routes(app)
+
+from apis.nlp.classification import register_nlp_routes
+register_nlp_routes(app)
 
 if __name__ == '__main__':
     app.run(debug=True)

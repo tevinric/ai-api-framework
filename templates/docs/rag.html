@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG Services - AI API Platform</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4a6fe3;
+            --secondary-color: #6c63ff;
+            --dark-color: #2a2c3b;
+            --light-color: #f5f6fa;
+            --text-color: #333;
+            --white-color: #ffffff;
+            --accent-color: #00d4ff;
+            --sidebar-width: 280px;
+            --header-height: 60px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--light-color);
+            color: var(--text-color);
+            position: relative;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            opacity: 0.05;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        .header {
+            background-color: var(--dark-color);
+            color: var(--white-color);
+            padding: 0 2rem;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: var(--header-height);
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo i {
+            font-size: 1.8rem;
+            margin-right: 0.5rem;
+            color: var(--accent-color);
+        }
+        
+        .logo h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+        
+        .nav {
+            display: flex;
+            align-items: center;
+        }
+        
+        .nav-item {
+            margin-left: 1.5rem;
+            color: var(--white-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+            display: flex;
+            align-items: center;
+        }
+        
+        .nav-item:hover {
+            color: var(--accent-color);
+        }
+        
+        .nav-item i {
+            margin-right: 0.5rem;
+        }
+        
+        .swagger-btn {
+            background-color: var(--accent-color);
+            color: var(--dark-color);
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-weight: 600;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        
+        .swagger-btn:hover {
+            background-color: #00b8e6;
+            transform: translateY(-2px);
+            color: var(--dark-color);
+        }
+        
+        /* Mobile menu toggle */
+        .menu-toggle {
+            display: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            top: var(--header-height);
+            left: 0;
+            height: calc(100vh - var(--header-height));
+            width: var(--sidebar-width);
+            background-color: var(--white-color);
+            border-right: 1px solid rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+            z-index: 900;
+            padding: 1.5rem 0;
+            transition: transform 0.3s ease-in-out;
+        }
+        
+        .sidebar-category {
+            padding: 0.5rem 1.5rem;
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar-link {
+            display: block;
+            padding: 0.7rem 1.5rem;
+            padding-left: 2.5rem;
+            color: var(--text-color);
+            text-decoration: none;
+            transition: background-color 0.2s, color 0.2s;
+            font-size: 0.95rem;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar-link:hover {
+            background-color: rgba(106, 100, 255, 0.05);
+            color: var(--primary-color);
+        }
+        
+        .sidebar-link.active {
+            color: var(--primary-color);
+            background-color: rgba(106, 100, 255, 0.08);
+            border-left: 3px solid var(--primary-color);
+        }
+        
+        .sidebar-link i {
+            margin-right: 0.5rem;
+            width: 20px;
+            text-align: center;
+        }
+        
+        /* Main content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            margin-top: var(--header-height);
+            padding: 2rem;
+            min-height: calc(100vh - var(--header-height));
+        }
+        
+        /* Content sections */
+        .content-section {
+            background-color: var(--white-color);
+            border-radius: 8px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .content-section h2 {
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            color: var(--dark-color);
+            border-bottom: 2px solid var(--light-color);
+            padding-bottom: 0.5rem;
+        }
+        
+        .content-section h3 {
+            font-size: 1.3rem;
+            margin: 1.5rem 0 1rem;
+            color: var(--primary-color);
+        }
+        
+        .content-section h4 {
+            font-size: 1.1rem;
+            margin: 1.2rem 0 0.8rem;
+            color: var(--dark-color);
+        }
+        
+        .content-section p {
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+        
+        .content-section ul, 
+        .content-section ol {
+            margin-bottom: 1.5rem;
+            padding-left: 1.5rem;
+        }
+        
+        .content-section li {
+            margin-bottom: 0.5rem;
+            line-height: 1.6;
+        }
+        
+        /* Code blocks */
+        .api-endpoints {
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .endpoint {
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: flex-start;
+        }
+        
+        .endpoint-method {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: monospace;
+            font-weight: bold;
+            margin-right: 0.5rem;
+            min-width: 60px;
+            text-align: center;
+        }
+        
+        .method-get {
+            background-color: #e7f5ff;
+            color: #1971c2;
+        }
+        
+        .method-post {
+            background-color: #e3fafc;
+            color: #0c8599;
+        }
+        
+        .method-put {
+            background-color: #fff9db;
+            color: #e67700;
+        }
+        
+        .method-delete {
+            background-color: #fff5f5;
+            color: #e03131;
+        }
+        
+        .endpoint-path {
+            display: inline-block;
+            background-color: var(--dark-color);
+            color: var(--white-color);
+            padding: 0.3rem 0.7rem;
+            border-radius: 4px;
+            font-family: monospace;
+            margin-right: 0.5rem;
+        }
+        
+        .endpoint-description {
+            color: #666;
+            flex: 1;
+        }
+        
+        .code-block {
+            background-color: #2d2d2d;
+            color: #fff;
+            padding: 1rem;
+            border-radius: 6px;
+            font-family: monospace;
+            overflow-x: auto;
+            margin-bottom: 1.5rem;
+            line-height: 1.4;
+        }
+        
+        /* Info boxes */
+        .info-box {
+            display: flex;
+            background-color: #e7f5ff;
+            border-left: 4px solid #1971c2;
+            padding: 1.5rem;
+            border-radius: 6px;
+            margin-bottom: 2rem;
+        }
+        
+        .info-box-icon {
+            font-size: 1.8rem;
+            color: #1971c2;
+            margin-right: 1.5rem;
+        }
+        
+        .info-box-content h4 {
+            margin-bottom: 0.5rem;
+            color: #1971c2;
+        }
+        
+        .info-box-content p, .info-box-content li {
+            color: #495057;
+        }
+        
+        /* Tab styles */
+        .tabs {
+            display: flex;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .tab {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border: 1px solid transparent;
+            border-radius: 4px 4px 0 0;
+            margin-right: 0.5rem;
+            transition: all 0.2s;
+        }
+        
+        .tab.active {
+            background-color: var(--white-color);
+            border-color: #ddd;
+            border-bottom-color: var(--white-color);
+            margin-bottom: -1px;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 1rem;
+            background-color: var(--white-color);
+            border-radius: 0 0 4px 4px;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Flow diagram */
+        .rag-flow {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 2rem;
+        }
+        
+        .rag-flow-step {
+            position: relative;
+            display: flex;
+            margin-bottom: 2rem;
+        }
+        
+        .rag-flow-step:not(:last-child)::after {
+            content: "";
+            position: absolute;
+            bottom: -1.5rem;
+            left: 3rem;
+            height: 1.5rem;
+            width: 3px;
+            background-color: var(--primary-color);
+        }
+        
+        .rag-flow-icon {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 6rem;
+            height: 6rem;
+            background-color: var(--light-color);
+            border-radius: 50%;
+            margin-right: 1.5rem;
+            flex-shrink: 0;
+            color: var(--primary-color);
+            font-size: 2rem;
+            border: 3px solid var(--primary-color);
+        }
+        
+        .rag-flow-content {
+            flex: 1;
+        }
+        
+        .rag-flow-content h4 {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+            color: var(--primary-color);
+        }
+        
+        .rag-flow-content p {
+            margin-bottom: 0.5rem;
+            color: #666;
+        }
+        
+        /* Feature cards */
+        .feature-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .feature-card {
+            background-color: var(--white-color);
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .feature-card h4 {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+        }
+        
+        .feature-card h4 i {
+            margin-right: 0.5rem;
+            font-size: 1.5rem;
+        }
+        
+        .feature-card p {
+            color: #666;
+            line-height: 1.5;
+        }
+        
+        /* Download button */
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background-color 0.3s, transform 0.2s;
+            margin-bottom: 2rem;
+        }
+        
+        .download-btn i {
+            margin-right: 0.5rem;
+        }
+        
+        .download-btn:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+        
+        /* Footer */
+        .footer {
+            background-color: var(--dark-color);
+            color: var(--white-color);
+            text-align: center;
+            padding: 2rem;
+            margin-top: 3rem;
+            margin-left: var(--sidebar-width);
+        }
+        
+        .footer p {
+            margin-bottom: 1rem;
+        }
+        
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+        }
+        
+        .social-link {
+            color: var(--white-color);
+            font-size: 1.5rem;
+            transition: color 0.3s;
+        }
+        
+        .social-link:hover {
+            color: var(--accent-color);
+        }
+        
+        /* Responsive styles */
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+                box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+                z-index: 1001;
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .footer {
+                margin-left: 0;
+            }
+            
+            .menu-toggle {
+                display: block;
+            }
+            
+            .feature-cards {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .header {
+                padding: 0 1rem;
+            }
+            
+            .nav-item:not(.swagger-btn) {
+                display: none;
+            }
+            
+            .rag-flow-step {
+                flex-direction: column;
+            }
+            
+            .rag-flow-icon {
+                margin-right: 0;
+                margin-bottom: 1rem;
+            }
+            
+            .rag-flow-step:not(:last-child)::after {
+                left: 3rem;
+                bottom: -1.5rem;
+                height: 1.5rem;
+                width: 3px;
+            }
+        }
+        
+        /* Dark overlay when sidebar is active on mobile */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        
+        @media (max-width: 992px) {
+            .sidebar-overlay.active {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <img src="/static/images/Telesure-logo.png" alt="TIH AI API Platform Logo" style="height: 40px; margin-right: 0.5rem;">
+            <h1>AI API Platform</h1>
+        </div>
+        <nav class="nav">
+            <div class="menu-toggle" id="menu-toggle">
+                <i class="fas fa-bars"></i>
+            </div>
+            <a href="{{ url_for('home') }}" class="nav-item">
+                <i class="fas fa-home"></i>Home
+            </a>
+            <a href="{{ url_for('getting_started') }}" class="nav-item">
+                <i class="fas fa-rocket"></i>Getting Started
+            </a>
+            <a href="/templates/docs/faq.html" class="nav-item">
+                <i class="fas fa-question-circle"></i>FAQ
+            </a>
+            <a href="/apidocs/" class="nav-item swagger-btn">
+                <i class="fas fa-book"></i>Swagger
+            </a>
+        </nav>
+    </header>
+    
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    
+    <!-- RENDER THE SIDEBAR TEMPLATE-->
+    <aside class="sidebar">
+        {% include 'sidebar.html' %}
+    </aside> 
+
+    <main class="main-content">
+        <section class="content-section">
+            <h2>RAG (Retrieval-Augmented Generation) Services</h2>
+            
+            <p>Our RAG API provides powerful tools for building AI applications that can answer questions and generate text based on your specific documents and content. RAG combines the capabilities of vector search with language models to provide accurate, context-aware responses that are grounded in your data.</p>
+            
+            <a href="/static/files/ai-api-postman-collection.json" class="download-btn">
+                <i class="fas fa-download"></i> Download Postman Collection
+            </a>
+            
+            <div class="info-box">
+                <div class="info-box-icon"><i class="fas fa-info-circle"></i></div>
+                <div class="info-box-content">
+                    <h4>What is RAG?</h4>
+                    <p>Retrieval-Augmented Generation (RAG) enhances large language models by retrieving relevant information from a knowledge base before generating responses. This approach allows the model to:</p>
+                    <ul>
+                        <li>Answer questions based on your specific data</li>
+                        <li>Provide sourced information rather than generating answers from its training data</li>
+                        <li>Reduce hallucinations by grounding responses in factual information</li>
+                        <li>Stay up-to-date with your latest content</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <h3>How RAG Works</h3>
+            
+            <div class="rag-flow">
+                <div class="rag-flow-step">
+                    <div class="rag-flow-icon">
+                        <i class="fas fa-database"></i>
+                    </div>
+                    <div class="rag-flow-content">
+                        <h4>1. Create a Vectorstore</h4>
+                        <p>Upload documents (PDF, DOCX, TXT, etc.) or text strings to create a vectorstore. The system converts the content into vector embeddings for semantic search.</p>
+                    </div>
+                </div>
+                <div class="rag-flow-step">
+                    <div class="rag-flow-icon">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <div class="rag-flow-content">
+                        <h4>2. Retrieve Relevant Information</h4>
+                        <p>When a query is submitted, the system searches the vectorstore to find the most relevant pieces of information using semantic similarity.</p>
+                    </div>
+                </div>
+                <div class="rag-flow-step">
+                    <div class="rag-flow-icon">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="rag-flow-content">
+                        <h4>3. Generate Contextual Response</h4>
+                        <p>The retrieved information is provided to a language model along with the original query. The model generates a response based specifically on this context.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <h3>Available Endpoints</h3>
+            
+            <div class="api-endpoints">
+                <div class="endpoint">
+                    <span class="endpoint-method method-post">POST</span>
+                    <span class="endpoint-path">/rag/vectorstore/document</span>
+                    <span class="endpoint-description">Create a vectorstore from document files</span>
+                </div>
+                <div class="endpoint">
+                    <span class="endpoint-method method-post">POST</span>
+                    <span class="endpoint-path">/rag/vectorstore/string</span>
+                    <span class="endpoint-description">Create a vectorstore directly from text</span>
+                </div>
+                <div class="endpoint">
+                    <span class="endpoint-method method-post">POST</span>
+                    <span class="endpoint-path">/rag/vectorstore/load</span>
+                    <span class="endpoint-description">Load a vectorstore and get its metadata</span>
+                </div>
+                <div class="endpoint">
+                    <span class="endpoint-method method-get">GET</span>
+                    <span class="endpoint-path">/rag/vectorstore/list</span>
+                    <span class="endpoint-description">List all vectorstores available to the user</span>
+                </div>
+                <div class="endpoint">
+                    <span class="endpoint-method method-delete">DELETE</span>
+                    <span class="endpoint-path">/rag/vectorstore</span>
+                    <span class="endpoint-description">Delete a vectorstore</span>
+                </div>
+                <div class="endpoint">
+                    <span class="endpoint-method method-post">POST</span>
+                    <span class="endpoint-path">/rag/vectorstore/consume</span>
+                    <span class="endpoint-description">Query a vectorstore to get AI-generated responses</span>
+                </div>
+            </div>
+            
+            <div class="tabs">
+                <div class="tab active" data-tab="create-doc">Create from Documents</div>
+                <div class="tab" data-tab="create-string">Create from Text</div>
+                <div class="tab" data-tab="list-vs">List Vectorstores</div>
+                <div class="tab" data-tab="load-vs">Load Vectorstore</div>
+                <div class="tab" data-tab="delete-vs">Delete Vectorstore</div>
+                <div class="tab" data-tab="query-vs">Query Vectorstore</div>
+            </div>
+            
+            <!-- Create Vectorstore from Documents Tab -->
+            <div id="create-doc" class="tab-content active">
+                <h3>Create Vectorstore from Documents</h3>
+                <p>This endpoint creates a FAISS vectorstore from document files that you've previously uploaded to the platform. The documents are chunked, embedded, and indexed for semantic search.</p>
+                
+                <h4>How It Works</h4>
+                <ol>
+                    <li>First, upload your documents using the <code>/file</code> endpoint</li>
+                    <li>Receive a <code>file_id</code> for each uploaded document</li>
+                    <li>Submit an array of <code>file_ids</code> to this endpoint to create a vectorstore</li>
+                    <li>Receive a <code>vectorstore_id</code> that you can use for querying</li>
+                </ol>
+                
+                <h4>Supported File Types</h4>
+                <ul>
+                    <li><strong>PDF</strong> (.pdf)</li>
+                    <li><strong>Word Documents</strong> (.docx)</li>
+                    <li><strong>Text Files</strong> (.txt)</li>
+                    <li><strong>CSV Files</strong> (.csv)</li>
+                    <li><strong>Excel Spreadsheets</strong> (.xlsx, .xls)</li>
+                </ul>
+                
+                <h4>Request Parameters</h4>
+                <ul>
+                    <li><strong>file_ids</strong> (required) - Array of file IDs to process</li>
+                    <li><strong>vectorstore_name</strong> (optional) - Name for the vectorstore (default: auto-generated name)</li>
+                    <li><strong>chunk_size</strong> (optional) - Size of text chunks for splitting documents (default: 1000)</li>
+                    <li><strong>chunk_overlap</strong> (optional) - Overlap between chunks (default: 200)</li>
+                </ul>
+                
+                <h4>Example Request</h4>
+                <div class="code-block">
+                    <pre>
+POST /rag/vectorstore/document
+Headers:
+  X-Token: your_token_here
+  Content-Type: application/json
+
+{
+  "file_ids": [
+    "81f2d4b2-f79c-4d33-b319-e25e658a0fcd",
+    "a9c8e7d6-5b4a-3c2d-1e0f-9g8h7i6j5k4l"
+  ],
+  "vectorstore_name": "Product Documentation",
+  "chunk_size": 1000,
+  "chunk_overlap": 200
+}
+                    </pre>
+                </div>
+                
+                <h4>Example Response</h4>
+                <div class="code-block">
+                    <pre>
+{
+  "message": "Vectorstore created successfully",
+  "vectorstore_id": "12345678-1234-5678-1234-567812345678",
+  "path": "user123-12345678-1234-5678-1234-567812345678",
+  "name": "Product Documentation",
+  "file_count": 2,
+  "document_count": 15,
+  "chunk_count": 42
+}
+                    </pre>
+                </div>
+                
+                <h4>Chunking Strategy</h4>
+                <p>Documents are split into smaller chunks for more precise retrieval. You can control this with:</p>
+                <ul>
+                    <li><strong>chunk_size</strong> - Larger chunks preserve more context but may retrieve irrelevant information. Smaller chunks are more precise but may lose context.</li>
+                    <li><strong>chunk_overlap</strong> - Controls how much text is shared between adjacent chunks to maintain context across chunk boundaries.</li>
+                </ul>
+                
+                <div class="info-box">
+                    <div class="info-box-icon"><i class="fas fa-lightbulb"></i></div>
+                    <div class="info-box-content">
+                        <h4>Pro Tip: Optimizing Document Chunking</h4>
+                        <p>For optimal results:</p>
+                        <ul>
+                            <li>Use smaller chunks (500-800) for FAQ-style content where precise answers matter</li>
+                            <li>Use larger chunks (1000-1500) for documents where context and connections between ideas are important</li>
+                            <li>Set chunk_overlap to approximately 10-20% of your chunk_size</li>
+                            <li>For better organization, group related documents into separate vectorstores</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Create Vectorstore from String Tab -->
+            <div id="create-string" class="tab-content">
+                <h3>Create Vectorstore from Text</h3>
+                <p>This endpoint creates a vectorstore directly from a text string, without requiring you to upload a document first. This is useful for API responses, text snippets, or any content you already have in string format.</p>
+                
+                <h4>Request Parameters</h4>
+                <ul>
+                    <li><strong>content</strong> (required) - Text content to create the vectorstore from</li>
+                    <li><strong>content_source</strong> (optional) - Source identifier for the content (default: "User Input")</li>
+                    <li><strong>vectorstore_name</strong> (optional) - Name for the vectorstore (default: auto-generated name)</li>
+                    <li><strong>chunk_size</strong> (optional) - Size of text chunks (default: 500, smaller than document default)</li>
+                    <li><strong>chunk_overlap</strong> (optional) - Overlap between chunks (default: 100)</li>
+                    <li><strong>metadata</strong> (optional) - Additional metadata to store with the content</li>
+                </ul>
+                
+                <h4>Example Request</h4>
+                <div class="code-block">
+                    <pre>
+POST /rag/vectorstore/string
+Headers:
+  X-Token: your_token_here
+  Content-Type: application/json
+
+{
+  "content": "TIH Insurance offers comprehensive car insurance with the following benefits: Accident coverage up to R500,000, Roadside assistance 24/7, Glass coverage with no excess, Car rental option for up to 30 days during repairs, No claim bonus of up to 60%, Medical expenses coverage of R50,000 for the driver and passengers. Additional features include: Emergency accommodation, Vehicle repatriation from neighboring countries, and Protection against theft and hijacking.",
+  "content_source": "Product Information",
+  "vectorstore_name": "Insurance Product Details",
+  "metadata": {
+    "category": "car-insurance",
+    "last_updated": "2025-03-15"
+  }
+}
+                    </pre>
+                </div>
+                
+                <h4>Example Response</h4>
+                <div class="code-block">
+                    <pre>
+{
+  "message": "Vectorstore created successfully from string content",
+  "vectorstore_id": "98765432-9876-5432-9876-987654321098",
+  "path": "user123-98765432-9876-5432-9876-987654321098",
+  "name": "Insurance Product Details",
+  "content_length": 421,
+  "chunk_count": 2,
+  "content_source": "Product Information"
+}
+                    </pre>
+                </div>
+                
+                <div class="info-box">
+                    <div class="info-box-icon"><i class="fas fa-lightbulb"></i></div>
+                    <div class="info-box-content">
+                        <h4>Pro Tip: String vs. Document Vectorstores</h4>
+                        <p>Use the string-based approach when:</p>
+                        <ul>
+                            <li>Working with content from APIs or databases that's already in text format</li>
+                            <li>Creating vectorstores from short, structured information like product details or FAQs</li>
+                            <li>Needing to frequently update content (it's easier to delete and recreate)</li>
+                            <li>You want more control over metadata and content organization</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- List Vectorstores Tab -->
+            <div id="list-vs" class="tab-content">
+                <h3>List Vectorstores</h3>
+                <p>This endpoint lists all vectorstores available to the current user. This includes vectorstores created by the user and, for administrators, vectorstores created by all users.</p>
+                
+                <h4>Example Request</h4>
+                <div class="code-block">
+                    <pre>
+GET /rag/vectorstore/list
+Headers:
+  X-Token: your_token_here
+                    </pre>
+                </div>
+                
+                <h4>Example Response</h4>
+                <div class="code-block">
+                    <pre>
+{
+  "message": "Vectorstores retrieved successfully",
+  "vectorstores": [
+    {
+      "id": "12345678-1234-5678-1234-567812345678",
+      "name": "Product Documentation",
+      "path": "user123-12345678-1234-5678-1234-567812345678",
+      "file_count": 2,
+      "document_count": 15,
+      "chunk_count": 42,
+      "created_at": "2025-03-15T14:30:45.123456+02:00",
+      "owner_id": "user123"
+    },
+    {
+      "id": "98765432-9876-5432-9876-987654321098",
+      "name": "Insurance Product Details",
+      "path": "user123-98765432-9876-5432-9876-987654321098",
+      "file_count": 1,
+      "document_count": 1,
+      "chunk_count": 2,
+      "created_at": "2025-03-20T10:15:32.987654+02:00",
+      "owner_id": "user123"
+    }
+  ],
+  "count": 2
+}
+                    </pre>
+                </div>
+            </div>
+            
+            <!-- Load Vectorstore Tab -->
+            <div id="load-vs" class="tab-content">
+                <h3>Load Vectorstore</h3>
+                <p>This endpoint loads a vectorstore and returns its metadata. It's useful for checking vectorstore details and validating that it's available before querying.</p>
+                
+                <h4>Request Parameters</h4>
+                <ul>
+                    <li><strong>vectorstore_id</strong> (required) - ID of the vectorstore to load</li>
+                </ul>
+                
+                <h4>Example Request</h4>
+                <div class="code-block">
+                    <pre>
+POST /rag/vectorstore/load
+Headers:
+  X-Token: your_token_here
+  Content-Type: application/json
+
+{
+  "vectorstore_id": "12345678-1234-5678-1234-567812345678"
+}
+                    </pre>
+                </div>
+                
+                <h4>Example Response</h4>
+                <div class="code-block">
+                    <pre>
+{
+  "message": "Vectorstore loaded successfully",
+  "vectorstore_id": "12345678-1234-5678-1234-567812345678",
+  "path": "user123-12345678-1234-5678-1234-567812345678",
+  "name": "Product Documentation",
+  "file_count": 2,
+  "document_count": 15,
+  "chunk_count": 42,
+  "created_at": "2025-03-15T14:30:45.123456+02:00"
+}
+                    </pre>
+                </div>
+            </div>
+            
+            <!-- Delete Vectorstore Tab -->
+            <div id="delete-vs" class="tab-content">
+                <h3>Delete Vectorstore</h3>
+                <p>This endpoint deletes a vectorstore when it's no longer needed. This operation cannot be undone, so use it with caution.</p>
+                
+                <h4>Request Parameters</h4>
+                <p>The <code>vectorstore_id</code> parameter is passed as a query parameter in the URL.</p>
+                
+                <h4>Example Request</h4>
+                <div class="code-block">
+                    <pre>
+DELETE /rag/vectorstore?vectorstore_id=12345678-1234-5678-1234-567812345678
+Headers:
+  X-Token: your_token_here
+                    </pre>
+                </div>
+                
+                <h4>Example Response</h4>
+                <div class="code-block">
+                    <pre>
+{
+  "message": "Vectorstore deleted successfully",
+  "vectorstore_id": "12345678-1234-5678-1234-567812345678",
+  "name": "Product Documentation"
+}
+                    </pre>
+                </div>
+                
+                <div class="info-box">
+                    <div class="info-box-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                    <div class="info-box-content">
+                        <h4>Important Note</h4>
+                        <p>Deleting a vectorstore permanently removes it from the system. This action cannot be undone. Make sure you no longer need the vectorstore before deleting it.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Query Vectorstore Tab -->
+            <div id="query-vs" class="tab-content">
+                <h3>Query Vectorstore</h3>
+                <p>This endpoint is the core of the RAG functionality. It retrieves relevant information from a vectorstore based on your query and uses an LLM to generate a response grounded in that information.</p>
+                
+                <h4>Request Parameters</h4>
+                <ul>
+                    <li><strong>vectorstore_id</strong> (required) - ID of the vectorstore to query</li>
+                    <li><strong>query</strong> (required) - User query to answer using the vectorstore</li>
+                    <li><strong>model</strong> (optional) - LLM model to use (gpt-4o-mini or gpt-4o, default: gpt-4o-mini)</li>
+                    <li><strong>system_prompt</strong> (optional) - Custom system prompt to guide model behavior</li>
+                    <li><strong>temperature</strong> (optional) - Controls randomness (0=focused, 1=creative, default: 0.5)</li>
+                    <li><strong>json_output</strong> (optional) - Format response as JSON (default: false)</li>
+                </ul>
+                
+                <h4>Example Request</h4>
+                <div class="code-block">
+                    <pre>
+POST /rag/vectorstore/consume
+Headers:
+  X-Token: your_token_here
+  Content-Type: application/json
+
+{
+  "vectorstore_id": "12345678-1234-5678-1234-567812345678",
+  "query": "What is covered under the car insurance for glass damage?",
+  "model": "gpt-4o-mini",
+  "system_prompt": "You are a helpful insurance advisor. Answer questions based on the provided context only.",
+  "temperature": 0.3
+}
+                    </pre>
+                </div>
+                
+                <h4>Example Response</h4>
+                <div class="code-block">
+                    <pre>
+{
+  "message": "Query processed successfully",
+  "answer": "Based on the information provided, the car insurance covers glass damage with no excess. This means you won't have to pay any deductible or co-payment when making a claim specifically for glass damage, such as windshield repair or replacement.",
+  "model": "gpt-4o-mini",
+  "vectorstore_id": "12345678-1234-5678-1234-567812345678",
+  "vectorstore_name": "Insurance Product Details",
+  "input_tokens": 248,
+  "completion_tokens": 59,
+  "output_tokens": 307
+}
+                    </pre>
+                </div>
+                
+                <h4>Custom System Prompts</h4>
+                <p>The <code>system_prompt</code> parameter allows you to control how the model uses the retrieved information. If not provided, the system uses a default prompt that instructs the model to answer based only on the provided context.</p>
+                
+                <p>Some example system prompts for different use cases:</p>
+                
+                <ul>
+                    <li><strong>Technical Support:</strong> <code>You are a technical support specialist. Use the context to provide step-by-step solutions to technical problems. If the solution isn't in the context, tell the user you don't have that information.</code></li>
+                    <li><strong>Legal Document Analysis:</strong> <code>You are a legal assistant analyzing contracts. Based on the provided context, explain legal terms in plain language. Do not provide legal advice beyond what's in the context.</code></li>
+                    <li><strong>Educational Content:</strong> <code>You are a helpful tutor. Explain concepts from the context in simple terms appropriate for a high school student, using analogies when possible.</code></li>
+                </ul>
+                
+                <div class="info-box">
+                    <div class="info-box-icon"><i class="fas fa-lightbulb"></i></div>
+                    <div class="info-box-content">
+                        <h4>Pro Tip: Advanced RAG Queries</h4>
+                        <p>For best results:</p>
+                        <ul>
+                            <li>Use specific, clearly worded queries rather than vague questions</li>
+                            <li>For factual information, use lower temperature settings (0.1-0.3)</li>
+                            <li>For creative responses within the document context, use higher temperatures (0.5-0.7)</li>
+                            <li>Use the <code>include_sources: true</code> parameter to get source documents in the response (great for debugging)</li>
+                            <li>For complex queries, use GPT-4o instead of GPT-4o-mini for more nuanced understanding</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <h3>Use Cases</h3>
+            
+            <div class="feature-cards">
+                <div class="feature-card">
+                    <h4><i class="fas fa-file-alt"></i> Document Q&A</h4>
+                    <p>Create intelligent systems that can answer questions based on specific documents like policy manuals, product documentation, or internal knowledge bases.</p>
+                </div>
+                <div class="feature-card">
+                    <h4><i class="fas fa-headset"></i> Customer Support</h4>
+                    <p>Build support chatbots that can answer questions using your specific products, services, and policies without hallucinating information.</p>
+                </div>
+                <div class="feature-card">
+                    <h4><i class="fas fa-graduation-cap"></i> Educational Content</h4>
+                    <p>Create learning systems that can answer student questions based on specific textbooks, course materials, or educational resources.</p>
+                </div>
+                <div class="feature-card">
+                    <h4><i class="fas fa-database"></i> Research Assistance</h4>
+                    <p>Build tools that help researchers search through papers, reports, and data to find relevant information and generate insights.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <footer class="footer">
+        <p>© 2025 TIH AI API Portal. Powered by the TIH AI Center of Excellence.</p>
+    </footer>
+    
+    <script>
+        // Toggle sidebar on mobile
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuToggle = document.getElementById('menu-toggle');
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            
+            menuToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('active');
+                overlay.classList.toggle('active');
+            });
+            
+            overlay.addEventListener('click', function() {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            });
+            
+            // Tab functionality
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // Remove active class from all tabs and contents
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tabContents.forEach(c => c.classList.remove('active'));
+                    
+                    // Add active class to clicked tab
+                    this.classList.add('active');
+                    
+                    // Show corresponding content
+                    const tabId = this.getAttribute('data-tab');
+                    document.getElementById(tabId).classList.add('active');
+                });
+            });
+            
+            // Highlight current page in sidebar
+            const currentPage = window.location.pathname;
+            const sidebarLinks = document.querySelectorAll('.sidebar-link');
+            
+            sidebarLinks.forEach(link => {
+                if (link.getAttribute('href') === currentPage) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

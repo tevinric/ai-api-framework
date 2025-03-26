@@ -246,22 +246,7 @@ class DatabaseService:
         
     @staticmethod
     def create_user(user_data):
-        """Create a new user in the database
-        
-        Args:
-            user_data (dict): Dictionary containing user data:
-                - user_name: Username for the new user
-                - user_email: Email address for the new user
-                - common_name: (Optional) Common name for the new user
-                - company: (Optional) Company name for the new user
-                - department: (Optional) Department name for the new user
-                - scope: (Optional) Permission scope (1-5), defaults to 1
-                - active: (Optional) Whether the user is active, defaults to True
-                - comment: (Optional) Comment about the user
-                
-        Returns:
-            tuple: (user_id, api_key) if successful, (None, None) otherwise
-        """
+        """Create a new user in the database with default aic_balance based on scope"""
         try:
             conn = DatabaseService.get_connection()
             cursor = conn.cursor()
@@ -278,6 +263,15 @@ class DatabaseService:
             active = user_data.get('active', True)
             comment = user_data.get('comment')
             
+            # Get default balance from scope_balance_config
+            balance_query = """
+            SELECT monthly_balance FROM scope_balance_config
+            WHERE scope = ?
+            """
+            cursor.execute(balance_query, [scope])
+            scope_balance_result = cursor.fetchone()
+            aic_balance = scope_balance_result[0] if scope_balance_result else 100  # Default to 100 if not found
+            
             # Prepare the SQL query
             query = """
             INSERT INTO users (
@@ -292,12 +286,14 @@ class DatabaseService:
                 active, 
                 created_at, 
                 modified_at, 
-                comment
+                comment,
+                aic_balance
             )
             VALUES (
                 ?, ?, ?, ?, ?, ?, ?, ?, ?,
                 DATEADD(HOUR, 2, GETUTCDATE()),
                 DATEADD(HOUR, 2, GETUTCDATE()),
+                ?,
                 ?
             )
             """
@@ -313,7 +309,8 @@ class DatabaseService:
                 api_key,
                 scope,
                 1 if active else 0,  # Convert boolean to bit
-                comment
+                comment,
+                aic_balance
             ])
             
             # Commit the transaction
