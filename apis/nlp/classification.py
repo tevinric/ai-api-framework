@@ -285,7 +285,7 @@ def multiclass_classification_route():
     """
     Consumes 0.5 AI credits per call when using gpt-4o-mini, 2 credits for gpt-4o
     
-    Classify text into multiple categories with probability scores
+    Classify text into multiple categories with confidence scores
     ---
     tags:
       - Natural Language Processing
@@ -322,11 +322,35 @@ def multiclass_classification_route():
       - application/json
     responses:
       200:
-        description: Classification results with probabilities
+        description: Classification results with confidence scores
         schema:
           type: object
           properties:
-            classifications:
+            top_result:
+              type: object
+              properties:
+                class:
+                  type: string
+                  example: "technology"
+                confidence:
+                  type: number
+                  format: float
+                  example: 0.85
+              description: The most relevant category for the text
+            top_categories:
+              type: array
+              items:
+                type: object
+                properties:
+                  class:
+                    type: string
+                    example: "technology"
+                  confidence:
+                    type: number
+                    format: float
+                    example: 0.85
+              description: Top 3 categories most relevant to the text
+            all_categories:
               type: array
               items:
                 type: object
@@ -334,23 +358,11 @@ def multiclass_classification_route():
                   class:
                     type: string
                     example: "sports"
-                  probability:
+                  confidence:
                     type: number
                     format: float
-                    example: 0.75
-            top_classifications:
-              type: array
-              items:
-                type: object
-                properties:
-                  class:
-                    type: string
-                    example: "sports"
-                  probability:
-                    type: number
-                    format: float
-                    example: 0.75
-              description: Top 3 classifications by probability
+                    example: 0.15
+              description: All categories with their confidence scores
             model_used:
               type: string
               example: "gpt-4o-mini"
@@ -365,48 +377,12 @@ def multiclass_classification_route():
               example: 167
       400:
         description: Bad request
-        schema:
-          type: object
-          properties:
-            error:
-              type: string
-              example: "Bad Request"
-            message:
-              type: string
-              example: "Missing required fields: categories, user_input"
       401:
         description: Authentication error
-        schema:
-          type: object
-          properties:
-            error:
-              type: string
-              example: "Authentication Error"
-            message:
-              type: string
-              example: "Token has expired"
       402:
         description: Insufficient balance
-        schema:
-          type: object
-          properties:
-            error:
-              type: string
-              example: "Insufficient Balance"
-            message:
-              type: string
-              example: "Your API call balance is depleted. Please upgrade your plan for additional calls."
       500:
         description: Server error
-        schema:
-          type: object
-          properties:
-            error:
-              type: string
-              example: "Server Error"
-            message:
-              type: string
-              example: "Error processing classification request"
     """
     # Get token from X-Token header
     token = request.headers.get('X-Token')
@@ -497,40 +473,52 @@ def multiclass_classification_route():
         }, 400)
     
     try:
-        # Simple prompt for the model to provide classification probabilities
-        system_prompt = """Classify the given text into the provided categories and assign a probability to each category.
+        # Improved system prompt for more accurate classification
+        system_prompt = """You are an expert text classification system. Your task is to determine how relevant the provided text is to each of the given categories.
 
-Carefully analyze the text and determine how relevant it is to each category. Assign higher probabilities to more relevant categories and lower probabilities to less relevant ones.
+For each category, assign a confidence score from 0.0 to 1.0 that reflects how strongly the text relates to that category:
+- 0.9-1.0: The text is primarily about this topic with high certainty
+- 0.7-0.89: The text strongly relates to this topic
+- 0.5-0.69: The text moderately relates to this topic
+- 0.3-0.49: The text slightly relates to this topic
+- 0.1-0.29: The text has minimal relation to this topic
+- 0.0-0.09: The text has virtually no relation to this topic
 
-Important rules:
-1. The probabilities MUST sum to exactly 1.0 (100%)
-2. If a category is clearly the best match, give it a much higher probability (0.7-0.9)
-3. Provide only the required JSON output with no explanation or additional text
-4. Format: [{"class": "category_name", "probability": 0.7}, {"class": "another_category", "probability": 0.3}]
+Each category should be evaluated independently - scores do NOT need to sum to 1.0.
 
-If a text is strongly related to one category, it should have a high probability for that category and very low for others."""
+Analyze the content, context, terminology, and themes in the text carefully before assigning scores.
+
+Return ONLY a valid JSON array with no additional text. Format:
+[
+  {"class": "category_name", "confidence": 0.95},
+  {"class": "another_category", "confidence": 0.45},
+  ...
+]
+
+Sort the results by confidence score in descending order."""
+
+        # Format categories and user input for the message
+        categories_str = json.dumps(categories)
+        user_message = f"""Categories: {categories_str}
+
+Text to classify:
+{user_input}
+
+Analyze how strongly the text relates to each category and return a JSON array with confidence scores for each category."""
         
-        # Format categories for the user message
-        categories_list = ', '.join(categories)
-        user_message = f"""Categories: {categories_list}
-
-Text to classify: {user_input}
-
-Classify the above text into the provided categories with probabilities that sum to 1.0."""
-        
-        # Determine which LLM endpoint to call
+        # Determine LLM endpoint
         llm_endpoint = f"{request.url_root.rstrip('/')}/llm/{model}"
         
         # Prepare payload for LLM request
         llm_request_data = {
             "system_prompt": system_prompt,
             "user_input": user_message,
-            "temperature": 0.1,  # Slight randomness to avoid uniform distributions
+            "temperature": 0.0,  # Use 0 for deterministic results
             "json_output": True  # Request JSON output format
         }
         
         # Call LLM API
-        logger.info(f"Calling {model} for multiclass classification")
+        logger.info(f"Calling {model} for improved multiclass classification")
         headers = {"X-Token": token, "Content-Type": "application/json"}
         llm_response = requests.post(
             llm_endpoint,
@@ -545,77 +533,69 @@ Classify the above text into the provided categories with probabilities that sum
                 "message": f"Error from LLM API: {llm_response.text[:200]}"
             }, 500)
         
-        # Extract response
+        # Extract and process the LLM response
         llm_result = llm_response.json()
         result_text = llm_result.get("message", "[]")
         
-        # Parse and validate the classification results
         try:
+            # Parse the JSON response
             classifications = json.loads(result_text)
             
-            # Validate and clean up results
+            # Validate and clean up the classifications
             valid_classifications = []
-            total_probability = 0.0
             
             for item in classifications:
-                if isinstance(item, dict) and 'class' in item and 'probability' in item:
-                    # Try to match the class name to one of our categories
+                if isinstance(item, dict) and 'class' in item and 'confidence' in item:
                     class_name = item['class']
+                    
+                    # Check if the class is in our categories or find a close match
                     if class_name not in categories:
-                        # Try to find a close match
+                        matched = False
                         for category in categories:
-                            if category.lower() == class_name.lower() or category.lower() in class_name.lower() or class_name.lower() in category.lower():
+                            if category.lower() == class_name.lower():
                                 class_name = category
+                                matched = True
                                 break
+                        
+                        if not matched:
+                            continue
                     
-                    # Skip if we still don't have a valid category
-                    if class_name not in categories:
-                        continue
-                    
-                    # Add valid classification
+                    # Validate and normalize confidence score
                     try:
-                        prob = float(item['probability'])
-                        prob = max(0, min(1, prob))  # Ensure probability is between 0 and 1
+                        confidence = float(item['confidence'])
+                        confidence = max(0.0, min(1.0, confidence))  # Ensure between 0 and 1
+                        confidence = round(confidence, 3)  # Round to 3 decimal places
                         
                         valid_classifications.append({
                             'class': class_name,
-                            'probability': prob
+                            'confidence': confidence
                         })
-                        total_probability += prob
                     except (ValueError, TypeError):
                         continue
             
-            # Handle case where we have no valid classifications
+            # If we don't have valid classifications, create reasonable defaults
             if not valid_classifications:
-                # Create default with 100% for first category
-                valid_classifications = [{'class': categories[0], 'probability': 1.0}]
-                total_probability = 1.0
+                logger.warning("No valid classifications returned, using default values")
+                valid_classifications = [{'class': category, 'confidence': 1.0 / len(categories)} for category in categories]
             
-            # Normalize probabilities to ensure they sum to 1.0
-            if abs(total_probability - 1.0) > 0.01:  # Allow small rounding errors
-                for item in valid_classifications:
-                    item['probability'] = item['probability'] / total_probability
-            
-            # Handle missing categories
-            category_dict = {item['class']: item for item in valid_classifications}
+            # Make sure we have all categories
+            classified_categories = {item['class'] for item in valid_classifications}
             for category in categories:
-                if category not in category_dict:
-                    valid_classifications.append({'class': category, 'probability': 0.0})
+                if category not in classified_categories:
+                    valid_classifications.append({'class': category, 'confidence': 0.0})
             
-            # Sort by probability (descending)
-            valid_classifications.sort(key=lambda x: x['probability'], reverse=True)
+            # Sort by confidence score (descending)
+            valid_classifications.sort(key=lambda x: x['confidence'], reverse=True)
             
-            # Round to 4 decimal places
-            for item in valid_classifications:
-                item['probability'] = round(item['probability'], 4)
+            # Get the top result and top 3 categories
+            top_result = valid_classifications[0] if valid_classifications else {'class': categories[0], 'confidence': 0.0}
+            top_categories = valid_classifications[:min(3, len(valid_classifications))]
             
-            # Get top 3 classifications
-            top_classifications = valid_classifications[:min(3, len(valid_classifications))]
-            
-            # Prepare response with classifications and token usage
+            # Prepare the response
             response_data = {
-                "classifications": valid_classifications,
-                "top_classifications": top_classifications,
+                "top_result": top_result,
+                "top_categories": top_categories,
+                "all_categories": valid_classifications,
                 "model_used": model,
                 "input_tokens": llm_result.get("input_tokens", 0),
                 "completion_tokens": llm_result.get("completion_tokens", 0),
@@ -637,7 +617,7 @@ Classify the above text into the provided categories with probabilities that sum
             "error": "Server Error",
             "message": f"Error processing classification request: {str(e)}"
         }, 500)
-
+        
 def register_nlp_routes(app):
     """Register NLP routes with the Flask app"""
     from apis.utils.logMiddleware import api_logger
