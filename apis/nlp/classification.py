@@ -285,7 +285,7 @@ def multiclass_classification_route():
     """
     Consumes 0.5 AI credits per call when using gpt-4o-mini, 2 credits for gpt-4o
     
-    Classify text into multiple categories with confidence scores
+    Classify text into multiple categories ordered by relevance
     ---
     tags:
       - Natural Language Processing
@@ -322,47 +322,26 @@ def multiclass_classification_route():
       - application/json
     responses:
       200:
-        description: Classification results with confidence scores
+        description: Classification results in order of relevance
         schema:
           type: object
           properties:
             top_result:
-              type: object
-              properties:
-                class:
-                  type: string
-                  example: "technology"
-                confidence:
-                  type: number
-                  format: float
-                  example: 0.85
+              type: string
+              example: "technology"
               description: The most relevant category for the text
             top_categories:
               type: array
               items:
-                type: object
-                properties:
-                  class:
-                    type: string
-                    example: "technology"
-                  confidence:
-                    type: number
-                    format: float
-                    example: 0.85
+                type: string
+              example: ["technology", "entertainment", "sports"]
               description: Top 3 categories most relevant to the text
-            all_categories:
+            ordered_categories:
               type: array
               items:
-                type: object
-                properties:
-                  class:
-                    type: string
-                    example: "sports"
-                  confidence:
-                    type: number
-                    format: float
-                    example: 0.15
-              description: All categories with their confidence scores
+                type: string
+              example: ["technology", "entertainment", "sports", "politics"]
+              description: All categories ordered from most to least relevant
             model_used:
               type: string
               example: "gpt-4o-mini"
@@ -473,39 +452,40 @@ def multiclass_classification_route():
         }, 400)
     
     try:
-        # Create a system message that includes the categories
-        categories_formatted = ", ".join([f'"{category}"' for category in categories])
-        system_prompt = f"""You are a text classification system. You must analyze the provided text and assign confidence scores for how strongly it relates to each of these specific categories: {categories_formatted}.
+        # Format categories as JSON array
+        categories_json = json.dumps(categories)
+        
+        # Simple system prompt that asks for ordered list
+        system_prompt = """You are a text classification system. Your task is to order the provided categories based on how well they match the given text.
+        
+Your response must be a JSON array containing the categories ordered from most relevant to least relevant.
+The first element must be the category that best matches the text, and the last element should be the least relevant category.
+The order of categories in the input should have NO influence on your output ordering.
 
-For each category, assign a confidence score from 0.0 to 1.0 based on how relevant the text is to that category:
-- A score near 1.0 means the text is highly relevant to the category
-- A score near 0.0 means the text has almost no relevance to the category
+Example input: ["tech", "sports", "politics"]
+Example output (if the text is about technology): ["tech", "politics", "sports"]
 
-Important rules:
-1. DO NOT assign the same confidence score to all categories
-2. If the text clearly relates to one category more than others, that category should receive a substantially higher score
-3. Return ONLY a valid JSON array with no explanation or additional text
-4. Format: [{{"class": "category_name", "confidence": 0.85}}, {{"class": "another_category", "confidence": 0.25}}]
+Respond ONLY with the JSON array. No explanations or additional text."""
+        
+        # User message combines categories and the text to classify
+        user_message = f"""Categories: {categories_json}
 
-Your classification must be specific and discriminative, with clear differentiation between relevant and non-relevant categories."""
-
-        # The user message contains only the text to classify
-        user_message = f"""Text to classify:
+Text to classify:
 {user_input}"""
         
-        # Determine LLM endpoint
+        # Determine which LLM endpoint to call
         llm_endpoint = f"{request.url_root.rstrip('/')}/llm/{model}"
         
         # Prepare payload for LLM request
         llm_request_data = {
             "system_prompt": system_prompt,
             "user_input": user_message,
-            "temperature": 0.2,  # Low but not zero
+            "temperature": 0.3,  # Slightly higher temp for more natural ordering
             "json_output": True  # Request JSON output format
         }
         
         # Call LLM API
-        logger.info(f"Calling {model} for multiclass classification")
+        logger.info(f"Calling {model} for ordered classification")
         headers = {"X-Token": token, "Content-Type": "application/json"}
         llm_response = requests.post(
             llm_endpoint,
@@ -520,86 +500,48 @@ Your classification must be specific and discriminative, with clear differentiat
                 "message": f"Error from LLM API: {llm_response.text[:200]}"
             }, 500)
         
-        # Extract and process the LLM response
+        # Extract and parse the LLM response
         llm_result = llm_response.json()
         result_message = llm_result.get("message", "[]")
         
+        # Parse the ordered categories
         try:
-            # Parse the JSON response
+            # Handle both string and pre-parsed responses
             if isinstance(result_message, str):
-                classifications = json.loads(result_message)
+                ordered_categories = json.loads(result_message)
             elif isinstance(result_message, list):
-                # If the API already parsed the JSON for us
-                classifications = result_message
+                ordered_categories = result_message
             else:
                 logger.error(f"Unexpected response format: {type(result_message)}")
-                classifications = []
+                ordered_categories = []
             
-            # Validate and process each classification
-            processed_classifications = []
+            # Validate the returned categories match our input categories
+            valid_categories = []
+            category_lookup = {c.lower(): c for c in categories}
             
-            for item in classifications:
-                if isinstance(item, dict) and 'class' in item and 'confidence' in item:
-                    class_name = item['class']
+            # Validate each returned category
+            for item in ordered_categories:
+                if not isinstance(item, str):
+                    continue
                     
-                    # Validate the class name is one of our input categories
-                    matched_category = None
-                    for category in categories:
-                        if category.lower() == class_name.lower():
-                            matched_category = category
-                            break
-                    
-                    # Skip if no match found
-                    if not matched_category:
-                        continue
-                        
-                    # Process the confidence score
-                    try:
-                        confidence = float(item['confidence'])
-                        confidence = max(0.0, min(1.0, confidence))  # Ensure between 0 and 1
-                        confidence = round(confidence, 3)  # Round to 3 decimal places
-                        
-                        processed_classifications.append({
-                            'class': matched_category,
-                            'confidence': confidence
-                        })
-                    except (ValueError, TypeError):
-                        continue
+                item_lower = item.lower()
+                if item_lower in category_lookup:
+                    # Use the original case from the input
+                    valid_categories.append(category_lookup[item_lower])
+                    # Remove from lookup to avoid duplicates
+                    del category_lookup[item_lower]
             
-            # Check if we have a valid classification
-            if not processed_classifications:
-                logger.warning("No valid classifications returned by LLM")
-                # Create a fallback that gives different scores (not equal splits)
-                processed_classifications = []
-                for i, category in enumerate(categories):
-                    # Generate descending scores (0.9, 0.7, 0.5, 0.3...)
-                    score = max(0.1, 0.9 - (i * 0.2))
-                    processed_classifications.append({
-                        'class': category,
-                        'confidence': round(score, 3)
-                    })
-            
-            # Add any missing categories with a low confidence score
-            classified_categories = {item['class'] for item in processed_classifications}
-            for category in categories:
-                if category not in classified_categories:
-                    processed_classifications.append({
-                        'class': category,
-                        'confidence': 0.1  # Low default confidence
-                    })
-            
-            # Sort by confidence (descending)
-            processed_classifications.sort(key=lambda x: x['confidence'], reverse=True)
-            
-            # Extract top result and top categories
-            top_result = processed_classifications[0]
-            top_categories = processed_classifications[:min(3, len(processed_classifications))]
+            # Add any missing categories at the end
+            valid_categories.extend(category_lookup.values())
             
             # Prepare the response
+            top_result = valid_categories[0] if valid_categories else categories[0]
+            top_categories = valid_categories[:min(3, len(valid_categories))]
+            
             response_data = {
                 "top_result": top_result,
                 "top_categories": top_categories,
-                "all_categories": processed_classifications,
+                "ordered_categories": valid_categories,
                 "model_used": model,
                 "input_tokens": llm_result.get("input_tokens", 0),
                 "completion_tokens": llm_result.get("completion_tokens", 0),
@@ -612,7 +554,7 @@ Your classification must be specific and discriminative, with clear differentiat
             logger.error(f"Error parsing classification results: {e}, Response: {result_message}")
             return create_api_response({
                 "error": "Server Error",
-                "message": "Failed to parse classification results as JSON"
+                "message": "Failed to parse ordered categories as JSON"
             }, 500)
             
     except Exception as e:
