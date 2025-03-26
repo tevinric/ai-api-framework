@@ -497,30 +497,62 @@ def multiclass_classification_route():
         }, 400)
     
     try:
-        # Create system message for multiclass classification
-        system_prompt = """You are a text classification system. Your task is to classify the provided text into multiple categories with probability scores.
-Analyze the text and assign a probability score (0.0 to 1.0) to each provided category.
-The probability scores MUST sum to exactly 1.0 (100%).
-Respond ONLY in valid JSON format with an array of objects, each containing 'class' and 'probability'.
-Example: [{"class": "category1", "probability": 0.7}, {"class": "category2", "probability": 0.3}]"""
+        # Create system message for multiclass classification with enhanced instructions for maximum accuracy
+        system_prompt = """You are an expert text classification system. Your task is to analyze the provided text content and classify it into the provided categories with accurate probability scores.
+
+IMPORTANT GUIDELINES FOR ACCURATE CLASSIFICATION:
+
+1. Analyze the text thoroughly for themes, topics, keywords, tone, and subject matter.
+
+2. For each category, determine how strongly the text relates to that category based on:
+   - Direct mentions of topics related to the category
+   - Implied themes or context related to the category
+   - Semantic similarity between text content and category concept
+
+3. Probability distribution rules:
+   - Assign a probability score (0.0 to 1.0) to each category
+   - The probability scores MUST sum to exactly 1.0 (100%)
+   - Assign higher probabilities (0.8-0.95) to categories that strongly match the content
+   - Assign very low probabilities (0.01-0.05) to categories that barely relate to the content
+   - Only distribute probabilities evenly when the text genuinely relates equally to multiple categories
+   - A text strongly about one topic should have a high probability for that category and low for others
+
+4. Respond ONLY in valid JSON format with an array of objects, each containing 'class' and 'probability'.
+
+Examples of good probability distributions:
+1. For text clearly about basketball: [{"class": "sports", "probability": 0.92}, {"class": "entertainment", "probability": 0.06}, {"class": "technology", "probability": 0.01}, {"class": "politics", "probability": 0.01}]
+2. For text equally about politics and technology: [{"class": "politics", "probability": 0.48}, {"class": "technology", "probability": 0.47}, {"class": "sports", "probability": 0.03}, {"class": "entertainment", "probability": 0.02}]
+3. For text predominantly about entertainment with some technology elements: [{"class": "entertainment", "probability": 0.78}, {"class": "technology", "probability": 0.19}, {"class": "sports", "probability": 0.02}, {"class": "politics", "probability": 0.01}]"""
         
-        # Create user message with category list and text to classify
+        # Create detailed user message with category list and text to classify
         categories_list = ', '.join(categories)
-        user_message = f"Categories: {categories_list}\n\nText to classify: {user_input}"
+        user_message = f"""CATEGORIES TO CLASSIFY INTO:
+{categories_list}
+
+TEXT TO ANALYZE AND CLASSIFY:
+{user_input}
+
+Please provide an accurate probability distribution that reflects how strongly the text relates to each category. The probabilities must sum to exactly 1.0."""
         
         # Determine which LLM endpoint to call based on model selection
         llm_endpoint = f"{request.url_root.rstrip('/')}/llm/{model}"
         
-        # Prepare payload for LLM request
+        # Prepare payload for LLM request with optimized parameters for accuracy
         llm_request_data = {
             "system_prompt": system_prompt,
             "user_input": user_message,
-            "temperature": 0.0,  # Set temperature to 0 for deterministic results
+            "temperature": 0.0,  # Zero temperature for maximum consistency
             "json_output": True  # Request JSON output format
         }
         
-        # Call selected LLM API
+        # Call selected LLM API (using GPT-4o is recommended for better accuracy)
         logger.info(f"Calling {model} for multiclass classification")
+        
+        # If user didn't specify model and text is longer than 200 chars, use gpt-4o for better accuracy
+        if model == 'gpt-4o-mini' and len(user_input) > 200 and 'model' not in data:
+            logger.info("Text length > 200 chars, suggesting gpt-4o for better classification accuracy")
+            # This is just a recommendation, we'll still use the specified or default model
+        
         headers = {"X-Token": token, "Content-Type": "application/json"}
         llm_response = requests.post(
             llm_endpoint,
