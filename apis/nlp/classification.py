@@ -533,9 +533,6 @@ For each category, provide a score (0-100) indicating how well the text matches 
             "json_output": True
         }
         
-        # Determine which LLM endpoint to call based on model selection
-        llm_endpoint = f"{request.url_root.rstrip('/')}/llm/{model}"
-        
         # Call LLM API for step 1 - scoring
         logger.info(f"Calling {model} for step 1: category scoring")
         headers = {"X-Token": token, "Content-Type": "application/json"}
@@ -556,164 +553,103 @@ For each category, provide a score (0-100) indicating how well the text matches 
         llm_result_step1 = llm_response_step1.json()
         result_text_step1 = llm_result_step1.get("message", "[]")
         
-        try:
-            # Parse the scores
-            scores_result = json.loads(result_text_step1)
-            
-            # Validate and extract scores
-            category_scores = {}
-            category_reasonings = {}
-            
-            for item in scores_result:
-                if isinstance(item, dict) and 'category' in item and 'score' in item:
-                    cat_name = item['category']
-                    # Find matching category from our list (case-insensitive)
-                    matching_cat = next((c for c in categories if c.lower() == cat_name.lower()), None)
-                    if not matching_cat and 'reasoning' in item:
-                        # Try to find in original categories list
-                        for c in categories:
-                            if c.lower() in cat_name.lower() or cat_name.lower() in c.lower():
-                                matching_cat = c
-                                break
-                    
-                    # If we found a match or it's already in our categories
-                    if matching_cat or cat_name in categories:
-                        use_cat = matching_cat if matching_cat else cat_name
-                        try:
-                            score = float(item['score'])
-                            # Ensure score is between 0-100
-                            score = max(0.1, min(100.0, score))  # Minimum 0.1 to avoid division by zero
-                            category_scores[use_cat] = score
-                            if 'reasoning' in item:
-                                category_reasonings[use_cat] = item['reasoning']
-                        except (ValueError, TypeError):
-                            logger.warning(f"Invalid score value: {item['score']}")
-            
-            # Make sure we have scores for all categories
-            for cat in categories:
-                if cat not in category_scores:
-                    # Assign minimum score for missing categories
-                    category_scores[cat] = 0.1
-            
-            # Handle the case where all scores are the same
-            all_same = len(set(category_scores.values())) == 1
-            if all_same:
-                # Apply a curve - 1st category gets highest score, then linear decrease
-                sorted_cats = sorted(categories)
-                for i, cat in enumerate(sorted_cats):
-                    # Simple linear decay from 100 to 10
-                    category_scores[cat] = 100 - (i * (90 / max(1, len(categories) - 1)))
-            
-            # Convert scores to probabilities
-            total_score = sum(category_scores.values())
-            probabilities = {cat: score/total_score for cat, score in category_scores.items()}
-            
-            # Create sorted results array
-            results = [{"class": cat, "probability": prob} for cat, prob in probabilities.items()]
-            results.sort(key=lambda x: x["probability"], reverse=True)
-            
-            # Apply exponential skewing to make distribution more extreme
-            # This will make high probabilities higher and low probabilities lower
-            if len(results) > 1 and results[0]["probability"] < 0.8:
-                # Square the probabilities and renormalize
-                for result in results:
-                    result["probability"] = result["probability"] ** 2
+        # Parse the scores
+        scores_result = json.loads(result_text_step1)
+        
+        # Validate and extract scores
+        category_scores = {}
+        category_reasonings = {}
+        
+        for item in scores_result:
+            if isinstance(item, dict) and 'category' in item and 'score' in item:
+                cat_name = item['category']
+                # Find matching category from our list (case-insensitive)
+                matching_cat = next((c for c in categories if c.lower() == cat_name.lower()), None)
+                if not matching_cat and 'reasoning' in item:
+                    # Try to find in original categories list
+                    for c in categories:
+                        if c.lower() in cat_name.lower() or cat_name.lower() in c.lower():
+                            matching_cat = c
+                            break
                 
-                # Renormalize to ensure sum is 1.0
-                total_prob = sum(r["probability"] for r in results)
-                for result in results:
-                    result["probability"] = result["probability"] / total_prob
-            
-            # Round to 4 decimal places
+                # If we found a match or it's already in our categories
+                if matching_cat or cat_name in categories:
+                    use_cat = matching_cat if matching_cat else cat_name
+                    try:
+                        score = float(item['score'])
+                        # Ensure score is between 0-100
+                        score = max(0.1, min(100.0, score))  # Minimum 0.1 to avoid division by zero
+                        category_scores[use_cat] = score
+                        if 'reasoning' in item:
+                            category_reasonings[use_cat] = item['reasoning']
+                    except (ValueError, TypeError):
+                        logger.warning(f"Invalid score value: {item['score']}")
+        
+        # Make sure we have scores for all categories
+        for cat in categories:
+            if cat not in category_scores:
+                # Assign minimum score for missing categories
+                category_scores[cat] = 0.1
+        
+        # Handle the case where all scores are the same
+        all_same = len(set(category_scores.values())) == 1
+        if all_same:
+            # Apply a curve - 1st category gets highest score, then linear decrease
+            sorted_cats = sorted(categories)
+            for i, cat in enumerate(sorted_cats):
+                # Simple linear decay from 100 to 10
+                category_scores[cat] = 100 - (i * (90 / max(1, len(categories) - 1)))
+        
+        # Convert scores to probabilities
+        total_score = sum(category_scores.values())
+        probabilities = {cat: score/total_score for cat, score in category_scores.items()}
+        
+        # Create sorted results array
+        results = [{"class": cat, "probability": prob} for cat, prob in probabilities.items()]
+        results.sort(key=lambda x: x["probability"], reverse=True)
+        
+        # Apply exponential skewing to make distribution more extreme
+        # This will make high probabilities higher and low probabilities lower
+        if len(results) > 1 and results[0]["probability"] < 0.8:
+            # Square the probabilities and renormalize
             for result in results:
-                result["probability"] = round(result["probability"], 4)
+                result["probability"] = result["probability"] ** 2
             
-            # Get top 3 classifications
-            top_classifications = results[:min(3, len(results))]
-            
-            # Calculate total token usage
-            input_tokens = llm_result_step1.get("input_tokens", 0)
-            completion_tokens = llm_result_step1.get("completion_tokens", 0)
-            output_tokens = llm_result_step1.get("output_tokens", 0)
-            
-            # Prepare the response
-            response_data = {
-                "classifications": results,
-                "top_classifications": top_classifications,
-                "model_used": model,
-                "input_tokens": input_tokens,
-                "completion_tokens": completion_tokens,
-                "output_tokens": output_tokens
-            }
+            # Renormalize to ensure sum is 1.0
+            total_prob = sum(r["probability"] for r in results)
+            for result in results:
+                result["probability"] = result["probability"] / total_prob
         
-        # Parse the JSON result, handling potential JSON parsing errors
-        try:
-            classification_results = json.loads(result_text)
-            
-            # Ensure all categories have probabilities and format is correct
-            valid_results = []
-            total_probability = 0.0
-            
-            for result in classification_results:
-                if isinstance(result, dict) and 'class' in result and 'probability' in result:
-                    # Ensure class is in the provided categories
-                    class_name = result['class']
-                    if class_name not in categories:
-                        # Try to find closest match
-                        for category in categories:
-                            if category.lower() in class_name.lower():
-                                class_name = category
-                                break
-                        
-                        # If still no match, skip this result
-                        if class_name not in categories:
-                            continue
-                    
-                    # Add valid result with matched class name
-                    prob = float(result['probability'])
-                    valid_results.append({
-                        'class': class_name,
-                        'probability': prob
-                    })
-                    total_probability += prob
-            
-            # If no valid results, create default with uniform distribution
-            if not valid_results:
-                prob_per_category = 1.0 / len(categories)
-                valid_results = [{'class': cat, 'probability': prob_per_category} for cat in categories]
-                total_probability = 1.0
-            
-            # Normalize probabilities if they don't sum to 1.0
-            if abs(total_probability - 1.0) > 0.01:  # Allow small rounding errors
-                logger.warning(f"Probabilities sum to {total_probability}, normalizing to 1.0")
-                for result in valid_results:
-                    result['probability'] = result['probability'] / total_probability
-            
-            # Sort by probability (descending)
-            valid_results.sort(key=lambda x: x['probability'], reverse=True)
-            
-            # Get top 3 classifications (or all if fewer than 3)
-            top_classifications = valid_results[:min(3, len(valid_results))]
-            
-            # Prepare response with classifications and token usage
-            response_data = {
-                "classifications": valid_results,
-                "top_classifications": top_classifications,
-                "model_used": model,
-                "input_tokens": llm_result.get("input_tokens", 0),
-                "completion_tokens": llm_result.get("completion_tokens", 0),
-                "output_tokens": llm_result.get("output_tokens", 0)
-            }
-            
-            return create_api_response(response_data, 200)
-            
-        except json.JSONDecodeError as je:
-            logger.error(f"Error parsing LLM response as JSON: {str(je)}")
-            return create_api_response({
-                "error": "Server Error",
-                "message": "Failed to parse classification results as JSON"
-            }, 500)
+        # Round to 4 decimal places
+        for result in results:
+            result["probability"] = round(result["probability"], 4)
         
+        # Get top 3 classifications
+        top_classifications = results[:min(3, len(results))]
+        
+        # Calculate total token usage
+        input_tokens = llm_result_step1.get("input_tokens", 0)
+        completion_tokens = llm_result_step1.get("completion_tokens", 0)
+        output_tokens = llm_result_step1.get("output_tokens", 0)
+        
+        # Prepare the response
+        response_data = {
+            "classifications": results,
+            "top_classifications": top_classifications,
+            "model_used": model,
+            "input_tokens": input_tokens,
+            "completion_tokens": completion_tokens,
+            "output_tokens": output_tokens
+        }
+        
+        return create_api_response(response_data, 200)
+        
+    except json.JSONDecodeError as je:
+        logger.error(f"Error parsing LLM response as JSON: {str(je)}")
+        return create_api_response({
+            "error": "Server Error",
+            "message": "Failed to parse classification results as JSON"
+        }, 500)
     except Exception as e:
         logger.error(f"Error in multiclass classification: {str(e)}")
         return create_api_response({
