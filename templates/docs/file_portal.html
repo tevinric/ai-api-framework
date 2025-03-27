@@ -131,7 +131,7 @@
             cursor: pointer;
         }
         
-        /* Main sidebar */
+        /* Sidebar */
         .sidebar {
             position: fixed;
             top: var(--header-height);
@@ -1120,7 +1120,7 @@
         };
         
         // Event listeners
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', function() {
             // Toggle sidebar on mobile
             const menuToggle = document.getElementById('menu-toggle');
             const sidebar = document.querySelector('.sidebar');
@@ -1233,6 +1233,15 @@
                     }
                 });
                 
+                // Check content type before attempting to parse JSON
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    // If not JSON, get text and provide a better error message
+                    const text = await response.text();
+                    console.error('Non-JSON response:', text);
+                    throw new Error('Received invalid response from server (not JSON)');
+                }
+                
                 if (!response.ok) {
                     const data = await response.json();
                     throw new Error(data.message || 'Failed to get token');
@@ -1258,13 +1267,21 @@
                     }
                 });
                 
+                // Check content type before attempting to parse JSON
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    // If not JSON, get text and provide a better error message
+                    const text = await response.text();
+                    console.error('Non-JSON response:', text);
+                    throw new Error('Received invalid response from server (not JSON)');
+                }
+                
                 if (!response.ok) {
                     const data = await response.json();
                     throw new Error(data.message || 'Failed to validate API key');
                 }
                 
-                const data = await response.json();
-                return data; // Contains user_id, user_email, etc.
+                return await response.json();
             } catch (error) {
                 console.error('API key validation error:', error);
                 throw error;
