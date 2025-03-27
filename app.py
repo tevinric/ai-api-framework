@@ -164,6 +164,10 @@ register_llm_gpt_4o(app)
 from apis.llm.gpt_o1_mini import register_llm_o1_mini
 register_llm_o1_mini(app)
 
+from apis.llm.deepseekv3 import register_llm_deepseek_v3
+register_llm_deepseek_v3(app)
+
+
 from apis.rag_query import register_rag_query_routes
 register_rag_query_routes(app)
 
