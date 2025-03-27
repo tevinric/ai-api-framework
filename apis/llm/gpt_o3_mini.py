@@ -1,0 +1,322 @@
+from flask import jsonify, request, g, make_response
+from apis.utils.tokenService import TokenService
+from apis.utils.databaseService import DatabaseService
+import logging
+import pytz
+from datetime import datetime
+from openai import AzureOpenAI
+from azure.identity import DefaultAzureCredential, get_bearer_token_provider
+from apis.utils.config import O3_MINI_API_KEY
+
+# CONFIGURE LOGGING
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Fixed deployment endpoint
+ENDPOINT = "https://ai-coe-services-dev.openai.azure.com/"
+DEPLOYMENT = "o3-mini"
+API_VERSION = "2024-12-01-preview"
+
+def create_api_response(data, status_code=200):
+    """Helper function to create consistent API responses"""
+    response = make_response(jsonify(data))
+    response.status_code = status_code
+    return response
+
+def o3_mini_route():
+    """
+    Consumes 3 AI credits per call
+    
+    O3-Mini LLM model for text generation with variable reasoning effort.
+
+    ---
+    tags:
+      - LLM
+    parameters:
+      - name: X-Token
+        in: header
+        type: string
+        required: true
+        description: Authentication token
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+            - user_input
+          properties:
+            system_prompt:
+              type: string
+              description: System prompt to control model behavior
+              default: "You are a helpful AI assistant"
+            user_input:
+              type: string
+              description: Text for the model to process
+            max_completion_tokens:
+              type: integer
+              minimum: 1
+              maximum: 120000
+              default: 100000
+              description: Maximum number of tokens in the response
+            reasoning_effort:
+              type: string
+              enum: ["high", "medium", "low"]
+              default: "medium"
+              description: Level of reasoning effort
+            json_output:
+              type: boolean
+              default: false
+              description: Whether to return the response in JSON format
+    produces:
+      - application/json
+    responses:
+      200:
+        description: Successful model response
+        schema:
+          type: object
+          properties:
+            response:
+              type: string
+              example: "200"
+            message:
+              type: string
+              example: "I'll help you with that question. Based on the information provided..."
+            user_id:
+              type: string
+              example: "user123"
+            user_name:
+              type: string
+              example: "John Doe"
+            user_email:
+              type: string
+              example: "john.doe@example.com"
+            model:
+              type: string
+              example: "o3-mini"
+            input_tokens:
+              type: integer
+              example: 125
+            completion_tokens:
+              type: integer
+              example: 84
+            output_tokens:
+              type: integer
+              example: 209
+      400:
+        description: Bad request
+        schema:
+          type: object
+          properties:
+            response:
+              type: string
+              example: "400"
+            message:
+              type: string
+              example: "Missing required fields: user_input"
+      401:
+        description: Authentication error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: "Authentication Error"
+            message:
+              type: string
+              example: "Token has expired"
+      500:
+        description: Server error
+        schema:
+          type: object
+          properties:
+            response:
+              type: string
+              example: "500"
+            message:
+              type: string
+              example: "Internal server error occurred during API request"
+    """
+    # Get token from X-Token header
+    token = request.headers.get('X-Token')
+    if not token:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "Missing X-Token header"
+        }, 401)
+    
+    # Validate token from database
+    token_details = DatabaseService.get_token_details_by_value(token)
+    if not token_details:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "Invalid token - not found in database"
+        }, 401)
+    
+    # Store token ID and user ID in g for logging and balance check
+    g.token_id = token_details["id"]
+    g.user_id = token_details["user_id"]  # This is critical for the balance middleware
+    
+    # Check if token is expired
+    now = datetime.now(pytz.UTC)
+    expiration_time = token_details["token_expiration_time"]
+    
+    # Ensure expiration_time is timezone-aware
+    if expiration_time.tzinfo is None:
+        johannesburg_tz = pytz.timezone('Africa/Johannesburg')
+        expiration_time = johannesburg_tz.localize(expiration_time)
+        
+    if now > expiration_time:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "Token has expired"
+        }, 401)
+    
+    # Validate token with Microsoft Graph
+    is_valid = TokenService.validate_token(token)
+    if not is_valid:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "Token is no longer valid with provider"
+        }, 401)
+        
+    # Get user details
+    user_id = token_details["user_id"]
+    user_details = DatabaseService.get_user_by_id(user_id)
+    if not user_details:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "User associated with token not found"
+        }, 401)
+    
+    # Get request data
+    data = request.get_json()
+    if not data:
+        return create_api_response({
+            "response": "400",
+            "message": "Request body is required"
+        }, 400)
+    
+    # Validate required fields
+    required_fields = ['user_input']
+    missing_fields = [field for field in required_fields if field not in data]
+    if missing_fields:
+        return create_api_response({
+            "response": "400",
+            "message": f"Missing required fields: {', '.join(missing_fields)}"
+        }, 400)
+    
+    # Extract parameters with defaults
+    system_prompt = data.get('system_prompt', 'You are a helpful AI assistant')
+    user_input = data.get('user_input', '')
+    max_completion_tokens = int(data.get('max_completion_tokens', 100000))
+    reasoning_effort = data.get('reasoning_effort', 'medium')
+    json_output = data.get('json_output', False)
+    
+    # Validate max_completion_tokens range
+    if not (1 <= max_completion_tokens <= 120000):
+        return create_api_response({
+            "response": "400",
+            "message": "max_completion_tokens must be between 1 and 120000"
+        }, 400)
+    
+    # Validate reasoning_effort
+    valid_reasoning_efforts = ["high", "medium", "low"]
+    if reasoning_effort not in valid_reasoning_efforts:
+        return create_api_response({
+            "response": "400",
+            "message": f"reasoning_effort must be one of: {', '.join(valid_reasoning_efforts)}"
+        }, 400)
+    
+    try:
+        # Log API usage
+        logger.info(f"O3-Mini API called by user: {user_id}")
+        
+        # Get token provider for Azure OpenAI
+        token_provider = get_bearer_token_provider(
+            DefaultAzureCredential(),
+            "https://cognitiveservices.azure.com/.default"
+        )
+        
+        # Initialize Azure OpenAI client
+        client = AzureOpenAI(
+            azure_endpoint=ENDPOINT,
+            azure_ad_token_provider=token_provider,
+            api_version=API_VERSION,
+        )
+        
+        # Prepare messages for the model
+        messages = [
+            {
+                "role": "developer",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": system_prompt
+                    }
+                ]
+            },
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": user_input
+                    }
+                ]
+            }
+        ]
+        
+        # Prepare additional parameters
+        additional_params = {
+            "max_completion_tokens": max_completion_tokens,
+            "reasoning_effort": reasoning_effort
+        }
+        
+        # Add response format if JSON output is requested
+        if json_output:
+            additional_params["response_format"] = {"type": "json_object"}
+        
+        # Make request to LLM
+        completion = client.chat.completions.create(
+            model=DEPLOYMENT,
+            messages=messages,
+            **additional_params,
+            stop=None,
+            stream=False
+        )
+        
+        # Extract response data
+        result = completion.choices[0].message.content
+        input_tokens = completion.usage.prompt_tokens
+        completion_tokens = completion.usage.completion_tokens
+        output_tokens = input_tokens + completion_tokens
+        model_name = completion.model if hasattr(completion, 'model') else DEPLOYMENT
+        
+        # Prepare successful response with user details
+        return create_api_response({
+            "response": "200",
+            "message": result,
+            "user_id": user_details["id"],
+            "user_name": user_details["user_name"],
+            "user_email": user_details["user_email"],
+            "model": model_name,
+            "input_tokens": input_tokens,
+            "completion_tokens": completion_tokens,
+            "output_tokens": output_tokens
+        }, 200)
+        
+    except Exception as e:
+        logger.error(f"O3-Mini API error: {str(e)}")
+        status_code = 500 if not str(e).startswith("4") else 400
+        return create_api_response({
+            "response": str(status_code),
+            "message": str(e)
+        }, status_code)
+
+def register_llm_o3_mini(app):
+    """Register routes with the Flask app"""
+    from apis.utils.logMiddleware import api_logger
+    from apis.utils.balanceMiddleware import check_balance
+    
+    app.route('/llm/o3-mini', methods=['POST'])(api_logger(check_balance(o3_mini_route)))
