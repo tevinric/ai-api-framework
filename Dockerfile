@@ -7,7 +7,6 @@ WORKDIR /app
 # Copy the rest of the application
 COPY . .
 
-
 # Update the package list and install necessary packages  
 RUN apt-get update && \  
     apt-get install -y \  
@@ -16,8 +15,9 @@ RUN apt-get update && \
     gnupg2 \  
     libodbc2 \
     build-essential \  
+    ca-certificates \ 
     && rm -rf /var/lib/apt/lists/*  
-  
+
 # Add the Microsoft repository key  
 RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add -  
   
