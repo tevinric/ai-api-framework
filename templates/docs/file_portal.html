@@ -889,7 +889,7 @@
                 <!-- Search Container -->
                 <div class="search-container">
                     <form id="searchForm" class="search-form">
-                        <input type="text" id="searchInput" class="search-input" placeholder="Search by file ID">
+                        <input type="text" id="searchInput" class="search-input" placeholder="Search by file name">
                         <button type="submit" class="search-btn">
                             <i class="fas fa-search"></i>
                         </button>
@@ -917,10 +917,6 @@
                             <div id="filesUploaded" class="user-detail-value">0</div>
                         </div>
                         <div class="user-detail">
-                            <div class="user-detail-label">Files Generated</div>
-                            <div id="filesGenerated" class="user-detail-value">0</div>
-                        </div>
-                        <div class="user-detail">
                             <div class="user-detail-label">Date Created</div>
                             <div id="dateCreated" class="user-detail-value">-</div>
                         </div>
@@ -929,20 +925,10 @@
                 
                 <!-- Uploaded Files Section -->
                 <div class="file-sidebar-header">
-                    <h3>Uploaded Files</h3>
+                    <h3>Your Files</h3>
                     <span id="uploadedFilesCount" class="file-count">0</span>
                 </div>
                 <div id="uploadedFilesList" class="file-list">
-                    <!-- Files will be added here dynamically -->
-                    <div class="file-item-placeholder">No files found</div>
-                </div>
-                
-                <!-- Generated Files Section -->
-                <div class="file-sidebar-header">
-                    <h3>Generated Files</h3>
-                    <span id="generatedFilesCount" class="file-count">0</span>
-                </div>
-                <div id="generatedFilesList" class="file-list">
                     <!-- Files will be added here dynamically -->
                     <div class="file-item-placeholder">No files found</div>
                 </div>
@@ -1014,7 +1000,6 @@
         let activeToken = null;
         let selectedFile = null;
         let uploadedFiles = [];
-        let generatedFiles = [];
         
         // DOM elements
         const authContainer = document.getElementById('auth-container');
@@ -1024,9 +1009,7 @@
         const authAlert = document.getElementById('authAlert');
         const fileAlert = document.getElementById('fileAlert');
         const uploadedFilesList = document.getElementById('uploadedFilesList');
-        const generatedFilesList = document.getElementById('generatedFilesList');
         const uploadedFilesCount = document.getElementById('uploadedFilesCount');
-        const generatedFilesCount = document.getElementById('generatedFilesCount');
         const fileContentPlaceholder = document.getElementById('fileContentPlaceholder');
         const fileContentView = document.getElementById('fileContentView');
         const fileTitle = document.getElementById('fileTitle');
@@ -1047,7 +1030,6 @@
         const userDepartment = document.getElementById('userDepartment');
         const userScope = document.getElementById('userScope');
         const filesUploaded = document.getElementById('filesUploaded');
-        const filesGenerated = document.getElementById('filesGenerated');
         const dateCreated = document.getElementById('dateCreated');
         
         // File type icons mapping
@@ -1147,9 +1129,12 @@
             // Search form submission
             searchForm.addEventListener('submit', (e) => {
                 e.preventDefault();
-                const fileId = searchInput.value.trim();
-                if (fileId) {
-                    handleSearchFile(fileId);
+                const searchText = searchInput.value.trim().toLowerCase();
+                if (searchText) {
+                    filterFiles(searchText);
+                } else {
+                    // If search is cleared, show all files
+                    updateFilesList(uploadedFilesList, uploadedFiles, uploadedFilesCount);
                 }
             });
             
@@ -1192,28 +1177,28 @@
             showLoading(true);
             
             try {
-                // Directly call the tokenRequest function
-                const token = await tokenRequest(apiKey);
-                
-                if (!token) {
+                // Get token using API key
+                const tokenResponse = await getToken(apiKey);
+                if (!tokenResponse || !tokenResponse.access_token) {
                     throw new Error('Failed to get authentication token');
                 }
                 
-                activeToken = token;
+                activeToken = tokenResponse.access_token;
+                console.log('Authentication successful. Token acquired.');
                 
-                // Get user details using the token instead of API key
-                const userInfo = await getUserInfo(token);
-                
-                if (!userInfo) {
+                // Get user details from the database using API key
+                const userDetails = await getUserDetails(apiKey);
+                if (!userDetails) {
                     throw new Error('Failed to get user information');
                 }
                 
-                currentUser = userInfo;
+                currentUser = userDetails;
+                console.log('User details retrieved:', currentUser);
                 
                 // Show authenticated UI
                 showAuthenticatedUI();
                 
-                // Load user files
+                // Load user files from database
                 await loadUserFiles();
                 
             } catch (error) {
@@ -1224,10 +1209,10 @@
             }
         }
         
-        // Direct token request implementation
-        async function tokenRequest(apiKey) {
+        // Get token with API key
+        async function getToken(apiKey) {
             try {
-                console.log('Attempting to get token with API key...');
+                console.log('Requesting token with API key...');
                 
                 const response = await fetch('/token', {
                     method: 'GET',
@@ -1236,154 +1221,310 @@
                     }
                 });
                 
-                console.log('Token response status:', response.status);
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Token request failed:', errorText);
+                    throw new Error('Failed to get token: ' + (response.statusText || 'Unknown error'));
+                }
                 
-                // Debug the response
                 const contentType = response.headers.get('content-type');
-                console.log('Response content type:', contentType);
-                
-                // Handle different response types
                 if (contentType && contentType.includes('application/json')) {
-                    const jsonData = await response.json();
-                    console.log('Token JSON response:', jsonData);
-                    
-                    if (response.ok) {
-                        return jsonData.access_token;
-                    } else {
-                        throw new Error(jsonData.message || 'Token request failed');
-                    }
+                    const data = await response.json();
+                    console.log('Token received successfully');
+                    return data;
                 } else {
-                    // For non-JSON responses, use text
+                    // Try to handle non-JSON response
                     const text = await response.text();
-                    console.log('Non-JSON response from token endpoint:', text);
+                    console.error('Received non-JSON response from token endpoint:', text);
                     
-                    // Attempt to extract token from response if it might be embedded
-                    const tokenMatch = text.match(/"access_token":\s*"([^"]+)"/);
+                    // Simple regex-based token extraction as a fallback
+                    const tokenMatch = text.match(/"access_token"\s*:\s*"([^"]+)"/);
                     if (tokenMatch && tokenMatch[1]) {
-                        console.log('Found token in response');
-                        return tokenMatch[1];
+                        console.log('Extracted token from text response');
+                        return { access_token: tokenMatch[1] };
                     }
                     
-                    throw new Error('Received invalid response from token endpoint');
+                    throw new Error('Invalid response format from server');
                 }
             } catch (error) {
-                console.error('Token request error:', error);
+                console.error('Token acquisition error:', error);
                 throw error;
             }
         }
         
-        // Get user info with token
-        async function getUserInfo(token) {
+        // Get user details using API key
+        async function getUserDetails(apiKey) {
             try {
-                console.log('Fetching user info with token...');
+                console.log('Fetching user details...');
                 
-                // First try with token details endpoint
-                try {
-                    const detailsResponse = await fetch('/token/details?token=' + encodeURIComponent(token), {
-                        method: 'GET',
-                        headers: {
-                            'API-Key': apiKeyInput.value.trim(),
-                            'Accept': 'application/json'
-                        }
-                    });
-                    
-                    if (detailsResponse.ok) {
-                        const data = await detailsResponse.json();
-                        console.log('User details from token:', data);
-                        return {
-                            id: data.user_id,
-                            scope: data.token_scope,
-                            // Add other fields as needed
-                            user_name: data.user_id,  // Placeholder
-                            user_email: data.user_id + '@example.com', // Placeholder
-                        };
-                    }
-                } catch (e) {
-                    console.log('Token details endpoint failed, trying alternative', e);
-                }
+                // This would be an API endpoint to get user details from the database
+                // For now, we'll use a mock implementation
                 
-                // Fallback to balance endpoint with token
+                // In a real implementation, this would be a specific endpoint to get user details
+                // For this implementation, we'll use the balance endpoint as it might have user info
                 const response = await fetch('/usage/balance', {
                     method: 'GET',
                     headers: {
-                        'X-Token': token,
-                        'Accept': 'application/json'
+                        'API-Key': apiKey
                     }
                 });
                 
                 if (!response.ok) {
-                    // Try with API key as another fallback
-                    const apiKeyResponse = await fetch('/usage/balance', {
-                        method: 'GET',
-                        headers: {
-                            'API-Key': apiKeyInput.value.trim(),
-                            'Accept': 'application/json'
-                        }
-                    });
-                    
-                    if (apiKeyResponse.ok) {
-                        const data = await apiKeyResponse.json();
-                        console.log('User info from balance endpoint (API Key):', data);
-                        return data;
-                    } else {
-                        console.log('Failed to get user info with both token and API key');
-                        // Last resort: Return minimal user object based on API key
-                        return {
-                            id: 'user-' + Math.random().toString(36).substring(2, 10),
-                            scope: 1,
-                            user_name: 'User',
-                            // Add other fields as needed
-                        };
+                    const errorText = await response.text();
+                    console.error('User details request failed:', errorText);
+                    throw new Error('Failed to get user details: ' + (response.statusText || 'Unknown error'));
+                }
+                
+                // Parse user data from response
+                const data = await response.json();
+                
+                // Extract user ID and other information
+                const userInfo = {
+                    id: data.user_id || data.id,
+                    user_name: data.user_name || 'User',
+                    user_email: data.user_email || 'user@example.com',
+                    department: data.department || 'Not specified',
+                    company: data.company || 'TIH',
+                    scope: data.scope || 1,
+                    created_at: data.created_at || new Date().toISOString()
+                };
+                
+                console.log('User details retrieved', userInfo);
+                return userInfo;
+            } catch (error) {
+                console.error('Error fetching user details:', error);
+                throw error;
+            }
+        }
+        
+        // Load user files from database
+        async function loadUserFiles() {
+            try {
+                console.log('Loading user files...');
+                
+                if (!currentUser || !currentUser.id || !activeToken) {
+                    throw new Error('User information or token missing');
+                }
+                
+                // In a real implementation, this would be an endpoint to list user files
+                // For now, we'll try to use the file API to get file URLs
+                
+                // Attempt to query the database for files
+                const files = await fetchUserFilesFromDB();
+                
+                if (files && files.length > 0) {
+                    uploadedFiles = files;
+                    updateFilesList(uploadedFilesList, uploadedFiles, uploadedFilesCount);
+                    updateUserStats();
+                    console.log('Files loaded successfully:', files.length);
+                } else {
+                    console.log('No files found for user');
+                    uploadedFiles = [];
+                    updateFilesList(uploadedFilesList, [], uploadedFilesCount);
+                    updateUserStats();
+                }
+                
+            } catch (error) {
+                console.error('Error loading files:', error);
+                showAlert(fileAlert, 'Error loading files: ' + error.message, 'alert-danger');
+                
+                // Reset UI
+                uploadedFiles = [];
+                updateFilesList(uploadedFilesList, [], uploadedFilesCount);
+                updateUserStats();
+            }
+        }
+        
+        // Fetch user files from database
+        async function fetchUserFilesFromDB() {
+            // This would typically be an API endpoint to get files from your SQL database
+            // For now, we'll need to simulate this
+            
+            // Attempt to get one file to see if the endpoint works
+            try {
+                // We'll try to simulate a DB query by making requests to get some files
+                // This is a workaround since we don't have a direct files list endpoint
+                
+                // In a production system, you would have an API endpoint like /files/list 
+                // that directly queries your database for files
+                
+                // For demonstration, let's try to get any file details for this user
+                // First we need to find file IDs
+                
+                // Simulating a SQL query request
+                console.log('Simulating SQL query to fetch files for user:', currentUser.id);
+                
+                // We could make a fetch to a custom endpoint that runs the SQL query
+                // For now, let's see if we can use any existing endpoints
+                
+                // For the purpose of demonstration, I'll return some sample files
+                // In a real implementation, this would be replaced with actual DB query
+                
+                // Sample file structure based on your database schema
+                const mockFiles = [
+                    {
+                        id: "f1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6",
+                        user_id: currentUser.id,
+                        original_filename: "contract_document.pdf",
+                        blob_name: "f1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6.pdf",
+                        blob_url: "https://storageaccount.blob.core.windows.net/file-uploads/f1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6.pdf",
+                        content_type: "application/pdf",
+                        file_size: 2450000,
+                        upload_date: "2025-03-15T14:30:45.123Z"
+                    },
+                    {
+                        id: "a9b8c7d6-e5f4-3g2h-1i0j-k9l8m7n6o5p4",
+                        user_id: currentUser.id,
+                        original_filename: "presentation_slides.pptx",
+                        blob_name: "a9b8c7d6-e5f4-3g2h-1i0j-k9l8m7n6o5p4.pptx",
+                        blob_url: "https://storageaccount.blob.core.windows.net/file-uploads/a9b8c7d6-e5f4-3g2h-1i0j-k9l8m7n6o5p4.pptx",
+                        content_type: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                        file_size: 4320000,
+                        upload_date: "2025-03-17T10:15:22.456Z"
+                    },
+                    {
+                        id: "z9y8x7w6-v5u4-3t2s-1r0q-p9o8n7m6l5k4",
+                        user_id: currentUser.id,
+                        original_filename: "project_image.jpg",
+                        blob_name: "z9y8x7w6-v5u4-3t2s-1r0q-p9o8n7m6l5k4.jpg",
+                        blob_url: "https://storageaccount.blob.core.windows.net/file-uploads/z9y8x7w6-v5u4-3t2s-1r0q-p9o8n7m6l5k4.jpg",
+                        content_type: "image/jpeg",
+                        file_size: 1250000,
+                        upload_date: "2025-03-20T16:45:33.789Z"
                     }
+                ];
+                
+                // In your real implementation, you would replace this with a fetch to your API
+                // that queries the database using SQL similar to:
+                // SELECT * FROM aiapisdev.dbo.file_uploads WHERE user_id = 'current-user-id'
+                
+                return mockFiles;
+                
+            } catch (error) {
+                console.error('Error fetching files from database:', error);
+                throw error;
+            }
+        }
+        
+        // Get file details using file_id
+        async function getFileDetails(fileId) {
+            try {
+                console.log('Fetching file details for:', fileId);
+                
+                const response = await fetch(`/file/url?file_id=${fileId}`, {
+                    method: 'GET',
+                    headers: {
+                        'X-Token': activeToken
+                    }
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('File details request failed:', errorText);
+                    throw new Error('Failed to get file details: ' + (response.statusText || 'Unknown error'));
                 }
                 
                 const data = await response.json();
-                console.log('User info from balance endpoint (Token):', data);
+                console.log('File details retrieved:', data);
                 return data;
-            } catch (error) {
-                console.error('User info error:', error);
-                // Rather than failing, return a basic user object
-                return {
-                    id: 'user-' + Math.random().toString(36).substring(2, 10),
-                    scope: 1,
-                    user_name: 'User',
-                    // Add other fields as needed
-                };
-            }
-        }
-        
-        // Fetch user files (placeholder function)
-        async function fetchUserFiles(fileType) {
-            // In a real implementation, this would call an actual API endpoint
-            // For now, we'll return mock data
-            
-            // This is a placeholder. In a real application, you would have an endpoint to list files
-            return {
-                files: generateMockFiles(fileType === 'uploaded' ? 5 : 3, fileType)
-            };
-        }
-        
-        // Generate mock files for demonstration
-        function generateMockFiles(count, type) {
-            const fileTypes = ['pdf', 'docx', 'jpg', 'png', 'txt', 'xlsx', 'mp3', 'mp4'];
-            const files = [];
-            
-            for (let i = 0; i < count; i++) {
-                const fileType = fileTypes[Math.floor(Math.random() * fileTypes.length)];
-                const isUploaded = type === 'uploaded';
                 
-                files.push({
-                    id: generateUUID(),
-                    original_filename: `${isUploaded ? 'Uploaded' : 'Generated'}_File_${i + 1}.${fileType}`,
-                    content_type: getMimeType(fileType),
-                    blob_url: `https://example.com/files/${generateUUID()}.${fileType}`,
-                    upload_date: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
-                    file_size: Math.floor(Math.random() * 10000000),
-                    is_uploaded: isUploaded
-                });
+            } catch (error) {
+                console.error('Error fetching file details:', error);
+                throw error;
             }
+        }
+        
+        // Delete file
+        async function deleteFile(fileId) {
+            showLoading(true);
             
-            return files;
+            try {
+                console.log('Deleting file:', fileId);
+                
+                const response = await fetch(`/file?file_id=${fileId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-Token': activeToken
+                    }
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('File deletion failed:', errorText);
+                    throw new Error('Failed to delete file: ' + (response.statusText || 'Unknown error'));
+                }
+                
+                const data = await response.json();
+                console.log('File deleted successfully:', data);
+                
+                // Remove the file from the list
+                uploadedFiles = uploadedFiles.filter(file => file.id !== fileId);
+                
+                // Update the UI
+                updateFilesList(uploadedFilesList, uploadedFiles, uploadedFilesCount);
+                updateUserStats();
+                
+                // Show success message
+                showAlert(fileAlert, 'File deleted successfully', 'alert-success');
+                
+                // Reset the view if the deleted file was selected
+                if (selectedFile && selectedFile.id === fileId) {
+                    selectedFile = null;
+                    fileContentPlaceholder.style.display = 'flex';
+                    fileContentView.style.display = 'none';
+                }
+                
+            } catch (error) {
+                console.error('File deletion error:', error);
+                showAlert(fileAlert, error.message || 'Error deleting file. Please try again.', 'alert-danger');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        // Download file
+        async function downloadFile(file) {
+            try {
+                console.log('Downloading file:', file.id);
+                
+                // Check if we have a direct blob URL
+                if (file.blob_url) {
+                    // Just use the blob URL for download
+                    const link = document.createElement('a');
+                    link.href = file.blob_url;
+                    link.download = file.original_filename;
+                    link.target = '_blank';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    return;
+                }
+                
+                // Otherwise, get the file URL from the API
+                const fileDetails = await getFileDetails(file.id);
+                
+                // Create a temporary link and trigger download
+                const link = document.createElement('a');
+                link.href = fileDetails.file_url;
+                link.download = fileDetails.file_name || file.original_filename;
+                link.target = '_blank';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+            } catch (error) {
+                console.error('File download error:', error);
+                showAlert(fileAlert, 'Error downloading file: ' + error.message, 'alert-danger');
+            }
+        }
+        
+        // Filter files based on search text
+        function filterFiles(searchText) {
+            const filteredFiles = uploadedFiles.filter(file => 
+                file.original_filename.toLowerCase().includes(searchText)
+            );
+            
+            updateFilesList(uploadedFilesList, filteredFiles, uploadedFilesCount);
         }
         
         // Update file list in the sidebar
@@ -1518,200 +1659,6 @@
             `;
         }
         
-        // Download file
-        function downloadFile(file) {
-            // Create a temporary link and trigger download
-            const link = document.createElement('a');
-            link.href = file.blob_url;
-            link.download = file.original_filename;
-            link.target = '_blank';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-        
-        // Delete file
-        async function deleteFile(fileId) {
-            showLoading(true);
-            
-            try {
-                // First get a fresh token
-                const tokenResponse = await tokenRequest(apiKeyInput.value);
-                if (!tokenResponse) {
-                    throw new Error('Failed to get authentication token for file deletion');
-                }
-                
-                const token = tokenResponse;
-                
-                // Call the delete endpoint
-                const response = await fetch(`/file?file_id=${fileId}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'X-Token': token,
-                        'Content-Type': 'application/json'
-                    }
-                });
-                
-                if (!response.ok) {
-                    const data = await response.json();
-                    throw new Error(data.message || 'Failed to delete file');
-                }
-                
-                const data = await response.json();
-                
-                // Remove the file from the lists
-                uploadedFiles = uploadedFiles.filter(file => file.id !== fileId);
-                generatedFiles = generatedFiles.filter(file => file.id !== fileId);
-                
-                // Update the UI
-                updateFilesList(uploadedFilesList, uploadedFiles, uploadedFilesCount);
-                updateFilesList(generatedFilesList, generatedFiles, generatedFilesCount);
-                
-                // Update user stats
-                updateUserStats();
-                
-                // Show success message
-                showAlert(fileAlert, 'File deleted successfully', 'alert-success');
-                
-                // Reset the view if the deleted file was selected
-                if (selectedFile && selectedFile.id === fileId) {
-                    selectedFile = null;
-                    fileContentPlaceholder.style.display = 'flex';
-                    fileContentView.style.display = 'none';
-                }
-                
-            } catch (error) {
-                console.error('File deletion error:', error);
-                showAlert(fileAlert, error.message || 'Error deleting file. Please try again.', 'alert-danger');
-            } finally {
-                showLoading(false);
-            }
-        }
-        
-        // Search for a file by ID
-        async function handleSearchFile(fileId) {
-            showLoading(true);
-            
-            try {
-                // In a real implementation, this would call an actual API endpoint
-                // For demonstration, we'll search in our local arrays
-                
-                // First check if the user is admin (scope 0)
-                const isAdmin = currentUser && currentUser.scope === 0;
-                
-                // Search in our mock data
-                let foundFile = [...uploadedFiles, ...generatedFiles].find(file => file.id === fileId);
-                
-                if (!foundFile) {
-                    // If not found and user is admin, simulate fetching from server
-                    if (isAdmin) {
-                        // Simulate API call for admin to find any file
-                        foundFile = {
-                            id: fileId,
-                            original_filename: `Admin_Access_File.pdf`,
-                            content_type: 'application/pdf',
-                            blob_url: `https://example.com/files/${fileId}.pdf`,
-                            upload_date: new Date().toISOString(),
-                            file_size: 1024000,
-                            is_uploaded: true
-                        };
-                    } else {
-                        throw new Error('File not found or you do not have permission to access it');
-                    }
-                }
-                
-                // Display the found file
-                displayFile(foundFile);
-                
-                // Clear the search input
-                searchInput.value = '';
-                
-            } catch (error) {
-                console.error('File search error:', error);
-                showAlert(fileAlert, error.message || 'Error searching for file. Please try again.', 'alert-danger');
-            } finally {
-                showLoading(false);
-            }
-        }
-        
-        // Load user files from the server
-        async function loadUserFiles() {
-            try {
-                // For this prototype, we'll assume all files are from uploads
-                // In a real implementation, you would have an endpoint to list user files
-                
-                // Placeholder logic - in real implementation, call a proper endpoint
-                // This is where we'd fetch the files from the server
-                
-                // Simulate fetching upload files - using mock data for now
-                console.log('Loading user files (mock data for prototype)');
-                
-                // In a real implementation, this would be:
-                // const uploadedFilesResponse = await fetch('/api/files/uploaded', {
-                //     headers: { 'X-Token': activeToken }
-                // });
-                // const uploadedFiles = await uploadedFilesResponse.json();
-                
-                // Using mock data for prototype
-                uploadedFiles = generateMockFiles(5, 'uploaded');
-                updateFilesList(uploadedFilesList, uploadedFiles, uploadedFilesCount);
-                
-                // Simulate fetching generated files
-                generatedFiles = generateMockFiles(3, 'generated');
-                updateFilesList(generatedFilesList, generatedFiles, generatedFilesCount);
-                
-                // Update user profile stats
-                updateUserStats();
-                
-            } catch (error) {
-                console.error('Error loading files:', error);
-                showAlert(fileAlert, 'Error loading files. Using sample data for demonstration.', 'alert-warning');
-                
-                // Still show mock data even if there's an error
-                uploadedFiles = generateMockFiles(5, 'uploaded');
-                updateFilesList(uploadedFilesList, uploadedFiles, uploadedFilesCount);
-                
-                generatedFiles = generateMockFiles(3, 'generated');
-                updateFilesList(generatedFilesList, generatedFiles, generatedFilesCount);
-                
-                updateUserStats();
-            }
-        }
-        
-        // Update user statistics
-        function updateUserStats() {
-            filesUploaded.textContent = uploadedFiles.length;
-            filesGenerated.textContent = generatedFiles.length;
-        }
-        
-        // Helper functions
-        
-        // Show loading spinner
-        function showLoading(show) {
-            loadingSpinner.style.display = show ? 'flex' : 'none';
-        }
-        
-        // Show alert message
-        function showAlert(element, message, className) {
-            element.className = `alert ${className}`;
-            
-            // Add appropriate icon based on alert type
-            let icon = 'fa-info-circle';
-            if (className === 'alert-success') icon = 'fa-check-circle';
-            if (className === 'alert-warning') icon = 'fa-exclamation-triangle';
-            if (className === 'alert-danger') icon = 'fa-exclamation-circle';
-            
-            element.innerHTML = `<i class="fas ${icon}"></i> ${message}`;
-            element.style.display = 'flex';
-            
-            // Auto-hide success alerts after 5 seconds
-            if (className === 'alert-success') {
-                setTimeout(() => {
-                    element.style.display = 'none';
-                }, 5000);
-            }
-        }
-        
         // Show authenticated UI
         function showAuthenticatedUI() {
             // Hide auth container, show files container
@@ -1743,50 +1690,54 @@
             };
             userScope.textContent = scopeNames[currentUser.scope] || `Level ${currentUser.scope || 1}`;
             
-            // Date created (placeholder - in real implementation, you would have this data)
-            dateCreated.textContent = 'March 15, 2025';
+            // Date created
+            const createdDate = currentUser.created_at 
+                ? new Date(currentUser.created_at).toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                })
+                : 'Not available';
+                
+            dateCreated.textContent = createdDate;
+        }
+        
+        // Update user statistics
+        function updateUserStats() {
+            filesUploaded.textContent = uploadedFiles.length;
+        }
+        
+        // Helper functions
+        
+        // Show loading spinner
+        function showLoading(show) {
+            loadingSpinner.style.display = show ? 'flex' : 'none';
+        }
+        
+        // Show alert message
+        function showAlert(element, message, className) {
+            element.className = `alert ${className}`;
+            
+            // Add appropriate icon based on alert type
+            let icon = 'fa-info-circle';
+            if (className === 'alert-success') icon = 'fa-check-circle';
+            if (className === 'alert-warning') icon = 'fa-exclamation-triangle';
+            if (className === 'alert-danger') icon = 'fa-exclamation-circle';
+            
+            element.innerHTML = `<i class="fas ${icon}"></i> ${message}`;
+            element.style.display = 'flex';
+            
+            // Auto-hide success alerts after 5 seconds
+            if (className === 'alert-success') {
+                setTimeout(() => {
+                    element.style.display = 'none';
+                }, 5000);
+            }
         }
         
         // Get file extension from filename
         function getFileExtension(filename) {
             return filename.split('.').pop().toLowerCase();
-        }
-        
-        // Get MIME type from file extension
-        function getMimeType(extension) {
-            const mimeTypes = {
-                // Documents
-                'pdf': 'application/pdf',
-                'doc': 'application/msword',
-                'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                'xls': 'application/vnd.ms-excel',
-                'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                'ppt': 'application/vnd.ms-powerpoint',
-                'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-                'txt': 'text/plain',
-                // Images
-                'jpg': 'image/jpeg',
-                'jpeg': 'image/jpeg',
-                'png': 'image/png',
-                'gif': 'image/gif',
-                'bmp': 'image/bmp',
-                'svg': 'image/svg+xml',
-                // Audio
-                'mp3': 'audio/mpeg',
-                'wav': 'audio/wav',
-                'ogg': 'audio/ogg',
-                'm4a': 'audio/mp4',
-                'flac': 'audio/flac',
-                // Video
-                'mp4': 'video/mp4',
-                'avi': 'video/x-msvideo',
-                'mov': 'video/quicktime',
-                'wmv': 'video/x-ms-wmv',
-                // Default
-                'default': 'application/octet-stream'
-            };
-            
-            return mimeTypes[extension] || mimeTypes['default'];
         }
         
         // Format date for display
@@ -1801,15 +1752,6 @@
             if (diff < 604800) return `${Math.floor(diff / 86400)} days ago`;
             
             return date.toLocaleDateString();
-        }
-        
-        // Generate UUID for mock data
-        function generateUUID() {
-            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-                const r = Math.random() * 16 | 0;
-                const v = c === 'x' ? r : (r & 0x3 | 0x8);
-                return v.toString(16);
-            });
         }
     </script>
 </body>
