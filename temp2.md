@@ -1,26 +1,24 @@
+
 import os  
 import base64
 from openai import AzureOpenAI  
-from azure.identity import DefaultAzureCredential, get_bearer_token_provider  
-        
+
 endpoint = os.getenv("ENDPOINT_URL", "https://ai-coe-services-dev.openai.azure.com/")  
 deployment = os.getenv("DEPLOYMENT_NAME", "o3-mini")  
-      
-# Initialize Azure OpenAI Service client with Entra ID authentication
-token_provider = get_bearer_token_provider(  
-    DefaultAzureCredential(),  
-    "https://cognitiveservices.azure.com/.default"  
-)  
-  
+subscription_key = os.getenv("AZURE_OPENAI_API_KEY", "REPLACE_WITH_YOUR_KEY_VALUE_HERE")  
+
+# Initialize Azure OpenAI Service client with key-based authentication    
 client = AzureOpenAI(  
     azure_endpoint=endpoint,  
-    azure_ad_token_provider=token_provider,  
-    api_version="2024-12-01-preview",  
-)  
-  
-
+    api_key=subscription_key,  
+    api_version="2024-12-01-preview",
+)
+    
+    
 # IMAGE_PATH = "YOUR_IMAGE_PATH"
 # encoded_image = base64.b64encode(open(IMAGE_PATH, 'rb').read()).decode('ascii')
+
+#Prepare the chat prompt 
 chat_prompt = [
     {
         "role": "developer",
@@ -34,14 +32,16 @@ chat_prompt = [
 ] 
     
 # Include speech result if speech is enabled  
-messages = chat_prompt 
-
+messages = chat_prompt  
+    
+# Generate the completion  
 completion = client.chat.completions.create(  
-    model=deployment,  
+    model=deployment,
     messages=messages,
     max_completion_tokens=100000,
     stop=None,  
-    stream=False  
-)  
-  
+    stream=False
+)
+
 print(completion.to_json())  
+    
