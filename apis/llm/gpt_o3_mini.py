@@ -5,7 +5,6 @@ import logging
 import pytz
 from datetime import datetime
 from openai import AzureOpenAI
-from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from apis.utils.config import O3_MINI_API_KEY
 
 # CONFIGURE LOGGING
@@ -232,21 +231,20 @@ def o3_mini_route():
         # Log API usage
         logger.info(f"O3-Mini API called by user: {user_id}")
         
-        # Get token provider for Azure OpenAI
-        token_provider = get_bearer_token_provider(
-            DefaultAzureCredential(),
-            "https://cognitiveservices.azure.com/.default"
-        )
+        # Get API key for Azure OpenAI
+        api_key = O3_MINI_API_KEY
+        if not api_key:
+            raise Exception("Azure OpenAI API key not found")
         
-        # Initialize Azure OpenAI client
+        # Initialize Azure OpenAI client with API key authentication
         client = AzureOpenAI(
             azure_endpoint=ENDPOINT,
-            azure_ad_token_provider=token_provider,
+            api_key=api_key,
             api_version=API_VERSION,
         )
         
         # Prepare messages for the model
-        messages = [
+        chat_prompt = [
             {
                 "role": "developer",
                 "content": [
@@ -280,7 +278,7 @@ def o3_mini_route():
         # Make request to LLM
         completion = client.chat.completions.create(
             model=DEPLOYMENT,
-            messages=messages,
+            messages=chat_prompt,
             **additional_params,
             stop=None,
             stream=False
