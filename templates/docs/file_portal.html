@@ -1,0 +1,1719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Management Portal - AI API Platform</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/pdfjs-dist/3.4.120/pdf_viewer.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfjs-dist/3.4.120/pdf.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #4a6fe3;
+            --secondary-color: #6c63ff;
+            --dark-color: #2a2c3b;
+            --light-color: #f5f6fa;
+            --text-color: #333;
+            --white-color: #ffffff;
+            --accent-color: #00d4ff;
+            --sidebar-width: 280px;
+            --header-height: 60px;
+            --file-sidebar-width: 300px;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --info-color: #17a2b8;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--light-color);
+            color: var(--text-color);
+            position: relative;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%234a6fe3' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        .header {
+            background-color: #03001A;
+            color: var(--white-color);
+            padding: 0 2rem;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: var(--header-height);
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo i {
+            font-size: 1.8rem;
+            margin-right: 0.5rem;
+            color: var(--accent-color);
+        }
+        
+        .logo h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+        
+        .nav {
+            display: flex;
+            align-items: center;
+        }
+        
+        .nav-item {
+            margin-left: 1.5rem;
+            color: var(--white-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+            display: flex;
+            align-items: center;
+        }
+        
+        .nav-item:hover {
+            color: var(--accent-color);
+        }
+        
+        .nav-item i {
+            margin-right: 0.5rem;
+        }
+        
+        .swagger-btn {
+            background-color: var(--accent-color);
+            color: var(--dark-color);
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-weight: 600;
+            transition: all 0.3s;
+            box-shadow: 0 4px 10px rgba(0, 212, 255, 0.3);
+        }
+        
+        .swagger-btn:hover {
+            background-color: #00b8e6;
+            transform: translateY(-2px);
+            color: var(--dark-color);
+            box-shadow: 0 6px 15px rgba(0, 212, 255, 0.4);
+        }
+        
+        /* Mobile menu toggle */
+        .menu-toggle {
+            display: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        /* Main sidebar */
+        .sidebar {
+            position: fixed;
+            top: var(--header-height);
+            left: 0;
+            height: calc(100vh - var(--header-height));
+            width: var(--sidebar-width);
+            background-color: var(--white-color);
+            border-right: 1px solid rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+            z-index: 900;
+            padding: 1.5rem 0;
+            transition: transform 0.3s ease-in-out;
+        }
+        
+        .sidebar-category {
+            padding: 0.5rem 1.5rem;
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar-link {
+            display: block;
+            padding: 0.7rem 1.5rem;
+            padding-left: 2.5rem;
+            color: var(--text-color);
+            text-decoration: none;
+            transition: background-color 0.2s, color 0.2s;
+            font-size: 0.95rem;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar-link:hover {
+            background-color: rgba(106, 100, 255, 0.05);
+            color: var(--primary-color);
+        }
+        
+        .sidebar-link.active {
+            color: var(--primary-color);
+            background-color: rgba(106, 100, 255, 0.08);
+            border-left: 3px solid var(--primary-color);
+        }
+        
+        .sidebar-link i {
+            margin-right: 0.5rem;
+            width: 20px;
+            text-align: center;
+        }
+        
+        /* Main content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            margin-top: var(--header-height);
+            padding: 0;
+            min-height: calc(100vh - var(--header-height));
+            display: flex;
+        }
+        
+        /* Auth Form */
+        .auth-container {
+            background-color: var(--white-color);
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            max-width: 500px;
+            margin: 2rem auto;
+        }
+        
+        .auth-container h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: var(--dark-color);
+            text-align: center;
+        }
+        
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        
+        .input-group input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        
+        .input-group input:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(74, 111, 227, 0.1);
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            background-color: var(--primary-color);
+            color: var(--white-color);
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s;
+            text-align: center;
+            width: 100%;
+        }
+        
+        .btn:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(74, 111, 227, 0.2);
+        }
+        
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+        
+        .btn-danger {
+            background-color: var(--danger-color);
+        }
+        
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+        
+        /* Files Layout */
+        .files-container {
+            display: flex;
+            width: 100%;
+            height: calc(100vh - var(--header-height));
+        }
+        
+        /* File sidebar */
+        .file-sidebar {
+            width: var(--file-sidebar-width);
+            background-color: var(--white-color);
+            border-right: 1px solid rgba(0, 0, 0, 0.1);
+            height: 100%;
+            overflow-y: auto;
+            padding: 1rem 0;
+            flex-shrink: 0;
+        }
+        
+        .file-sidebar-header {
+            padding: 0.5rem 1rem;
+            font-weight: 600;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .file-sidebar-header h3 {
+            font-size: 1rem;
+            color: var(--dark-color);
+        }
+        
+        .file-count {
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 10px;
+            padding: 0.1rem 0.5rem;
+            font-size: 0.7rem;
+        }
+        
+        .file-list {
+            padding: 0 0.5rem;
+        }
+        
+        .file-item {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-bottom: 0.2rem;
+            border-left: 3px solid transparent;
+        }
+        
+        .file-item:hover {
+            background-color: rgba(74, 111, 227, 0.05);
+        }
+        
+        .file-item.active {
+            background-color: rgba(74, 111, 227, 0.1);
+            border-left: 3px solid var(--primary-color);
+        }
+        
+        .file-icon {
+            margin-right: 0.75rem;
+            color: var(--primary-color);
+            font-size: 1.2rem;
+            width: 1.5rem;
+            text-align: center;
+        }
+        
+        .file-info {
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        .file-name {
+            font-size: 0.9rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .file-date {
+            font-size: 0.75rem;
+            color: #777;
+        }
+        
+        /* File content area */
+        .file-content {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .file-content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .file-title {
+            font-size: 1.5rem;
+            color: var(--dark-color);
+        }
+        
+        .file-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+        
+        .file-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+        
+        .file-btn i {
+            font-size: 1rem;
+        }
+        
+        .file-btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .file-btn-primary:hover {
+            background-color: var(--secondary-color);
+        }
+        
+        .file-btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+        }
+        
+        .file-btn-danger:hover {
+            background-color: #c82333;
+        }
+        
+        /* File viewer */
+        .file-viewer {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f5f5f5;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .file-viewer-placeholder {
+            text-align: center;
+            color: #777;
+        }
+        
+        .file-viewer-placeholder i {
+            font-size: 5rem;
+            color: #ddd;
+            margin-bottom: 1rem;
+        }
+        
+        .file-viewer-placeholder p {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .file-viewer-placeholder span {
+            font-size: 0.9rem;
+        }
+        
+        .file-preview {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        
+        /* PDF viewer */
+        .pdf-container {
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+        }
+        
+        /* Image viewer */
+        .image-container {
+            max-width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .image-container img {
+            max-width: 100%;
+            max-height: 90%;
+            object-fit: contain;
+        }
+        
+        /* Audio/Video player */
+        .media-container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .media-container audio,
+        .media-container video {
+            width: 100%;
+        }
+        
+        /* Not viewable file */
+        .not-viewable {
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        .not-viewable i {
+            font-size: 5rem;
+            color: #ddd;
+            margin-bottom: 1rem;
+        }
+        
+        /* User profile section */
+        .user-profile {
+            background-color: var(--white-color);
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 1.5rem;
+        }
+        
+        .user-profile h3 {
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            color: var(--dark-color);
+            border-bottom: 1px solid #eee;
+            padding-bottom: 0.5rem;
+        }
+        
+        .user-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        
+        .user-detail {
+            margin-bottom: 0.5rem;
+        }
+        
+        .user-detail-label {
+            font-weight: 500;
+            color: #777;
+            font-size: 0.85rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .user-detail-value {
+            font-size: 1rem;
+        }
+        
+        /* Search bar */
+        .search-container {
+            background-color: var(--white-color);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        
+        .search-form {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .search-input {
+            flex: 1;
+            padding: 0.6rem 1rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        
+        .search-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 0.6rem 1.2rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .search-btn:hover {
+            background-color: var(--secondary-color);
+        }
+        
+        /* Alert messages */
+        .alert {
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .alert i {
+            margin-right: 0.75rem;
+            font-size: 1.2rem;
+        }
+        
+        .alert-success {
+            background-color: rgba(40, 167, 69, 0.1);
+            border-left: 4px solid var(--success-color);
+            color: var(--success-color);
+        }
+        
+        .alert-warning {
+            background-color: rgba(255, 193, 7, 0.1);
+            border-left: 4px solid var(--warning-color);
+            color: var(--warning-color);
+        }
+        
+        .alert-danger {
+            background-color: rgba(220, 53, 69, 0.1);
+            border-left: 4px solid var(--danger-color);
+            color: var(--danger-color);
+        }
+        
+        .alert-info {
+            background-color: rgba(23, 162, 184, 0.1);
+            border-left: 4px solid var(--info-color);
+            color: var(--info-color);
+        }
+        
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        
+        .modal-container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            width: 90%;
+            max-width: 500px;
+            overflow: hidden;
+        }
+        
+        .modal-header {
+            padding: 1.25rem;
+            background-color: var(--primary-color);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-header h3 {
+            font-size: 1.3rem;
+            margin: 0;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        .modal-body {
+            padding: 1.5rem;
+        }
+        
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+        }
+        
+        /* Loading spinner */
+        .spinner-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Responsive styles */
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+                box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+                z-index: 1001;
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .menu-toggle {
+                display: block;
+            }
+            
+            .files-container {
+                flex-direction: column;
+            }
+            
+            .file-sidebar {
+                width: 100%;
+                height: auto;
+                max-height: 30vh;
+                border-right: none;
+                border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            }
+            
+            .user-details {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .header {
+                padding: 0 1rem;
+            }
+            
+            .nav-item:not(.swagger-btn) {
+                display: none;
+            }
+            
+            .file-content-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            
+            .file-actions {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
+        
+        /* Dark overlay when sidebar is active on mobile */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        
+        @media (max-width: 992px) {
+            .sidebar-overlay.active {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <img src="/static/images/Telesure-logo.png" alt="TIH AI API Platform Logo" style="height: 40px; margin-right: 0.5rem;">
+            <h1>File Management Portal</h1>
+        </div>
+        <nav class="nav">
+            <div class="menu-toggle" id="menu-toggle">
+                <i class="fas fa-bars"></i>
+            </div>
+            <a href="/" class="nav-item">
+                <i class="fas fa-home"></i>Home
+            </a>
+            <a href="/docs/getting_started" class="nav-item">
+                <i class="fas fa-rocket"></i>Getting Started
+            </a>
+            <a href="/templates/docs/faq.html" class="nav-item">
+                <i class="fas fa-question-circle"></i>FAQ
+            </a>
+            <a href="/apidocs/" class="nav-item swagger-btn">
+                <i class="fas fa-book"></i>Swagger
+            </a>
+        </nav>
+    </header>
+    
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    
+    <!-- Main sidebar -->
+    <aside class="sidebar">
+        <!-- Include sidebar template -->
+        <div class="sidebar-category">Main</div>
+        <a href="/" class="sidebar-link">
+            <i class="fas fa-home"></i> Home
+        </a>
+        <a href="/apidocs/" class="sidebar-link">
+            <i class="fas fa-book"></i> API Documentation
+        </a>
+        <a href="/docs/getting_started" class="sidebar-link">
+            <i class="fas fa-rocket"></i> Getting Started
+        </a>
+
+        <div class="sidebar-category">Endpoints</div>
+        <a href="/docs/token_services" class="sidebar-link">
+            <i class="fas fa-key"></i> Token Services
+        </a>
+        <a href="/docs/balance_management" class="sidebar-link">
+            <i class="fas fa-wallet"></i> Balance Management
+        </a>
+        <a href="/docs/llm" class="sidebar-link">
+            <i class="fas fa-robot"></i> Language Models
+        </a>
+        <a href="/docs/llm_conversation" class="sidebar-link">
+            <i class="fas fa-commenting"></i> LLM Conversational
+        </a>
+        <a href="/docs/image_generation" class="sidebar-link">
+            <i class="fas fa-image"></i> Image Generation
+        </a>
+        <a href="/docs/speech_services" class="sidebar-link">
+            <i class="fas fa-microphone"></i> Speech Services
+        </a>
+        <a href="/docs/file_management" class="sidebar-link active">
+            <i class="fas fa-file-alt"></i> File Management
+        </a>
+        <a href="/docs/document_intelligence" class="sidebar-link">
+            <i class="fa fa-book"></i> Document Intelligence
+        </a>
+        <a href="/docs/ocr_services" class="sidebar-link">
+            <i class="fa fa-eye"></i> OCR
+        </a>
+        <a href="/docs/nlp" class="sidebar-link">
+            <i class="fa fa-language"></i> NLP
+        </a>
+        <a href="/docs/rag" class="sidebar-link">
+            <i class="fas fa-search"></i> RAG Services
+        </a>
+
+        <div class="sidebar-category">Resources</div>
+        <a href="/templates/docs/faq.html" class="sidebar-link">
+            <i class="fas fa-question-circle"></i> FAQ
+        </a>
+        <a href="/templates/docs/rate-limits.html" class="sidebar-link">
+            <i class="fas fa-tachometer-alt"></i> Technical Support
+        </a>
+        <a href="/templates/docs/changelog.html" class="sidebar-link">
+            <i class="fas fa-history"></i> Changelog
+        </a>
+    </aside>
+    
+    <main class="main-content">
+        <!-- Authentication Form Container -->
+        <div id="auth-container" class="auth-container">
+            <h2>File Management Portal</h2>
+            <div id="authAlert" style="display: none;" class="alert"></div>
+            <div class="input-group">
+                <label for="apiKey">Enter your API Key</label>
+                <input type="password" id="apiKey" placeholder="Your API Key" autocomplete="off">
+            </div>
+            <button id="loginBtn" class="btn">Authenticate</button>
+        </div>
+        
+        <!-- Files Container (visible after authentication) -->
+        <div id="files-container" class="files-container" style="display: none;">
+            <!-- File Sidebar -->
+            <div class="file-sidebar">
+                <!-- Search Container -->
+                <div class="search-container">
+                    <form id="searchForm" class="search-form">
+                        <input type="text" id="searchInput" class="search-input" placeholder="Search by file ID">
+                        <button type="submit" class="search-btn">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </form>
+                </div>
+                
+                <!-- User Profile -->
+                <div class="user-profile">
+                    <h3>User Profile</h3>
+                    <div class="user-details">
+                        <div class="user-detail">
+                            <div class="user-detail-label">Name</div>
+                            <div id="userName" class="user-detail-value">-</div>
+                        </div>
+                        <div class="user-detail">
+                            <div class="user-detail-label">Department</div>
+                            <div id="userDepartment" class="user-detail-value">-</div>
+                        </div>
+                        <div class="user-detail">
+                            <div class="user-detail-label">Scope</div>
+                            <div id="userScope" class="user-detail-value">-</div>
+                        </div>
+                        <div class="user-detail">
+                            <div class="user-detail-label">Files Uploaded</div>
+                            <div id="filesUploaded" class="user-detail-value">0</div>
+                        </div>
+                        <div class="user-detail">
+                            <div class="user-detail-label">Files Generated</div>
+                            <div id="filesGenerated" class="user-detail-value">0</div>
+                        </div>
+                        <div class="user-detail">
+                            <div class="user-detail-label">Date Created</div>
+                            <div id="dateCreated" class="user-detail-value">-</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Uploaded Files Section -->
+                <div class="file-sidebar-header">
+                    <h3>Uploaded Files</h3>
+                    <span id="uploadedFilesCount" class="file-count">0</span>
+                </div>
+                <div id="uploadedFilesList" class="file-list">
+                    <!-- Files will be added here dynamically -->
+                    <div class="file-item-placeholder">No files found</div>
+                </div>
+                
+                <!-- Generated Files Section -->
+                <div class="file-sidebar-header">
+                    <h3>Generated Files</h3>
+                    <span id="generatedFilesCount" class="file-count">0</span>
+                </div>
+                <div id="generatedFilesList" class="file-list">
+                    <!-- Files will be added here dynamically -->
+                    <div class="file-item-placeholder">No files found</div>
+                </div>
+            </div>
+            
+            <!-- File Content -->
+            <div class="file-content">
+                <div id="fileAlert" style="display: none;" class="alert"></div>
+                
+                <div id="fileContentPlaceholder" class="file-viewer-placeholder">
+                    <i class="fas fa-file-alt"></i>
+                    <p>No file selected</p>
+                    <span>Select a file from the sidebar to view its contents</span>
+                </div>
+                
+                <div id="fileContentView" style="display: none;">
+                    <div class="file-content-header">
+                        <h2 id="fileTitle" class="file-title">File Name</h2>
+                        <div class="file-actions">
+                            <button id="downloadBtn" class="file-btn file-btn-primary">
+                                <i class="fas fa-download"></i> Download
+                            </button>
+                            <button id="deleteBtn" class="file-btn file-btn-danger">
+                                <i class="fas fa-trash-alt"></i> Delete
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="fileViewer" class="file-viewer">
+                        <!-- Different file viewers will be rendered here based on file type -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal-overlay">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3>Confirm Delete</h3>
+                <button class="modal-close" id="closeModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this file?</p>
+                <p id="deleteFileName" style="font-weight: 600; margin-top: 0.5rem;"></p>
+                <p style="color: #dc3545; margin-top: 1rem;">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button id="cancelDelete" class="file-btn btn-secondary">Cancel</button>
+                <button id="confirmDelete" class="file-btn file-btn-danger">Delete</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Loading Spinner -->
+    <div id="loadingSpinner" class="spinner-overlay">
+        <div class="spinner"></div>
+    </div>
+    
+    <!-- Footer -->
+    <footer class="footer" style="display: none;">
+        <p>© 2025 TIH AI API Portal. Powered by the TIH AI Center of Excellence.</p>
+    </footer>
+    
+    <script>
+        // Global variables
+        let currentUser = null;
+        let activeToken = null;
+        let selectedFile = null;
+        let uploadedFiles = [];
+        let generatedFiles = [];
+        
+        // DOM elements
+        const authContainer = document.getElementById('auth-container');
+        const filesContainer = document.getElementById('files-container');
+        const apiKeyInput = document.getElementById('apiKey');
+        const loginBtn = document.getElementById('loginBtn');
+        const authAlert = document.getElementById('authAlert');
+        const fileAlert = document.getElementById('fileAlert');
+        const uploadedFilesList = document.getElementById('uploadedFilesList');
+        const generatedFilesList = document.getElementById('generatedFilesList');
+        const uploadedFilesCount = document.getElementById('uploadedFilesCount');
+        const generatedFilesCount = document.getElementById('generatedFilesCount');
+        const fileContentPlaceholder = document.getElementById('fileContentPlaceholder');
+        const fileContentView = document.getElementById('fileContentView');
+        const fileTitle = document.getElementById('fileTitle');
+        const fileViewer = document.getElementById('fileViewer');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const deleteBtn = document.getElementById('deleteBtn');
+        const deleteModal = document.getElementById('deleteModal');
+        const closeModal = document.getElementById('closeModal');
+        const cancelDelete = document.getElementById('cancelDelete');
+        const confirmDelete = document.getElementById('confirmDelete');
+        const deleteFileName = document.getElementById('deleteFileName');
+        const searchForm = document.getElementById('searchForm');
+        const searchInput = document.getElementById('searchInput');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        
+        // User profile elements
+        const userName = document.getElementById('userName');
+        const userDepartment = document.getElementById('userDepartment');
+        const userScope = document.getElementById('userScope');
+        const filesUploaded = document.getElementById('filesUploaded');
+        const filesGenerated = document.getElementById('filesGenerated');
+        const dateCreated = document.getElementById('dateCreated');
+        
+        // File type icons mapping
+        const fileIcons = {
+            // Documents
+            'pdf': 'fa-file-pdf',
+            'doc': 'fa-file-word',
+            'docx': 'fa-file-word',
+            'xls': 'fa-file-excel',
+            'xlsx': 'fa-file-excel',
+            'ppt': 'fa-file-powerpoint',
+            'pptx': 'fa-file-powerpoint',
+            'txt': 'fa-file-alt',
+            // Images
+            'jpg': 'fa-file-image',
+            'jpeg': 'fa-file-image',
+            'png': 'fa-file-image',
+            'gif': 'fa-file-image',
+            'bmp': 'fa-file-image',
+            'svg': 'fa-file-image',
+            // Audio
+            'mp3': 'fa-file-audio',
+            'wav': 'fa-file-audio',
+            'ogg': 'fa-file-audio',
+            'm4a': 'fa-file-audio',
+            'flac': 'fa-file-audio',
+            // Video
+            'mp4': 'fa-file-video',
+            'avi': 'fa-file-video',
+            'mov': 'fa-file-video',
+            'wmv': 'fa-file-video',
+            // Archives
+            'zip': 'fa-file-archive',
+            'rar': 'fa-file-archive',
+            '7z': 'fa-file-archive',
+            // Code
+            'html': 'fa-file-code',
+            'css': 'fa-file-code',
+            'js': 'fa-file-code',
+            'json': 'fa-file-code',
+            'py': 'fa-file-code',
+            'java': 'fa-file-code',
+            'php': 'fa-file-code',
+            // Default
+            'default': 'fa-file'
+        };
+        
+        // File viewers by MIME type
+        const fileViewers = {
+            // Images
+            'image/jpeg': showImageViewer,
+            'image/png': showImageViewer,
+            'image/gif': showImageViewer,
+            'image/bmp': showImageViewer,
+            'image/svg+xml': showImageViewer,
+            // PDFs
+            'application/pdf': showPdfViewer,
+            // Audio
+            'audio/mpeg': showAudioViewer,
+            'audio/wav': showAudioViewer,
+            'audio/ogg': showAudioViewer,
+            'audio/mp4': showAudioViewer,
+            // Video
+            'video/mp4': showVideoViewer,
+            'video/quicktime': showVideoViewer,
+            'video/x-msvideo': showVideoViewer,
+            'video/x-ms-wmv': showVideoViewer,
+            // Default
+            'default': showNotViewable
+        };
+        
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            // Toggle sidebar on mobile
+            const menuToggle = document.getElementById('menu-toggle');
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            
+            menuToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('active');
+                overlay.classList.toggle('active');
+            });
+            
+            overlay.addEventListener('click', function() {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            });
+            
+            // Auth form submission
+            loginBtn.addEventListener('click', handleLogin);
+            apiKeyInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    handleLogin();
+                }
+            });
+            
+            // Search form submission
+            searchForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const fileId = searchInput.value.trim();
+                if (fileId) {
+                    handleSearchFile(fileId);
+                }
+            });
+            
+            // File deletion modal
+            deleteBtn.addEventListener('click', () => {
+                if (selectedFile) {
+                    deleteFileName.textContent = selectedFile.original_filename;
+                    deleteModal.style.display = 'flex';
+                }
+            });
+            
+            closeModal.addEventListener('click', () => {
+                deleteModal.style.display = 'none';
+            });
+            
+            cancelDelete.addEventListener('click', () => {
+                deleteModal.style.display = 'none';
+            });
+            
+            confirmDelete.addEventListener('click', () => {
+                deleteModal.style.display = 'none';
+                deleteFile(selectedFile.id);
+            });
+            
+            downloadBtn.addEventListener('click', () => {
+                if (selectedFile) {
+                    downloadFile(selectedFile);
+                }
+            });
+        });
+        
+        // Handle login with API key
+        async function handleLogin() {
+            const apiKey = apiKeyInput.value.trim();
+            if (!apiKey) {
+                showAlert(authAlert, 'Please enter your API key', 'alert-warning');
+                return;
+            }
+            
+            showLoading(true);
+            
+            try {
+                // Get token using API key
+                const tokenResponse = await getToken(apiKey);
+                if (!tokenResponse.access_token) {
+                    throw new Error('Failed to get authentication token');
+                }
+                
+                activeToken = tokenResponse.access_token;
+                
+                // Get user details using API key
+                const userInfo = await validateApiKey(apiKey);
+                if (!userInfo) {
+                    throw new Error('Failed to get user information');
+                }
+                
+                currentUser = userInfo;
+                
+                // Show authenticated UI
+                showAuthenticatedUI();
+                
+                // Load user files
+                await loadUserFiles();
+                
+            } catch (error) {
+                console.error('Authentication error:', error);
+                showAlert(authAlert, error.message || 'Authentication failed. Please check your API key and try again.', 'alert-danger');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        // Get token with API key
+        async function getToken(apiKey) {
+            try {
+                const response = await fetch('/token', {
+                    method: 'GET',
+                    headers: {
+                        'API-Key': apiKey,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    const data = await response.json();
+                    throw new Error(data.message || 'Failed to get token');
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error('Token error:', error);
+                throw error;
+            }
+        }
+        
+        // Validate API key to get user details
+        async function validateApiKey(apiKey) {
+            try {
+                // Use a dummy endpoint to validate the API key
+                // This is a workaround since we don't have a dedicated endpoint to get user info
+                const response = await fetch('/usage/balance', {
+                    method: 'GET',
+                    headers: {
+                        'API-Key': apiKey,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    const data = await response.json();
+                    throw new Error(data.message || 'Failed to validate API key');
+                }
+                
+                const data = await response.json();
+                return data; // Contains user_id, user_email, etc.
+            } catch (error) {
+                console.error('API key validation error:', error);
+                throw error;
+            }
+        }
+        
+        // Load user files from the server
+        async function loadUserFiles() {
+            try {
+                // For this prototype, we'll assume all files are from uploads
+                // In a real implementation, you would have an endpoint to list user files
+                
+                // Placeholder logic - in real implementation, call a proper endpoint
+                // This is where we'd fetch the files from the server
+                
+                // Simulate fetching upload files
+                const uploadedFilesResponse = await fetchUserFiles('uploaded');
+                uploadedFiles = uploadedFilesResponse.files || [];
+                updateFilesList(uploadedFilesList, uploadedFiles, uploadedFilesCount);
+                
+                // Simulate fetching generated files
+                const generatedFilesResponse = await fetchUserFiles('generated');
+                generatedFiles = generatedFilesResponse.files || [];
+                updateFilesList(generatedFilesList, generatedFiles, generatedFilesCount);
+                
+                // Update user profile stats
+                updateUserStats();
+                
+            } catch (error) {
+                console.error('Error loading files:', error);
+                showAlert(fileAlert, 'Error loading files. Please try again.', 'alert-danger');
+            }
+        }
+        
+        // Fetch user files (placeholder function)
+        async function fetchUserFiles(fileType) {
+            // In a real implementation, this would call an actual API endpoint
+            // For now, we'll return mock data
+            
+            // This is a placeholder. In a real application, you would have an endpoint to list files
+            return {
+                files: generateMockFiles(fileType === 'uploaded' ? 5 : 3, fileType)
+            };
+        }
+        
+        // Generate mock files for demonstration
+        function generateMockFiles(count, type) {
+            const fileTypes = ['pdf', 'docx', 'jpg', 'png', 'txt', 'xlsx', 'mp3', 'mp4'];
+            const files = [];
+            
+            for (let i = 0; i < count; i++) {
+                const fileType = fileTypes[Math.floor(Math.random() * fileTypes.length)];
+                const isUploaded = type === 'uploaded';
+                
+                files.push({
+                    id: generateUUID(),
+                    original_filename: `${isUploaded ? 'Uploaded' : 'Generated'}_File_${i + 1}.${fileType}`,
+                    content_type: getMimeType(fileType),
+                    blob_url: `https://example.com/files/${generateUUID()}.${fileType}`,
+                    upload_date: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
+                    file_size: Math.floor(Math.random() * 10000000),
+                    is_uploaded: isUploaded
+                });
+            }
+            
+            return files;
+        }
+        
+        // Update file list in the sidebar
+        function updateFilesList(container, files, countElement) {
+            container.innerHTML = '';
+            
+            if (files.length === 0) {
+                const placeholder = document.createElement('div');
+                placeholder.className = 'file-item-placeholder';
+                placeholder.textContent = 'No files found';
+                container.appendChild(placeholder);
+                countElement.textContent = '0';
+                return;
+            }
+            
+            // Sort files by date (newest first)
+            files.sort((a, b) => new Date(b.upload_date) - new Date(a.upload_date));
+            
+            files.forEach(file => {
+                const fileItem = createFileItem(file);
+                container.appendChild(fileItem);
+            });
+            
+            countElement.textContent = files.length;
+        }
+        
+        // Create a file item for the sidebar
+        function createFileItem(file) {
+            const fileItem = document.createElement('div');
+            fileItem.className = 'file-item';
+            fileItem.dataset.fileId = file.id;
+            
+            const fileExtension = getFileExtension(file.original_filename);
+            const iconClass = fileIcons[fileExtension] || fileIcons['default'];
+            
+            fileItem.innerHTML = `
+                <div class="file-icon">
+                    <i class="fas ${iconClass}"></i>
+                </div>
+                <div class="file-info">
+                    <div class="file-name" title="${file.original_filename}">${file.original_filename}</div>
+                    <div class="file-date">${formatDate(file.upload_date)}</div>
+                </div>
+            `;
+            
+            fileItem.addEventListener('click', () => {
+                // Remove active class from all file items
+                document.querySelectorAll('.file-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                
+                // Add active class to clicked item
+                fileItem.classList.add('active');
+                
+                // Show file content
+                displayFile(file);
+            });
+            
+            return fileItem;
+        }
+        
+        // Display file content in the main container
+        function displayFile(file) {
+            selectedFile = file;
+            
+            // Update file title
+            fileTitle.textContent = file.original_filename;
+            
+            // Show file content view, hide placeholder
+            fileContentPlaceholder.style.display = 'none';
+            fileContentView.style.display = 'block';
+            
+            // Determine and show appropriate viewer based on file type
+            const contentType = file.content_type;
+            const viewer = fileViewers[contentType] || fileViewers['default'];
+            viewer(file);
+        }
+        
+        // Image viewer
+        function showImageViewer(file) {
+            fileViewer.innerHTML = `
+                <div class="image-container">
+                    <img src="${file.blob_url}" alt="${file.original_filename}" class="file-preview">
+                </div>
+            `;
+        }
+        
+        // PDF viewer
+        function showPdfViewer(file) {
+            fileViewer.innerHTML = `
+                <div class="pdf-container">
+                    <iframe src="${file.blob_url}" width="100%" height="100%" frameborder="0"></iframe>
+                </div>
+            `;
+        }
+        
+        // Audio viewer
+        function showAudioViewer(file) {
+            fileViewer.innerHTML = `
+                <div class="media-container">
+                    <audio controls>
+                        <source src="${file.blob_url}" type="${file.content_type}">
+                        Your browser does not support the audio element.
+                    </audio>
+                </div>
+            `;
+        }
+        
+        // Video viewer
+        function showVideoViewer(file) {
+            fileViewer.innerHTML = `
+                <div class="media-container">
+                    <video controls>
+                        <source src="${file.blob_url}" type="${file.content_type}">
+                        Your browser does not support the video element.
+                    </video>
+                </div>
+            `;
+        }
+        
+        // Not viewable file fallback
+        function showNotViewable(file) {
+            const fileExtension = getFileExtension(file.original_filename);
+            const iconClass = fileIcons[fileExtension] || fileIcons['default'];
+            
+            fileViewer.innerHTML = `
+                <div class="not-viewable">
+                    <i class="fas ${iconClass}"></i>
+                    <p>This file type cannot be previewed</p>
+                    <p>You can still download the file using the button above</p>
+                </div>
+            `;
+        }
+        
+        // Download file
+        function downloadFile(file) {
+            // Create a temporary link and trigger download
+            const link = document.createElement('a');
+            link.href = file.blob_url;
+            link.download = file.original_filename;
+            link.target = '_blank';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        // Delete file
+        async function deleteFile(fileId) {
+            showLoading(true);
+            
+            try {
+                // First get a fresh token
+                const tokenResponse = await getToken(apiKeyInput.value);
+                if (!tokenResponse.access_token) {
+                    throw new Error('Failed to get authentication token for file deletion');
+                }
+                
+                const token = tokenResponse.access_token;
+                
+                // Call the delete endpoint
+                const response = await fetch(`/file?file_id=${fileId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-Token': token,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    const data = await response.json();
+                    throw new Error(data.message || 'Failed to delete file');
+                }
+                
+                const data = await response.json();
+                
+                // Remove the file from the lists
+                uploadedFiles = uploadedFiles.filter(file => file.id !== fileId);
+                generatedFiles = generatedFiles.filter(file => file.id !== fileId);
+                
+                // Update the UI
+                updateFilesList(uploadedFilesList, uploadedFiles, uploadedFilesCount);
+                updateFilesList(generatedFilesList, generatedFiles, generatedFilesCount);
+                
+                // Update user stats
+                updateUserStats();
+                
+                // Show success message
+                showAlert(fileAlert, 'File deleted successfully', 'alert-success');
+                
+                // Reset the view if the deleted file was selected
+                if (selectedFile && selectedFile.id === fileId) {
+                    selectedFile = null;
+                    fileContentPlaceholder.style.display = 'flex';
+                    fileContentView.style.display = 'none';
+                }
+                
+            } catch (error) {
+                console.error('File deletion error:', error);
+                showAlert(fileAlert, error.message || 'Error deleting file. Please try again.', 'alert-danger');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        // Search for a file by ID
+        async function handleSearchFile(fileId) {
+            showLoading(true);
+            
+            try {
+                // In a real implementation, this would call an actual API endpoint
+                // For demonstration, we'll search in our local arrays
+                
+                // First check if the user is admin (scope 0)
+                const isAdmin = currentUser && currentUser.scope === 0;
+                
+                // Search in our mock data
+                let foundFile = [...uploadedFiles, ...generatedFiles].find(file => file.id === fileId);
+                
+                if (!foundFile) {
+                    // If not found and user is admin, simulate fetching from server
+                    if (isAdmin) {
+                        // Simulate API call for admin to find any file
+                        foundFile = {
+                            id: fileId,
+                            original_filename: `Admin_Access_File.pdf`,
+                            content_type: 'application/pdf',
+                            blob_url: `https://example.com/files/${fileId}.pdf`,
+                            upload_date: new Date().toISOString(),
+                            file_size: 1024000,
+                            is_uploaded: true
+                        };
+                    } else {
+                        throw new Error('File not found or you do not have permission to access it');
+                    }
+                }
+                
+                // Display the found file
+                displayFile(foundFile);
+                
+                // Clear the search input
+                searchInput.value = '';
+                
+            } catch (error) {
+                console.error('File search error:', error);
+                showAlert(fileAlert, error.message || 'Error searching for file. Please try again.', 'alert-danger');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        // Show authenticated UI
+        function showAuthenticatedUI() {
+            // Hide auth container, show files container
+            authContainer.style.display = 'none';
+            filesContainer.style.display = 'flex';
+            
+            // Update user profile information
+            updateUserProfile();
+        }
+        
+        // Update user profile information
+        function updateUserProfile() {
+            if (!currentUser) return;
+            
+            // Display name (use common_name if available, otherwise user_name)
+            userName.textContent = currentUser.common_name || currentUser.user_name || currentUser.user_email || '-';
+            
+            // Department
+            userDepartment.textContent = currentUser.department || '-';
+            
+            // Scope (with friendly name)
+            const scopeNames = {
+                0: 'Administrator',
+                1: 'User - Basic',
+                2: 'User - Standard',
+                3: 'User - Premium',
+                4: 'User - Enterprise',
+                5: 'User - Unlimited'
+            };
+            userScope.textContent = scopeNames[currentUser.scope] || `Level ${currentUser.scope}`;
+            
+            // Date created (placeholder - in real implementation, you would have this data)
+            dateCreated.textContent = 'March 15, 2025';
+        }
+        
+        // Update user statistics
+        function updateUserStats() {
+            filesUploaded.textContent = uploadedFiles.length;
+            filesGenerated.textContent = generatedFiles.length;
+        }
+        
+        // Helper functions
+        
+        // Show loading spinner
+        function showLoading(show) {
+            loadingSpinner.style.display = show ? 'flex' : 'none';
+        }
+        
+        // Show alert message
+        function showAlert(element, message, className) {
+            element.className = `alert ${className}`;
+            
+            // Add appropriate icon based on alert type
+            let icon = 'fa-info-circle';
+            if (className === 'alert-success') icon = 'fa-check-circle';
+            if (className === 'alert-warning') icon = 'fa-exclamation-triangle';
+            if (className === 'alert-danger') icon = 'fa-exclamation-circle';
+            
+            element.innerHTML = `<i class="fas ${icon}"></i> ${message}`;
+            element.style.display = 'flex';
+            
+            // Auto-hide success alerts after 5 seconds
+            if (className === 'alert-success') {
+                setTimeout(() => {
+                    element.style.display = 'none';
+                }, 5000);
+            }
+        }
+        
+        // Get file extension from filename
+        function getFileExtension(filename) {
+            return filename.split('.').pop().toLowerCase();
+        }
+        
+        // Get MIME type from file extension
+        function getMimeType(extension) {
+            const mimeTypes = {
+                // Documents
+                'pdf': 'application/pdf',
+                'doc': 'application/msword',
+                'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'xls': 'application/vnd.ms-excel',
+                'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'ppt': 'application/vnd.ms-powerpoint',
+                'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+                'txt': 'text/plain',
+                // Images
+                'jpg': 'image/jpeg',
+                'jpeg': 'image/jpeg',
+                'png': 'image/png',
+                'gif': 'image/gif',
+                'bmp': 'image/bmp',
+                'svg': 'image/svg+xml',
+                // Audio
+                'mp3': 'audio/mpeg',
+                'wav': 'audio/wav',
+                'ogg': 'audio/ogg',
+                'm4a': 'audio/mp4',
+                'flac': 'audio/flac',
+                // Video
+                'mp4': 'video/mp4',
+                'avi': 'video/x-msvideo',
+                'mov': 'video/quicktime',
+                'wmv': 'video/x-ms-wmv',
+                // Default
+                'default': 'application/octet-stream'
+            };
+            
+            return mimeTypes[extension] || mimeTypes['default'];
+        }
+        
+        // Format date for display
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diff = (now - date) / 1000; // Difference in seconds
+            
+            if (diff < 60) return 'Just now';
+            if (diff < 3600) return `${Math.floor(diff / 60)} minutes ago`;
+            if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
+            if (diff < 604800) return `${Math.floor(diff / 86400)} days ago`;
+            
+            return date.toLocaleDateString();
+        }
+        
+        // Generate UUID for mock data
+        function generateUUID() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                const r = Math.random() * 16 | 0;
+                const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+    </script>
+</body>
+</html>
