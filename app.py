@@ -120,6 +120,11 @@ def rag():
 def nlp():
     return render_template('docs/nlp.html')
 
+## file management
+@app.route('/docs/file_portal')
+def file_portal():
+    return render_template('docs/file_portal.html')
+
 # TOKEN SERVICE ENDPOINTS
 ## GET TOKEN
 from apis.token_services.get_token import register_routes as get_token_endpoint 
