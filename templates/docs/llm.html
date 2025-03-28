@@ -397,6 +397,7 @@
             height: 100%;
             display: flex;
             flex-direction: column;
+            min-height: 550px; /* Consistent card height */
         }
         
         .model-card:hover {
@@ -423,23 +424,15 @@
             padding: 1.5rem;
             color: white;
             position: relative;
+            height: 130px; /* Fixed header height */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
         
         .model-name {
             font-size: 1.6rem;
             margin-bottom: 0.5rem;
-        }
-        
-        .model-cost {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            background-color: rgba(0, 0, 0, 0.2);
-            color: white;
-            padding: 0.3rem 0.8rem;
-            border-radius: 30px;
-            font-size: 0.85rem;
-            font-weight: 600;
         }
         
         .model-description {
@@ -459,6 +452,7 @@
             flex-wrap: wrap;
             gap: 0.5rem;
             margin-bottom: 1.5rem;
+            min-height: 50px; /* Consistent tag section height */
         }
         
         .model-tag {
@@ -501,6 +495,38 @@
             background-color: #20C997;
         }
         
+        .model-tag.technical {
+            background-color: #6741D9;
+        }
+        
+        .model-tag.problem-solving {
+            background-color: #E03131;
+        }
+        
+        .model-tag.complexity {
+            background-color: #5F3DC4;
+        }
+        
+        .model-tag.variable-reasoning {
+            background-color: #F76707;
+        }
+        
+        .model-tag.long-form {
+            background-color: #0CA678;
+        }
+        
+        .model-tag.chain-of-thought {
+            background-color: #C2255C;
+        }
+        
+        .model-tag.task-oriented {
+            background-color: #1971C2;
+        }
+        
+        .model-tag.configurable {
+            background-color: #5C940D;
+        }
+        
         .model-details {
             margin-bottom: 1.5rem;
             flex-grow: 1;
@@ -509,6 +535,7 @@
         .detail-item {
             display: flex;
             margin-bottom: 0.75rem;
+            align-items: flex-start;
         }
         
         .detail-label {
@@ -520,6 +547,26 @@
         
         .detail-value {
             color: #666;
+        }
+        
+        .feature-list {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        
+        .feature-list li {
+            position: relative;
+            padding-left: 1.2rem;
+            margin-bottom: 0.4rem;
+            line-height: 1.4;
+        }
+        
+        .feature-list li::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: var(--primary-color);
+            font-weight: bold;
         }
         
         .endpoint-box {
@@ -537,7 +584,8 @@
             border-top: 1px solid #eee;
             padding: 1.5rem;
             display: flex;
-            justify-content: flex-end;
+            justify-content: space-between;
+            align-items: center;
         }
         
         .model-btn {
@@ -571,6 +619,30 @@
         
         .meta-card .model-btn {
             background-color: var(--meta-color);
+        }
+        
+        .credit-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-weight: 600;
+            color: white;
+            background: linear-gradient(135deg, rgba(1, 0, 15, 1) 0%, rgba(74, 111, 227, 1) 100%);
+            animation: pulse 3s infinite ease-in-out;
+        }
+        
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(0, 212, 255, 0.4);
+            }
+            70% {
+                box-shadow: 0 0 0 8px rgba(0, 212, 255, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(0, 212, 255, 0);
+            }
         }
         
         /* CTA section */
@@ -788,7 +860,6 @@
                     <div class="model-card openai-card">
                         <div class="model-header">
                             <h3 class="model-name">GPT-4o</h3>
-                            <span class="model-cost">2 credits</span>
                             <p class="model-description">OpenAI's most advanced model for text completion and content generation</p>
                         </div>
                         <div class="model-body">
@@ -804,7 +875,13 @@
                                 </div>
                                 <div class="detail-item">
                                     <div class="detail-label">Features</div>
-                                    <div class="detail-value">High-quality content generation, excellent reasoning capabilities, structured JSON output</div>
+                                    <div class="detail-value">
+                                        <ul class="feature-list">
+                                            <li>High-quality content generation</li>
+                                            <li>Excellent reasoning capabilities</li>
+                                            <li>Structured JSON output</li>
+                                        </ul>
+                                    </div>
                                 </div>
                                 <div class="detail-item">
                                     <div class="detail-label">Best for</div>
@@ -819,6 +896,7 @@
                             <a href="/apidocs/#/LLM/create_gpt4o_route" class="model-btn">
                                 <i class="fas fa-code"></i> API Reference
                             </a>
+                            <div class="credit-badge">2 credits</div>
                         </div>
                     </div>
                     
@@ -826,7 +904,6 @@
                     <div class="model-card openai-card">
                         <div class="model-header">
                             <h3 class="model-name">GPT-4o with Document Intelligence</h3>
-                            <span class="model-cost">2 credits</span>
                             <p class="model-description">GPT-4o with enhanced document processing capabilities</p>
                         </div>
                         <div class="model-body">
@@ -842,7 +919,13 @@
                                 </div>
                                 <div class="detail-item">
                                     <div class="detail-label">Features</div>
-                                    <div class="detail-value">Multimodal document processing, multi-file support, image understanding</div>
+                                    <div class="detail-value">
+                                        <ul class="feature-list">
+                                            <li>Multimodal document processing</li>
+                                            <li>Multi-file support</li>
+                                            <li>Image understanding</li>
+                                        </ul>
+                                    </div>
                                 </div>
                                 <div class="detail-item">
                                     <div class="detail-label">Best for</div>
@@ -857,6 +940,7 @@
                             <a href="/apidocs/#/LLM/create_gpt4o_document_intelligence_route" class="model-btn">
                                 <i class="fas fa-code"></i> API Reference
                             </a>
+                            <div class="credit-badge">2 credits</div>
                         </div>
                     </div>
                     
@@ -864,7 +948,6 @@
                     <div class="model-card openai-card">
                         <div class="model-header">
                             <h3 class="model-name">GPT-4o-mini</h3>
-                            <span class="model-cost">0.5 credits</span>
                             <p class="model-description">Lightweight version of GPT-4o for everyday text completion tasks</p>
                         </div>
                         <div class="model-body">
@@ -880,7 +963,13 @@
                                 </div>
                                 <div class="detail-item">
                                     <div class="detail-label">Features</div>
-                                    <div class="detail-value">Cost-effective, fast responses, JSON output capability</div>
+                                    <div class="detail-value">
+                                        <ul class="feature-list">
+                                            <li>Cost-effective processing</li>
+                                            <li>Fast response times</li>
+                                            <li>JSON output capability</li>
+                                        </ul>
+                                    </div>
                                 </div>
                                 <div class="detail-item">
                                     <div class="detail-label">Best for</div>
@@ -895,6 +984,7 @@
                             <a href="/apidocs/#/LLM/create_gpt4o_mini_route" class="model-btn">
                                 <i class="fas fa-code"></i> API Reference
                             </a>
+                            <div class="credit-badge">0.5 credits</div>
                         </div>
                     </div>
                     
@@ -902,14 +992,13 @@
                     <div class="model-card openai-card">
                         <div class="model-header">
                             <h3 class="model-name">O1-mini</h3>
-                            <span class="model-cost">5 credits</span>
                             <p class="model-description">Specialized model for complex reasoning and deep problem-solving</p>
                         </div>
                         <div class="model-body">
                             <div class="model-tags">
                                 <span class="model-tag reasoning"><i class="fas fa-brain"></i>Reasoning</span>
-                                <span class="model-tag"><i class="fas fa-chess"></i>Problem-solving</span>
-                                <span class="model-tag"><i class="fas fa-project-diagram"></i>Complexity</span>
+                                <span class="model-tag problem-solving"><i class="fas fa-chess"></i>Problem-solving</span>
+                                <span class="model-tag complexity"><i class="fas fa-project-diagram"></i>Complexity</span>
                             </div>
                             <div class="model-details">
                                 <div class="detail-item">
@@ -918,7 +1007,13 @@
                                 </div>
                                 <div class="detail-item">
                                     <div class="detail-label">Features</div>
-                                    <div class="detail-value">Superior chain-of-thought reasoning, complex problem-solving capabilities</div>
+                                    <div class="detail-value">
+                                        <ul class="feature-list">
+                                            <li>Superior chain-of-thought reasoning</li>
+                                            <li>Complex problem-solving capabilities</li>
+                                            <li>Advanced analytical processing</li>
+                                        </ul>
+                                    </div>
                                 </div>
                                 <div class="detail-item">
                                     <div class="detail-label">Best for</div>
@@ -933,6 +1028,7 @@
                             <a href="/apidocs/#/LLM/create_o1_mini_route" class="model-btn">
                                 <i class="fas fa-code"></i> API Reference
                             </a>
+                            <div class="credit-badge">5 credits</div>
                         </div>
                     </div>
                     
@@ -940,14 +1036,13 @@
                     <div class="model-card openai-card">
                         <div class="model-header">
                             <h3 class="model-name">O3-mini</h3>
-                            <span class="model-cost">3 credits</span>
                             <p class="model-description">Text generation model with variable reasoning effort settings</p>
                         </div>
                         <div class="model-body">
                             <div class="model-tags">
-                                <span class="model-tag reasoning"><i class="fas fa-brain"></i>Variable Reasoning</span>
+                                <span class="model-tag variable-reasoning"><i class="fas fa-brain"></i>Variable Reasoning</span>
                                 <span class="model-tag json"><i class="fas fa-code"></i>JSON</span>
-                                <span class="model-tag content"><i class="fas fa-file-alt"></i>Long-form</span>
+                                <span class="model-tag long-form"><i class="fas fa-file-alt"></i>Long-form</span>
                             </div>
                             <div class="model-details">
                                 <div class="detail-item">
@@ -956,7 +1051,13 @@
                                 </div>
                                 <div class="detail-item">
                                     <div class="detail-label">Features</div>
-                                    <div class="detail-value">Adjustable reasoning effort (high/medium/low), long context handling</div>
+                                    <div class="detail-value">
+                                        <ul class="feature-list">
+                                            <li>Adjustable reasoning effort (high/medium/low)</li>
+                                            <li>Long context handling</li>
+                                            <li>Content optimization settings</li>
+                                        </ul>
+                                    </div>
                                 </div>
                                 <div class="detail-item">
                                     <div class="detail-label">Best for</div>
@@ -971,6 +1072,7 @@
                             <a href="/apidocs/#/LLM/create_o3_mini_route" class="model-btn">
                                 <i class="fas fa-code"></i> API Reference
                             </a>
+                            <div class="credit-badge">3 credits</div>
                         </div>
                     </div>
                 </div>
@@ -992,14 +1094,13 @@
                     <div class="model-card deepseek-card">
                         <div class="model-header">
                             <h3 class="model-name">DeepSeek-R1</h3>
-                            <span class="model-cost">3 credits</span>
                             <p class="model-description">Specialized for deep reasoning and complex problem-solving</p>
                         </div>
                         <div class="model-body">
                             <div class="model-tags">
                                 <span class="model-tag reasoning"><i class="fas fa-brain"></i>Reasoning</span>
-                                <span class="model-tag"><i class="fas fa-code-branch"></i>Chain of Thought</span>
-                                <span class="model-tag"><i class="fas fa-laptop-code"></i>Technical</span>
+                                <span class="model-tag chain-of-thought"><i class="fas fa-code-branch"></i>Chain of Thought</span>
+                                <span class="model-tag technical"><i class="fas fa-laptop-code"></i>Technical</span>
                             </div>
                             <div class="model-details">
                                 <div class="detail-item">
@@ -1008,7 +1109,13 @@
                                 </div>
                                 <div class="detail-item">
                                     <div class="detail-label">Features</div>
-                                    <div class="detail-value">Multi-step reasoning, excellent on technical content, deep analysis</div>
+                                    <div class="detail-value">
+                                        <ul class="feature-list">
+                                            <li>Multi-step reasoning capabilities</li>
+                                            <li>Excellent technical content handling</li>
+                                            <li>Deep analytical processing</li>
+                                        </ul>
+                                    </div>
                                 </div>
                                 <div class="detail-item">
                                     <div class="detail-label">Best for</div>
@@ -1023,6 +1130,7 @@
                             <a href="/apidocs/#/LLM/create_deepseek_r1_route" class="model-btn">
                                 <i class="fas fa-code"></i> API Reference
                             </a>
+                            <div class="credit-badge">3 credits</div>
                         </div>
                     </div>
                     
@@ -1030,14 +1138,13 @@
                     <div class="model-card deepseek-card">
                         <div class="model-header">
                             <h3 class="model-name">DeepSeek-V3</h3>
-                            <span class="model-cost">3 credits</span>
                             <p class="model-description">General purpose LLM for text generation and task completion</p>
                         </div>
                         <div class="model-body">
                             <div class="model-tags">
                                 <span class="model-tag content"><i class="fas fa-pen-fancy"></i>Content</span>
                                 <span class="model-tag json"><i class="fas fa-code"></i>JSON</span>
-                                <span class="model-tag"><i class="fas fa-tasks"></i>Task-oriented</span>
+                                <span class="model-tag task-oriented"><i class="fas fa-tasks"></i>Task-oriented</span>
                             </div>
                             <div class="model-details">
                                 <div class="detail-item">
@@ -1046,7 +1153,13 @@
                                 </div>
                                 <div class="detail-item">
                                     <div class="detail-label">Features</div>
-                                    <div class="detail-value">General task completion, text generation, JSON output support</div>
+                                    <div class="detail-value">
+                                        <ul class="feature-list">
+                                            <li>General task completion</li>
+                                            <li>High-quality text generation</li>
+                                            <li>JSON output support</li>
+                                        </ul>
+                                    </div>
                                 </div>
                                 <div class="detail-item">
                                     <div class="detail-label">Best for</div>
@@ -1061,6 +1174,7 @@
                             <a href="/apidocs/#/LLM/create_deepseek_v3_route" class="model-btn">
                                 <i class="fas fa-code"></i> API Reference
                             </a>
+                            <div class="credit-badge">3 credits</div>
                         </div>
                     </div>
                 </div>
@@ -1082,14 +1196,13 @@
                     <div class="model-card meta-card">
                         <div class="model-header">
                             <h3 class="model-name">Llama 3.1 (405B)</h3>
-                            <span class="model-cost">3 credits</span>
                             <p class="model-description">Meta's largest language model with 405 billion parameters</p>
                         </div>
                         <div class="model-body">
                             <div class="model-tags">
                                 <span class="model-tag content"><i class="fas fa-pen-fancy"></i>Content</span>
                                 <span class="model-tag json"><i class="fas fa-code"></i>JSON</span>
-                                <span class="model-tag"><i class="fas fa-sliders-h"></i>Configurable</span>
+                                <span class="model-tag configurable"><i class="fas fa-sliders-h"></i>Configurable</span>
                             </div>
                             <div class="model-details">
                                 <div class="detail-item">
@@ -1098,7 +1211,13 @@
                                 </div>
                                 <div class="detail-item">
                                     <div class="detail-label">Features</div>
-                                    <div class="detail-value">Massive 405B parameter count, highly configurable (temperature, top_p), JSON support</div>
+                                    <div class="detail-value">
+                                        <ul class="feature-list">
+                                            <li>Massive 405B parameter model</li>
+                                            <li>Highly configurable settings (temperature, top_p)</li>
+                                            <li>Comprehensive JSON support</li>
+                                        </ul>
+                                    </div>
                                 </div>
                                 <div class="detail-item">
                                     <div class="detail-label">Best for</div>
@@ -1113,6 +1232,7 @@
                             <a href="/apidocs/#/LLM/create_llama_route" class="model-btn">
                                 <i class="fas fa-code"></i> API Reference
                             </a>
+                            <div class="credit-badge">3 credits</div>
                         </div>
                     </div>
                 </div>
