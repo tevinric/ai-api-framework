@@ -1025,7 +1025,7 @@
                     <div class="auth-flow-step">
                         <div class="step-number">3</div>
                         <div class="step-content">
-                            <h3>Refresh Token Before Expiration</h3>
+                            <h3>Refresh Token Before Expiration (Optional)</h3>
                             <p>Tokens expire after 1 hour (3599 seconds). You can refresh a token before it expires to extend its validity period without generating a new one.</p>
                             <div class="code-block">
                                 <span class="code-label">Token Refresh</span>
@@ -1048,10 +1048,12 @@
                     <div class="info-box-content">
                         <h4>Authentication Flow</h4>
                         <p>Our API uses a two-step authentication process:</p>
+                        <br>
                         <ol>
                             <li>First, you authenticate with your unique API key to generate a token</li>
                             <li>Then, you use this token for subsequent API calls</li>
                         </ol>
+                        <br>
                         <p>Tokens expire after 1 hour (3599 seconds) and can be refreshed before and after expiration.</p>
                         <p>You can use the same token to call multiple AI endpoints in your application flow as long as your process remains within the token validity period.</p>
                     </div>
@@ -1246,7 +1248,7 @@
                                 <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--primary-color); color: white; display: flex; justify-content: center; align-items: center; margin-right: 1rem; flex-shrink: 0; font-size: 0.8rem;">1</div>
                                 <div>
                                     <h4 style="margin: 0 0 0.3rem 0; color: var(--dark-color);">Reuse tokens</h4>
-                                    <p style="margin: 0; color: #666; line-height: 1.5;">Use the same token for multiple API calls until it expires</p>
+                                    <p style="margin: 0; color: #666; line-height: 1.5;">Use the same token for multiple API calls within the same workflow or process stream (until it expires)</p>
                                 </div>
                             </div>
                             
@@ -1254,7 +1256,7 @@
                                 <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--primary-color); color: white; display: flex; justify-content: center; align-items: center; margin-right: 1rem; flex-shrink: 0; font-size: 0.8rem;">2</div>
                                 <div>
                                     <h4 style="margin: 0 0 0.3rem 0; color: var(--dark-color);">Use token refreshing</h4>
-                                    <p style="margin: 0; color: #666; line-height: 1.5;">Instead of generating new tokens, refresh existing ones when possible</p>
+                                    <p style="margin: 0; color: #666; line-height: 1.5;">Instead of generating new tokens, refresh existing ones when possible (only if required)</p>
                                 </div>
                             </div>
                             
@@ -1271,6 +1273,14 @@
                                 <div>
                                     <h4 style="margin: 0 0 0.3rem 0; color: var(--dark-color);">Keep tokens secure</h4>
                                     <p style="margin: 0; color: #666; line-height: 1.5;">Store tokens securely and never share them in client-side code</p>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; align-items: flex-start;">
+                                <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--primary-color); color: white; display: flex; justify-content: center; align-items: center; margin-right: 1rem; flex-shrink: 0; font-size: 0.8rem;">5</div>
+                                <div>
+                                    <h4 style="margin: 0 0 0.3rem 0; color: var(--dark-color);">Token Generation</h4>
+                                    <p style="margin: 0; color: #666; line-height: 1.5;">Generated new tokens for each new session or process work stream</p>
                                 </div>
                             </div>
                         </div>
@@ -1350,14 +1360,6 @@
                         </div>
                     </div>
                     
-                    <div class="code-block" style="max-width: 800px; margin: 0 auto;">
-                        <span class="code-label">Example Error Response</span>
-                        <span class="code-comment">// 401 Unauthorized response</span><br>
-                        {<br>
-                          <span class="code-string">"error"</span>: <span class="code-string">"Authentication Error"</span>,<br>
-                          <span class="code-string">"message"</span>: <span class="code-string">"Token has expired"</span><br>
-                        }
-                    </div>
                 </div>
             </div>
         </section>
