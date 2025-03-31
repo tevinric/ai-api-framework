@@ -14,8 +14,15 @@
             --text-color: #333;
             --white-color: #ffffff;
             --accent-color: #00d4ff;
+            --accent-gradient: linear-gradient(90deg, #00d4ff 0%, #6c63ff 100%);
+            --magenta-dark: #3B0138;
+            --magenta-gradient: linear-gradient(90deg, #3B0138 0%, #4a6fe3 100%);
             --sidebar-width: 280px;
             --header-height: 60px;
+            --sa-id-color: #1971c2;
+            --sa-id-gradient: linear-gradient(90deg, #1971c2 0%, #3b82f6 100%);
+            --vehicle-license-color: #2f9e44;
+            --vehicle-license-gradient: linear-gradient(90deg, #2f9e44 0%, #40c057 100%);
         }
         
         * {
@@ -40,14 +47,13 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-size: cover;
-            opacity: 0.05;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%234a6fe3' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
             z-index: -1;
             pointer-events: none;
         }
         
         .header {
-            background-color: var(--dark-color);
+            background-color: #03001A;
             color: var(--white-color);
             padding: 0 2rem;
             position: fixed;
@@ -56,7 +62,7 @@
             width: 100%;
             height: var(--header-height);
             z-index: 1000;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -107,13 +113,15 @@
             padding: 0.5rem 1rem;
             border-radius: 4px;
             font-weight: 600;
-            transition: background-color 0.3s, transform 0.2s;
+            transition: all 0.3s;
+            box-shadow: 0 4px 10px rgba(0, 212, 255, 0.3);
         }
         
         .swagger-btn:hover {
             background-color: #00b8e6;
             transform: translateY(-2px);
             color: var(--dark-color);
+            box-shadow: 0 6px 15px rgba(0, 212, 255, 0.4);
         }
         
         /* Mobile menu toggle */
@@ -181,107 +189,493 @@
         .main-content {
             margin-left: var(--sidebar-width);
             margin-top: var(--header-height);
-            padding: 2rem;
+            padding: 0;
             min-height: calc(100vh - var(--header-height));
         }
         
-        /* Content sections */
-        .content-section {
-            background-color: var(--white-color);
-            border-radius: 8px;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        /* Hero */
+        .hero {
+            background: linear-gradient(135deg, rgba(1, 0, 15, 1) 0%, rgba(35, 0, 33, 1) 100%);
+            color: var(--white-color);
+            padding: 5rem 3rem;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
         }
         
-        .content-section h2 {
-            font-size: 1.8rem;
+        .hero::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23FFFFFF' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
+            opacity: 0.12;
+            pointer-events: none;
+            animation: zoomDots 20s linear infinite;
+            transform-origin: center;
+            z-index: 0;
+        }
+        
+        @keyframes zoomDots {
+            0% {
+                transform: scale(0.3);
+                opacity: 0.1;
+            }
+            50% {
+                transform: scale(0.7);
+                opacity: 0.15;
+            }
+            100% {
+                transform: scale(0.3);
+                opacity: 0.1;
+            }
+        }
+        
+        .hero-container {
+            max-width: 1440px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .hero h2 {
+            font-size: 3rem;
             margin-bottom: 1.5rem;
+            line-height: 1.2;
+            max-width: 840px;
+            background: linear-gradient(to left, var(--white-color), var(--accent-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: fadeInUp 0.8s ease-out;
+        }
+        
+        .hero p {
+            font-size: 1.2rem;
+            max-width: 700px;
+            margin-bottom: 2rem;
+            line-height: 1.7;
+            color: rgba(255, 255, 255, 0.9);
+            animation: fadeInUp 1s ease-out;
+        }
+        
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            animation: fadeInUp 1.2s ease-out;
+        }
+        
+        .cta-btn {
+            display: inline-flex;
+            align-items: center;
+            background-color: var(--accent-color);
             color: var(--dark-color);
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
+        }
+        
+        .cta-btn:hover {
+            background-color: #00b8e6;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 212, 255, 0.4);
+        }
+        
+        .cta-btn-secondary {
+            background-color: transparent;
+            color: var(--white-color);
+            border: 2px solid var(--white-color);
+            box-shadow: none;
+        }
+        
+        .cta-btn-secondary:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--white-color);
+            box-shadow: 0 4px 15px rgba(255, 255, 255, 0.2);
+        }
+        
+        .cta-btn i {
+            margin-right: 0.5rem;
+        }
+        
+        /* Overview section */
+        .overview-section {
+            padding: 4rem 3rem;
+            position: relative;
+        }
+        
+        .overview-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .section-header {
+            text-align: left;
+            margin-bottom: 2rem;
             border-bottom: 2px solid var(--light-color);
             padding-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
         }
         
-        .content-section h3 {
-            font-size: 1.3rem;
-            margin: 1.5rem 0 1rem;
+        .section-icon {
+            width: 40px;
+            height: 40px;
+            margin-right: 1rem;
+            border-radius: 8px;
+            background-color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .section-icon i {
+            color: white;
+            font-size: 20px;
+        }
+        
+        .section-header h2 {
+            font-size: 2rem;
+            color: var(--dark-color);
+            margin: 0;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+        
+        .feature-card {
+            background-color: var(--white-color);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            margin-bottom: 1rem;
+            border-radius: 12px;
+            background: var(--accent-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .feature-icon i {
+            color: white;
+            font-size: 24px;
+        }
+        
+        .feature-card h3 {
+            margin-bottom: 0.75rem;
+            color: var(--dark-color);
+        }
+        
+        .feature-card p {
+            color: #666;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        
+        /* Model sections */
+        .model-section {
+            padding: 4rem 3rem;
+            position: relative;
+        }
+        
+        .model-section.alternate {
+            background-color: #f8faff;
+        }
+        
+        .model-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .model-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        
+        .model-icon {
+            width: 50px;
+            height: 50px;
+            margin-right: 1rem;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .sa-id-icon {
+            background: var(--sa-id-gradient);
+        }
+        
+        .sa-id-icon i {
+            color: white;
+            font-size: 24px;
+        }
+        
+        .vehicle-license-icon {
+            background: var(--vehicle-license-gradient);
+        }
+        
+        .vehicle-license-icon i {
+            color: white;
+            font-size: 24px;
+        }
+        
+        .model-info {
+            flex-grow: 1;
+        }
+        
+        .model-info h2 {
+            font-size: 2rem;
+            color: var(--dark-color);
+            margin-bottom: 0.5rem;
+        }
+        
+        .model-info p {
+            color: #666;
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+        
+        .model-details {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+        
+        .model-detail-card {
+            background-color: var(--white-color);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            flex: 1;
+            min-width: 280px;
+        }
+        
+        .model-detail-card h3 {
+            margin-bottom: 1rem;
+            color: var(--dark-color);
+            display: flex;
+            align-items: center;
+        }
+        
+        .model-detail-card h3 i {
+            margin-right: 0.5rem;
             color: var(--primary-color);
         }
         
-        .content-section p {
-            margin-bottom: 1rem;
-            line-height: 1.6;
+        .model-detail-card ul {
+            list-style-type: none;
+            padding: 0;
         }
         
-        .content-section ul, 
-        .content-section ol {
-            margin-bottom: 1.5rem;
+        .model-detail-card li {
+            position: relative;
             padding-left: 1.5rem;
-        }
-        
-        .content-section li {
             margin-bottom: 0.5rem;
-            line-height: 1.6;
+            line-height: 1.5;
         }
         
-        /* Code blocks */
-        .api-endpoints {
-            background-color: #f8f9fa;
-            border-radius: 6px;
+        .model-detail-card li:before {
+            content: "\f00c";
+            font-family: "Font Awesome 5 Free";
+            font-weight: 900;
+            position: absolute;
+            left: 0;
+            color: var(--primary-color);
+        }
+        
+        .sa-id-card li:before {
+            color: var(--sa-id-color);
+        }
+        
+        .vehicle-license-card li:before {
+            color: var(--vehicle-license-color);
+        }
+        
+        .endpoint-box {
+            background-color: #f5f7fa;
             padding: 1rem;
+            border-radius: 8px;
             margin-bottom: 1.5rem;
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: var(--dark-color);
         }
         
-        .endpoint {
-            margin-bottom: 1rem;
+        .sa-id-card .endpoint-box {
+            border-left: 3px solid var(--sa-id-color);
+        }
+        
+        .vehicle-license-card .endpoint-box {
+            border-left: 3px solid var(--vehicle-license-color);
+        }
+        
+        /* Examples section */
+        .examples-section {
+            margin-top: 2rem;
+        }
+        
+        .examples-tabs {
             display: flex;
-            align-items: flex-start;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 2rem;
+            overflow-x: auto;
+            padding-bottom: 1px;
+            scrollbar-width: thin;
         }
         
-        .endpoint-method {
-            display: inline-block;
-            padding: 0.2rem 0.5rem;
-            border-radius: 4px;
-            font-family: monospace;
-            font-weight: bold;
-            margin-right: 0.5rem;
-            min-width: 60px;
-            text-align: center;
+        .examples-tabs::-webkit-scrollbar {
+            height: 4px;
         }
         
-        .method-get {
-            background-color: #e7f5ff;
-            color: #1971c2;
+        .examples-tabs::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
         }
         
-        .method-post {
-            background-color: #e3fafc;
-            color: #0c8599;
+        .examples-tabs::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 10px;
         }
         
-        .method-put {
-            background-color: #fff9db;
-            color: #e67700;
-        }
-        
-        .method-delete {
-            background-color: #fff5f5;
-            color: #e03131;
-        }
-        
-        .endpoint-path {
-            display: inline-block;
-            background-color: var(--dark-color);
-            color: var(--white-color);
-            padding: 0.3rem 0.7rem;
-            border-radius: 4px;
-            font-family: monospace;
-            margin-right: 0.5rem;
-        }
-        
-        .endpoint-description {
+        .example-tab {
+            padding: 0.75rem 1.25rem;
+            cursor: pointer;
+            font-weight: 600;
             color: #666;
-            flex: 1;
+            transition: all 0.3s;
+            white-space: nowrap;
+            border-bottom: 2px solid transparent;
+        }
+        
+        .example-tab.active {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--primary-color);
+        }
+        
+        .sa-id-tab.active {
+            color: var(--sa-id-color);
+            border-bottom: 2px solid var(--sa-id-color);
+        }
+        
+        .vehicle-license-tab.active {
+            color: var(--vehicle-license-color);
+            border-bottom: 2px solid var(--vehicle-license-color);
+        }
+        
+        .example-content {
+            display: none;
+        }
+        
+        .example-content.active {
+            display: block;
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        .example-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+        
+        .example-settings {
+            background-color: var(--white-color);
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            padding: 1.5rem;
+            height: 100%;
+        }
+        
+        .settings-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .setting-group {
+            margin-bottom: 1.25rem;
+        }
+        
+        .setting-label {
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+        
+        .setting-value {
+            color: #666;
+            margin-bottom: 0.75rem;
+            line-height: 1.5;
+            background-color: #f9f9f9;
+            padding: 0.75rem;
+            border-radius: 6px;
+            border-left: 3px solid var(--primary-color);
+        }
+        
+        .sa-id-settings .setting-value {
+            border-left-color: var(--sa-id-color);
+        }
+        
+        .vehicle-license-settings .setting-value {
+            border-left-color: var(--vehicle-license-color);
+        }
+        
+        .example-response {
+            background-color: var(--white-color);
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        
+        .response-header {
+            padding: 1rem 1.5rem;
+            background-color: #f5f7fa;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .response-header h4 {
+            margin: 0;
+            color: var(--dark-color);
+            font-size: 1.1rem;
+        }
+        
+        .response-container {
+            flex-grow: 1;
+            padding: 1.5rem;
+            background-color: #fafafa;
+            position: relative;
         }
         
         .code-block {
@@ -291,156 +685,168 @@
             border-radius: 6px;
             font-family: monospace;
             overflow-x: auto;
-            margin-bottom: 1.5rem;
             line-height: 1.4;
         }
         
-        /* Info boxes */
-        .info-box {
-            display: flex;
-            background-color: #e7f5ff;
-            border-left: 4px solid #1971c2;
-            padding: 1.5rem;
+        /* Response Fields */
+        .response-fields-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        
+        .response-field-item {
+            background-color: #f5f7fa;
+            padding: 0.75rem;
             border-radius: 6px;
-            margin-bottom: 2rem;
+            border-left: 3px solid var(--primary-color);
+        }
+        
+        .sa-id-response .response-field-item {
+            border-left-color: var(--sa-id-color);
+        }
+        
+        .vehicle-license-response .response-field-item {
+            border-left-color: var(--vehicle-license-color);
+        }
+        
+        .response-field-label {
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-bottom: 0.25rem;
+            font-family: monospace;
+        }
+        
+        .response-field-description {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        /* Info box */
+        .info-box {
+            background-color: var(--white-color);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            padding: 1.5rem;
+            margin-top: 2rem;
+            display: flex;
+            align-items: flex-start;
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .sa-id-info-box {
+            border-left-color: var(--sa-id-color);
+        }
+        
+        .vehicle-license-info-box {
+            border-left-color: var(--vehicle-license-color);
         }
         
         .info-box-icon {
             font-size: 1.8rem;
-            color: #1971c2;
+            color: var(--primary-color);
             margin-right: 1.5rem;
         }
         
-        .info-box-content h4 {
-            margin-bottom: 0.5rem;
-            color: #1971c2;
+        .sa-id-info-box .info-box-icon {
+            color: var(--sa-id-color);
         }
         
-        .info-box-content p, .info-box-content li {
-            color: #495057;
+        .vehicle-license-info-box .info-box-icon {
+            color: var(--vehicle-license-color);
+        }
+        
+        .info-box-content h4 {
+            margin-bottom: 0.75rem;
+            color: var(--dark-color);
+        }
+        
+        .info-box-content ul {
+            padding-left: 1.25rem;
+        }
+        
+        .info-box-content li {
+            margin-bottom: 0.5rem;
+            color: #555;
+        }
+        
+        /* CTA section */
+        .cta-section {
+            padding: 5rem 3rem;
+            text-align: center;
+            background: linear-gradient(135deg, rgba(1, 0, 15, 0.95) 0%, rgba(35, 0, 33, 0.95) 100%);
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .cta-section::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23FFFFFF' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
+            opacity: 0.15;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .cta-container {
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .cta-section h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .cta-section p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
         }
         
         /* Footer */
         .footer {
-            background-color: var(--dark-color);
+            background-color: #03001A;
             color: var(--white-color);
             text-align: center;
-            padding: 2rem;
+            padding: 3rem;
             margin-top: 3rem;
             margin-left: var(--sidebar-width);
+            position: relative;
         }
         
         .footer p {
             margin-bottom: 1rem;
+            position: relative;
         }
         
-        .social-links {
-            display: flex;
-            justify-content: center;
-            gap: 1rem;
+        /* Animation keyframes */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
         
-        .social-link {
-            color: var(--white-color);
-            font-size: 1.5rem;
-            transition: color 0.3s;
-        }
-        
-        .social-link:hover {
-            color: var(--accent-color);
-        }
-        
-        /* Tab styles */
-        .tabs {
-            display: flex;
-            margin-bottom: 1rem;
-            border-bottom: 1px solid #ddd;
-        }
-        
-        .tab {
-            padding: 0.5rem 1rem;
-            cursor: pointer;
-            border: 1px solid transparent;
-            border-radius: 4px 4px 0 0;
-            margin-right: 0.5rem;
-            transition: all 0.2s;
-        }
-        
-        .tab.active {
-            background-color: var(--white-color);
-            border-color: #ddd;
-            border-bottom-color: var(--white-color);
-            margin-bottom: -1px;
-            color: var(--primary-color);
-            font-weight: 600;
-        }
-        
-        .tab-content {
-            display: none;
-            padding: 1rem;
-            background-color: var(--white-color);
-            border-radius: 0 0 4px 4px;
-        }
-        
-        .tab-content.active {
-            display: block;
-        }
-        
-        /* Image styles for example images */
-        .example-image {
-            max-width: 100%;
-            height: auto;
-            margin: 1rem 0;
-            border-radius: 4px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-        
-        /* Two-column layout for ID card data */
-        .document-data-columns {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 1.5rem;
-        }
-        
-        .document-data-item {
-            background-color: #f8f9fa;
-            padding: 1rem;
-            border-radius: 4px;
-            border-left: 3px solid var(--primary-color);
-        }
-        
-        .document-data-label {
-            font-weight: 600;
-            margin-bottom: 0.25rem;
-            color: var(--dark-color);
-        }
-        
-        .document-data-value {
-            color: #555;
-        }
-        
-        /* Download button */
-        .download-btn {
-            display: inline-flex;
-            align-items: center;
-            background-color: var(--primary-color);
-            color: white;
-            padding: 0.75rem 1.5rem;
-            border-radius: 4px;
-            font-weight: 600;
-            text-decoration: none;
-            transition: background-color 0.3s, transform 0.2s;
-            margin-bottom: 2rem;
-        }
-        
-        .download-btn i {
-            margin-right: 0.5rem;
-        }
-        
-        .download-btn:hover {
-            background-color: var(--secondary-color);
-            transform: translateY(-2px);
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
         }
         
         /* Responsive styles */
@@ -467,8 +873,12 @@
                 display: block;
             }
             
-            .document-data-columns {
+            .example-grid {
                 grid-template-columns: 1fr;
+            }
+            
+            .features-grid {
+                grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
             }
         }
         
@@ -479,6 +889,23 @@
             
             .nav-item:not(.swagger-btn) {
                 display: none;
+            }
+            
+            .hero {
+                padding: 3rem 1.5rem;
+            }
+            
+            .hero h2 {
+                font-size: 2rem;
+            }
+            
+            .overview-section, .model-section {
+                padding: 3rem 1.5rem;
+            }
+            
+            .model-details {
+                flex-direction: column;
+                gap: 1.5rem;
             }
         }
         
@@ -497,6 +924,31 @@
         @media (max-width: 992px) {
             .sidebar-overlay.active {
                 display: block;
+            }
+        }
+        
+        .credit-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.35rem 0.35rem; 
+            border-radius: 4px;
+            font-weight: 400;
+            font-size: 1.5rem; 
+            color: white;
+            background: linear-gradient(135deg, rgba(1, 0, 15, 1) 0%, rgba(74, 111, 227, 1) 100%);
+            animation: pulse 3s infinite ease-in-out;
+        }
+        
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(74, 111, 227, 0.4);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(74, 111, 227, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(74, 111, 227, 0);
             }
         }
     </style>
@@ -531,262 +983,440 @@
     <!-- RENDER THE SIDEBAR TEMPLATE-->
     <aside class="sidebar">
         {% include 'sidebar.html' %}
-    </aside>    
-
+    </aside>
+    
     <main class="main-content">
-        <section class="content-section">
-            <h2>OCR Services</h2>
-            
-            <p>Our OCR (Optical Character Recognition) services provide specialized document extraction capabilities for South African ID documents and vehicle license discs. These services extract structured data from document images and return it in a standardized JSON format.</p>
-            
-            <a href="/static/files/ai-api-postman-collection.json" class="download-btn">
-                <i class="fas fa-download"></i> Download Postman Collection
-            </a>
-            
-            <div class="info-box">
-                <div class="info-box-icon"><i class="fas fa-info-circle"></i></div>
-                <div class="info-box-content">
-                    <h4>Authentication Required</h4>
-                    <p>All OCR services require authentication using a token. You must include your token in the <code>X-Token</code> header for all requests.</p>
-                    <p>See the <a href="{{ url_for('token_services') }}">Token Services</a> documentation for details on token generation.</p>
+        <section class="hero">
+            <div class="hero-container">
+                <h2>OCR Services</h2>
+                <p>Extract valuable information from South African ID documents and vehicle license discs using our specialized OCR services. Turn images into structured data for seamless integration into your applications.</p>
+                <div class="cta-buttons">
+                    <a href="/static/files/ai-api-postman-collection.json" class="cta-btn">
+                        <i class="fas fa-download"></i> Download Postman Collection
+                    </a>
+                    <a href="/apidocs/#/OCR" class="cta-btn cta-btn-secondary">
+                        <i class="fas fa-book"></i> Swagger API Docs
+                    </a>
                 </div>
             </div>
-            
-            <div class="tabs">
-                <div class="tab active" data-tab="sa-id">South African ID</div>
-                <div class="tab" data-tab="vehicle-license">Vehicle License Disc</div>
-            </div>
-            
-            <!-- South African ID Tab -->
-            <div id="sa-id" class="tab-content active">
-                <h3>South African ID Document OCR</h3>
-                <p>This endpoint extracts information from South African ID documents (both green ID books and smart ID cards) using advanced OCR technology. The service can extract data from the barcode (when present) or directly from the image using machine learning.</p>
-                
-                <h4>Endpoint</h4>
-                <div class="api-endpoints">
-                    <div class="endpoint">
-                        <span class="endpoint-method method-post">POST</span>
-                        <span class="endpoint-path">/ocr/sa_id_card</span>
-                        <span class="endpoint-description">Extract information from South African ID documents</span>
+        </section>
+        
+        <!-- Overview section -->
+        <section class="overview-section">
+            <div class="overview-container">
+                <div class="section-header">
+                    <div class="section-icon">
+                        <i class="fas fa-eye"></i>
                     </div>
+                    <h2>Overview</h2>
                 </div>
                 
-                <h4>How It Works</h4>
-                <ol>
-                    <li>First, upload your ID document image using the <code>/file</code> endpoint</li>
-                    <li>Receive a <code>file_id</code> for your uploaded image</li>
-                    <li>Submit this <code>file_id</code> to the OCR endpoint</li>
-                    <li>Receive structured ID information in response</li>
-                </ol>
-                <p>The uploaded file is automatically deleted after processing to maintain document security.</p>
+                <p class="section-intro">Our OCR (Optical Character Recognition) services provide specialized document extraction capabilities for South African ID documents and vehicle license discs. These services extract structured data from document images and return it in a standardized JSON format.</p>
+                <br><br>
                 
-                <h4>Request Parameters</h4>
-                <div class="code-block">
-                    <pre>
-{
-    "file_id": "your-file-id"  // ID of previously uploaded ID document image
-}
-                    </pre>
-                </div>
-                
-                <h4>Supported File Types</h4>
-                <ul>
-                    <li><strong>Images</strong> (.jpg, .jpeg, .png)</li>
-                    <li><strong>PDF</strong> (.pdf) - Single page containing the ID document</li>
-                    <li><strong>TIFF</strong> (.tiff, .tif)</li>
-                </ul>
-                
-                <h4>Example Response</h4>
-                <div class="code-block">
-                    <pre>
-{
-    "surname": "SMITH",
-    "names": "JOHN JAMES",
-    "sex": "M",
-    "nationality": "RSA",
-    "identity_number": "8001015009087",
-    "date_of_birth": "01 JAN 1980",
-    "country_of_birth": "SOUTH AFRICA",
-    "num_documents_processed": 1,
-    "num_pages_processed": 1,
-    "input_tokens": 120,
-    "completion_tokens": 45,
-    "output_tokens": 165
-}
-                    </pre>
-                </div>
-                
-                <h4>Response Fields</h4>
-                <div class="document-data-columns">
-                    <div class="document-data-item">
-                        <div class="document-data-label">surname</div>
-                        <div class="document-data-value">Last name of the ID holder</div>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-id-card"></i>
+                        </div>
+                        <h3>South African ID Processing</h3>
+                        <p>Extract key information from both green ID books and smart ID cards, including personal details, ID numbers, and citizenship information.</p>
                     </div>
-                    <div class="document-data-item">
-                        <div class="document-data-label">names</div>
-                        <div class="document-data-value">Given names of the ID holder</div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-car"></i>
+                        </div>
+                        <h3>Vehicle License Disc Analysis</h3>
+                        <p>Automatically extract vehicle information including registration numbers, make, model, VIN numbers, and expiry dates from license discs.</p>
                     </div>
-                    <div class="document-data-item">
-                        <div class="document-data-label">sex</div>
-                        <div class="document-data-value">Gender (M or F)</div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-barcode"></i>
+                        </div>
+                        <h3>Barcode Processing</h3>
+                        <p>Extract data directly from document barcodes (when present) for higher accuracy and more reliable information extraction.</p>
                     </div>
-                    <div class="document-data-item">
-                        <div class="document-data-label">nationality</div>
-                        <div class="document-data-value">Nationality (usually RSA)</div>
-                    </div>
-                    <div class="document-data-item">
-                        <div class="document-data-label">identity_number</div>
-                        <div class="document-data-value">South African ID number (13 digits)</div>
-                    </div>
-                    <div class="document-data-item">
-                        <div class="document-data-label">date_of_birth</div>
-                        <div class="document-data-value">Birth date in DD MMM YYYY format</div>
-                    </div>
-                    <div class="document-data-item">
-                        <div class="document-data-label">country_of_birth</div>
-                        <div class="document-data-value">Country where ID holder was born</div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                        <h3>Multiple Format Support</h3>
+                        <p>Process images (.jpg, .jpeg, .png), PDFs (.pdf), and TIFF files (.tiff, .tif) for maximum flexibility in your document workflows.</p>
                     </div>
                 </div>
                 
                 <div class="info-box">
-                    <div class="info-box-icon"><i class="fas fa-lightbulb"></i></div>
+                    <div class="info-box-icon"><i class="fas fa-info-circle"></i></div>
                     <div class="info-box-content">
-                        <h4>Pro Tips for ID Document OCR</h4>
-                        <ul>
-                            <li>For best results, ensure the ID document is well-lit and the entire document is visible in the image</li>
-                            <li>Position the document against a dark background for better contrast</li>
-                            <li>Barcode extraction (when available) is more accurate than image OCR</li>
-                            <li>For Smart ID cards, scan both sides but submit the side with the ID number and personal details</li>
-                        </ul>
+                        <h4>Authentication Required</h4>
+                        <p>All OCR services require authentication using a token. You must include your token in the <code>X-Token</code> header for all requests.</p>
+                        <p>See the <a href="{{ url_for('token_services') }}">Token Services</a> documentation for details on token generation.</p>
                     </div>
                 </div>
             </div>
-            
-            <!-- Vehicle License Disc Tab -->
-            <div id="vehicle-license" class="tab-content">
-                <h3>Vehicle License Disc OCR</h3>
-                <p>This endpoint extracts information from South African vehicle license discs using OCR technology. The service can extract data from the barcode (when present) or directly from the license disc image using machine learning.</p>
-                
-                <h4>Endpoint</h4>
-                <div class="api-endpoints">
-                    <div class="endpoint">
-                        <span class="endpoint-method method-post">POST</span>
-                        <span class="endpoint-path">/ocr/vehicle_license_disc</span>
-                        <span class="endpoint-description">Extract information from South African vehicle license discs</span>
+        </section>
+        
+        <!-- South African ID section -->
+        <section class="model-section">
+            <div class="model-container">
+                <div class="model-header" style="display: flex; align-items: center;">
+                    <div class="model-icon sa-id-icon">
+                        <i class="fas fa-id-card"></i>
+                    </div>
+                    <div class="model-info" style="flex-grow: 1; margin-left: 1rem;">
+                        <h2 style="display: flex; justify-content: space-between; align-items: center;">
+                            South African ID Documents
+                            <div class="credit-badge">3 AI Credits</div>
+                        </h2>
+                        <p>Extract structured information from South African ID documents including green ID books and smart ID cards using advanced OCR technology. The service can extract data from the barcode (when present) or directly from the image using machine learning.</p>
                     </div>
                 </div>
                 
-                <h4>How It Works</h4>
-                <ol>
-                    <li>First, upload your license disc image using the <code>/file</code> endpoint</li>
-                    <li>Receive a <code>file_id</code> for your uploaded image</li>
-                    <li>Submit this <code>file_id</code> to the OCR endpoint</li>
-                    <li>Receive structured vehicle license information in response</li>
-                </ol>
-                <p>The uploaded file is automatically deleted after processing to maintain document security.</p>
-                
-                <h4>Request Parameters</h4>
-                <div class="code-block">
-                    <pre>
-{
-    "file_id": "your-file-id"  // ID of previously uploaded license disc image
-}
-                    </pre>
-                </div>
-                
-                <h4>Supported File Types</h4>
-                <ul>
-                    <li><strong>Images</strong> (.jpg, .jpeg, .png)</li>
-                    <li><strong>PDF</strong> (.pdf) - Single page containing the license disc</li>
-                    <li><strong>TIFF</strong> (.tiff, .tif)</li>
-                </ul>
-                
-                <h4>Example Response</h4>
-                <div class="code-block">
-                    <pre>
-{
-    "veh_no": "12345678",
-    "veh_reg_no": "ABC123GP",
-    "veh_register_no": "1234567890123",
-    "veh_description": "TOYOTA COROLLA 1.8 GLS",
-    "veh_make": "TOYOTA",
-    "veh_model": "COROLLA",
-    "veh_color": "WHITE",
-    "veh_vin_no": "ABCD12345XYZ67890",
-    "veh_engine_no": "1AB2345678",
-    "veh_expiry": "2025-12-31",
-    "extraction_method": "barcode analysis",
-    "num_documents_processed": 1,
-    "num_pages_processed": 1,
-    "input_tokens": 0,
-    "completion_tokens": 0,
-    "output_tokens": 0
-}
-                    </pre>
-                </div>
-                
-                <h4>Response Fields</h4>
-                <div class="document-data-columns">
-                    <div class="document-data-item">
-                        <div class="document-data-label">veh_no</div>
-                        <div class="document-data-value">RSA identification number</div>
-                    </div>
-                    <div class="document-data-item">
-                        <div class="document-data-label">veh_reg_no</div>
-                        <div class="document-data-value">Vehicle license number (license plate)</div>
-                    </div>
-                    <div class="document-data-item">
-                        <div class="document-data-label">veh_register_no</div>
-                        <div class="document-data-value">Vehicle registration number</div>
-                    </div>
-                    <div class="document-data-item">
-                        <div class="document-data-label">veh_description</div>
-                        <div class="document-data-value">Vehicle model and details</div>
-                    </div>
-                    <div class="document-data-item">
-                        <div class="document-data-label">veh_make</div>
-                        <div class="document-data-value">Vehicle manufacturer</div>
-                    </div>
-                    <div class="document-data-item">
-                        <div class="document-data-label">veh_model</div>
-                        <div class="document-data-value">Vehicle model</div>
-                    </div>
-                    <div class="document-data-item">
-                        <div class="document-data-label">veh_color</div>
-                        <div class="document-data-value">Vehicle color</div>
-                    </div>
-                    <div class="document-data-item">
-                        <div class="document-data-label">veh_vin_no</div>
-                        <div class="document-data-value">Vehicle Identification Number</div>
-                    </div>
-                    <div class="document-data-item">
-                        <div class="document-data-label">veh_engine_no</div>
-                        <div class="document-data-value">Engine number</div>
-                    </div>
-                    <div class="document-data-item">
-                        <div class="document-data-label">veh_expiry</div>
-                        <div class="document-data-value">License expiry date</div>
-                    </div>
-                    <div class="document-data-item">
-                        <div class="document-data-label">extraction_method</div>
-                        <div class="document-data-value">Method used to extract data (barcode analysis or image ocr)</div>
-                    </div>
-                </div>
-                
-                <div class="info-box">
-                    <div class="info-box-icon"><i class="fas fa-lightbulb"></i></div>
-                    <div class="info-box-content">
-                        <h4>Pro Tips for License Disc OCR</h4>
+                <div class="model-details">
+                    <div class="model-detail-card sa-id-card">
+                        <h3><i class="fas fa-cogs"></i> Features</h3>
                         <ul>
-                            <li>For best results, capture the entire license disc including the barcode</li>
-                            <li>Ensure the barcode (PDF417) is clearly visible for more accurate extraction</li>
-                            <li>Remove the license disc from the windshield to avoid glare and reflections</li>
-                            <li>Position the disc against a dark background for better contrast</li>
-                            <li>When <code>extraction_method</code> is "barcode analysis", the data is extracted directly from the PDF417 barcode and is highly accurate</li>
+                            <li>Extraction from both green ID books and smart ID cards</li>
+                            <li>Barcode extraction for higher accuracy</li>
+                            <li>Fallback to image OCR using machine learning</li>
+                            <li>Multiple file format support (JPG, PNG, PDF, TIFF)</li>
+                            <li>Automatic document cleanup and processing</li>
+                            <li>Secure document handling with automatic deletion</li>
                         </ul>
                     </div>
+                    
+                    <div class="model-detail-card sa-id-card" style="line-height: 1.8;">
+                        <h3><i class="fas fa-code"></i> API Endpoint</h3>
+                        <div class="endpoint-box">
+                            POST /ocr/sa_id_card
+                        </div>
+                        <p>Extract information from South African ID documents by sending a POST request to this endpoint with your file ID.</p>
+                        <p>Required parameters:</p>
+                        <ul>
+                            <li><strong>file_id</strong>: ID of the previously uploaded ID document image</li>
+                            <li><strong>X-Token</strong>: Your API authentication token (header)</li>
+                        </ul>
+                        <p>File upload process:</p>
+                        <ol>
+                            <li>First, upload your ID document image using the <code>/file</code> endpoint</li>
+                            <li>Receive a <code>file_id</code> for your uploaded image</li>
+                            <li>Submit this <code>file_id</code> to the OCR endpoint</li>
+                            <li>Receive structured ID information in response</li>
+                        </ol>
+                    </div>
                 </div>
                 
+                <h3>Example</h3>
+                <div class="example-grid">
+                    <div class="example-settings sa-id-settings">
+                        <h3 class="settings-title">Request Details</h3>
+                        
+                        <div class="setting-group">
+                            <span class="setting-label">API Endpoint</span>
+                            <div class="setting-value">POST /ocr/sa_id_card</div>
+                        </div>
+                        
+                        <div class="setting-group">
+                            <span class="setting-label">Headers</span>
+                            <div class="setting-value">
+                                X-Token: your-authentication-token
+                            </div>
+                        </div>
+                        
+                        <div class="setting-group">
+                            <span class="setting-label">Request Body</span>
+                            <div class="setting-value">
+                                {
+                                  "file_id": "your-file-id"
+                                }
+                            </div>
+                        </div>
+                        
+                        <div class="setting-group">
+                            <span class="setting-label">Supported File Types</span>
+                            <div class="setting-value">
+                                Images (.jpg, .jpeg, .png), PDF (.pdf), TIFF (.tiff, .tif)
+                            </div>
+                        </div>
+                        
+                        <div class="info-box sa-id-info-box" style="margin-top: 2rem;">
+                            <div class="info-box-icon"><i class="fas fa-lightbulb"></i></div>
+                            <div class="info-box-content">
+                                <h4>Pro Tips for ID Document OCR</h4>
+                                <ul>
+                                    <li>For best results, ensure the ID document is well-lit and the entire document is visible in the image</li>
+                                    <li>Position the document against a dark background for better contrast</li>
+                                    <li>Barcode extraction (when available) is more accurate than image OCR</li>
+                                    <li>For Smart ID cards, scan both sides but submit the side with the ID number and personal details</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="example-response sa-id-response">
+                        <div class="response-header">
+                            <h4>Response Example</h4>
+                        </div>
+                        <div class="response-container">
+                            <div class="code-block">
+{
+  "surname": "SMITH",
+  "names": "JOHN JAMES",
+  "sex": "M",
+  "nationality": "RSA",
+  "identity_number": "8001015009087",
+  "date_of_birth": "01 JAN 1980",
+  "country_of_birth": "SOUTH AFRICA",
+  "num_documents_processed": 1,
+  "num_pages_processed": 1,
+  "input_tokens": 120,
+  "completion_tokens": 45,
+  "output_tokens": 165
+}
+                            </div>
+                            
+                            <h4 style="margin-top: 1.5rem;">Response Fields</h4>
+                            <div class="response-fields-grid">
+                                <div class="response-field-item">
+                                    <div class="response-field-label">surname</div>
+                                    <div class="response-field-description">Last name of the ID holder</div>
+                                </div>
+                                <div class="response-field-item">
+                                    <div class="response-field-label">names</div>
+                                    <div class="response-field-description">Given names of the ID holder</div>
+                                </div>
+                                <div class="response-field-item">
+                                    <div class="response-field-label">sex</div>
+                                    <div class="response-field-description">Gender (M or F)</div>
+                                </div>
+                                <div class="response-field-item">
+                                    <div class="response-field-label">nationality</div>
+                                    <div class="response-field-description">Nationality (usually RSA)</div>
+                                </div>
+                                <div class="response-field-item">
+                                    <div class="response-field-label">identity_number</div>
+                                    <div class="response-field-description">South African ID number (13 digits)</div>
+                                </div>
+                                <div class="response-field-item">
+                                    <div class="response-field-label">date_of_birth</div>
+                                    <div class="response-field-description">Birth date in DD MMM YYYY format</div>
+                                </div>
+                                <div class="response-field-item">
+                                    <div class="response-field-label">country_of_birth</div>
+                                    <div class="response-field-description">Country where ID holder was born</div>
+                                </div>
+                                <div class="response-field-item">
+                                    <div class="response-field-label">num_documents_processed</div>
+                                    <div class="response-field-description">Number of documents processed</div>
+                                </div>
+                                <div class="response-field-item">
+                                    <div class="response-field-label">num_pages_processed</div>
+                                    <div class="response-field-description">Number of pages processed</div>
+                                </div>
+                                <div class="response-field-item">
+                                    <div class="response-field-label">input_tokens</div>
+                                    <div class="response-field-description">Input tokens used (if AI analysis was needed)</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Vehicle License Disc section -->
+        <section class="model-section alternate">
+            <div class="model-container">
+                <div class="model-header">
+                    <div class="model-icon vehicle-license-icon">
+                        <i class="fas fa-car"></i>
+                    </div>
+                    <div class="model-info">
+                        <h2 style="display: flex; justify-content: space-between; align-items: center;">
+                            Vehicle License Disc
+                            <div class="credit-badge">3 AI Credits</div>
+                        </h2>
+                        <p>Extract detailed information from South African vehicle license discs using OCR technology. The service can extract data from the barcode (when present) or directly from the license disc image using machine learning.</p>
+                    </div>
+                </div>
+                
+                <div class="model-details">
+                    <div class="model-detail-card vehicle-license-card">
+                        <h3><i class="fas fa-cogs"></i> Features</h3>
+                        <ul>
+                            <li>High-fidelity extraction from vehicle license discs</li>
+                            <li>PDF417 barcode extraction for higher accuracy</li>
+                            <li>Fallback to image OCR using machine learning</li>
+                            <li>Multiple file format support (JPG, PNG, PDF, TIFF)</li>
+                            <li>Extraction method indication in response</li>
+                            <li>Secure document handling with automatic deletion</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="model-detail-card vehicle-license-card">
+                        <h3><i class="fas fa-code"></i> API Endpoint</h3>
+                        <div class="endpoint-box">
+                            POST /ocr/vehicle_license_disc
+                        </div>
+                        <p>Extract information from South African vehicle license discs by sending a POST request to this endpoint with your file ID.</p>
+                        <p>Required parameters:</p>
+                        <ul>
+                            <li><strong>file_id</strong>: ID of the previously uploaded license disc image</li>
+                            <li><strong>X-Token</strong>: Your API authentication token (header)</li>
+                        </ul>
+                        <p>File upload process:</p>
+                        <ol>
+                            <li>First, upload your license disc image using the <code>/file</code> endpoint</li>
+                            <li>Receive a <code>file_id</code> for your uploaded image</li>
+                            <li>Submit this <code>file_id</code> to the OCR endpoint</li>
+                            <li>Receive structured vehicle license information in response</li>
+                        </ol>
+                    </div>
+                </div>
+                
+                <h3>Example</h3>
+                <div class="example-grid">
+                    <div class="example-settings vehicle-license-settings">
+                        <h3 class="settings-title">Request Details</h3>
+                        
+                        <div class="setting-group">
+                            <span class="setting-label">API Endpoint</span>
+                            <div class="setting-value">POST /ocr/vehicle_license_disc</div>
+                        </div>
+                        
+                        <div class="setting-group">
+                            <span class="setting-label">Headers</span>
+                            <div class="setting-value">
+                                X-Token: your-authentication-token
+                            </div>
+                        </div>
+                        
+                        <div class="setting-group">
+                            <span class="setting-label">Request Body</span>
+                            <div class="setting-value">
+                                {
+                                  "file_id": "your-file-id"
+                                }
+                            </div>
+                        </div>
+                        
+                        <div class="setting-group">
+                            <span class="setting-label">Supported File Types</span>
+                            <div class="setting-value">
+                                Images (.jpg, .jpeg, .png), PDF (.pdf), TIFF (.tiff, .tif)
+                            </div>
+                        </div>
+                        
+                        <div class="info-box vehicle-license-info-box" style="margin-top: 2rem;">
+                            <div class="info-box-icon"><i class="fas fa-lightbulb"></i></div>
+                            <div class="info-box-content">
+                                <h4>Pro Tips for License Disc OCR</h4>
+                                <ul>
+                                    <li>For best results, capture the entire license disc including the barcode</li>
+                                    <li>Ensure the barcode (PDF417) is clearly visible for more accurate extraction</li>
+                                    <li>Remove the license disc from the windshield to avoid glare and reflections</li>
+                                    <li>Position the disc against a dark background for better contrast</li>
+                                    <li>When <code>extraction_method</code> is "barcode analysis", the data is extracted directly from the PDF417 barcode and is highly accurate</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="example-response vehicle-license-response">
+                        <div class="response-header">
+                            <h4>Response Example</h4>
+                        </div>
+                        <div class="response-container">
+                            <div class="code-block">
+{
+  "veh_no": "12345678",
+  "veh_reg_no": "ABC123GP",
+  "veh_register_no": "1234567890123",
+  "veh_description": "TOYOTA COROLLA 1.8 GLS",
+  "veh_make": "TOYOTA",
+  "veh_model": "COROLLA",
+  "veh_color": "WHITE",
+  "veh_vin_no": "ABCD12345XYZ67890",
+  "veh_engine_no": "1AB2345678",
+  "veh_expiry": "2025-12-31",
+  "extraction_method": "barcode analysis",
+  "num_documents_processed": 1,
+  "num_pages_processed": 1,
+  "input_tokens": 0,
+  "completion_tokens": 0,
+  "output_tokens": 0
+}
+                            </div>
+                            
+                            <h4 style="margin-top: 1.5rem;">Response Fields</h4>
+                            <div class="response-fields-grid">
+                                <div class="response-field-item">
+                                    <div class="response-field-label">veh_no</div>
+                                    <div class="response-field-description">RSA identification number</div>
+                                </div>
+                                <div class="response-field-item">
+                                    <div class="response-field-label">veh_reg_no</div>
+                                    <div class="response-field-description">Vehicle license number (license plate)</div>
+                                </div>
+                                <div class="response-field-item">
+                                    <div class="response-field-label">veh_register_no</div>
+                                    <div class="response-field-description">Vehicle registration number</div>
+                                </div>
+                                <div class="response-field-item">
+                                    <div class="response-field-label">veh_description</div>
+                                    <div class="response-field-description">Vehicle model and details</div>
+                                </div>
+                                <div class="response-field-item">
+                                    <div class="response-field-label">veh_make</div>
+                                    <div class="response-field-description">Vehicle manufacturer</div>
+                                </div>
+                                <div class="response-field-item">
+                                    <div class="response-field-label">veh_model</div>
+                                    <div class="response-field-description">Vehicle model</div>
+                                </div>
+                                <div class="response-field-item">
+                                    <div class="response-field-label">veh_color</div>
+                                    <div class="response-field-description">Vehicle color</div>
+                                </div>
+                                <div class="response-field-item">
+                                    <div class="response-field-label">veh_vin_no</div>
+                                    <div class="response-field-description">Vehicle Identification Number</div>
+                                </div>
+                                <div class="response-field-item">
+                                    <div class="response-field-label">veh_engine_no</div>
+                                    <div class="response-field-description">Engine number</div>
+                                </div>
+                                <div class="response-field-item">
+                                    <div class="response-field-label">veh_expiry</div>
+                                    <div class="response-field-description">License expiry date</div>
+                                </div>
+                                <div class="response-field-item">
+                                    <div class="response-field-label">extraction_method</div>
+                                    <div class="response-field-description">Method used to extract data</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- CTA Section -->
+        <section class="cta-section">
+            <div class="cta-container">
+                <h2>Start Extracting Document Data Today</h2>
+                <p>Integrate our powerful OCR services into your applications and automate your document processing workflows.</p>
+                <div class="cta-buttons" style="justify-content: center;">
+                    <a href="/static/files/ai-api-postman-collection.json" class="cta-btn">
+                        <i class="fas fa-download"></i> Download Postman Collection
+                    </a>
+                    <a href="/apidocs/#/OCR" class="cta-btn cta-btn-secondary">
+                        <i class="fas fa-book"></i> Swagger API Docs
+                    </a>
+                </div>
             </div>
         </section>
     </main>
@@ -812,25 +1442,6 @@
                 overlay.classList.remove('active');
             });
             
-            // Tab functionality
-            const tabs = document.querySelectorAll('.tab');
-            const tabContents = document.querySelectorAll('.tab-content');
-            
-            tabs.forEach(tab => {
-                tab.addEventListener('click', function() {
-                    // Remove active class from all tabs and contents
-                    tabs.forEach(t => t.classList.remove('active'));
-                    tabContents.forEach(c => c.classList.remove('active'));
-                    
-                    // Add active class to clicked tab
-                    this.classList.add('active');
-                    
-                    // Show corresponding content
-                    const tabId = this.getAttribute('data-tab');
-                    document.getElementById(tabId).classList.add('active');
-                });
-            });
-            
             // Highlight current page in sidebar
             const currentPage = window.location.pathname;
             const sidebarLinks = document.querySelectorAll('.sidebar-link');
@@ -840,6 +1451,26 @@
                     link.classList.add('active');
                 }
             });
+            
+            // Add scroll animation for elements
+            const animateOnScroll = function() {
+                const elements = document.querySelectorAll('.feature-card, .model-detail-card, .example-response, .example-settings, .section-header');
+                
+                elements.forEach(element => {
+                    const elementPosition = element.getBoundingClientRect().top;
+                    const screenPosition = window.innerHeight / 1.2;
+                    
+                    if (elementPosition < screenPosition) {
+                        element.style.animation = 'fadeInUp 0.6s ease-out forwards';
+                    }
+                });
+            };
+            
+            // Run on load
+            animateOnScroll();
+            
+            // Run on scroll
+            window.addEventListener('scroll', animateOnScroll);
         });
     </script>
 </body>
