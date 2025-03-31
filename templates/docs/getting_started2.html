@@ -1,0 +1,1297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Getting Started - AI API Platform</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4a6fe3;
+            --secondary-color: #6c63ff;
+            --dark-color: #2a2c3b;
+            --light-color: #f5f6fa;
+            --text-color: #333;
+            --white-color: #ffffff;
+            --accent-color: #00d4ff;
+            --accent-gradient: linear-gradient(90deg, #00d4ff 0%, #6c63ff 100%);
+            --magenta-dark: #3B0138; /* Updated dark magenta color */
+            --magenta-gradient: linear-gradient(90deg, #3B0138 0%, #4a6fe3 100%);
+            --sidebar-width: 280px;
+            --header-height: 60px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--light-color);
+            color: var(--text-color);
+            position: relative;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%234a6fe3' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        .header {
+            background-color: #03001A;
+            color: var(--white-color);
+            padding: 0 2rem;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: var(--header-height);
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo i {
+            font-size: 1.8rem;
+            margin-right: 0.5rem;
+            color: var(--accent-color);
+        }
+        
+        .logo h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+        
+        .nav {
+            display: flex;
+            align-items: center;
+        }
+        
+        .nav-item {
+            margin-left: 1.5rem;
+            color: var(--white-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+            display: flex;
+            align-items: center;
+        }
+        
+        .nav-item:hover {
+            color: var(--accent-color);
+        }
+        
+        .nav-item i {
+            margin-right: 0.5rem;
+        }
+        
+        .swagger-btn {
+            background-color: var(--accent-color);
+            color: var(--dark-color);
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-weight: 600;
+            transition: all 0.3s;
+            box-shadow: 0 4px 10px rgba(0, 212, 255, 0.3);
+        }
+        
+        .swagger-btn:hover {
+            background-color: #00b8e6;
+            transform: translateY(-2px);
+            color: var(--dark-color);
+            box-shadow: 0 6px 15px rgba(0, 212, 255, 0.4);
+        }
+        
+        /* Mobile menu toggle */
+        .menu-toggle {
+            display: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            top: var(--header-height);
+            left: 0;
+            height: calc(100vh - var(--header-height));
+            width: var(--sidebar-width);
+            background-color: var(--white-color);
+            border-right: 1px solid rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+            z-index: 900;
+            padding: 1.5rem 0;
+            transition: transform 0.3s ease-in-out;
+        }
+        
+        .sidebar-category {
+            padding: 0.5rem 1.5rem;
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar-link {
+            display: block;
+            padding: 0.7rem 1.5rem;
+            padding-left: 2.5rem;
+            color: var(--text-color);
+            text-decoration: none;
+            transition: background-color 0.2s, color 0.2s;
+            font-size: 0.95rem;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar-link:hover {
+            background-color: rgba(106, 100, 255, 0.05);
+            color: var(--primary-color);
+        }
+        
+        .sidebar-link.active {
+            color: var(--primary-color);
+            background-color: rgba(106, 100, 255, 0.08);
+            border-left: 3px solid var(--primary-color);
+        }
+        
+        .sidebar-link i {
+            margin-right: 0.5rem;
+            width: 20px;
+            text-align: center;
+        }
+        
+        .sidebar-submenu {
+            margin-left: 1rem;
+        }
+        
+        .sidebar-submenu .sidebar-link {
+            padding-left: 3rem;
+            font-size: 0.9rem;
+        }
+        
+        /* Main content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            margin-top: var(--header-height);
+            padding: 0;
+            min-height: calc(100vh - var(--header-height));
+        }
+        
+        /* Hero */
+        .hero {
+            background: linear-gradient(135deg, rgba(1, 0, 15, 1) 0%, rgba(35, 0, 33, 1) 100%);
+            color: var(--white-color);
+            padding: 5rem 3rem;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        .hero::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23FFFFFF' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
+            opacity: 0.12;
+            pointer-events: none;
+            animation: zoomDots 20s linear infinite;
+            transform-origin: center;
+            z-index: 0;
+        }
+        
+        @keyframes zoomDots {
+            0% {
+                transform: scale(0.3);
+                opacity: 0.1;
+            }
+            50% {
+                transform: scale(0.7);
+                opacity: 0.15;
+            }
+            100% {
+                transform: scale(0.3);
+                opacity: 0.1;
+            }
+        }
+        
+        .hero-container {
+            max-width: 1440px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .hero h2 {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+            max-width: 840px;
+            background: linear-gradient(to left, var(--white-color), var(--accent-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: fadeInUp 0.8s ease-out;
+        }
+        
+        .hero p {
+            font-size: 1.2rem;
+            max-width: 700px;
+            margin-bottom: 2rem;
+            line-height: 1.7;
+            color: rgba(255, 255, 255, 0.9);
+            animation: fadeInUp 1s ease-out;
+        }
+        
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            animation: fadeInUp 1.2s ease-out;
+        }
+        
+        .cta-btn {
+            display: inline-flex;
+            align-items: center;
+            background-color: var(--accent-color);
+            color: var(--dark-color);
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
+        }
+        
+        .cta-btn:hover {
+            background-color: #00b8e6;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 212, 255, 0.4);
+        }
+        
+        .cta-btn-secondary {
+            background-color: transparent;
+            color: var(--white-color);
+            border: 2px solid var(--white-color);
+            box-shadow: none;
+        }
+        
+        .cta-btn-secondary:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--white-color);
+            box-shadow: 0 4px 15px rgba(255, 255, 255, 0.2);
+        }
+        
+        .cta-btn i {
+            margin-right: 0.5rem;
+        }
+        
+        /* Features highlights */
+        .features-highlight {
+            padding: 2rem 3rem;
+            background-color: var(--white-color);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .features-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .highlight-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .highlight-icon {
+            font-size: 1.5rem;
+            width: 3.5rem;
+            height: 3.5rem;
+            border-radius: 50%;
+            background: var(--accent-gradient);
+            color: var(--white-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .highlight-text h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.2rem;
+            color: var(--dark-color);
+        }
+        
+        .highlight-text p {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        /* Content sections */
+        .content-section {
+            padding: 5rem 3rem;
+            position: relative;
+        }
+        
+        .content-section.alt-bg {
+            background-color: #f8faff;
+        }
+        
+        .section-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        .section-header h2 {
+            font-size: 2.5rem;
+            color: var(--dark-color);
+            margin-bottom: 1rem;
+            position: relative;
+            display: inline-block;
+        }
+        
+        .section-header h2::after {
+            content: "";
+            position: absolute;
+            left: 50%;
+            bottom: -10px;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: var(--accent-gradient);
+            border-radius: 2px;
+        }
+        
+        .section-header p {
+            color: #666;
+            font-size: 1.1rem;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        
+        /* Steps grid */
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 4rem;
+        }
+        
+        .step-card {
+            background-color: var(--white-color);
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            z-index: 1;
+        }
+        
+        .step-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to right, rgba(138, 43, 226, 0.05), rgba(74, 111, 227, 0.05));
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .step-card::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                linear-gradient(90deg, var(--magenta-dark) 50%, transparent 50%) 0 0,
+                linear-gradient(180deg, var(--magenta-dark) 50%, transparent 50%) 100% 0,
+                linear-gradient(270deg, var(--magenta-dark) 50%, transparent 50%) 100% 100%,
+                linear-gradient(0deg, var(--magenta-dark) 50%, transparent 50%) 0 100%;
+            background-repeat: no-repeat;
+            background-size: 0% 2px, 2px 0%, 0% 2px, 2px 0%;
+            border-radius: 8px;
+            animation: none;
+            transition: all 0.3s ease;
+        }
+        
+        .step-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(59, 1, 56, 0.15);
+        }
+        
+        .step-card:hover::before {
+            opacity: 1;
+        }
+        
+        .step-card:hover::after {
+            animation: borderRotate 2s linear infinite;
+            background-size: 100% 2px, 2px 100%, 100% 2px, 2px 100%;
+        }
+        
+        @keyframes borderRotate {
+            0% {
+                background-position: 0 0, 100% 0, 100% 100%, 0 100%;
+                opacity: 1;
+            }
+            25% {
+                background-position: 100% 0, 100% 0, 100% 100%, 0 100%;
+                opacity: 0.8;
+            }
+            50% {
+                background-position: 100% 0, 100% 100%, 100% 100%, 0 100%;
+                opacity: 1;
+            }
+            75% {
+                background-position: 100% 0, 100% 100%, 0 100%, 0 100%;
+                opacity: 0.8;
+            }
+            100% {
+                background-position: 0 0, 100% 0, 100% 100%, 0 100%;
+                opacity: 1;
+            }
+        }
+        
+        .step-number {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            background: var(--accent-gradient);
+            color: white;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 212, 255, 0.3);
+        }
+        
+        .step-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--dark-color);
+        }
+        
+        .step-card p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+            flex-grow: 1;
+        }
+        
+        .btn-container {
+            margin-top: auto;
+        }
+        
+        /* Code block */
+        .code-block {
+            background-color: #2d2d2d;
+            color: #fff;
+            padding: 1.5rem;
+            border-radius: 6px;
+            font-family: monospace;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            line-height: 1.5;
+            position: relative;
+        }
+        
+        .code-label {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: var(--accent-gradient);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.8rem;
+            border-radius: 0 6px 0 6px;
+        }
+        
+        .code-keyword {
+            color: #f92672;
+        }
+        
+        .code-string {
+            color: #a6e22e;
+        }
+        
+        .code-comment {
+            color: #75715e;
+        }
+        
+        .token-response {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #444;
+        }
+
+        /* API key tiers table */
+        .api-tiers {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background-color: var(--white-color);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .api-tiers th {
+            background-color: var(--primary-color);
+            color: var(--white-color);
+            padding: 1rem;
+            text-align: left;
+        }
+        
+        .api-tiers td {
+            padding: 1rem;
+            border-top: 1px solid #eee;
+        }
+        
+        .api-tiers tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        .api-tiers tr:hover {
+            background-color: #f0f2f5;
+        }
+        
+        .tier-name {
+            font-weight: 600;
+            color: var(--dark-color);
+        }
+        
+        .tier-credits {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+        
+        /* Info box */
+        .info-box {
+            background-color: #e7f5ff;
+            border-left: 4px solid var(--primary-color);
+            padding: 1.5rem;
+            border-radius: 6px;
+            margin: 2rem 0;
+            position: relative;
+        }
+        
+        .info-box-icon {
+            color: var(--primary-color);
+            font-size: 1.5rem;
+            position: absolute;
+            top: 1.5rem;
+            left: 1.5rem;
+        }
+        
+        .info-box-content {
+            padding-left: 2.5rem;
+        }
+        
+        .info-box-content h4 {
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+            font-size: 1.2rem;
+        }
+        
+        .info-box-content p {
+            color: #495057;
+            margin-bottom: 0.5rem;
+        }
+        
+        .info-box-content ul {
+            color: #495057;
+            margin-left: 1.5rem;
+            margin-bottom: 0;
+        }
+        
+        .info-box-content li {
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Registration form section */
+        .registration-form {
+            background-color: var(--white-color);
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            padding: 2rem;
+            margin: 2rem 0;
+        }
+        
+        .registration-form h3 {
+            color: var(--dark-color);
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+            border-bottom: 2px solid var(--light-color);
+            padding-bottom: 0.5rem;
+        }
+        
+        .registration-form .form-description {
+            margin-bottom: 1.5rem;
+            color: #666;
+            line-height: 1.6;
+        }
+        
+        .registration-form .form-link {
+            display: inline-flex;
+            align-items: center;
+            color: var(--primary-color);
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+        
+        .registration-form .form-link:hover {
+            color: var(--secondary-color);
+            text-decoration: underline;
+        }
+        
+        .registration-form .form-link i {
+            margin-right: 0.5rem;
+        }
+        
+        .registration-form h4 {
+            color: var(--dark-color);
+            margin: 1.5rem 0 1rem;
+            font-size: 1.2rem;
+        }
+        
+        .registration-form ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        
+        .registration-form li {
+            position: relative;
+            padding-left: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: #666;
+        }
+        
+        .registration-form li::before {
+            content: "\f00c";
+            font-family: "Font Awesome 5 Free";
+            font-weight: 900;
+            position: absolute;
+            left: 0;
+            color: var(--primary-color);
+        }
+        
+        /* CTA section */
+        .cta-section {
+            padding: 5rem 3rem;
+            text-align: center;
+            background: linear-gradient(135deg, rgba(1, 0, 15, 0.95) 0%, rgba(35, 0, 33, 0.95) 100%);
+            color: var(--white-color);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .cta-section::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23FFFFFF' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
+            opacity: 0.15;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .cta-container {
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .cta-section h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .cta-section p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+        
+        /* Footer */
+        .footer {
+            background-color: #03001A;
+            color: var(--white-color);
+            text-align: center;
+            padding: 3rem;
+            margin-top: 0;
+            margin-left: var(--sidebar-width);
+            position: relative;
+        }
+        
+        .footer::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%234a6fe3' fill-opacity='0.05' fill-rule='evenodd'%3E%3Ccircle cx='3' cy='3' r='3'/%3E%3Ccircle cx='13' cy='13' r='3'/%3E%3C/g%3E%3C/svg%3E");
+            opacity: 0.1;
+            pointer-events: none;
+        }
+        
+        .footer p {
+            margin-bottom: 1rem;
+            position: relative;
+        }
+        
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            position: relative;
+        }
+        
+        .social-link {
+            color: var(--white-color);
+            font-size: 1.5rem;
+            transition: all 0.3s;
+        }
+        
+        .social-link:hover {
+            color: var(--accent-color);
+            transform: translateY(-3px);
+        }
+        
+        /* Animation keyframes */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        /* Responsive styles */
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+                box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+                z-index: 1001;
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .footer {
+                margin-left: 0;
+            }
+            
+            .menu-toggle {
+                display: block;
+            }
+            
+            .features-container {
+                flex-direction: column;
+            }
+            
+            .steps-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .header {
+                padding: 0 1rem;
+            }
+            
+            .nav-item:not(.swagger-btn) {
+                display: none;
+            }
+            
+            .hero {
+                padding: 3rem 1.5rem;
+            }
+            
+            .hero h2 {
+                font-size: 2rem;
+            }
+            
+            .content-section {
+                padding: 3rem 1.5rem;
+            }
+            
+            .section-header h2 {
+                font-size: 2rem;
+            }
+            
+            .features-highlight {
+                padding: 1.5rem;
+            }
+            
+            .cta-buttons {
+                flex-direction: column;
+            }
+        }
+        
+        /* Dark overlay when sidebar is active on mobile */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        
+        @media (max-width: 992px) {
+            .sidebar-overlay.active {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <img src="/static/images/Telesure-logo.png" alt="TIH AI API Platform Logo" style="height: 40px; margin-right: 0.5rem;">
+            <h1>AI API Platform</h1>
+        </div>
+        <nav class="nav">
+            <div class="menu-toggle" id="menu-toggle">
+                <i class="fas fa-bars"></i>
+            </div>
+            <a href="{{ url_for('home') }}" class="nav-item">
+                <i class="fas fa-home"></i>Home
+            </a>
+            <a href="{{ url_for('getting_started') }}" class="nav-item">
+                <i class="fas fa-rocket"></i>Getting Started
+            </a>
+            <a href="/templates/docs/faq.html" class="nav-item">
+                <i class="fas fa-question-circle"></i>FAQ
+            </a>
+            <a href="/apidocs/" class="nav-item swagger-btn">
+                <i class="fas fa-book"></i>Swagger
+            </a>
+        </nav>
+    </header>
+    
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    
+    <!-- RENDER THE SIDEBAR TEMPLATE-->
+    <aside class="sidebar">
+        {% include 'sidebar.html' %}
+    </aside>
+    
+    <main class="main-content">
+        <section class="hero">
+            <div class="hero-container">
+                <h2>Getting Started with the AI API Platform</h2>
+                <p>Follow this guide to start integrating powerful AI capabilities into your applications. From obtaining your API key to making your first API calls, we'll walk you through everything you need to know to get started with our platform.</p>
+                <div class="cta-buttons">
+                    <a href="/static/files/ai-api-postman-collection.json" class="cta-btn">
+                        <i class="fas fa-download"></i> Download Postman Collection
+                    </a>
+                    <a href="/apidocs/" class="cta-btn cta-btn-secondary">
+                        <i class="fas fa-book"></i> API Documentation
+                    </a>
+                </div>
+            </div>
+        </section>
+        
+        <section class="features-highlight">
+            <div class="features-container">
+                <div class="highlight-item">
+                    <div class="highlight-icon">
+                        <i class="fas fa-key"></i>
+                    </div>
+                    <div class="highlight-text">
+                        <h3>Simple Setup</h3>
+                        <p>Request an API key and get started in minutes</p>
+                    </div>
+                </div>
+                <div class="highlight-item">
+                    <div class="highlight-icon">
+                        <i class="fas fa-code"></i>
+                    </div>
+                    <div class="highlight-text">
+                        <h3>Comprehensive API</h3>
+                        <p>Access all AI services through consistent endpoints</p>
+                    </div>
+                </div>
+                <div class="highlight-item">
+                    <div class="highlight-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="highlight-text">
+                        <h3>Usage Tracking</h3>
+                        <p>Monitor consumption with built-in analytics</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <div class="section-container">
+                <div class="section-header">
+                    <h2>Getting Started Process</h2>
+                    <p>Follow these steps to start using our AI API Platform</p>
+                </div>
+                
+                <div class="steps-grid">
+                    <div class="step-card">
+                        <div class="step-number">1</div>
+                        <h3>Request an API Key</h3>
+                        <p>Complete our registration form to request an API key with appropriate permissions for your needs. You can request a key for yourself as an employee or for a service account.</p>
+                        <div class="btn-container">
+                            <a href="#request-key" class="cta-btn" style="background: var(--magenta-gradient);">
+                                <i class="fas fa-key"></i> Request Key
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="step-card">
+                        <div class="step-number">2</div>
+                        <h3>Generate Authentication Token</h3>
+                        <p>Once you receive your API key, use it to generate a temporary authentication token. This token will be used for all subsequent API calls to authenticate your requests.</p>
+                        <div class="code-block">
+                            <span class="code-label">Token Generation</span>
+                            <span class="code-keyword">POST</span> /token<br>
+                            <span class="code-comment">// Use your API key in header</span><br>
+                            Headers: {<br>
+                              "API-Key": <span class="code-string">"your_api_key_here"</span><br>
+                            }
+                            
+                            <div class="token-response">
+                            <span class="code-comment">// Example response</span><br>
+                            {<br>
+                              <span class="code-string">"access_token"</span>: <span class="code-string">"eyJhbGciOiJIUzI1NiIsInR5..."</span>,<br>
+                              <span class="code-string">"expires_in"</span>: 3599<br>
+                            }
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="step-card">
+                        <div class="step-number">3</div>
+                        <h3>Explore Available Endpoints</h3>
+                        <p>Browse our comprehensive documentation to discover all available AI services. From language models to image generation, speech services, and document intelligence – choose the endpoints that meet your application's needs.</p>
+                        <div class="btn-container">
+                            <a href="/apidocs/" class="cta-btn" style="background: var(--magenta-gradient);">
+                                <i class="fas fa-book"></i> API Documentation
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="step-card">
+                        <div class="step-number">4</div>
+                        <h3>Make Your First API Call</h3>
+                        <p>Use your authentication token to make your first API call. Include the token in the header of your request to access any of our AI services. Our consistent API structure makes integration straightforward.</p>
+                        <div class="code-block">
+                            <span class="code-label">Example API Call</span>
+                            <span class="code-keyword">POST</span> /llm/gpt-4o-mini<br>
+                            <span class="code-comment">// Include token in header</span><br>
+                            Headers: {<br>
+                              "X-Token": <span class="code-string">"your_token_here"</span>,<br>
+                              "Content-Type": <span class="code-string">"application/json"</span><br>
+                            }<br>
+                            <br>
+                            Body: {<br>
+                              <span class="code-string">"user_input"</span>: <span class="code-string">"Tell me about AI APIs"</span><br>
+                            }
+                        </div>
+                    </div>
+                    
+                    <div class="step-card">
+                        <div class="step-number">5</div>
+                        <h3>Monitor Your Usage</h3>
+                        <p>Keep track of your API consumption using our Balance Management endpoints. Monitor your credit usage across different endpoints and time periods to optimize your AI utilization.</p>
+                        <div class="code-block">
+                            <span class="code-label">Check Balance</span>
+                            <span class="code-keyword">GET</span> /usage/balance<br>
+                            Headers: {<br>
+                              "X-Token": <span class="code-string">"your_token_here"</span><br>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section class="content-section alt-bg" id="request-key">
+            <div class="section-container">
+                <div class="section-header">
+                    <h2>Request an API Key</h2>
+                    <p>Complete our registration form to get started with your AI journey</p>
+                </div>
+                
+                <div class="registration-form">
+                    <h3>API Key Request Form</h3>
+                    <p class="form-description">To access our AI API Platform, you'll need to request an API key with appropriate permissions. Fill out our registration form to get started:</p>
+                    
+                    <a href="https://forms.office.com/Pages/ResponsePage.aspx?id=uM6zjUZ0vEiLtJeAPFJ6N2xrQvNFNxxGn2IZUHwM9CxUQUkzUTlURE9JR0c0UVJGN0Q2RTRCU0pYVC4u" class="form-link" target="_blank">
+                        <i class="fas fa-external-link-alt"></i> Access Registration Form
+                    </a>
+                    
+                    <h4>What happens after you register?</h4>
+                    <ul>
+                        <li>The AI COE team receives your request</li>
+                        <li>A user profile will be created for you using the details you provide on the form</li>
+                        <li>Your unique user ID and API key will be communicated to you by the AI COE within 48 hours</li>
+                        <li>You must <strong>NEVER</strong> share your unique user ID or API key with anyone or store them in any code repository</li>
+                    </ul>
+                </div>
+                
+                <div class="info-box">
+                    <div class="info-box-icon">
+                        <i class="fas fa-info-circle"></i>
+                    </div>
+                    <div class="info-box-content">
+                        <h4>User Types & Credit Allocation</h4>
+                        <p>We offer different user types with varying credit allocations to meet your needs:</p>
+                    </div>
+                </div>
+                
+                <table class="api-tiers">
+                    <thead>
+                        <tr>
+                            <th>User Role</th>
+                            <th>Description</th>
+                            <th>Monthly AI Credits</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="tier-name">Test/Trial</td>
+                            <td>Get started with using our APIs with a test/trial API key.</td>
+                            <td class="tier-credits">100</td>
+                        </tr>
+                        <tr>
+                            <td class="tier-name">Developer</td>
+                            <td>Developer keys are to be used to develop applications using our APIs.</td>
+                            <td class="tier-credits">999</td>
+                        </tr>
+                        <tr>
+                            <td class="tier-name">Production Tier 3 - Basic</td>
+                            <td>A starter subscription for production applications with low volume requirements.</td>
+                            <td class="tier-credits">5,000</td>
+                        </tr>
+                        <tr>
+                            <td class="tier-name">Production Tier 2 - Professional</td>
+                            <td>An intermediate subscription for production applications with medium volume requirements.</td>
+                            <td class="tier-credits">10,000</td>
+                        </tr>
+                        <tr>
+                            <td class="tier-name">Production Tier 1 - Professional</td>
+                            <td>A premium subscription for production applications with high volume requirements.</td>
+                            <td class="tier-credits">25,000</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <p>Specify your requirements in the registration form, and our team will set up your account accordingly.</p>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <div class="section-container">
+                <div class="section-header">
+                    <h2>Using the Platform</h2>
+                    <p>Essential information to help you start developing with our AI APIs</p>
+                </div>
+                
+                <h3>Token Generation and Authentication</h3>
+                <p>Before making API calls, you need to generate an authentication token using your API key:</p>
+                <ul>
+                    <li>Use the <code>/token</code> endpoint with your API key in the header</li>
+                    <li>Store the returned token securely</li>
+                    <li>Use this token in the <code>X-Token</code> header for subsequent API calls</li>
+                    <li>Each token is valid for 1 hour (3599 seconds)</li>
+                    <li>When using the Postman collection, add the token to the collection environment variables</li>
+                </ul>
+                
+                <div class="code-block">
+                    <span class="code-label">Token Generation</span>
+                    <span class="code-keyword">POST</span> /token<br>
+                    Headers: {<br>
+                      "API-Key": <span class="code-string">"your_api_key_here"</span><br>
+                    }
+                    
+                    <div class="token-response">
+                    <span class="code-comment">// Example response</span><br>
+                    {<br>
+                      <span class="code-string">"access_token"</span>: <span class="code-string">"eyJhbGciOiJIUzI1NiIsInR5..."</span>,<br>
+                      <span class="code-string">"expires_in"</span>: 3599<br>
+                    }
+                    </div>
+                </div>
+                
+                <p>See our <a href="{{ url_for('token_services') }}">Token Services</a> documentation for more details.</p>
+                
+                <h3>Explore Available Endpoints</h3>
+                <p>Our platform offers a wide range of AI capabilities through different endpoints:</p>
+                <ul>
+                    <li><a href="{{ url_for('llm') }}">Language Models</a> - Text generation and analysis</li>
+                    <li><a href="{{ url_for('llm_conversation') }}">Conversational AI</a> - Build sophisticated chat applications</li>
+                    <li><a href="{{ url_for('image_generation') }}">Image Generation</a> - Create images from text descriptions</li>
+                    <li><a href="{{ url_for('speech_services') }}">Speech Services</a> - Convert speech to text</li>
+                    <li><a href="{{ url_for('document_intelligence') }}">Document Intelligence</a> - Extract insights from documents</li>
+                    <li><a href="{{ url_for('ocr_services') }}">OCR Services</a> - Extract data from specific document types</li>
+                    <li><a href="{{ url_for('nlp') }}">NLP Services</a> - Text analysis and classification</li>
+                    <li><a href="{{ url_for('rag') }}">RAG Services</a> - Build AI applications with your own data</li>
+                    <li><a href="{{ url_for('file_management') }}">File Management</a> - Upload and manage files</li>
+                </ul>
+                
+                <h3>Monitor Your Usage</h3>
+                <p>Keep track of your API consumption using our <a href="{{ url_for('balance_management') }}">Balance Management</a> endpoints:</p>
+                <ul>
+                    <li>Check your current AI credit balance</li>
+                    <li>View detailed usage statistics by endpoint</li>
+                    <li>Track consumption over time to optimize your usage</li>
+                </ul>
+                
+                <div class="info-box">
+                    <div class="info-box-icon">
+                        <i class="fas fa-lightbulb"></i>
+                    </div>
+                    <div class="info-box-content">
+                        <h4>Pro Tip</h4>
+                        <p>When developing your application, start with the most cost-effective endpoints (such as GPT-4o-mini) for testing, and switch to more advanced models for production use when needed.</p>
+                        <p>For example, GPT-4o-mini costs 0.5 credits per call, while GPT-4o costs 2 credits per call.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section class="cta-section">
+            <div class="cta-container">
+                <h2>Ready to Build with AI?</h2>
+                <p>Download our Postman Collection to quickly start integrating powerful AI capabilities into your applications.</p>
+                <div style="display: flex; justify-content: center; margin: 2rem 0; gap: 2rem; flex-wrap: wrap;">
+                    <a href="/static/files/ai-api-postman-collection.json" class="cta-btn">
+                        <i class="fas fa-download"></i> Download Postman Collection
+                    </a>
+                    <a href="/apidocs/" class="cta-btn cta-btn-secondary">
+                        <i class="fas fa-book"></i> Explore API Docs
+                    </a>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <footer class="footer">
+        <p>© 2025 TIH AI API Portal. Powered by the TIH AI Center of Excellence.</p>
+    </footer>
+    
+    <script>
+        // Toggle sidebar on mobile
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuToggle = document.getElementById('menu-toggle');
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            
+            menuToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('active');
+                overlay.classList.toggle('active');
+            });
+            
+            overlay.addEventListener('click', function() {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            });
+            
+            // Highlight current page in sidebar
+            const currentPage = window.location.pathname;
+            const sidebarLinks = document.querySelectorAll('.sidebar-link');
+            
+            sidebarLinks.forEach(link => {
+                if (link.getAttribute('href') === currentPage) {
+                    link.classList.add('active');
+                }
+            });
+            
+            // Add scroll animation for elements
+            const animateOnScroll = function() {
+                const elements = document.querySelectorAll('.step-card, .section-header, .registration-form, .info-box, .api-tiers');
+                
+                elements.forEach(element => {
+                    const elementPosition = element.getBoundingClientRect().top;
+                    const screenPosition = window.innerHeight / 1.2;
+                    
+                    if (elementPosition < screenPosition) {
+                        element.style.animation = 'fadeInUp 0.6s ease-out forwards';
+                    }
+                });
+            };
+            
+            // Run on load
+            animateOnScroll();
+            
+            // Run on scroll
+            window.addEventListener('scroll', animateOnScroll);
+        });
+    </script>
+</body>
+</html>
