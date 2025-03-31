@@ -477,6 +477,9 @@
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
             padding: 2rem;
             transition: transform 0.3s ease, box-shadow 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
         }
         
         .dashboard-card:hover {
@@ -513,18 +516,18 @@
             color: #666;
             line-height: 1.6;
             margin-bottom: 1.5rem;
+            flex-grow: 1;
         }
         
         .dashboard-card-footer {
             display: flex;
             justify-content: flex-end;
+            margin-top: auto;
         }
         
         .card-btn {
             display: inline-flex;
             align-items: center;
-            background-color: #f5f6fa;
-            color: var(--dark-color);
             padding: 0.5rem 1rem;
             border-radius: 4px;
             font-weight: 600;
@@ -532,12 +535,25 @@
             transition: all 0.3s;
         }
         
-        .card-btn:hover {
-            background-color: var(--accent-color);
+        .cta-btn {
+            display: inline-flex;
+            align-items: center;
+            background: var(--magenta-gradient);
             color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(59, 1, 56, 0.15);
         }
         
-        .card-btn i {
+        .cta-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(59, 1, 56, 0.2);
+        }
+        
+        .cta-btn i {
             margin-left: 0.5rem;
         }
         
@@ -849,7 +865,9 @@
 }</code></pre>
                         </div>
                         <div class="dashboard-card-footer">
-                            <a href="/apidocs/#/Balance%20Management/check_balance_route" class="card-btn">API Documentation <i class="fas fa-arrow-right"></i></a>
+                            <a href="/apidocs/#/Balance%20Management/check_balance_route" class="cta-btn">
+                                API Documentation <i class="fas fa-arrow-right"></i>
+                            </a>
                         </div>
                     </div>
                     
@@ -873,7 +891,9 @@ GET /usage/user?user_id=12345678-1234-5678-1234-567812345678&time_period=2025-03
 X-Token: eyJhbGciOiJIUzI1NiIsInR5...</code></pre>
                         </div>
                         <div class="dashboard-card-footer">
-                            <a href="/apidocs/#/Balance%20Management/usage_by_user_route" class="card-btn">API Documentation <i class="fas fa-arrow-right"></i></a>
+                            <a href="/apidocs/#/Balance%20Management/usage_by_user_route" class="cta-btn">
+                                API Documentation <i class="fas fa-arrow-right"></i>
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -940,7 +960,9 @@ GET /usage/department?department=Engineering&time_period=2025-03
 X-Token: eyJhbGciOiJIUzI1NiIsInR5...</code></pre>
                         </div>
                         <div class="dashboard-card-footer">
-                            <a href="/apidocs/#/Balance%20Management/usage_by_department_route" class="card-btn">API Documentation <i class="fas fa-arrow-right"></i></a>
+                            <a href="/apidocs/#/Balance%20Management/usage_by_department_route" class="cta-btn">
+                                API Documentation <i class="fas fa-arrow-right"></i>
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -948,7 +970,7 @@ X-Token: eyJhbGciOiJIUzI1NiIsInR5...</code></pre>
                 <div style="margin-top: 4rem; text-align: center;">
                     <p style="margin-bottom: 1.5rem; font-size: 1.1rem;">For complete details and examples, please refer to our documentation:</p>
                     <div style="display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap;">
-                        <a href="/apidocs/" style="display: inline-flex; align-items: center; background-color: var(--primary-color); color: white; padding: 0.75rem 1.5rem; border-radius: 6px; text-decoration: none; font-weight: 600; transition: all 0.3s; box-shadow: 0 4px 10px rgba(74, 111, 227, 0.3);">
+                        <a href="/apidocs/" style="display: inline-flex; align-items: center; background: var(--magenta-gradient); color: white; padding: 0.75rem 1.5rem; border-radius: 6px; text-decoration: none; font-weight: 600; transition: all 0.3s; box-shadow: 0 4px 15px rgba(59, 1, 56, 0.15);">
                             <i class="fas fa-book" style="margin-right: 0.5rem;"></i> Swagger Documentation
                         </a>
                         <a href="/static/files/ai-api-postman-collection.json" style="display: inline-flex; align-items: center; background-color: #f5f6fa; color: var(--dark-color); padding: 0.75rem 1.5rem; border-radius: 6px; text-decoration: none; font-weight: 600; transition: all 0.3s; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);">
