@@ -864,6 +864,19 @@
                 display: block;
             }
         }
+        
+        .credit-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.35rem 0.35rem; 
+            border-radius: 4px;
+            font-weight: 400;
+            font-size: 1.5rem; 
+            color: white;
+            background: linear-gradient(135deg, rgba(1, 0, 15, 1) 0%, rgba(74, 111, 227, 1) 100%);
+            animation: pulse 3s infinite ease-in-out;
+        }
     </style>
 </head>
 <body>
@@ -902,13 +915,13 @@
         <section class="hero">
             <div class="hero-container">
                 <h2>Image Generation API</h2>
-                <p>Create stunning, high-quality images for your applications with our powerful Image Generation API. From photorealistic visualizations to creative illustrations, unlock the potential of AI-powered image creation.</p>
+                <p>Create stunning, high-quality images for your applications with our powerful Image Generation APIs. From photorealistic visualizations to creative illustrations, unlock the potential of AI-powered image creation.</p>
                 <div class="cta-buttons">
                     <a href="/static/files/ai-api-postman-collection.json" class="cta-btn">
                         <i class="fas fa-download"></i> Download Postman Collection
                     </a>
                     <a href="/apidocs/#/Image%20Generation" class="cta-btn cta-btn-secondary">
-                        <i class="fas fa-book"></i> API Documentation
+                        <i class="fas fa-book"></i> Swagger API Docs
                     </a>
                 </div>
             </div>
@@ -924,7 +937,10 @@
                     <h2>Overview</h2>
                 </div>
                 
-                <p class="section-intro">Our Image Generation API provides access to state-of-the-art AI models that can create images from text descriptions. With support for multiple models and customization options, you can generate precisely the visuals you need for your projects.</p>
+                <p class="section-intro">Our Image Generation APIs provide access to state-of-the-art AI models that generated images from text descriptions. 
+                    With an option of models and customization settings to choose from, you can generate bespoke images to meet the needs of your projects.
+                </p>
+                <br><br>
                 
                 <div class="features-grid">
                     <div class="feature-card">
@@ -965,12 +981,15 @@
         <!-- DALL-E 3 section -->
         <section class="model-section">
             <div class="model-container">
-                <div class="model-header">
+                <div class="model-header" style="display: flex; align-items: center;">
                     <div class="model-icon dalle-icon">
                         <i class="fas fa-palette"></i>
                     </div>
-                    <div class="model-info">
-                        <h2>DALL-E 3</h2>
+                    <div class="model-info" style="flex-grow: 1; margin-left: 1rem;">
+                        <h2 style="display: flex; justify-content: space-between; align-items: center;">
+                            DALL-E 3
+                            <div class="credit-badge">5 AI Credits</div>
+                        </h2>
                         <p>OpenAI's advanced image generation model capable of creating detailed, high-quality images from text descriptions with remarkable accuracy.</p>
                     </div>
                 </div>
@@ -986,9 +1005,10 @@
                             <li>Quality control (standard or HD)</li>
                             <li>Style adjustment (vivid or natural)</li>
                         </ul>
+                        
                     </div>
                     
-                    <div class="model-detail-card dalle-card">
+                    <div class="model-detail-card dalle-card" style="line-height: 1.8;">
                         <h3><i class="fas fa-code"></i> API Endpoint</h3>
                         <div class="endpoint-box">
                             POST /image-generation/dalle3
@@ -1063,7 +1083,7 @@
                             </div>
                             <div class="image-container">
                                 <div class="image-placeholder">
-                                    [Image will be displayed here]
+                                    <img src="/static/images/image-gen-models/dalle3/dalle3_sample1.png" alt="Architectural Visualization Sample" style="max-width: 100%; border-radius: 4px;">
                                 </div>
                             </div>
                         </div>
@@ -1115,7 +1135,7 @@
                             </div>
                             <div class="image-container">
                                 <div class="image-placeholder">
-                                    [Image will be displayed here]
+                                    <img src="/static/images/image-gen-models/dalle3/dalle3_sample2.png" alt="Product Visualization Sample" style="max-width: 100%; border-radius: 4px;">
                                 </div>
                             </div>
                         </div>
@@ -1167,7 +1187,7 @@
                             </div>
                             <div class="image-container">
                                 <div class="image-placeholder">
-                                    [Image will be displayed here]
+                                    <img src="/static/images/image-gen-models/dalle3/dalle3_sample3.png" alt="Smart City Illustration Sample" style="max-width: 100%; border-radius: 4px;">
                                 </div>
                             </div>
                         </div>
@@ -1219,7 +1239,7 @@
                             </div>
                             <div class="image-container">
                                 <div class="image-placeholder">
-                                    [Image will be displayed here]
+                                    <img src="/static/images/image-gen-models/dalle3/dalle3_sample4.png" alt="Business Team Portrait Sample" style="max-width: 100%; border-radius: 4px;">
                                 </div>
                             </div>
                         </div>
@@ -1271,7 +1291,7 @@
                             </div>
                             <div class="image-container">
                                 <div class="image-placeholder">
-                                    [Image will be displayed here]
+                                    <img src="/static/images/image-gen-models/dalle3/dalle3_sample5.png" alt="Medical Illustration Sample" style="max-width: 100%; border-radius: 4px;">
                                 </div>
                             </div>
                         </div>
@@ -1288,7 +1308,10 @@
                         <i class="fas fa-wave-square"></i>
                     </div>
                     <div class="model-info">
-                        <h2>Stable Diffusion Ultra</h2>
+                        <h2 style="display: flex; justify-content: space-between; align-items: center;">
+                            STABLE DIUFFION - ULTRA
+                            <div class="credit-badge">5 AI Credits</div>
+                        </h2>
                         <p>A powerful diffusion-based image generation model capable of creating highly detailed images with exceptional quality and creative flexibility.</p>
                     </div>
                 </div>
@@ -1331,11 +1354,12 @@
                 <div class="examples-tabs">
                     <div class="example-tab stable-diffusion-tab active">Data Center</div>
                     <div class="example-tab stable-diffusion-tab">Sustainable Urban Development</div>
-                    <div class="example-tab stable-diffusion-tab">Drone Delivery</div>
+                    <div class="example-tab stable-diffusion-tab">Car Insurance</div>
                     <div class="example-tab stable-diffusion-tab">Smartphone Concept</div>
+                    <div class="example-tab stable-diffusion-tab">Vehicle Generation</div>
                     <div class="example-tab stable-diffusion-tab">Biochemistry Lab</div>
                 </div>
-                
+
                 <!-- Example 1 - Data Center -->
                 <div class="example-content active">
                     <div class="example-grid">
@@ -1345,7 +1369,7 @@
                             <div class="setting-group">
                                 <span class="setting-label">Prompt</span>
                                 <div class="setting-value">
-                                    A photorealistic visualization of a modern data center with server racks and blue ambient lighting, highly detailed
+                                    Image of a modern data center with rows of servers, high-tech equipment, and a futuristic design, architectural visualization style
                                 </div>
                             </div>
                             
@@ -1382,14 +1406,12 @@
                                 <h4>Data Center Visualization</h4>
                             </div>
                             <div class="image-container">
-                                <div class="image-placeholder">
-                                    [Image will be displayed here]
-                                </div>
+                                <img src="/static/images/image-gen-models/stable-diffusion-ultra/sfultra-sample1.png" alt="Data Center Visualization Sample" style="max-width: 100%; border-radius: 4px;">
                             </div>
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Example 2 - Sustainable Urban Development -->
                 <div class="example-content">
                     <div class="example-grid">
@@ -1422,7 +1444,7 @@
                             
                             <div class="setting-group">
                                 <span class="setting-label">Seed</span>
-                                <div class="setting-value">-1 (random)</div>
+                                <div class="setting-value">5</div>
                             </div>
                             
                             <div class="setting-group">
@@ -1436,15 +1458,13 @@
                                 <h4>Sustainable Urban Development</h4>
                             </div>
                             <div class="image-container">
-                                <div class="image-placeholder">
-                                    [Image will be displayed here]
-                                </div>
+                                <img src="/static/images/image-gen-models/stable-diffusion-ultra/sfultra-sample2.png" alt="Sustainable Urban Development Sample" style="max-width: 100%; border-radius: 4px;">
                             </div>
                         </div>
                     </div>
                 </div>
-                
-                <!-- Example 3 - Drone Delivery -->
+
+                <!-- Example 3 - Car Insurance -->
                 <div class="example-content">
                     <div class="example-grid">
                         <div class="example-settings stable-diffusion-settings">
@@ -1453,20 +1473,20 @@
                             <div class="setting-group">
                                 <span class="setting-label">Prompt</span>
                                 <div class="setting-value">
-                                    A detailed technical illustration of a drone delivering packages in a business district, cutaway view showing internal components
+                                    A picture of a woman driving her car happily with focus on driver from a front angle. Hands on steering with fingers wrapped around the steering wheel.
                                 </div>
                             </div>
                             
                             <div class="setting-group">
                                 <span class="setting-label">Negative Prompt</span>
                                 <div class="setting-value">
-                                    cartoon style, low detail, unrealistic proportions
+                                    cartoon style, low detail, obscured views, overlapping image components
                                 </div>
                             </div>
                             
                             <div class="setting-group">
                                 <span class="setting-label">Size</span>
-                                <div class="setting-value">768x768</div>
+                                <div class="setting-value">1024x1024</div>
                             </div>
                             
                             <div class="setting-group">
@@ -1476,7 +1496,7 @@
                             
                             <div class="setting-group">
                                 <span class="setting-label">Seed</span>
-                                <div class="setting-value">1234</div>
+                                <div class="setting-value">3</div>
                             </div>
                             
                             <div class="setting-group">
@@ -1487,17 +1507,15 @@
                         
                         <div class="example-image">
                             <div class="image-header">
-                                <h4>Drone Delivery Technical Illustration</h4>
+                                <h4>Car Insurance Visualization</h4>
                             </div>
                             <div class="image-container">
-                                <div class="image-placeholder">
-                                    [Image will be displayed here]
-                                </div>
+                                <img src="/static/images/image-gen-models/stable-diffusion-ultra/sfultra-sample3.png" alt="Car Insurance Sample" style="max-width: 100%; border-radius: 4px;">
                             </div>
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Example 4 - Smartphone Concept -->
                 <div class="example-content">
                     <div class="example-grid">
@@ -1544,15 +1562,65 @@
                                 <h4>Smartphone Concept Visualization</h4>
                             </div>
                             <div class="image-container">
-                                <div class="image-placeholder">
-                                    [Image will be displayed here]
-                                </div>
+                                <img src="/static/images/image-gen-models/stable-diffusion-ultra/sfultra-sample4.png" alt="Smartphone Concept Sample" style="max-width: 100%; border-radius: 4px;">
                             </div>
                         </div>
                     </div>
                 </div>
-                
-                <!-- Example 5 - Biochemistry Lab -->
+
+                <!-- Example 5 - Vehicle Generation -->
+                <div class="example-content">
+                    <div class="example-grid">
+                        <div class="example-settings stable-diffusion-settings">
+                            <h3 class="settings-title">Model Settings</h3>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Prompt</span>
+                                <div class="setting-value">
+                                    A picture of a high-performance vehicle driving along the freeway. The vehicle has BMW-like features and is very similar to a BMW.
+                                </div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Negative Prompt</span>
+                                <div class="setting-value">
+                                    outdated design, cartoonish, text, humans, low quality image
+                                </div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Size</span>
+                                <div class="setting-value">1024x1024</div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Output Format</span>
+                                <div class="setting-value">png</div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Seed</span>
+                                <div class="setting-value">2096</div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">API Endpoint</span>
+                                <div class="setting-value">POST /image-generation/stable-diffusion-ultra</div>
+                            </div>
+                        </div>
+                        
+                        <div class="example-image">
+                            <div class="image-header">
+                                <h4>Vehicle Generation Visualization</h4>
+                            </div>
+                            <div class="image-container">
+                                <img src="/static/images/image-gen-models/stable-diffusion-ultra/sfultra-sample5.png" alt="Vehicle Generation Sample" style="max-width: 100%; border-radius: 4px;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Example 6 - Biochemistry Lab -->
                 <div class="example-content">
                     <div class="example-grid">
                         <div class="example-settings stable-diffusion-settings">
@@ -1598,9 +1666,7 @@
                                 <h4>Biochemistry Laboratory</h4>
                             </div>
                             <div class="image-container">
-                                <div class="image-placeholder">
-                                    [Image will be displayed here]
-                                </div>
+                                <img src="/static/images/image-gen-models/stable-diffusion-ultra/sfultra-sample6.png" alt="Biochemistry Lab Sample" style="max-width: 100%; border-radius: 4px;">
                             </div>
                         </div>
                     </div>
@@ -1612,13 +1678,13 @@
         <section class="cta-section">
             <div class="cta-container">
                 <h2>Start Generating Amazing Images Today</h2>
-                <p>Integrate our powerful Image Generation API into your applications and unlock creative possibilities.</p>
+                <p>Integrate our powerful Image Generation APIs into your applications and unlock countless creative possibilities.</p>
                 <div class="cta-buttons" style="justify-content: center;">
                     <a href="/static/files/ai-api-postman-collection.json" class="cta-btn">
                         <i class="fas fa-download"></i> Download Postman Collection
                     </a>
                     <a href="/apidocs/#/Image%20Generation" class="cta-btn cta-btn-secondary">
-                        <i class="fas fa-book"></i> API Documentation
+                        <i class="fas fa-book"></i> Swagger API Docs
                     </a>
                 </div>
             </div>
