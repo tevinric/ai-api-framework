@@ -31,8 +31,6 @@ from langchain_community.document_loaders import (
     UnstructuredExcelLoader
 )
 
-
-
 # CONFIGURE LOGGING
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -548,7 +546,7 @@ def create_advanced_vectorstore_route():
             conn = DatabaseService.get_connection()
             cursor = conn.cursor()
             
-            # Insert vectorstore metadata
+            # Insert vectorstore metadata - comply with database schema (no processing_stats column)
             query = """
             INSERT INTO vectorstores (
                 id, 
@@ -560,10 +558,9 @@ def create_advanced_vectorstore_route():
                 chunk_count,
                 chunk_size,
                 chunk_overlap,
-                created_at,
-                processing_stats
+                created_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, DATEADD(HOUR, 2, GETUTCDATE()), ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, DATEADD(HOUR, 2, GETUTCDATE()))
             """
             
             cursor.execute(query, [
@@ -575,8 +572,7 @@ def create_advanced_vectorstore_route():
                 len(all_documents),
                 len(chunks),
                 chunk_size,
-                chunk_overlap,
-                json.dumps(processing_stats)
+                chunk_overlap
             ])
             
             conn.commit()
