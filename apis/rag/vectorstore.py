@@ -38,6 +38,29 @@ def create_api_response(data, status_code=200):
     response.status_code = status_code
     return response
 
+def update_vectorstore_access_timestamp(vectorstore_id):
+    """Update the last_accessed timestamp for a vectorstore"""
+    try:
+        conn = DatabaseService.get_connection()
+        cursor = conn.cursor()
+        
+        # Update the last_accessed timestamp
+        query = """
+        UPDATE vectorstores
+        SET last_accessed = DATEADD(HOUR, 2, GETUTCDATE())
+        WHERE id = ?
+        """
+        
+        cursor.execute(query, [vectorstore_id])
+        conn.commit()
+        
+        cursor.close()
+        conn.close()
+        
+        logger.info(f"Updated last_accessed timestamp for vectorstore {vectorstore_id}")
+    except Exception as e:
+        logger.error(f"Error updating last_accessed timestamp: {str(e)}")
+
 def detect_file_type(file_path):
     """Detect file type and return appropriate loader"""
     file_extension = os.path.splitext(file_path)[1].lower()
@@ -383,9 +406,10 @@ def create_vectorstore_route():
                 chunk_count,
                 chunk_size,
                 chunk_overlap,
-                created_at
+                created_at,
+                last_accessed
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, DATEADD(HOUR, 2, GETUTCDATE()))
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, DATEADD(HOUR, 2, GETUTCDATE()), DATEADD(HOUR, 2, GETUTCDATE()))
             """
             
             cursor.execute(query, [
@@ -721,6 +745,10 @@ def load_vectorstore_route():
               type: string
               format: date-time
               example: "2023-06-01T10:30:45.123456+02:00"
+            last_accessed:
+              type: string
+              format: date-time
+              example: "2023-06-02T14:22:33.123456+02:00"
       400:
         description: Bad request
         schema:
@@ -849,7 +877,7 @@ def load_vectorstore_route():
             # Get vectorstore info
             query = """
             SELECT id, user_id, path, name, file_count, document_count, 
-                   chunk_count, created_at
+                   chunk_count, created_at, last_accessed
             FROM vectorstores 
             WHERE id = ?
             """
@@ -878,6 +906,17 @@ def load_vectorstore_route():
             document_count = vectorstore_info[5]
             chunk_count = vectorstore_info[6]
             created_at = vectorstore_info[7].isoformat() if vectorstore_info[7] else None
+            last_accessed = vectorstore_info[8].isoformat() if vectorstore_info[8] else None
+            
+            # Update the last_accessed timestamp
+            update_query = """
+            UPDATE vectorstores
+            SET last_accessed = DATEADD(HOUR, 2, GETUTCDATE())
+            WHERE id = ?
+            """
+            
+            cursor.execute(update_query, [vectorstore_id])
+            conn.commit()
             
         except Exception as e:
             logger.error(f"Error checking vectorstore: {str(e)}")
@@ -957,7 +996,8 @@ def load_vectorstore_route():
                 "file_count": file_count,
                 "document_count": document_count,
                 "chunk_count": chunk_count,
-                "created_at": created_at
+                "created_at": created_at,
+                "last_accessed": last_accessed
             }, 200)
             
         except Exception as e:
@@ -1027,6 +1067,10 @@ def list_vectorstores_route():
                     type: string
                     format: date-time
                     example: "2023-06-01T10:30:45.123456+02:00"
+                  last_accessed:
+                    type: string
+                    format: date-time
+                    example: "2023-06-02T14:22:33.123456+02:00"
       401:
         description: Authentication error
         schema:
@@ -1106,7 +1150,7 @@ def list_vectorstores_route():
             if user_details.get("scope", 1) == 0:
                 query = """
                 SELECT id, name, path, file_count, document_count, chunk_count, 
-                       created_at, user_id
+                       created_at, user_id, last_accessed
                 FROM vectorstores 
                 ORDER BY created_at DESC
                 """
@@ -1115,7 +1159,7 @@ def list_vectorstores_route():
                 # For regular users, only get their vectorstores
                 query = """
                 SELECT id, name, path, file_count, document_count, chunk_count, 
-                       created_at, user_id
+                       created_at, user_id, last_accessed
                 FROM vectorstores 
                 WHERE user_id = ?
                 ORDER BY created_at DESC
@@ -1135,7 +1179,8 @@ def list_vectorstores_route():
                     "document_count": row[4],
                     "chunk_count": row[5],
                     "created_at": row[6].isoformat() if row[6] else None,
-                    "owner_id": row[7]
+                    "owner_id": row[7],
+                    "last_accessed": row[8].isoformat() if row[8] else None
                 })
             
             return create_api_response({
@@ -1425,9 +1470,10 @@ def create_vectorstore_from_string_route():
                 chunk_count,
                 chunk_size,
                 chunk_overlap,
-                created_at
+                created_at,
+                last_accessed
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, DATEADD(HOUR, 2, GETUTCDATE()))
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, DATEADD(HOUR, 2, GETUTCDATE()), DATEADD(HOUR, 2, GETUTCDATE()))
             """
             
             cursor.execute(query, [
