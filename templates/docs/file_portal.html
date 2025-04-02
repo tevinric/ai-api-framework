@@ -16,6 +16,7 @@
             --text-color: #333;
             --white-color: #ffffff;
             --accent-color: #00d4ff;
+            --magenta-dark: #3B0138;
             --sidebar-width: 280px;
             --header-height: 60px;
             --file-sidebar-width: 300px;
@@ -434,6 +435,7 @@
             border-radius: 8px;
             overflow: hidden;
             position: relative;
+            min-height: 500px; /* Ensure minimum height for viewers */
         }
         
         .file-viewer-placeholder {
@@ -466,6 +468,7 @@
         .pdf-container {
             width: 100%;
             height: 100%;
+            min-height: 700px; /* Increased height for PDF viewer */
             overflow: auto;
         }
         
@@ -494,6 +497,29 @@
         .media-container audio,
         .media-container video {
             width: 100%;
+        }
+        
+        /* Text file viewer */
+        .text-container {
+            width: 100%;
+            height: 100%;
+            padding: 1rem;
+            background-color: white;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            overflow: auto;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+        
+        /* PowerPoint/Office viewer */
+        .office-container {
+            width: 100%;
+            height: 100%;
+            min-height: 700px; /* Increased height for Office documents */
+            overflow: auto;
         }
         
         /* Not viewable file */
@@ -824,7 +850,7 @@
 <body>
     <header class="header">
         <div class="logo">
-            <i class="fas fa-cloud"></i>
+            <img src="/static/images/Telesure-logo.png" alt="TIH AI API Platform Logo" style="height: 40px; margin-right: 0.5rem;">
             <h1>File Management Portal</h1>
         </div>
         <nav class="nav">
@@ -850,7 +876,7 @@
     
     <!-- Main sidebar -->
     <aside class="sidebar">
-        <!-- Include sidebar template -->
+        <!-- Sidebar contents -->
         <div class="sidebar-category">Main</div>
         <a href="/" class="sidebar-link">
             <i class="fas fa-home"></i> Home
@@ -881,7 +907,7 @@
         <a href="/docs/speech_services" class="sidebar-link">
             <i class="fas fa-microphone"></i> Speech Services
         </a>
-        <a href="/docs/file_management" class="sidebar-link active">
+        <a href="/docs/file_management" class="sidebar-link">
             <i class="fas fa-file-alt"></i> File Management
         </a>
         <a href="/docs/document_intelligence" class="sidebar-link">
@@ -895,6 +921,9 @@
         </a>
         <a href="/docs/rag" class="sidebar-link">
             <i class="fas fa-search"></i> RAG Services
+        </a>
+        <a href="/docs/file_portal" class="sidebar-link active">
+            <i class="fas fa-folder-open"></i> File Portal
         </a>
 
         <div class="sidebar-category">Resources</div>
@@ -918,12 +947,6 @@
             <div class="input-group">
                 <label for="apiKey">Enter your API Key</label>
                 <input type="password" id="apiKey" placeholder="Your API Key" autocomplete="off">
-            </div>
-            
-            <div id="tokenSection" class="input-group">
-                <label for="token">Enter your Token (optional)</label>
-                <input type="password" id="token" placeholder="Your Token (optional)" autocomplete="off">
-                <p style="margin-top: 5px; font-size: 0.8rem; color: #666;">Leave empty to generate a new token</p>
             </div>
             
             <button id="loginBtn" class="btn">Authenticate</button>
@@ -952,16 +975,20 @@
                             <div id="userName" class="user-detail-value">-</div>
                         </div>
                         <div class="user-detail">
+                            <div class="user-detail-label">Email</div>
+                            <div id="userEmail" class="user-detail-value">-</div>
+                        </div>
+                        <div class="user-detail">
                             <div class="user-detail-label">Department</div>
                             <div id="userDepartment" class="user-detail-value">-</div>
                         </div>
                         <div class="user-detail">
-                            <div class="user-detail-label">Files</div>
-                            <div id="filesUploaded" class="user-detail-value">0</div>
+                            <div class="user-detail-label">Company</div>
+                            <div id="userCompany" class="user-detail-value">-</div>
                         </div>
                         <div class="user-detail">
-                            <div class="user-detail-label">Authentication</div>
-                            <div id="authMethod" class="user-detail-value">API Key + Token</div>
+                            <div class="user-detail-label">Files</div>
+                            <div id="filesUploaded" class="user-detail-value">0</div>
                         </div>
                     </div>
                     <button id="logoutBtn" class="btn logout-btn">
@@ -1042,7 +1069,7 @@
     
     <!-- Footer -->
     <footer class="footer" style="display: none;">
-        <p>© 2025 AI API Portal. Powered by the AI Center of Excellence.</p>
+        <p>© 2025 TIH AI API Portal. Powered by the TIH AI Center of Excellence.</p>
     </footer>
     
     <script>
@@ -1057,7 +1084,6 @@
         const authContainer = document.getElementById('auth-container');
         const filesContainer = document.getElementById('files-container');
         const apiKeyInput = document.getElementById('apiKey');
-        const tokenInput = document.getElementById('token');
         const loginBtn = document.getElementById('loginBtn');
         const logoutBtn = document.getElementById('logoutBtn');
         const authAlert = document.getElementById('authAlert');
@@ -1082,9 +1108,10 @@
         
         // User profile elements
         const userName = document.getElementById('userName');
+        const userEmail = document.getElementById('userEmail');
         const userDepartment = document.getElementById('userDepartment');
+        const userCompany = document.getElementById('userCompany');
         const filesUploaded = document.getElementById('filesUploaded');
-        const authMethod = document.getElementById('authMethod');
         
         // File type icons mapping
         const fileIcons = {
@@ -1141,6 +1168,27 @@
             'image/svg+xml': showImageViewer,
             // PDFs
             'application/pdf': showPdfViewer,
+            // Office Documents
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation': showOfficeViewer,
+            'application/vnd.ms-powerpoint': showOfficeViewer,
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document': showOfficeViewer,
+            'application/msword': showOfficeViewer,
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': showOfficeViewer,
+            'application/vnd.ms-excel': showOfficeViewer,
+            // Plain text
+            'text/plain': showTextViewer,
+            // HTML
+            'text/html': showTextViewer,
+            // JSON
+            'application/json': showTextViewer,
+            // XML
+            'application/xml': showTextViewer,
+            'text/xml': showTextViewer,
+            // CSS
+            'text/css': showTextViewer,
+            // JavaScript
+            'application/javascript': showTextViewer,
+            'text/javascript': showTextViewer,
             // Audio
             'audio/mpeg': showAudioViewer,
             'audio/wav': showAudioViewer,
@@ -1223,10 +1271,9 @@
             });
         });
         
-        // Handle login with API key and optional token
+        // Handle login with API key
         async function handleLogin() {
             const apiKey = apiKeyInput.value.trim();
-            const token = tokenInput.value.trim();
             
             if (!apiKey) {
                 showAlert(authAlert, 'Please enter your API key', 'alert-warning');
@@ -1236,37 +1283,19 @@
             showLoading(true);
             
             try {
-                // Step 1: If token is not provided, get a new one using API key
-                if (!token) {
-                    // Get token using API key
-                    const tokenResponse = await getToken(apiKey);
-                    if (!tokenResponse || !tokenResponse.access_token) {
-                        throw new Error('Failed to get authentication token');
-                    }
-                    
-                    activeToken = tokenResponse.access_token;
-                    console.log('Generated new token successfully');
-                    authMethod.textContent = 'API Key + Generated Token';
-                } else {
-                    // Use the provided token
-                    activeToken = token;
-                    
-                    // Validate the token
-                    const tokenValidation = await validateToken(apiKey, token);
-                    if (!tokenValidation || tokenValidation.token_status !== 'valid') {
-                        throw new Error('The provided token is invalid or expired');
-                    }
-                    
-                    console.log('Using provided token');
-                    authMethod.textContent = 'API Key + Provided Token';
-                }
-                
                 // Get user details from the database using API key
                 const userDetails = await getUserDetails(apiKey);
                 if (!userDetails) {
                     throw new Error('Failed to get user information');
                 }
                 
+                // Get token using API key
+                const tokenResponse = await getToken(apiKey);
+                if (!tokenResponse || !tokenResponse.access_token) {
+                    throw new Error('Failed to get authentication token');
+                }
+                
+                activeToken = tokenResponse.access_token;
                 currentUser = userDetails;
                 console.log('User authenticated:', currentUser);
                 
@@ -1278,7 +1307,7 @@
                 
             } catch (error) {
                 console.error('Authentication error:', error);
-                showAlert(authAlert, error.message || 'Authentication failed. Please check your credentials and try again.', 'alert-danger');
+                showAlert(authAlert, error.message || 'Authentication failed. Please check your API key and try again.', 'alert-danger');
             } finally {
                 showLoading(false);
             }
@@ -1295,7 +1324,6 @@
             
             // Clear form inputs
             apiKeyInput.value = '';
-            tokenInput.value = '';
             
             // Hide files container, show auth container
             filesContainer.style.display = 'none';
@@ -1335,33 +1363,6 @@
             }
         }
         
-        // Validate token using token details endpoint
-        async function validateToken(apiKey, token) {
-            try {
-                console.log('Validating token...');
-                
-                const response = await fetch(`/token/details?token=${token}`, {
-                    method: 'GET',
-                    headers: {
-                        'API-Key': apiKey
-                    }
-                });
-                
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    console.error('Token validation failed:', errorText);
-                    throw new Error('Failed to validate token: ' + (response.statusText || 'Unknown error'));
-                }
-                
-                const data = await response.json();
-                console.log('Token validation result:', data);
-                return data;
-            } catch (error) {
-                console.error('Token validation error:', error);
-                throw error;
-            }
-        }
-        
         // Get user details using API key
         async function getUserDetails(apiKey) {
             try {
@@ -1389,6 +1390,7 @@
                     id: data.user_id,
                     user_name: data.user_name || 'User',
                     user_email: data.user_email || 'user@example.com',
+                    common_name: data.common_name || data.user_name || 'User',
                     department: data.department || 'Not specified',
                     company: data.company || 'TIH',
                     scope: data.scope || 1,
@@ -1511,6 +1513,32 @@
             } catch (error) {
                 console.error('Error fetching file details:', error);
                 throw error;
+            }
+        }
+        
+        // Get uploader info (user name) based on user_id from file
+        async function getUploaderInfo(userId) {
+            // If it's the current user, we already have the info
+            if (userId === currentUser.id) {
+                return {
+                    name: currentUser.common_name || currentUser.user_name,
+                    email: currentUser.user_email
+                };
+            }
+            
+            try {
+                // In a real implementation, you would have an API endpoint to get user details by ID
+                // For now, return a placeholder
+                return {
+                    name: "Unknown User",
+                    email: "unknown@example.com"
+                };
+            } catch (error) {
+                console.error('Error fetching uploader info:', error);
+                return {
+                    name: "Unknown User",
+                    email: "unknown@example.com"
+                };
             }
         }
         
@@ -1681,8 +1709,11 @@
                 // Update selected file with URL info
                 selectedFile = { ...selectedFile, ...fileDetails };
                 
-                // Display file metadata
-                displayFileMetadata(selectedFile);
+                // Get uploader information
+                const uploaderInfo = await getUploaderInfo(file.user_id);
+                
+                // Display file metadata with uploader info
+                displayFileMetadata(selectedFile, uploaderInfo);
                 
                 // Determine and show appropriate viewer based on file type
                 const contentType = file.content_type;
@@ -1701,7 +1732,7 @@
         }
         
         // Display file metadata
-        function displayFileMetadata(file) {
+        function displayFileMetadata(file, uploaderInfo) {
             fileMetadata.innerHTML = '';
             
             // Create metadata items
@@ -1710,7 +1741,9 @@
                 { label: 'File Type', value: file.content_type },
                 { label: 'File Size', value: formatFileSize(file.file_size) },
                 { label: 'Upload Date', value: formatDate(file.upload_date) },
-                { label: 'File ID', value: file.file_id }
+                { label: 'File ID', value: file.file_id },
+                { label: 'Uploader ID', value: file.user_id },
+                { label: 'Uploader Name', value: uploaderInfo ? uploaderInfo.name : 'Unknown' }
             ];
             
             metadata.forEach(item => {
@@ -1742,6 +1775,34 @@
                     <iframe src="${file.file_url}" width="100%" height="100%" frameborder="0"></iframe>
                 </div>
             `;
+        }
+        
+        // Office file viewer (PowerPoint, Word, Excel)
+        function showOfficeViewer(file) {
+            fileViewer.innerHTML = `
+                <div class="office-container">
+                    <iframe src="https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(file.file_url)}" 
+                            width="100%" height="100%" frameborder="0"></iframe>
+                </div>
+            `;
+        }
+        
+        // Text file viewer
+        function showTextViewer(file) {
+            // Create container
+            fileViewer.innerHTML = `
+                <div class="text-container" id="textContent">Loading text content...</div>
+            `;
+            
+            // Fetch text content
+            fetch(file.file_url)
+                .then(response => response.text())
+                .then(text => {
+                    document.getElementById('textContent').textContent = text;
+                })
+                .catch(error => {
+                    document.getElementById('textContent').textContent = 'Error loading text content: ' + error.message;
+                });
         }
         
         // Audio viewer
@@ -1796,13 +1857,17 @@
         function updateUserProfile() {
             if (!currentUser) return;
             
-            // Display name
-            userName.textContent = currentUser.user_name || currentUser.user_email || 'User';
+            // Display name (use common_name if available, otherwise user_name)
+            userName.textContent = currentUser.common_name || currentUser.user_name || 'User';
+            
+            // Email
+            userEmail.textContent = currentUser.user_email || 'No email provided';
             
             // Department
             userDepartment.textContent = currentUser.department || 'Not specified';
             
-            // Files count and authentication method are set elsewhere
+            // Company
+            userCompany.textContent = currentUser.company || 'Not specified';
         }
         
         // Update user statistics
@@ -1856,7 +1921,7 @@
             if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
             if (diff < 604800) return `${Math.floor(diff / 86400)} days ago`;
             
-            return date.toLocaleDateString();
+            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
         }
         
         // Format file size
