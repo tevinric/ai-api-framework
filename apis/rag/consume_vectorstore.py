@@ -64,6 +64,10 @@ def consume_git_policies_route():
             system_prompt:
               type: string
               description: Custom system prompt to guide model behavior (optional)
+            include_sources:
+              type: boolean
+              default: false 
+              description: Whether to include source documents in the response
     produces:
       - application/json
     responses:
@@ -93,6 +97,12 @@ def consume_git_policies_route():
             output_tokens:
               type: integer
               example: 209
+            sources:
+              type: array
+              items:
+                type: string
+              example: ["document1.pdf", "document2.docx"]
+              description: Source documents used for the answer (only included if include_sources is true)
       400:
         description: Bad request
         schema:
@@ -175,12 +185,12 @@ def consume_git_policies_route():
     # Extract parameters
     query = data.get('query')
     system_prompt = data.get('system_prompt', None)
+    include_sources = data.get('include_sources', False)
     
     # Set hardcoded parameters for git policies
     vectorstore_id = "abc123456789"
     model = "gpt-4o"
     temperature = 0.15
-    json_output = False
     
     try:
         # Check if vectorstore exists and user has access
@@ -299,8 +309,7 @@ def consume_git_policies_route():
                 llm_request_data = {
                     "system_prompt": system_prompt,
                     "user_input": f"Context: {context}\n\nQuestion: {query}\n\nAnswer the question based on the context provided.",
-                    "temperature": temperature,
-                    "json_output": json_output
+                    "temperature": temperature
                 }
                 
                 # Use gpt-4o endpoint
@@ -342,8 +351,8 @@ def consume_git_policies_route():
                     "output_tokens": output_tokens
                 }
                 
-                # Add source documents if desired
-                if data.get('include_sources', False):
+                # Add source documents if requested
+                if include_sources:
                     sources = []
                     for doc in docs:
                         if 'source' in doc.metadata:
@@ -421,10 +430,10 @@ def consume_vectorstore_route():
               maximum: 1
               default: 0.5
               description: Controls randomness (0=focused, 1=creative)
-            json_output:
+            include_sources:
               type: boolean
               default: false
-              description: Format response as JSON
+              description: Whether to include source documents in the response
     produces:
       - application/json
     responses:
@@ -454,6 +463,12 @@ def consume_vectorstore_route():
             output_tokens:
               type: integer
               example: 209
+            sources:
+              type: array
+              items:
+                type: string
+              example: ["document1.pdf", "document2.docx"]
+              description: Source documents used for the answer (only included if include_sources is true)
       400:
         description: Bad request
         schema:
@@ -577,7 +592,7 @@ def consume_vectorstore_route():
     model = data.get('model', 'gpt-4o-mini')  # Default to gpt-4o-mini
     system_prompt = data.get('system_prompt', None)
     temperature = float(data.get('temperature', 0.5))
-    json_output = data.get('json_output', False)
+    include_sources = data.get('include_sources', False)
     
     # Validate model
     valid_models = ['gpt-4o-mini', 'gpt-4o']
@@ -710,8 +725,7 @@ def consume_vectorstore_route():
                 llm_request_data = {
                     "system_prompt": system_prompt,
                     "user_input": f"Context: {context}\n\nQuestion: {query}\n\nAnswer the question based on the context provided.",
-                    "temperature": temperature,
-                    "json_output": json_output
+                    "temperature": temperature
                 }
                 
                 # Determine LLM endpoint based on selected model
@@ -756,8 +770,8 @@ def consume_vectorstore_route():
                     "output_tokens": output_tokens
                 }
                 
-                # Add source documents if desired
-                if data.get('include_sources', False):
+                # Add source documents if requested
+                if include_sources:
                     sources = []
                     for doc in docs:
                         if 'source' in doc.metadata:
