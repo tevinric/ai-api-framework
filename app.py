@@ -130,6 +130,11 @@ def file_portal():
 def faq():
     return render_template('docs/faq.html')
 
+## TECHNICAL SUPPORT 
+@app.route('/docs/technical_support')
+def technical_support():    
+    return render_template('docs/technical_support.html')
+
 # TOKEN SERVICE ENDPOINTS
 ## GET TOKEN
 from apis.token_services.get_token import register_routes as get_token_endpoint 
