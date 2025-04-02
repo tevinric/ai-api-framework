@@ -780,12 +780,51 @@
                 display: block;
             }
         }
+
+        /* File metadata styling */
+        .file-metadata {
+            background-color: var(--white-color);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        
+        .metadata-item {
+            display: flex;
+            margin-bottom: 0.5rem;
+            border-bottom: 1px solid #f0f0f0;
+            padding-bottom: 0.5rem;
+        }
+        
+        .metadata-label {
+            font-weight: 600;
+            width: 150px;
+            color: #666;
+        }
+        
+        .metadata-value {
+            flex: 1;
+        }
+
+        /* Logout button */
+        .logout-btn {
+            margin-top: 1rem;
+            background-color: #f8f9fa;
+            color: #666;
+            border: 1px solid #ddd;
+        }
+        
+        .logout-btn:hover {
+            background-color: #e2e6ea;
+            color: #333;
+        }
     </style>
 </head>
 <body>
     <header class="header">
         <div class="logo">
-            <img src="/static/images/Telesure-logo.png" alt="TIH AI API Platform Logo" style="height: 40px; margin-right: 0.5rem;">
+            <i class="fas fa-cloud"></i>
             <h1>File Management Portal</h1>
         </div>
         <nav class="nav">
@@ -875,10 +914,18 @@
         <div id="auth-container" class="auth-container">
             <h2>File Management Portal</h2>
             <div id="authAlert" style="display: none;" class="alert"></div>
+            
             <div class="input-group">
                 <label for="apiKey">Enter your API Key</label>
                 <input type="password" id="apiKey" placeholder="Your API Key" autocomplete="off">
             </div>
+            
+            <div id="tokenSection" class="input-group">
+                <label for="token">Enter your Token (optional)</label>
+                <input type="password" id="token" placeholder="Your Token (optional)" autocomplete="off">
+                <p style="margin-top: 5px; font-size: 0.8rem; color: #666;">Leave empty to generate a new token</p>
+            </div>
+            
             <button id="loginBtn" class="btn">Authenticate</button>
         </div>
         
@@ -909,18 +956,17 @@
                             <div id="userDepartment" class="user-detail-value">-</div>
                         </div>
                         <div class="user-detail">
-                            <div class="user-detail-label">Scope</div>
-                            <div id="userScope" class="user-detail-value">-</div>
-                        </div>
-                        <div class="user-detail">
-                            <div class="user-detail-label">Files Uploaded</div>
+                            <div class="user-detail-label">Files</div>
                             <div id="filesUploaded" class="user-detail-value">0</div>
                         </div>
                         <div class="user-detail">
-                            <div class="user-detail-label">Date Created</div>
-                            <div id="dateCreated" class="user-detail-value">-</div>
+                            <div class="user-detail-label">Authentication</div>
+                            <div id="authMethod" class="user-detail-value">API Key + Token</div>
                         </div>
                     </div>
+                    <button id="logoutBtn" class="btn logout-btn">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
                 </div>
                 
                 <!-- Uploaded Files Section -->
@@ -957,6 +1003,11 @@
                         </div>
                     </div>
                     
+                    <!-- File Metadata Section -->
+                    <div id="fileMetadata" class="file-metadata">
+                        <!-- Metadata will be added here dynamically -->
+                    </div>
+                    
                     <div id="fileViewer" class="file-viewer">
                         <!-- Different file viewers will be rendered here based on file type -->
                     </div>
@@ -991,7 +1042,7 @@
     
     <!-- Footer -->
     <footer class="footer" style="display: none;">
-        <p>© 2025 TIH AI API Portal. Powered by the TIH AI Center of Excellence.</p>
+        <p>© 2025 AI API Portal. Powered by the AI Center of Excellence.</p>
     </footer>
     
     <script>
@@ -1000,12 +1051,15 @@
         let activeToken = null;
         let selectedFile = null;
         let uploadedFiles = [];
+        let fileIds = []; // Temporary list to store file IDs
         
         // DOM elements
         const authContainer = document.getElementById('auth-container');
         const filesContainer = document.getElementById('files-container');
         const apiKeyInput = document.getElementById('apiKey');
+        const tokenInput = document.getElementById('token');
         const loginBtn = document.getElementById('loginBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
         const authAlert = document.getElementById('authAlert');
         const fileAlert = document.getElementById('fileAlert');
         const uploadedFilesList = document.getElementById('uploadedFilesList');
@@ -1013,6 +1067,7 @@
         const fileContentPlaceholder = document.getElementById('fileContentPlaceholder');
         const fileContentView = document.getElementById('fileContentView');
         const fileTitle = document.getElementById('fileTitle');
+        const fileMetadata = document.getElementById('fileMetadata');
         const fileViewer = document.getElementById('fileViewer');
         const downloadBtn = document.getElementById('downloadBtn');
         const deleteBtn = document.getElementById('deleteBtn');
@@ -1028,9 +1083,8 @@
         // User profile elements
         const userName = document.getElementById('userName');
         const userDepartment = document.getElementById('userDepartment');
-        const userScope = document.getElementById('userScope');
         const filesUploaded = document.getElementById('filesUploaded');
-        const dateCreated = document.getElementById('dateCreated');
+        const authMethod = document.getElementById('authMethod');
         
         // File type icons mapping
         const fileIcons = {
@@ -1126,6 +1180,9 @@
                 }
             });
             
+            // Logout button
+            logoutBtn.addEventListener('click', handleLogout);
+            
             // Search form submission
             searchForm.addEventListener('submit', (e) => {
                 e.preventDefault();
@@ -1141,7 +1198,7 @@
             // File deletion modal
             deleteBtn.addEventListener('click', () => {
                 if (selectedFile) {
-                    deleteFileName.textContent = selectedFile.original_filename;
+                    deleteFileName.textContent = selectedFile.file_name;
                     deleteModal.style.display = 'flex';
                 }
             });
@@ -1156,19 +1213,21 @@
             
             confirmDelete.addEventListener('click', () => {
                 deleteModal.style.display = 'none';
-                deleteFile(selectedFile.id);
+                deleteFile(selectedFile.file_id);
             });
             
             downloadBtn.addEventListener('click', () => {
                 if (selectedFile) {
-                    downloadFile(selectedFile);
+                    downloadFile(selectedFile.file_id);
                 }
             });
         });
         
-        // Handle login with API key
+        // Handle login with API key and optional token
         async function handleLogin() {
             const apiKey = apiKeyInput.value.trim();
+            const token = tokenInput.value.trim();
+            
             if (!apiKey) {
                 showAlert(authAlert, 'Please enter your API key', 'alert-warning');
                 return;
@@ -1177,14 +1236,30 @@
             showLoading(true);
             
             try {
-                // Get token using API key
-                const tokenResponse = await getToken(apiKey);
-                if (!tokenResponse || !tokenResponse.access_token) {
-                    throw new Error('Failed to get authentication token');
+                // Step 1: If token is not provided, get a new one using API key
+                if (!token) {
+                    // Get token using API key
+                    const tokenResponse = await getToken(apiKey);
+                    if (!tokenResponse || !tokenResponse.access_token) {
+                        throw new Error('Failed to get authentication token');
+                    }
+                    
+                    activeToken = tokenResponse.access_token;
+                    console.log('Generated new token successfully');
+                    authMethod.textContent = 'API Key + Generated Token';
+                } else {
+                    // Use the provided token
+                    activeToken = token;
+                    
+                    // Validate the token
+                    const tokenValidation = await validateToken(apiKey, token);
+                    if (!tokenValidation || tokenValidation.token_status !== 'valid') {
+                        throw new Error('The provided token is invalid or expired');
+                    }
+                    
+                    console.log('Using provided token');
+                    authMethod.textContent = 'API Key + Provided Token';
                 }
-                
-                activeToken = tokenResponse.access_token;
-                console.log('Authentication successful. Token acquired.');
                 
                 // Get user details from the database using API key
                 const userDetails = await getUserDetails(apiKey);
@@ -1193,20 +1268,44 @@
                 }
                 
                 currentUser = userDetails;
-                console.log('User details retrieved:', currentUser);
+                console.log('User authenticated:', currentUser);
                 
                 // Show authenticated UI
                 showAuthenticatedUI();
                 
-                // Load user files from database
+                // Load user files
                 await loadUserFiles();
                 
             } catch (error) {
                 console.error('Authentication error:', error);
-                showAlert(authAlert, error.message || 'Authentication failed. Please check your API key and try again.', 'alert-danger');
+                showAlert(authAlert, error.message || 'Authentication failed. Please check your credentials and try again.', 'alert-danger');
             } finally {
                 showLoading(false);
             }
+        }
+        
+        // Handle logout
+        function handleLogout() {
+            // Reset all state
+            currentUser = null;
+            activeToken = null;
+            selectedFile = null;
+            uploadedFiles = [];
+            fileIds = [];
+            
+            // Clear form inputs
+            apiKeyInput.value = '';
+            tokenInput.value = '';
+            
+            // Hide files container, show auth container
+            filesContainer.style.display = 'none';
+            authContainer.style.display = 'block';
+            
+            // Hide any alerts
+            authAlert.style.display = 'none';
+            fileAlert.style.display = 'none';
+            
+            console.log('Logged out successfully');
         }
         
         // Get token with API key
@@ -1227,27 +1326,38 @@
                     throw new Error('Failed to get token: ' + (response.statusText || 'Unknown error'));
                 }
                 
-                const contentType = response.headers.get('content-type');
-                if (contentType && contentType.includes('application/json')) {
-                    const data = await response.json();
-                    console.log('Token received successfully');
-                    return data;
-                } else {
-                    // Try to handle non-JSON response
-                    const text = await response.text();
-                    console.error('Received non-JSON response from token endpoint:', text);
-                    
-                    // Simple regex-based token extraction as a fallback
-                    const tokenMatch = text.match(/"access_token"\s*:\s*"([^"]+)"/);
-                    if (tokenMatch && tokenMatch[1]) {
-                        console.log('Extracted token from text response');
-                        return { access_token: tokenMatch[1] };
-                    }
-                    
-                    throw new Error('Invalid response format from server');
-                }
+                const data = await response.json();
+                console.log('Token received successfully');
+                return data;
             } catch (error) {
                 console.error('Token acquisition error:', error);
+                throw error;
+            }
+        }
+        
+        // Validate token using token details endpoint
+        async function validateToken(apiKey, token) {
+            try {
+                console.log('Validating token...');
+                
+                const response = await fetch(`/token/details?token=${token}`, {
+                    method: 'GET',
+                    headers: {
+                        'API-Key': apiKey
+                    }
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Token validation failed:', errorText);
+                    throw new Error('Failed to validate token: ' + (response.statusText || 'Unknown error'));
+                }
+                
+                const data = await response.json();
+                console.log('Token validation result:', data);
+                return data;
+            } catch (error) {
+                console.error('Token validation error:', error);
                 throw error;
             }
         }
@@ -1257,11 +1367,7 @@
             try {
                 console.log('Fetching user details...');
                 
-                // This would be an API endpoint to get user details from the database
-                // For now, we'll use a mock implementation
-                
-                // In a real implementation, this would be a specific endpoint to get user details
-                // For this implementation, we'll use the balance endpoint as it might have user info
+                // Using the balance endpoint to get user details
                 const response = await fetch('/usage/balance', {
                     method: 'GET',
                     headers: {
@@ -1278,9 +1384,9 @@
                 // Parse user data from response
                 const data = await response.json();
                 
-                // Extract user ID and other information
+                // Extract user information
                 const userInfo = {
-                    id: data.user_id || data.id,
+                    id: data.user_id,
                     user_name: data.user_name || 'User',
                     user_email: data.user_email || 'user@example.com',
                     department: data.department || 'Not specified',
@@ -1297,7 +1403,7 @@
             }
         }
         
-        // Load user files from database
+        // Load user files
         async function loadUserFiles() {
             try {
                 console.log('Loading user files...');
@@ -1306,20 +1412,22 @@
                     throw new Error('User information or token missing');
                 }
                 
-                // In a real implementation, this would be an endpoint to list user files
-                // For now, we'll try to use the file API to get file URLs
-                
-                // Attempt to query the database for files
-                const files = await fetchUserFilesFromDB();
+                // Call the list files endpoint
+                const files = await listUserFiles();
                 
                 if (files && files.length > 0) {
                     uploadedFiles = files;
+                    
+                    // Store file IDs in temporary list
+                    fileIds = files.map(file => file.file_id);
+                    
                     updateFilesList(uploadedFilesList, uploadedFiles, uploadedFilesCount);
                     updateUserStats();
                     console.log('Files loaded successfully:', files.length);
                 } else {
                     console.log('No files found for user');
                     uploadedFiles = [];
+                    fileIds = [];
                     updateFilesList(uploadedFilesList, [], uploadedFilesCount);
                     updateUserStats();
                 }
@@ -1330,78 +1438,50 @@
                 
                 // Reset UI
                 uploadedFiles = [];
+                fileIds = [];
                 updateFilesList(uploadedFilesList, [], uploadedFilesCount);
                 updateUserStats();
             }
         }
         
-        // Fetch user files from database
-        async function fetchUserFilesFromDB() {
-            // This would typically be an API endpoint to get files from your SQL database
-            // For now, we'll need to simulate this
-            
-            // Attempt to get one file to see if the endpoint works
+        // List user files using API
+        async function listUserFiles() {
             try {
-                // We'll try to simulate a DB query by making requests to get some files
-                // This is a workaround since we don't have a direct files list endpoint
+                console.log('Fetching user files...');
                 
-                // In a production system, you would have an API endpoint like /files/list 
-                // that directly queries your database for files
-                
-                // For demonstration, let's try to get any file details for this user
-                // First we need to find file IDs
-                
-                // Simulating a SQL query request
-                console.log('Simulating SQL query to fetch files for user:', currentUser.id);
-                
-                // We could make a fetch to a custom endpoint that runs the SQL query
-                // For now, let's see if we can use any existing endpoints
-                
-                // For the purpose of demonstration, I'll return some sample files
-                // In a real implementation, this would be replaced with actual DB query
-                
-                // Sample file structure based on your database schema
-                const mockFiles = [
-                    {
-                        id: "f1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6",
-                        user_id: currentUser.id,
-                        original_filename: "contract_document.pdf",
-                        blob_name: "f1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6.pdf",
-                        blob_url: "https://storageaccount.blob.core.windows.net/file-uploads/f1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6.pdf",
-                        content_type: "application/pdf",
-                        file_size: 2450000,
-                        upload_date: "2025-03-15T14:30:45.123Z"
-                    },
-                    {
-                        id: "a9b8c7d6-e5f4-3g2h-1i0j-k9l8m7n6o5p4",
-                        user_id: currentUser.id,
-                        original_filename: "presentation_slides.pptx",
-                        blob_name: "a9b8c7d6-e5f4-3g2h-1i0j-k9l8m7n6o5p4.pptx",
-                        blob_url: "https://storageaccount.blob.core.windows.net/file-uploads/a9b8c7d6-e5f4-3g2h-1i0j-k9l8m7n6o5p4.pptx",
-                        content_type: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-                        file_size: 4320000,
-                        upload_date: "2025-03-17T10:15:22.456Z"
-                    },
-                    {
-                        id: "z9y8x7w6-v5u4-3t2s-1r0q-p9o8n7m6l5k4",
-                        user_id: currentUser.id,
-                        original_filename: "project_image.jpg",
-                        blob_name: "z9y8x7w6-v5u4-3t2s-1r0q-p9o8n7m6l5k4.jpg",
-                        blob_url: "https://storageaccount.blob.core.windows.net/file-uploads/z9y8x7w6-v5u4-3t2s-1r0q-p9o8n7m6l5k4.jpg",
-                        content_type: "image/jpeg",
-                        file_size: 1250000,
-                        upload_date: "2025-03-20T16:45:33.789Z"
+                // First try with X-Token header
+                const response = await fetch('/file/list', {
+                    method: 'GET',
+                    headers: {
+                        'X-Token': activeToken
                     }
-                ];
+                });
                 
-                // In your real implementation, you would replace this with a fetch to your API
-                // that queries the database using SQL similar to:
-                // SELECT * FROM aiapisdev.dbo.file_uploads WHERE user_id = 'current-user-id'
+                if (!response.ok) {
+                    // If that fails, try with API-Key header
+                    if (response.status === 401) {
+                        const apiKeyResponse = await fetch('/file/list', {
+                            method: 'GET',
+                            headers: {
+                                'API-Key': apiKeyInput.value.trim()
+                            }
+                        });
+                        
+                        if (!apiKeyResponse.ok) {
+                            throw new Error('Failed to fetch files: ' + apiKeyResponse.statusText);
+                        }
+                        
+                        const data = await apiKeyResponse.json();
+                        return data.files || [];
+                    } else {
+                        throw new Error('Failed to fetch files: ' + response.statusText);
+                    }
+                }
                 
-                return mockFiles;
-                
+                const data = await response.json();
+                return data.files || [];
             } catch (error) {
-                console.error('Error fetching files from database:', error);
+                console.error('Error listing files:', error);
                 throw error;
             }
         }
@@ -1457,8 +1537,9 @@
                 const data = await response.json();
                 console.log('File deleted successfully:', data);
                 
-                // Remove the file from the list
-                uploadedFiles = uploadedFiles.filter(file => file.id !== fileId);
+                // Remove the file from our lists
+                uploadedFiles = uploadedFiles.filter(file => file.file_id !== fileId);
+                fileIds = fileIds.filter(id => id !== fileId);
                 
                 // Update the UI
                 updateFilesList(uploadedFilesList, uploadedFiles, uploadedFilesCount);
@@ -1468,7 +1549,7 @@
                 showAlert(fileAlert, 'File deleted successfully', 'alert-success');
                 
                 // Reset the view if the deleted file was selected
-                if (selectedFile && selectedFile.id === fileId) {
+                if (selectedFile && selectedFile.file_id === fileId) {
                     selectedFile = null;
                     fileContentPlaceholder.style.display = 'flex';
                     fileContentView.style.display = 'none';
@@ -1483,34 +1564,27 @@
         }
         
         // Download file
-        async function downloadFile(file) {
+        async function downloadFile(fileId) {
             try {
-                console.log('Downloading file:', file.id);
+                console.log('Downloading file:', fileId);
                 
-                // Check if we have a direct blob URL
-                if (file.blob_url) {
-                    // Just use the blob URL for download
-                    const link = document.createElement('a');
-                    link.href = file.blob_url;
-                    link.download = file.original_filename;
-                    link.target = '_blank';
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    return;
+                // Get file details including the URL
+                const fileDetails = await getFileDetails(fileId);
+                
+                if (!fileDetails || !fileDetails.file_url) {
+                    throw new Error('Failed to get file download URL');
                 }
-                
-                // Otherwise, get the file URL from the API
-                const fileDetails = await getFileDetails(file.id);
                 
                 // Create a temporary link and trigger download
                 const link = document.createElement('a');
                 link.href = fileDetails.file_url;
-                link.download = fileDetails.file_name || file.original_filename;
+                link.download = fileDetails.file_name;
                 link.target = '_blank';
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
+                
+                console.log('File download initiated');
                 
             } catch (error) {
                 console.error('File download error:', error);
@@ -1521,7 +1595,7 @@
         // Filter files based on search text
         function filterFiles(searchText) {
             const filteredFiles = uploadedFiles.filter(file => 
-                file.original_filename.toLowerCase().includes(searchText)
+                file.file_name.toLowerCase().includes(searchText)
             );
             
             updateFilesList(uploadedFilesList, filteredFiles, uploadedFilesCount);
@@ -1555,9 +1629,9 @@
         function createFileItem(file) {
             const fileItem = document.createElement('div');
             fileItem.className = 'file-item';
-            fileItem.dataset.fileId = file.id;
+            fileItem.dataset.fileId = file.file_id;
             
-            const fileExtension = getFileExtension(file.original_filename);
+            const fileExtension = getFileExtension(file.file_name);
             const iconClass = fileIcons[fileExtension] || fileIcons['default'];
             
             fileItem.innerHTML = `
@@ -1565,7 +1639,7 @@
                     <i class="fas ${iconClass}"></i>
                 </div>
                 <div class="file-info">
-                    <div class="file-name" title="${file.original_filename}">${file.original_filename}</div>
+                    <div class="file-name" title="${file.file_name}">${file.file_name}</div>
                     <div class="file-date">${formatDate(file.upload_date)}</div>
                 </div>
             `;
@@ -1587,27 +1661,76 @@
         }
         
         // Display file content in the main container
-        function displayFile(file) {
-            selectedFile = file;
+        async function displayFile(file) {
+            try {
+                selectedFile = file;
+                
+                // Show loading spinner
+                showLoading(true);
+                
+                // Update file title
+                fileTitle.textContent = file.file_name;
+                
+                // Show file content view, hide placeholder
+                fileContentPlaceholder.style.display = 'none';
+                fileContentView.style.display = 'block';
+                
+                // Get detailed file information
+                const fileDetails = await getFileDetails(file.file_id);
+                
+                // Update selected file with URL info
+                selectedFile = { ...selectedFile, ...fileDetails };
+                
+                // Display file metadata
+                displayFileMetadata(selectedFile);
+                
+                // Determine and show appropriate viewer based on file type
+                const contentType = file.content_type;
+                const viewer = fileViewers[contentType] || fileViewers['default'];
+                viewer(selectedFile);
+                
+            } catch (error) {
+                console.error('Error displaying file:', error);
+                showAlert(fileAlert, 'Error loading file: ' + error.message, 'alert-danger');
+                
+                // Show not viewable as fallback
+                fileViewers['default'](file);
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        // Display file metadata
+        function displayFileMetadata(file) {
+            fileMetadata.innerHTML = '';
             
-            // Update file title
-            fileTitle.textContent = file.original_filename;
+            // Create metadata items
+            const metadata = [
+                { label: 'File Name', value: file.file_name },
+                { label: 'File Type', value: file.content_type },
+                { label: 'File Size', value: formatFileSize(file.file_size) },
+                { label: 'Upload Date', value: formatDate(file.upload_date) },
+                { label: 'File ID', value: file.file_id }
+            ];
             
-            // Show file content view, hide placeholder
-            fileContentPlaceholder.style.display = 'none';
-            fileContentView.style.display = 'block';
-            
-            // Determine and show appropriate viewer based on file type
-            const contentType = file.content_type;
-            const viewer = fileViewers[contentType] || fileViewers['default'];
-            viewer(file);
+            metadata.forEach(item => {
+                if (item.value) {
+                    const metadataItem = document.createElement('div');
+                    metadataItem.className = 'metadata-item';
+                    metadataItem.innerHTML = `
+                        <div class="metadata-label">${item.label}:</div>
+                        <div class="metadata-value">${item.value}</div>
+                    `;
+                    fileMetadata.appendChild(metadataItem);
+                }
+            });
         }
         
         // Image viewer
         function showImageViewer(file) {
             fileViewer.innerHTML = `
                 <div class="image-container">
-                    <img src="${file.blob_url}" alt="${file.original_filename}" class="file-preview">
+                    <img src="${file.file_url}" alt="${file.file_name}" class="file-preview">
                 </div>
             `;
         }
@@ -1616,7 +1739,7 @@
         function showPdfViewer(file) {
             fileViewer.innerHTML = `
                 <div class="pdf-container">
-                    <iframe src="${file.blob_url}" width="100%" height="100%" frameborder="0"></iframe>
+                    <iframe src="${file.file_url}" width="100%" height="100%" frameborder="0"></iframe>
                 </div>
             `;
         }
@@ -1626,7 +1749,7 @@
             fileViewer.innerHTML = `
                 <div class="media-container">
                     <audio controls>
-                        <source src="${file.blob_url}" type="${file.content_type}">
+                        <source src="${file.file_url}" type="${file.content_type}">
                         Your browser does not support the audio element.
                     </audio>
                 </div>
@@ -1638,7 +1761,7 @@
             fileViewer.innerHTML = `
                 <div class="media-container">
                     <video controls>
-                        <source src="${file.blob_url}" type="${file.content_type}">
+                        <source src="${file.file_url}" type="${file.content_type}">
                         Your browser does not support the video element.
                     </video>
                 </div>
@@ -1647,7 +1770,7 @@
         
         // Not viewable file fallback
         function showNotViewable(file) {
-            const fileExtension = getFileExtension(file.original_filename);
+            const fileExtension = getFileExtension(file.file_name);
             const iconClass = fileIcons[fileExtension] || fileIcons['default'];
             
             fileViewer.innerHTML = `
@@ -1673,33 +1796,13 @@
         function updateUserProfile() {
             if (!currentUser) return;
             
-            // Display name (use common_name if available, otherwise user_name)
-            userName.textContent = currentUser.common_name || currentUser.user_name || currentUser.user_email || 'User';
+            // Display name
+            userName.textContent = currentUser.user_name || currentUser.user_email || 'User';
             
             // Department
             userDepartment.textContent = currentUser.department || 'Not specified';
             
-            // Scope (with friendly name)
-            const scopeNames = {
-                0: 'Administrator',
-                1: 'User - Basic',
-                2: 'User - Standard',
-                3: 'User - Premium',
-                4: 'User - Enterprise',
-                5: 'User - Unlimited'
-            };
-            userScope.textContent = scopeNames[currentUser.scope] || `Level ${currentUser.scope || 1}`;
-            
-            // Date created
-            const createdDate = currentUser.created_at 
-                ? new Date(currentUser.created_at).toLocaleDateString('en-US', { 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
-                })
-                : 'Not available';
-                
-            dateCreated.textContent = createdDate;
+            // Files count and authentication method are set elsewhere
         }
         
         // Update user statistics
@@ -1742,6 +1845,8 @@
         
         // Format date for display
         function formatDate(dateString) {
+            if (!dateString) return 'Unknown';
+            
             const date = new Date(dateString);
             const now = new Date();
             const diff = (now - date) / 1000; // Difference in seconds
@@ -1752,6 +1857,15 @@
             if (diff < 604800) return `${Math.floor(diff / 86400)} days ago`;
             
             return date.toLocaleDateString();
+        }
+        
+        // Format file size
+        function formatFileSize(bytes) {
+            if (!bytes || bytes === 0) return 'Unknown';
+            
+            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(1024));
+            return `${(bytes / Math.pow(1024, i)).toFixed(2)} ${sizes[i]}`;
         }
     </script>
 </body>
