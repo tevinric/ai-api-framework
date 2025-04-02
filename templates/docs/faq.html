@@ -1,0 +1,1458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAQ - TIH AI API Portal</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4a6fe3;
+            --secondary-color: #6c63ff;
+            --dark-color: #2a2c3b;
+            --light-color: #f5f6fa;
+            --text-color: #333;
+            --white-color: #ffffff;
+            --accent-color: #00d4ff;
+            --accent-gradient: linear-gradient(90deg, #00d4ff 0%, #6c63ff 100%);
+            --magenta-dark: #3B0138;
+            --magenta-gradient: linear-gradient(90deg, #3B0138 0%, #4a6fe3 100%);
+            --sidebar-width: 280px;
+            --header-height: 60px;
+            --faq-sidebar-width: 220px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--light-color);
+            color: var(--text-color);
+            position: relative;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%234a6fe3' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        .header {
+            background-color: #03001A;
+            color: var(--white-color);
+            padding: 0 2rem;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: var(--header-height);
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo i {
+            font-size: 1.8rem;
+            margin-right: 0.5rem;
+            color: var(--accent-color);
+        }
+        
+        .logo h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+        
+        .nav {
+            display: flex;
+            align-items: center;
+        }
+        
+        .nav-item {
+            margin-left: 1.5rem;
+            color: var(--white-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+            display: flex;
+            align-items: center;
+        }
+        
+        .nav-item:hover {
+            color: var(--accent-color);
+        }
+        
+        .nav-item i {
+            margin-right: 0.5rem;
+        }
+        
+        .swagger-btn {
+            background-color: var(--accent-color);
+            color: var(--dark-color);
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-weight: 600;
+            transition: all 0.3s;
+            box-shadow: 0 4px 10px rgba(0, 212, 255, 0.3);
+        }
+        
+        .swagger-btn:hover {
+            background-color: #00b8e6;
+            transform: translateY(-2px);
+            color: var(--dark-color);
+            box-shadow: 0 6px 15px rgba(0, 212, 255, 0.4);
+        }
+        
+        /* Mobile menu toggle */
+        .menu-toggle {
+            display: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            top: var(--header-height);
+            left: 0;
+            height: calc(100vh - var(--header-height));
+            width: var(--sidebar-width);
+            background-color: var(--white-color);
+            border-right: 1px solid rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+            z-index: 900;
+            padding: 1.5rem 0;
+            transition: transform 0.3s ease-in-out;
+        }
+        
+        .sidebar-category {
+            padding: 0.5rem 1.5rem;
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar-link {
+            display: block;
+            padding: 0.7rem 1.5rem;
+            padding-left: 2.5rem;
+            color: var(--text-color);
+            text-decoration: none;
+            transition: background-color 0.2s, color 0.2s;
+            font-size: 0.95rem;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar-link:hover {
+            background-color: rgba(106, 100, 255, 0.05);
+            color: var(--primary-color);
+        }
+        
+        .sidebar-link.active {
+            color: var(--primary-color);
+            background-color: rgba(106, 100, 255, 0.08);
+            border-left: 3px solid var(--primary-color);
+        }
+        
+        .sidebar-link i {
+            margin-right: 0.5rem;
+            width: 20px;
+            text-align: center;
+        }
+        
+        .sidebar-submenu {
+            margin-left: 1rem;
+        }
+        
+        .sidebar-submenu .sidebar-link {
+            padding-left: 3rem;
+            font-size: 0.9rem;
+        }
+        
+        /* Main content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            margin-top: var(--header-height);
+            padding: 0;
+            min-height: calc(100vh - var(--header-height));
+        }
+        
+        /* Hero */
+        .hero {
+            background: linear-gradient(135deg, rgba(1, 0, 15, 1) 0%, rgba(35, 0, 33, 1) 100%);
+            color: var(--white-color);
+            padding: 5rem 3rem;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        .hero::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23FFFFFF' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
+            opacity: 0.12;
+            pointer-events: none;
+            animation: zoomDots 20s linear infinite;
+            transform-origin: center;
+            z-index: 0;
+        }
+        
+        @keyframes zoomDots {
+            0% {
+                transform: scale(0.3);
+                opacity: 0.1;
+            }
+            50% {
+                transform: scale(0.7);
+                opacity: 0.15;
+            }
+            100% {
+                transform: scale(0.3);
+                opacity: 0.1;
+            }
+        }
+        
+        .hero-container {
+            max-width: 1440px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .hero h2 {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+            max-width: 840px;
+            background: linear-gradient(to left, var(--white-color), var(--accent-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: fadeInUp 0.8s ease-out;
+        }
+        
+        .hero p {
+            font-size: 1.2rem;
+            max-width: 700px;
+            margin-bottom: 2rem;
+            line-height: 1.7;
+            color: rgba(255, 255, 255, 0.9);
+            animation: fadeInUp 1s ease-out;
+        }
+        
+        /* FAQ specific styles */
+        .faq-layout {
+            display: flex;
+            width: 100%;
+        }
+        
+        .faq-sidebar {
+            width: var(--faq-sidebar-width);
+            background-color: var(--white-color);
+            padding: 2rem 1rem;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+            flex-shrink: 0;
+            position: sticky;
+            top: var(--header-height);
+            height: calc(100vh - var(--header-height));
+            overflow-y: auto;
+        }
+        
+        .faq-sidebar-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--accent-color);
+        }
+        
+        .faq-categories {
+            list-style-type: none;
+        }
+        
+        .faq-category {
+            margin-bottom: 0.8rem;
+            cursor: pointer;
+            padding: 0.6rem 0.8rem;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+        }
+        
+        .faq-category:hover {
+            background-color: rgba(106, 100, 255, 0.05);
+            color: var(--primary-color);
+        }
+        
+        .faq-category.active {
+            background-color: rgba(106, 100, 255, 0.1);
+            color: var(--primary-color);
+        }
+        
+        .faq-category i {
+            margin-right: 0.8rem;
+            width: 20px;
+            text-align: center;
+            color: var(--primary-color);
+        }
+        
+        .faq-content {
+            flex: 1;
+            padding: 3rem;
+            background-color: var(--light-color);
+        }
+        
+        .faq-section {
+            background-color: var(--white-color);
+            border-radius: 8px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        .faq-section-title {
+            font-size: 1.8rem;
+            color: var(--dark-color);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            position: relative;
+        }
+        
+        .faq-section-title::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            bottom: -10px;
+            width: 60px;
+            height: 3px;
+            background: var(--accent-gradient);
+            border-radius: 2px;
+        }
+        
+        .faq-section-title i {
+            margin-right: 1rem;
+            color: var(--primary-color);
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1) 0%, rgba(106, 100, 255, 0.1) 100%);
+            border-radius: 50%;
+        }
+        
+        .faq-search {
+            margin-bottom: 2rem;
+        }
+        
+        .faq-search-input {
+            width: 100%;
+            padding: 0.8rem 1rem 0.8rem 3rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23888' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: 1rem center;
+            background-size: 1rem;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
+        }
+        
+        .faq-search-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(74, 111, 227, 0.1);
+        }
+        
+        .faq-item {
+            margin-bottom: 1rem;
+            border: 1px solid #eee;
+            border-radius: 6px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        .faq-item:hover {
+            border-color: #ddd;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        .faq-question {
+            padding: 1.2rem;
+            background-color: var(--white-color);
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+        
+        .faq-question:hover {
+            background-color: #f9f9f9;
+        }
+        
+        .faq-question-text {
+            flex: 1;
+        }
+        
+        .faq-question-icon {
+            margin-left: 1rem;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background-color: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+        
+        .faq-question-icon i {
+            font-size: 0.8rem;
+            color: var(--primary-color);
+            transition: all 0.3s ease;
+        }
+        
+        .faq-answer {
+            padding: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .faq-answer-content {
+            padding: 0 1.2rem 1.2rem 1.2rem;
+            color: #666;
+            line-height: 1.6;
+        }
+        
+        .faq-item.active .faq-question {
+            background-color: #f9f9f9;
+        }
+        
+        .faq-item.active .faq-question-icon {
+            background-color: var(--primary-color);
+        }
+        
+        .faq-item.active .faq-question-icon i {
+            color: white;
+            transform: rotate(180deg);
+        }
+        
+        .faq-item.active .faq-answer {
+            max-height: 1000px;
+            transition: max-height 0.5s ease;
+        }
+        
+        /* Animation keyframes */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+        
+        /* Responsive styles */
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+                box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+                z-index: 1001;
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .faq-layout {
+                flex-direction: column;
+            }
+            
+            .faq-sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                top: 0;
+                padding: 1.5rem;
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+            }
+            
+            .faq-sidebar-title {
+                margin-bottom: 1rem;
+                margin-right: 1rem;
+                padding-bottom: 0;
+                border-bottom: none;
+            }
+            
+            .faq-categories {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
+            
+            .faq-category {
+                margin-bottom: 0;
+                padding: 0.4rem 0.8rem;
+                font-size: 0.9rem;
+            }
+            
+            .faq-content {
+                padding: 1.5rem;
+            }
+            
+            .footer {
+                margin-left: 0;
+            }
+            
+            .menu-toggle {
+                display: block;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .header {
+                padding: 0 1rem;
+            }
+            
+            .nav-item:not(.swagger-btn) {
+                display: none;
+            }
+            
+            .hero {
+                padding: 3rem 1.5rem;
+            }
+            
+            .hero h2 {
+                font-size: 2rem;
+            }
+            
+            .faq-section-title {
+                font-size: 1.5rem;
+            }
+            
+            .faq-section {
+                padding: 1.5rem;
+            }
+        }
+        
+        /* Dark overlay when sidebar is active on mobile */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        
+        @media (max-width: 992px) {
+            .sidebar-overlay.active {
+                display: block;
+            }
+        }
+        
+        /* Footer */
+        .footer {
+            background-color: #03001A;
+            color: var(--white-color);
+            text-align: center;
+            padding: 3rem;
+            margin-top: 3rem;
+            margin-left: var(--sidebar-width);
+            position: relative;
+        }
+        
+        .footer::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%234a6fe3' fill-opacity='0.05' fill-rule='evenodd'%3E%3Ccircle cx='3' cy='3' r='3'/%3E%3Ccircle cx='13' cy='13' r='3'/%3E%3C/g%3E%3C/svg%3E");
+            opacity: 0.1;
+            pointer-events: none;
+        }
+        
+        .footer p {
+            margin-bottom: 1rem;
+            position: relative;
+        }
+        
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            position: relative;
+        }
+        
+        .social-link {
+            color: var(--white-color);
+            font-size: 1.5rem;
+            transition: all 0.3s;
+        }
+        
+        .social-link:hover {
+            color: var(--accent-color);
+            transform: translateY(-3px);
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <img src="/static/images/Telesure-logo.png" alt="TIH AI API Platform Logo" style="height: 40px; margin-right: 0.5rem;">
+            <h1>AI API Platform</h1>
+        </div>
+        <nav class="nav">
+            <div class="menu-toggle" id="menu-toggle">
+                <i class="fas fa-bars"></i>
+            </div>
+            <a href="{{ url_for('home') }}" class="nav-item">
+                <i class="fas fa-home"></i>Home
+            </a>
+            <a href="{{ url_for('getting_started') }}" class="nav-item">
+                <i class="fas fa-rocket"></i>Getting Started
+            </a>
+            <a href="/templates/docs/faq.html" class="nav-item">
+                <i class="fas fa-question-circle"></i>FAQ
+            </a>
+            <a href="/apidocs/" class="nav-item swagger-btn">
+                <i class="fas fa-book"></i>Swagger
+            </a>
+        </nav>
+    </header>
+    
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    
+    <!-- RENDER THE SIDEBAR TEMPLATE-->
+    <aside class="sidebar">
+        {% include 'sidebar.html' %}
+    </aside>
+    
+    <main class="main-content">
+        <section class="hero">
+            <div class="hero-container">
+                <h2>Frequently Asked Questions</h2>
+                <p>Find answers to common questions about our AI API Platform, including authentication, services, pricing, technical details, and support options.</p>
+            </div>
+        </section>
+        
+        <div class="faq-layout">
+            <!-- FAQ Categories Sidebar -->
+            <div class="faq-sidebar">
+                <h3 class="faq-sidebar-title">Categories</h3>
+                <ul class="faq-categories">
+                    <li class="faq-category active" data-category="all">
+                        <i class="fas fa-list"></i> All Questions
+                    </li>
+                    <li class="faq-category" data-category="general">
+                        <i class="fas fa-info-circle"></i> General
+                    </li>
+                    <li class="faq-category" data-category="authentication">
+                        <i class="fas fa-key"></i> Authentication
+                    </li>
+                    <li class="faq-category" data-category="services">
+                        <i class="fas fa-cogs"></i> Services
+                    </li>
+                    <li class="faq-category" data-category="pricing">
+                        <i class="fas fa-wallet"></i> Pricing & Credits
+                    </li>
+                    <li class="faq-category" data-category="files">
+                        <i class="fas fa-file"></i> File Management
+                    </li>
+                    <li class="faq-category" data-category="technical">
+                        <i class="fas fa-code"></i> Technical
+                    </li>
+                    <li class="faq-category" data-category="support">
+                        <i class="fas fa-headset"></i> Support
+                    </li>
+                </ul>
+            </div>
+            
+            <!-- FAQ Content Area -->
+            <div class="faq-content">
+                <!-- Search Box -->
+                <div class="faq-search">
+                    <input type="text" id="faqSearch" class="faq-search-input" placeholder="Search frequently asked questions...">
+                </div>
+                
+                <!-- General FAQs -->
+                <div class="faq-section" data-category="general">
+                    <h2 class="faq-section-title"><i class="fas fa-info-circle"></i> General Questions</h2>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <div class="faq-question-text">What is the TIH AI API Platform?</div>
+                            <div class="faq-question-icon"><i class="fas fa-chevron-down"></i></div>
+                        </div>
+                        <div class="faq-answer">
+                            <div class="faq-answer-content">
+                                <p>The TIH AI API Platform is a comprehensive suite of AI services designed to transform your applications. It's developed by the TIH AI Center of Excellence and provides access to various AI capabilities including advanced language models, image generation, speech processing, document intelligence, and more—all accessible through simple, powerful APIs designed for developers.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <div class="faq-question-text">Who can use the TIH AI API Platform?</div>
+                            <div class="faq-question-icon"><i class="fas fa-chevron-down"></i></div>
+                        </div>
+                        <div class="faq-answer">
+                            <div class="faq-answer-content">
+                                <p>The platform is designed for TIH employees and approved partners. You need to request access through our registration form to obtain an API key. Both individual employees and service accounts are supported.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <div class="faq-question-text">How do I get started with the platform?</div>
+                            <div class="faq-question-icon"><i class="fas fa-chevron-down"></i></div>
+                        </div>
+                        <div class="faq-answer">
+                            <div class="faq-answer-content">
+                                <p>To get started with our AI API Platform:</p>
+                                <ol>
+                                    <li>Request an API key through our registration form</li>
+                                    <li>Generate an authentication token using your API key</li>
+                                    <li>Download our Postman Collection or explore our API documentation</li>
+                                    <li>Make your first API call using the authentication token</li>
+                                </ol>
+                                <p>For detailed instructions, visit our <a href="{{ url_for('getting_started') }}">Getting Started</a> page.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <div class="faq-question-text">What AI services are available on the platform?</div>
+                            <div class="faq-question-icon"><i class="fas fa-chevron-down"></i></div>
+                        </div>
+                        <div class="faq-answer">
+                            <div class="faq-answer-content">
+                                <p>Our platform offers a wide range of AI services, including:</p>
+                                <ul>
+                                    <li>Language Models (GPT-4o, GPT-4o-mini, DeepSeek, Llama, etc.)</li>
+                                    <li>Conversational AI</li>
+                                    <li>Image Generation (DALL-E 3, Stable Diffusion)</li>
+                                    <li>Speech Services (Speech-to-Text)</li>
+                                    <li>Document Intelligence</li>
+                                    <li>OCR Services (ID document and vehicle license disc recognition)</li>
+                                    <li>NLP Services (text analysis, classification)</li>
+                                    <li>RAG Services (query your own data)</li>
+                                    <li>File Management</li>
+                                </ul>
+                                <p>Explore our detailed documentation for each service in the navigation menu.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Authentication FAQs -->
+                <div class="faq-section" data-category="authentication">
+                    <h2 class="faq-section-title"><i class="fas fa-key"></i> Authentication Questions</h2>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <div class="faq-question-text">How do I authenticate with the API?</div>
+                            <div class="faq-question-icon"><i class="fas fa-chevron-down"></i></div>
+                        </div>
+                        <div class="faq-answer">
+                            <div class="faq-answer-content">
+                                <p>We use a two-step authentication process:</p>
+                                <ol>
+                                    <li>First, you authenticate with your unique API key to generate a token by calling the <code>/token</code> endpoint</li>
+                                    <li>Then, you use this token in the <code>X-Token</code> header for all subsequent API calls</li>
+                                </ol>
+                                <p>This approach enhances security by limiting the exposure of your API key and providing temporary access tokens.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <div class="faq-question-text">How long are authentication tokens valid?</div>
+                            <div class="faq-question-icon"><i class="fas fa-chevron-down"></i></div>
+                        </div>
+                        <div class="faq-answer">
+                            <div class="faq-answer-content">
+                                <p>Authentication tokens are valid for 1 hour (3599 seconds) from the time of generation. After this period, you'll need to generate a new token or refresh the existing one to continue using the API.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <div class="faq-question-text">How do I refresh my authentication token?</div>
+                            <div class="faq-question-icon"><i class="fas fa-chevron-down"></i></div>
+                        </div>
+                        <div class="faq-answer">
+                            <div class="faq-answer-content">
+                                <p>You can refresh your token by calling the <code>/token/refresh</code> endpoint with your API key in the header and the current token as a query parameter. This will extend the token's validity for another hour without requiring a completely new token generation.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <div class="faq-question-text">What should I do if my API key is compromised?</div>
+                            <div class="faq-question-icon"><i class="fas fa-chevron-down"></i></div>
+                        </div>
+                        <div class="faq-answer">
+                            <div class="faq-answer-content">
+                                <p>If you believe your API key has been compromised, contact the AI COE team immediately to revoke the existing key and issue a new one. For security reasons, never share your API key or include it in client-side code or public repositories.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Services FAQs -->
+                <div class="faq-section" data-category="services">
+                    <h2 class="faq-section-title"><i class="fas fa-cogs"></i> Services Questions</h2>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <div class="faq-question-text">Which language models are available on the platform?</div>
+                            <div class="faq-question-icon"><i class="fas fa-chevron-down"></i></div>
+                        </div>
+                        <div class="faq-answer">
+                            <div class="faq-answer-content">
+                                <p>We offer several cutting-edge language models:</p>
+                                <ul>
+                                    <li><strong>GPT-4o</strong>: OpenAI's latest model for complex content generation and reasoning</li>
+                                    <li><strong>GPT-4o-mini</strong>: Lightweight version for everyday tasks</li>
+                                    <li><strong>O1-mini</strong>: Specialized for complex reasoning and problem-solving</li>
+                                    <li><strong>O3-mini</strong>: Text generation with variable reasoning settings</li>
+                                    <li><strong>DeepSeek-R1</strong>: Focused on deep reasoning capabilities</li>
+                                    <li><strong>DeepSeek-V3</strong>: General-purpose text generation</li>
+                                    <li><strong>Llama 3.1 (405B)</strong>: Meta's large language model</li>
+                                </ul>
+                                <p>Each model has different strengths, costs, and use cases. Visit our <a href="{{ url_for('llm') }}">Language Models</a> page for detailed information.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <div class="faq-question-text">What's the difference between the LLM and Conversational endpoints?</div>
+                            <div class="faq-question-icon"><i class="fas fa-chevron-down"></i></div>
+                        </div>
+                        <div class="faq-answer">
+                            <div class="faq-answer-content">
+                                <p>The LLM endpoints are designed for one-off text generation, while the Conversational endpoints maintain context across multiple messages:</p>
+                                <ul>
+                                    <li><strong>LLM endpoints</strong> (/llm/*): Best for single queries, text generation, and tasks that don't require maintaining conversation history</li>
+                                    <li><strong>Conversational endpoints</strong> (/conversation/*): Optimized for multi-turn conversations where context from previous interactions is important</li>
+                                </ul>
+                                <p>Use Conversational endpoints when building chatbots or applications that need to remember previous user interactions.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <div class="faq-question-text">Which image generation models are available?</div>
+                            <div class="faq-question-icon"><i class="fas fa-chevron-down"></i></div>
+                        </div>
+                        <div class="faq-answer">
+                            <div class="faq-answer-content">
+                                <p>We offer two advanced image generation models:</p>
+                                <ul>
+                                    <li><strong>DALL-E 3</strong>: OpenAI's powerful image generation model, excellent for highly detailed and accurate representations of text prompts</li>
+                                    <li><strong>Stable Diffusion Ultra</strong>: Advanced open-source model that specializes in high-quality, creative image generation</li>
+                                </ul>
+                                <p>Both models allow you to create images from text descriptions, but they have different strengths and aesthetic styles. See our <a href="{{ url_for('image_generation') }}">Image Generation</a> page for details and examples.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <div class="faq-question-text">What's RAG and how can I use it?</div>
+                            <div class="faq-question-icon"><i class="fas fa-chevron-down"></i></div>
+                        </div>
+                        <div class="faq-answer">
+                            <div class="faq-answer-content">
+                                <p>RAG (Retrieval-Augmented Generation) allows you to build AI applications that can answer questions based on your specific content. It combines vector search with language models to provide accurate, context-aware responses grounded in your documents.</p>
+                                <p>To use RAG:</p>
+                                <ol>
+                                    <li>Upload your documents to our platform</li>
+                                    <li>Create a RAG collection using those documents</li>
+                                    <li>Query the collection with natural language questions</li>
+                                </ol>
+                                <p>RAG is ideal for building knowledge bases, question-answering systems, and customer support tools based on your organization's specific information. See our <a href="{{ url_for('rag') }}">RAG Services</a> page for implementation details.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Pricing FAQs -->
+                <div class="faq-section" data-category="pricing">
+                    <h2 class="faq-section-title"><i class="fas fa-wallet"></i> Pricing & Credits Questions</h2>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <div class="faq-question-text">How does the credit system work?</div>
+                            <div class="faq-question-icon"><i class="fas fa-chevron-down"></i></div>
+                        </div>
+                        <div class="faq-answer">
+                            <div class="faq-answer-content">
+                                <p>Our platform uses a credit-based system:</p>
+                                <ul>
+                                    <li>Each API endpoint consumes a specific number of AI credits per call</li>
+                                    <li>Credits are allocated monthly based on your account tier</li>
+                                    <li>Different models and services have different credit costs based on their computational requirements</li>
+                                </ul>
+                                <p>For example, GPT-4o costs 2 credits per call, while GPT-4o-mini costs only 0.5 credits. The credit system helps manage resource allocation and ensures fair access to AI services.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <div class="faq-question-text">What account tiers are available?</div>
+                            <div class="faq-question-icon"><i class="fas fa-chevron-down"></i></div>
+                        </div>
+                        <div class="faq-answer">
+                            <div class="faq-answer-content">
+                                <p>We offer several account tiers with varying credit allocations:</p>
+                                <ul>
+                                    <li><strong>Test/Trial</strong>: 100 monthly AI credits for initial exploration</li>
+                                    <li><strong>Developer</strong>: 999 monthly AI credits for development and testing</li>
+                                    <li><strong>Production Tier 3 - Basic</strong>: 5,000 monthly AI credits for low-volume production applications</li>
+                                    <li><strong>Production Tier 2 - Professional</strong>: 10,000 monthly AI credits for medium-volume production applications</li>
+                                    <li><strong>Production Tier 1 - Professional</strong>: 25,000 monthly AI credits for high-volume production applications</li>
+                                </ul>
+                                <p>You can specify your requirements when requesting an API key, and our team will set up your account accordingly.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <div class="faq-question-text">How can I check my current credit balance?</div>
+                            <div class="faq-question-icon"><i class="fas fa-chevron-down"></i></div>
+                        </div>
+                        <div class="faq-answer">
+                            <div class="faq-answer-content">
+                                <p>You can check your current AI credit balance using the <code>/usage/balance</code> endpoint. This will return information about your current balance, total allocated credits, and usage statistics for the current month.</p>
+                                <p>We also provide detailed usage statistics through our Balance Management endpoints, which allow you to track consumption across different services over time.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <div class="faq-question-text">What happens if I run out of credits?</div>
+                            <div class="faq-question-icon"><i class="fas fa-chevron-down"></i></div>
+                        </div>
+                        <div class="faq-answer">
+                            <div class="faq-answer-content">
+                                <p>If you run out of credits, your API calls will return an error message indicating insufficient credits. Credits reset at the beginning of each month according to your account tier.</p>
+                                <p>If you need additional credits before the reset, contact the AI COE team to discuss your requirements. We may be able to allocate additional credits based on your use case and business needs.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- File Management FAQs -->
+                <div class="faq-section" data-category="files">
+                    <h2 class="faq-section-title"><i class="fas fa-file"></i> File Management Questions</h2>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <div class="faq-question-text">What file types are supported?</div>
+                            <div class="faq-question-icon"><i class="fas fa-chevron-down"></i></div>
+                        </div>
+                        <div class="faq-answer">
+                            <div class="faq-answer-content">
+                                <p>Our platform supports a wide range of file formats across different categories:</p>
+                                <ul>
+                                    <li><strong>Documents</strong>: PDF, DOCX, TXT, RTF, CSV, JSON</li>
+                                    <li><strong>Images</strong>: JPEG, PNG, GIF, BMP, SVG</li>
+                                    <li><strong>Audio</strong>: MP3, WAV, M4A, FLAC, OGG</li>
+                                    <li><strong>Other</strong>: ZIP, XML, JSON, CSV</li>
+                                </ul>
+                                <p>The specific formats supported may vary depending on the service you're using. Check the documentation for each service for specific format requirements.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <div class="faq-question-text">Are there any file size limits?</div>
+                            <div class="faq-question-icon"><i class="fas fa-chevron-down"></i></div>
+                        </div>
+                        <div class="faq-answer">
+                            <div class="faq-answer-content">
+                                <p>Yes, we have the following file size limitations:</p>
+                                <ul>
+                                    <li>Maximum file size: 200MB per file</li>
+                                    <li>For speech-to-text services: Maximum audio length of 2 hours</li>
+                                    <li>For document intelligence: Maximum of 100 pages per document</li>
+                                </ul>
+                                <p>For larger files, consider splitting them into smaller chunks or contact our support team for assistance with processing large volumes of data.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <div class="faq-question-text">How long are uploaded files stored?</div>
+                            <div class="faq-question-icon"><i class="fas fa-chevron-down"></i></div>
+                        </div>
+                        <div class="faq-answer">
+                            <div class="faq-answer-content">
+                                <p>Files are stored differently depending on the service:</p>
+                                <ul>
+                                    <li>Files used with certain services (like speech-to-text) are automatically deleted after processing</li>
+                                    <li>Other files remain available until explicitly deleted by the user or until they expire (typically 30 days)</li>
+                                </ul>
+                                <p>You can manually delete files at any time using the <code>/file</code> endpoint with the DELETE method. We recommend removing files once they're no longer needed.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <div class="faq-question-text">How do I manage my uploaded files?</div>
+                            <div class="faq-question-icon"><i class="fas fa-chevron-down"></i></div>
+                        </div>
+                        <div class="faq-answer">
+                            <div class="faq-answer-content">
+                                <p>You can manage your files using these endpoints:</p>
+                                <ul>
+                                    <li><code>POST /file</code>: Upload one or more files</li>
+                                    <li><code>GET /file/url</code>: Get access URL for a previously uploaded file</li>
+                                    <li><code>DELETE /file</code>: Delete a previously uploaded file</li>
+                                    <li><code>GET /file/list</code>: List all files uploaded by your account</li>
+                                </ul>
+                                <p>We also provide a visual File Portal interface for easy file management. Access it via the File Portal link in the sidebar navigation.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Technical FAQs -->
+                <div class="faq-section" data-category="technical">
+                    <h2 class="faq-section-title"><i class="fas fa-code"></i> Technical Questions</h2>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <div class="faq-question-text">Are there rate limits for API calls?</div>
+                            <div class="faq-question-icon"><i class="fas fa-chevron-down"></i></div>
+                        </div>
+                        <div class="faq-answer">
+                            <div class="faq-answer-content">
+                                <p>Yes, we implement rate limits to ensure fair usage and system stability:</p>
+                                <ul>
+                                    <li>Default rate limit: 60 requests per minute per user</li>
+                                    <li>Burst rate limit: 10 requests per second</li>
+                                </ul>
+                                <p>Rate limits may vary by service and account tier. If you hit a rate limit, your request will receive a 429 (Too Many Requests) response. Implement appropriate retry logic with exponential backoff in your applications.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <div class="faq-question-text">How should I handle errors from the API?</div>
+                            <div class="faq-question-icon"><i class="fas fa-chevron-down"></i></div>
+                        </div>
+                        <div class="faq-answer">
+                            <div class="faq-answer-content">
+                                <p>Our API uses standard HTTP response codes to indicate success or failure. Here are common error codes and how to handle them:</p>
+                                <ul>
+                                    <li><strong>401 Unauthorized</strong>: Authentication failed (invalid or expired token). Generate a new token.</li>
+                                    <li><strong>403 Forbidden</strong>: Insufficient permissions. Check your account scope.</li>
+                                    <li><strong>400 Bad Request</strong>: Invalid parameters or request format. Check your request body.</li>
+                                    <li><strong>429 Too Many Requests</strong>: Rate limit exceeded. Implement backoff and retry.</li>
+                                    <li><strong>500 Server Error</strong>: Unexpected server error. Retry after a delay or contact support.</li>
+                                </ul>
+                                <p>All API errors include a message field explaining the issue. Implement proper error handling and logging in your applications.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <div class="faq-question-text">How can I optimize my API usage?</div>
+                            <div class="faq-question-icon"><i class="fas fa-chevron-down"></i></div>
+                        </div>
+                        <div class="faq-answer">
+                            <div class="faq-answer-content">
+                                <p>Here are some best practices for optimizing your API usage:</p>
+                                <ol>
+                                    <li>Reuse authentication tokens within their validity period (1 hour) instead of generating new ones for each request</li>
+                                    <li>Start with cost-effective models (like GPT-4o-mini) for development and testing</li>
+                                    <li>Use the appropriate model for each task (don't use an advanced model when a simpler one would suffice)</li>
+                                    <li>Implement caching for responses that don't change frequently</li>
+                                    <li>Monitor your usage with the Balance Management endpoints to identify optimization opportunities</li>
+                                    <li>For batch processing, consider using our asynchronous endpoints where available</li>
+                                </ol>
+                                <p>These practices can help reduce costs and improve application performance.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <div class="faq-question-text">Do you provide client libraries or SDKs?</div>
+                            <div class="faq-question-icon"><i class="fas fa-chevron-down"></i></div>
+                        </div>
+                        <div class="faq-answer">
+                            <div class="faq-answer-content">
+                                <p>Currently, we don't provide official client libraries or SDKs. However, our API is RESTful and follows standard conventions, making it easy to integrate with any programming language that supports HTTP requests.</p>
+                                <p>We provide a comprehensive Postman Collection that you can download and import into Postman to quickly get started. The collection includes all endpoints with example requests and response schemas.</p>
+                                <p>Our API documentation includes code examples in popular languages like Python, JavaScript, and cURL to help you integrate with our services.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Support FAQs -->
+                <div class="faq-section" data-category="support">
+                    <h2 class="faq-section-title"><i class="fas fa-headset"></i> Support Questions</h2>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <div class="faq-question-text">How can I get help with the API?</div>
+                            <div class="faq-question-icon"><i class="fas fa-chevron-down"></i></div>
+                        </div>
+                        <div class="faq-answer">
+                            <div class="faq-answer-content">
+                                <p>We offer several support channels:</p>
+                                <ul>
+                                    <li><strong>Documentation</strong>: Comprehensive guides and API references</li>
+                                    <li><strong>Email Support</strong>: Contact the AI COE team at aicoe@tih.co.za</li>
+                                    <li><strong>Microsoft Teams</strong>: Join the "TIH AI COE" channel for community support</li>
+                                    <li><strong>Training Sessions</strong>: Regular training sessions for new users</li>
+                                </ul>
+                                <p>For urgent issues or production incidents, please contact our support team directly with "URGENT" in the subject line.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <div class="faq-question-text">How do I report bugs or issues?</div>
+                            <div class="faq-question-icon"><i class="fas fa-chevron-down"></i></div>
+                        </div>
+                        <div class="faq-answer">
+                            <div class="faq-answer-content">
+                                <p>To report bugs or issues:</p>
+                                <ol>
+                                    <li>Send an email to aicoe@tih.co.za with the subject "Bug Report: [Brief Description]"</li>
+                                    <li>Include detailed information about the issue, including:
+                                        <ul>
+                                            <li>Endpoint being used</li>
+                                            <li>Request details (headers, body, parameters)</li>
+                                            <li>Error message or unexpected behavior</li>
+                                            <li>Steps to reproduce</li>
+                                            <li>Your user ID or account information</li>
+                                        </ul>
+                                    </li>
+                                </ol>
+                                <p>Our team will investigate and respond to your report as soon as possible. For critical issues affecting production systems, please mark your email as high priority.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <div class="faq-question-text">Can I request new features or models?</div>
+                            <div class="faq-question-icon"><i class="fas fa-chevron-down"></i></div>
+                        </div>
+                        <div class="faq-answer">
+                            <div class="faq-answer-content">
+                                <p>Yes, we welcome feature requests and feedback! To submit a feature request:</p>
+                                <ol>
+                                    <li>Email aicoe@tih.co.za with the subject "Feature Request: [Feature Name]"</li>
+                                    <li>Describe the feature you'd like to see added</li>
+                                    <li>Explain your use case and the business value it would provide</li>
+                                    <li>Include any specific requirements or technical details</li>
+                                </ol>
+                                <p>Our team regularly reviews feature requests and prioritizes them based on community interest and strategic alignment. While we can't implement every request, your feedback is invaluable in shaping our roadmap.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <div class="faq-question-text">Are there any upcoming features or services?</div>
+                            <div class="faq-question-icon"><i class="fas fa-chevron-down"></i></div>
+                        </div>
+                        <div class="faq-answer">
+                            <div class="faq-answer-content">
+                                <p>We're constantly working on expanding our platform capabilities. Some upcoming features include:</p>
+                                <ul>
+                                    <li><strong>Text-to-Speech</strong>: High-quality voice synthesis in multiple languages</li>
+                                    <li><strong>Fine-tuning</strong>: Custom model fine-tuning for specific use cases</li>
+                                    <li><strong>Advanced Analytics</strong>: Enhanced usage analytics and reporting</li>
+                                    <li><strong>Expanded Document Intelligence</strong>: Support for more document types and extraction capabilities</li>
+                                    <li><strong>Enterprise Tools</strong>: Team management, resource allocation, and governance features</li>
+                                </ul>
+                                <p>Check our changelog regularly for updates on new features and improvements. You can also subscribe to our newsletter to stay informed about platform enhancements.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <footer class="footer">
+        <p>© 2025 TIH AI API Portal. Powered by the TIH AI Center of Excellence.</p>
+        <div class="social-links">
+            <a href="#" class="social-link"><i class="fab fa-linkedin"></i></a>
+            <a href="#" class="social-link"><i class="fab fa-github"></i></a>
+            <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
+        </div>
+    </footer>
+    
+    <script>
+        // Toggle sidebar on mobile
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuToggle = document.getElementById('menu-toggle');
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            
+            menuToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('active');
+                overlay.classList.toggle('active');
+            });
+            
+            overlay.addEventListener('click', function() {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            });
+            
+            // Highlight current page in sidebar
+            const currentPage = window.location.pathname;
+            const sidebarLinks = document.querySelectorAll('.sidebar-link');
+            
+            sidebarLinks.forEach(link => {
+                if (link.getAttribute('href') === currentPage) {
+                    link.classList.add('active');
+                }
+            });
+            
+            // FAQ Categories filtering
+            const faqCategories = document.querySelectorAll('.faq-category');
+            const faqSections = document.querySelectorAll('.faq-section');
+            
+            faqCategories.forEach(category => {
+                category.addEventListener('click', () => {
+                    // Remove active class from all categories
+                    faqCategories.forEach(cat => cat.classList.remove('active'));
+                    
+                    // Add active class to clicked category
+                    category.classList.add('active');
+                    
+                    const selectedCategory = category.dataset.category;
+                    
+                    // Show/hide sections based on selected category
+                    if (selectedCategory === 'all') {
+                        faqSections.forEach(section => {
+                            section.style.display = 'block';
+                        });
+                    } else {
+                        faqSections.forEach(section => {
+                            if (section.dataset.category === selectedCategory) {
+                                section.style.display = 'block';
+                            } else {
+                                section.style.display = 'none';
+                            }
+                        });
+                    }
+                });
+            });
+            
+            // FAQ Question expansion
+            const faqQuestions = document.querySelectorAll('.faq-question');
+            
+            faqQuestions.forEach(question => {
+                question.addEventListener('click', () => {
+                    const faqItem = question.parentElement;
+                    const isActive = faqItem.classList.contains('active');
+                    
+                    // Close all other items
+                    document.querySelectorAll('.faq-item.active').forEach(item => {
+                        if (item !== faqItem) {
+                            item.classList.remove('active');
+                            const answer = item.querySelector('.faq-answer');
+                            answer.style.maxHeight = null;
+                        }
+                    });
+                    
+                    // Toggle current item
+                    if (isActive) {
+                        faqItem.classList.remove('active');
+                        const answer = faqItem.querySelector('.faq-answer');
+                        answer.style.maxHeight = null;
+                    } else {
+                        faqItem.classList.add('active');
+                        const answer = faqItem.querySelector('.faq-answer');
+                        answer.style.maxHeight = answer.scrollHeight + 'px';
+                    }
+                });
+            });
+            
+            // Search functionality
+            const searchInput = document.getElementById('faqSearch');
+            const faqItems = document.querySelectorAll('.faq-item');
+            
+            searchInput.addEventListener('input', () => {
+                const searchTerm = searchInput.value.toLowerCase();
+                
+                if (searchTerm.length > 2) {
+                    // Show all sections for search
+                    faqSections.forEach(section => {
+                        section.style.display = 'block';
+                    });
+                    
+                    // Set "All" category as active
+                    faqCategories.forEach(cat => {
+                        if (cat.dataset.category === 'all') {
+                            cat.classList.add('active');
+                        } else {
+                            cat.classList.remove('active');
+                        }
+                    });
+                    
+                    // Filter questions based on search
+                    let hasResults = false;
+                    
+                    faqItems.forEach(item => {
+                        const questionText = item.querySelector('.faq-question-text').textContent.toLowerCase();
+                        const answerText = item.querySelector('.faq-answer-content').textContent.toLowerCase();
+                        
+                        if (questionText.includes(searchTerm) || answerText.includes(searchTerm)) {
+                            item.style.display = 'block';
+                            hasResults = true;
+                        } else {
+                            item.style.display = 'none';
+                        }
+                    });
+                    
+                    // Hide sections with no visible items
+                    faqSections.forEach(section => {
+                        const visibleItems = Array.from(section.querySelectorAll('.faq-item')).filter(item => 
+                            item.style.display !== 'none'
+                        );
+                        
+                        if (visibleItems.length === 0) {
+                            section.style.display = 'none';
+                        }
+                    });
+                } else {
+                    // Reset to default view if search is cleared or too short
+                    faqItems.forEach(item => {
+                        item.style.display = 'block';
+                    });
+                    
+                    // Reapply active category filter
+                    const activeCategory = document.querySelector('.faq-category.active').dataset.category;
+                    if (activeCategory !== 'all') {
+                        faqSections.forEach(section => {
+                            if (section.dataset.category === activeCategory) {
+                                section.style.display = 'block';
+                            } else {
+                                section.style.display = 'none';
+                            }
+                        });
+                    }
+                }
+            });
+            
+            // Add scroll animation for elements
+            const animateOnScroll = function() {
+                const elements = document.querySelectorAll('.faq-section');
+                
+                elements.forEach(element => {
+                    const elementPosition = element.getBoundingClientRect().top;
+                    const screenPosition = window.innerHeight / 1.2;
+                    
+                    if (elementPosition < screenPosition) {
+                        element.style.animation = 'fadeInUp 0.6s ease-out forwards';
+                    }
+                });
+            };
+            
+            // Run on load
+            animateOnScroll();
+            
+            // Run on scroll
+            window.addEventListener('scroll', animateOnScroll);
+        });
+    </script>
+</body>
+</html>
