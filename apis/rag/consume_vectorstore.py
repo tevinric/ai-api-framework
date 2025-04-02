@@ -38,6 +38,29 @@ def create_api_response(data, status_code=200):
     response.status_code = status_code
     return response
 
+def update_vectorstore_access_timestamp(vectorstore_id):
+    """Update the last_accessed timestamp for a vectorstore"""
+    try:
+        conn = DatabaseService.get_connection()
+        cursor = conn.cursor()
+        
+        # Update the last_accessed timestamp
+        query = """
+        UPDATE vectorstores
+        SET last_accessed = DATEADD(HOUR, 2, GETUTCDATE())
+        WHERE id = ?
+        """
+        
+        cursor.execute(query, [vectorstore_id])
+        conn.commit()
+        
+        cursor.close()
+        conn.close()
+        
+        logger.info(f"Updated last_accessed timestamp for vectorstore {vectorstore_id}")
+    except Exception as e:
+        logger.error(f"Error updating last_accessed timestamp: {str(e)}")
+
 def consume_git_policies_route():
     """
     Consume the Git policies vectorstore with a query - RAG-based conversational assistant
@@ -338,6 +361,9 @@ def consume_git_policies_route():
                 input_tokens = llm_result.get("input_tokens", 0)
                 completion_tokens = llm_result.get("completion_tokens", 0)
                 output_tokens = llm_result.get("output_tokens", 0)
+                
+                # Update the last_accessed timestamp
+                update_vectorstore_access_timestamp(vectorstore_id)
                 
                 # Create the response
                 response_data = {
@@ -757,6 +783,9 @@ def consume_vectorstore_route():
                 input_tokens = llm_result.get("input_tokens", 0)
                 completion_tokens = llm_result.get("completion_tokens", 0)
                 output_tokens = llm_result.get("output_tokens", 0)
+                
+                # Update the last_accessed timestamp
+                update_vectorstore_access_timestamp(vectorstore_id)
                 
                 # Create the response
                 response_data = {
