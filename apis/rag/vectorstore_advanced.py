@@ -48,6 +48,30 @@ def create_api_response(data, status_code=200):
     return response
 
 
+def update_vectorstore_access_timestamp(vectorstore_id):
+    """Update the last_accessed timestamp for a vectorstore"""
+    try:
+        conn = DatabaseService.get_connection()
+        cursor = conn.cursor()
+        
+        # Update the last_accessed timestamp
+        query = """
+        UPDATE vectorstores
+        SET last_accessed = DATEADD(HOUR, 2, GETUTCDATE())
+        WHERE id = ?
+        """
+        
+        cursor.execute(query, [vectorstore_id])
+        conn.commit()
+        
+        cursor.close()
+        conn.close()
+        
+        logger.info(f"Updated last_accessed timestamp for vectorstore {vectorstore_id}")
+    except Exception as e:
+        logger.error(f"Error updating last_accessed timestamp: {str(e)}")
+
+
 class TextProcessor:
     @staticmethod
     def clean_text(text: str) -> str:
@@ -546,7 +570,7 @@ def create_advanced_vectorstore_route():
             conn = DatabaseService.get_connection()
             cursor = conn.cursor()
             
-            # Insert vectorstore metadata - comply with database schema (no processing_stats column)
+            # Insert vectorstore metadata - updated to include last_accessed column
             query = """
             INSERT INTO vectorstores (
                 id, 
@@ -558,9 +582,10 @@ def create_advanced_vectorstore_route():
                 chunk_count,
                 chunk_size,
                 chunk_overlap,
-                created_at
+                created_at,
+                last_accessed
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, DATEADD(HOUR, 2, GETUTCDATE()))
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, DATEADD(HOUR, 2, GETUTCDATE()), DATEADD(HOUR, 2, GETUTCDATE()))
             """
             
             cursor.execute(query, [
