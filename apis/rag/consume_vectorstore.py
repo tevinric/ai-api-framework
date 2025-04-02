@@ -188,7 +188,7 @@ def consume_git_policies_route():
     include_sources = data.get('include_sources', False)
     
     # Set hardcoded parameters for git policies
-    vectorstore_id = "abc123456789"
+    vectorstore_id = "f5e57660-79a7-4742-a240-c0fa6fc81b0d"
     model = "gpt-4o"
     temperature = 0.15
     
