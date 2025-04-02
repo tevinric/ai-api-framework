@@ -709,8 +709,228 @@ def delete_file_route():
             except:
                 pass
 
+def list_user_files_route():
+    """
+    List all files uploaded by the authenticated user or all files for admin users
+    ---
+    tags:
+      - File Management
+    summary: List all files uploaded by the user
+    description: Returns a list of all files uploaded by the authenticated user. Admin users can see all files.
+    parameters:
+      - name: API-Key
+        in: header
+        type: string
+        required: false
+        description: API Key for authentication
+      - name: X-Token
+        in: header
+        type: string
+        required: false
+        description: Valid token for authentication
+    produces:
+      - application/json
+    responses:
+      200:
+        description: Files retrieved successfully
+        schema:
+          type: object
+          properties:
+            files:
+              type: array
+              items:
+                type: object
+                properties:
+                  file_id:
+                    type: string
+                    example: "12345678-1234-1234-1234-123456789012"
+                  file_name:
+                    type: string
+                    example: "document.pdf"
+                  content_type:
+                    type: string
+                    example: "application/pdf"
+                  upload_date:
+                    type: string
+                    format: date-time
+                    example: "2024-03-16T10:30:45+02:00"
+                  file_size:
+                    type: integer
+                    example: 1024
+                  user_id:
+                    type: string
+                    description: Only returned for admin users
+                    example: "12345678-1234-1234-1234-123456789012"
+                  user_name:
+                    type: string
+                    description: Only returned for admin users
+                    example: "johndoe"
+      401:
+        description: Authentication error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Authentication Error
+            message:
+              type: string
+              example: Missing authentication headers
+      403:
+        description: Forbidden
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Forbidden
+            message:
+              type: string
+              example: Authentication token has expired
+      500:
+        description: Server error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Server Error
+            message:
+              type: string
+              example: Error retrieving files
+    """
+    # Check authentication - try both API-Key and X-Token
+    api_key = request.headers.get('API-Key')
+    token = request.headers.get('X-Token')
+    
+    user_id = None
+    is_admin = False
+    
+    # Try to authenticate with API key first
+    if api_key:
+        user_info = DatabaseService.validate_api_key(api_key)
+        if user_info:
+            user_id = user_info['id']
+            is_admin = user_info['scope'] == 0
+            g.user_id = user_id
+    
+    # If not authenticated with API key, try token
+    if not user_id and token:
+        token_details = DatabaseService.get_token_details_by_value(token)
+        if token_details:
+            # Check if token is expired
+            now = datetime.now(pytz.UTC)
+            expiration_time = token_details["token_expiration_time"]
+            
+            # Ensure expiration_time is timezone-aware
+            if expiration_time.tzinfo is None:
+                johannesburg_tz = pytz.timezone('Africa/Johannesburg')
+                expiration_time = johannesburg_tz.localize(expiration_time)
+                
+            if now > expiration_time:
+                return create_api_response({
+                    "error": "Forbidden",
+                    "message": "Authentication token has expired"
+                }, 403)
+                
+            user_id = token_details["user_id"]
+            g.user_id = user_id
+            g.token_id = token_details["id"]
+            
+            # Check if user is admin
+            user_info = DatabaseService.get_user_by_id(user_id)
+            is_admin = user_info and user_info.get('scope') == 0
+    
+    # If still not authenticated, return error
+    if not user_id:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "Missing or invalid authentication"
+        }, 401)
+    
+    try:
+        # Query database for files
+        conn = DatabaseService.get_connection()
+        cursor = conn.cursor()
+        
+        if is_admin:
+            # Admin can see all files
+            query = """
+            SELECT
+                fu.id,
+                fu.user_id,
+                fu.original_filename,
+                fu.blob_name,
+                fu.blob_url,
+                fu.content_type,
+                fu.file_size,
+                fu.upload_date,
+                u.user_name,
+                u.common_name
+            FROM
+                file_uploads fu
+            LEFT JOIN
+                users u ON fu.user_id = u.id
+            ORDER BY
+                fu.upload_date DESC
+            """
+            cursor.execute(query)
+        else:
+            # Regular user can only see their own files
+            query = """
+            SELECT
+                id,
+                user_id,
+                original_filename,
+                blob_name,
+                blob_url,
+                content_type,
+                file_size,
+                upload_date
+            FROM
+                file_uploads
+            WHERE
+                user_id = ?
+            ORDER BY
+                upload_date DESC
+            """
+            cursor.execute(query, [user_id])
+        
+        files = []
+        for row in cursor.fetchall():
+            file_info = {
+                "file_id": str(row[0]),
+                "file_name": row[2],
+                "content_type": row[5],
+                "upload_date": row[7].isoformat() if row[7] else None,
+                "file_size": row[6],
+                "blob_url": row[4]  # Include the blob URL for reference
+            }
+            
+            # Add user info for admin view
+            if is_admin:
+                file_info["user_id"] = str(row[1])
+                file_info["user_name"] = row[9] if row[9] else row[8]  # Use common_name if available, otherwise user_name
+            
+            files.append(file_info)
+        
+        cursor.close()
+        conn.close()
+        
+        return create_api_response({
+            "files": files
+        }, 200)
+        
+    except Exception as e:
+        logger.error(f"Error retrieving files: {str(e)}")
+        return create_api_response({
+            "error": "Server Error",
+            "message": f"Error retrieving files: {str(e)}"
+        }, 500)
+
 def register_file_upload_routes(app):
     """Register file upload routes with the Flask app"""
     app.route('/file', methods=['POST'])(api_logger(upload_file_route))
     app.route('/file/url', methods=['GET'])(api_logger(get_file_url_route))
     app.route('/file', methods=['DELETE'])(api_logger(delete_file_route))
+    app.route('/file/list', methods=['GET'])(api_logger(list_user_files_route))
