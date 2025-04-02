@@ -135,6 +135,11 @@ def faq():
 def technical_support():    
     return render_template('docs/technical_support.html')
 
+## CHANGELOG
+@app.route('/docs/changelog')
+def changelog():    
+    return render_template('docs/changelog.html')
+
 # TOKEN SERVICE ENDPOINTS
 ## GET TOKEN
 from apis.token_services.get_token import register_routes as get_token_endpoint 

@@ -1,0 +1,23 @@
+<header class="header">
+    <div class="logo">
+        <img src="/static/images/Telesure-logo.png" alt="TIH AI API Platform Logo" style="height: 40px; margin-right: 0.5rem;">
+        <h1>AI API Platform</h1>
+    </div>
+    <nav class="nav">
+        <div class="menu-toggle" id="menu-toggle">
+            <i class="fas fa-bars"></i>
+        </div>
+        <a href="{{ url_for('home') }}" class="nav-item">
+            <i class="fas fa-home"></i>Home
+        </a>
+        <a href="{{ url_for('getting_started') }}" class="nav-item">
+            <i class="fas fa-rocket"></i>Getting Started
+        </a>
+        <a href="{{ url_for('faq') }}" class="nav-item">
+            <i class="fas fa-question-circle"></i>FAQ
+        </a>
+        <a href="/apidocs/" class="nav-item swagger-btn">
+            <i class="fas fa-book"></i>Swagger
+        </a>
+    </nav>
+</header>

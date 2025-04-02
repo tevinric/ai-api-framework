@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Changelog - TIH AI API Portal</title>
+    <link rel="icon" href="/static/images/Telesure-logo.png" type="image/png">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
@@ -588,29 +589,8 @@
     </style>
 </head>
 <body>
-    <header class="header">
-        <div class="logo">
-            <img src="/static/images/Telesure-logo.png" alt="TIH AI API Platform Logo" style="height: 40px; margin-right: 0.5rem;">
-            <h1>AI API Platform</h1>
-        </div>
-        <nav class="nav">
-            <div class="menu-toggle" id="menu-toggle">
-                <i class="fas fa-bars"></i>
-            </div>
-            <a href="{{ url_for('home') }}" class="nav-item">
-                <i class="fas fa-home"></i>Home
-            </a>
-            <a href="{{ url_for('getting_started') }}" class="nav-item">
-                <i class="fas fa-rocket"></i>Getting Started
-            </a>
-            <a href="/templates/docs/faq.html" class="nav-item">
-                <i class="fas fa-question-circle"></i>FAQ
-            </a>
-            <a href="/apidocs/" class="nav-item swagger-btn">
-                <i class="fas fa-book"></i>Swagger
-            </a>
-        </nav>
-    </header>
+    <!-- RENDER THE HEADER TEMPLATE-->
+    {% include 'header.html' %}
     
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
     
@@ -636,12 +616,14 @@
                 
                 <!-- Post-Deployment Section -->
                 <div class="timeline-section">
+
+                     <!--
                     <h3 class="timeline-section-title">Post-Deployment</h3>
                     
                     <div class="timeline">
-                        <!-- Add new timeline items at the top -->
-                        
+                    
                         <div class="timeline-item timeline-item-major">
+
                             <div class="timeline-date">April 2, 2025</div>
                             <div class="timeline-card">
                                 <h4 class="timeline-title">Service Update: GPT-4o Performance Enhancements</h4>
@@ -710,6 +692,8 @@
                         </div>
                     </div>
                 </div>
+
+                        -->
                 
                 <!-- Pre-Deployment Section -->
                 <div class="timeline-section">
@@ -717,15 +701,14 @@
                     
                     <div class="timeline">
                         <div class="timeline-item timeline-item-major">
-                            <div class="timeline-date">February 15, 2025</div>
+                            <div class="timeline-date">02 April 2025</div>
                             <div class="timeline-card">
-                                <h4 class="timeline-title">Release Candidate 2 (RC2)</h4>
+                                <h4 class="timeline-title">First release to DEV Version 0.01</h4>
                                 <div class="timeline-content">
-                                    <p>Final pre-release version with production-ready features and stability improvements.</p>
+                                    <p>First working release into the development environment for testing and feedback compiliation</p>
                                     <ul>
-                                        <li>Load testing completed with 500+ concurrent users</li>
-                                        <li>Security audit passed with all critical findings addressed</li>
-                                        <li>Final documentation review and updates</li>
+                                        <li>Initail system deployment to Development environment with development cloud resources</li>
+                                        <li>Launch on Rancher DEV</li>
                                     </ul>
                                     <span class="timeline-tag">Pre-release</span>
                                     <span class="timeline-tag">Testing</span>
@@ -733,69 +716,14 @@
                             </div>
                         </div>
                         
-                        <div class="timeline-item">
-                            <div class="timeline-date">February 1, 2025</div>
-                            <div class="timeline-card">
-                                <h4 class="timeline-title">Release Candidate 1 (RC1)</h4>
-                                <div class="timeline-content">
-                                    <p>First release candidate with complete feature set and beta testing.</p>
-                                    <ul>
-                                        <li>All planned models and services included</li>
-                                        <li>Rate limiting and quota management implemented</li>
-                                        <li>Beta testing with select partners</li>
-                                    </ul>
-                                    <span class="timeline-tag">Pre-release</span>
-                                    <span class="timeline-tag">Testing</span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="timeline-item">
-                            <div class="timeline-date">January 15, 2025</div>
-                            <div class="timeline-card">
-                                <h4 class="timeline-title">Beta Release</h4>
-                                <div class="timeline-content">
-                                    <p>Initial beta release with core functionality for internal testing.</p>
-                                    <ul>
-                                        <li>Core LLM and conversational endpoints ready</li>
-                                        <li>Authentication system implemented</li>
-                                        <li>Basic documentation available</li>
-                                    </ul>
-                                    <span class="timeline-tag">Beta</span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="timeline-item timeline-item-major">
-                            <div class="timeline-date">January 1, 2025</div>
-                            <div class="timeline-card">
-                                <h4 class="timeline-title">Development Start</h4>
-                                <div class="timeline-content">
-                                    <p>Initial development of the TIH AI API Platform begins.</p>
-                                    <ul>
-                                        <li>Requirements gathering completed</li>
-                                        <li>Architecture design finalized</li>
-                                        <li>Development roadmap established</li>
-                                    </ul>
-                                    <span class="timeline-tag">Planning</span>
-                                    <span class="timeline-tag">Development</span>
-                                </div>
-                            </div>
-                        </div>
+                    
                     </div>
                 </div>
             </div>
         </section>
     </main>
     
-    <footer class="footer">
-        <p>© 2025 TIH AI API Portal. Powered by the TIH AI Center of Excellence.</p>
-        <div class="social-links">
-            <a href="#" class="social-link"><i class="fab fa-linkedin"></i></a>
-            <a href="#" class="social-link"><i class="fab fa-github"></i></a>
-            <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
-        </div>
-    </footer>
+    {% include 'footer.html' %}
     
     <script>
         // Toggle sidebar on mobile

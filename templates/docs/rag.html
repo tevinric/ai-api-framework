@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RAG (Retrieval-Augmented Generation) Services - AI API Platform</title>
+    <link rel="icon" href="/static/images/Telesure-logo.png" type="image/png">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
@@ -924,29 +925,8 @@
     </style>
 </head>
 <body>
-    <header class="header">
-        <div class="logo">
-            <img src="/static/images/Telesure-logo.png" alt="TIH AI API Platform Logo" style="height: 40px; margin-right: 0.5rem;">
-            <h1>AI API Platform</h1>
-        </div>
-        <nav class="nav">
-            <div class="menu-toggle" id="menu-toggle">
-                <i class="fas fa-bars"></i>
-            </div>
-            <a href="{{ url_for('home') }}" class="nav-item">
-                <i class="fas fa-home"></i>Home
-            </a>
-            <a href="{{ url_for('getting_started') }}" class="nav-item">
-                <i class="fas fa-rocket"></i>Getting Started
-            </a>
-            <a href="/templates/docs/faq.html" class="nav-item">
-                <i class="fas fa-question-circle"></i>FAQ
-            </a>
-            <a href="/apidocs/" class="nav-item swagger-btn">
-                <i class="fas fa-book"></i>Swagger
-            </a>
-        </nav>
-    </header>
+    <!-- RENDER THE HEADER TEMPLATE-->
+    {% include 'header.html' %}
     
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
     
@@ -1494,9 +1474,7 @@
         
     </main>
     
-    <footer class="footer">
-        <p>© 2025 TIH AI API Portal. Powered by the TIH AI Center of Excellence.</p>
-    </footer>
+    {% include 'footer.html' %}
     
     <script>
         // Toggle sidebar on mobile
