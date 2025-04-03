@@ -13,7 +13,7 @@ import os
 from apis.utils.config import IMAGE_GENERATION_CONTAINER, STORAGE_ACCOUNT
 from apis.utils.logMiddleware import api_logger
 from apis.utils.balanceMiddleware import check_balance
-from apis.utils.fileServices import upload_file
+from apis.utils.fileService import FileService
 
 # CONFIGURE LOGGING
 logging.basicConfig(level=logging.INFO)
@@ -322,15 +322,28 @@ def stable_diffusion_ultra_route():
         # Set the content type for the file
         content_type = f"image/{output_format}"
         
-        # Upload the image directly using fileServices
-        # Creating BytesIO object to simulate a file object
-        file_obj = io.BytesIO(image_data)
-        file_id = upload_file(
-            user_id=g.user_id,
-            file=file_obj,
-            filename=image_name,
-            content_type=content_type
-        )
+        # Create a custom file-like object that mimics Flask's file object
+        class MockFileObj:
+            def __init__(self, data, filename, content_type):
+                self._io = io.BytesIO(data)
+                self.filename = filename
+                self.content_type = content_type
+            
+            def read(self):
+                return self._io.getvalue()
+
+        # Create the file object and upload using FileService
+        file_obj = MockFileObj(image_data, image_name, content_type)
+        file_info, error = FileService.upload_file(file_obj, g.user_id, IMAGE_GENERATION_CONTAINER)
+
+        if error:
+            logger.error(f"Failed to upload generated image: {error}")
+            return create_api_response({
+                "response": "500",
+                "message": f"Failed to upload generated image: {error}"
+            }, 500)
+
+        file_id = file_info["file_id"]
         
         if not file_id:
             logger.error("Failed to upload generated image")
