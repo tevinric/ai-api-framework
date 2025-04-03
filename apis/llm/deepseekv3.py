@@ -4,17 +4,11 @@ from apis.utils.databaseService import DatabaseService
 import logging
 import pytz
 from datetime import datetime
-from azure.ai.inference import ChatCompletionsClient
-from azure.core.credentials import AzureKeyCredential
-from apis.utils.config import DEEPSEEK_V3_API_KEY
+from apis.utils.llmServices import deepseek_v3_service  # Import the service function
 
 # CONFIGURE LOGGING
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-# Fixed deployment endpoint
-ENDPOINT = 'https://ai-coe-services-dev.services.ai.azure.com/models'
-MODEL_NAME = 'DeepSeek-V3'
 
 def create_api_response(data, status_code=200):
     """Helper function to create consistent API responses"""
@@ -232,60 +226,34 @@ def deepseek_v3_route():
         # Log API usage
         logger.info(f"DeepSeek-V3 API called by user: {user_id}")
         
-        # Get Azure Inference API key
-        api_key = DEEPSEEK_V3_API_KEY
-        if not api_key:
-            raise Exception("Azure Inference API key not found")
-        
-        # Initialize Azure Inference client
-        client = ChatCompletionsClient(
-            endpoint=ENDPOINT,
-            credential=AzureKeyCredential(api_key)
+        # Use the service function instead of direct API call
+        service_response = deepseek_v3_service(
+            system_prompt=system_prompt,
+            user_input=user_input,
+            temperature=temperature,
+            json_output=json_output,
+            max_tokens=max_tokens
         )
         
-        # Prepare messages for the model
-        messages = []
-        
-        # Add system message if provided
-        if system_prompt:
-            messages.append({"role": "system", "content": system_prompt})
-        
-        # Add user message
-        messages.append({"role": "user", "content": user_input})
-        
-        # Prepare payload
-        payload = {
-            "messages": messages,
-            "max_tokens": max_tokens,
-            "temperature": temperature,
-            "model": MODEL_NAME
-        }
-        
-        # Add response format if JSON output is requested
-        if json_output:
-            payload["response_format"] = {"type": "json_object"}
-        
-        # Make request to LLM using the client's complete method
-        response = client.complete(payload)
-        
-        # Extract response data from the response object
-        result = response.choices[0].message.content
-        input_tokens = response.usage.prompt_tokens
-        completion_tokens = response.usage.completion_tokens
-        output_tokens = response.usage.total_tokens
-        model_name = response.model if hasattr(response, 'model') else MODEL_NAME
+        if not service_response["success"]:
+            logger.error(f"DeepSeek-V3 API error: {service_response['error']}")
+            status_code = 500 if not str(service_response["error"]).startswith("4") else 400
+            return create_api_response({
+                "response": str(status_code),
+                "message": service_response["error"]
+            }, status_code)
         
         # Prepare successful response with user details
         return create_api_response({
             "response": "200",
-            "message": result,
+            "message": service_response["result"],
             "user_id": user_details["id"],
             "user_name": user_details["user_name"],
             "user_email": user_details["user_email"],
-            "model": model_name,
-            "input_tokens": input_tokens,
-            "completion_tokens": completion_tokens,
-            "output_tokens": output_tokens
+            "model": service_response["model"],
+            "input_tokens": service_response["input_tokens"],
+            "completion_tokens": service_response["completion_tokens"],
+            "output_tokens": service_response["output_tokens"]
         }, 200)
         
     except Exception as e:
