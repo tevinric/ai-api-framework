@@ -4,18 +4,11 @@ from apis.utils.databaseService import DatabaseService
 import logging
 import pytz
 from datetime import datetime
-from openai import AzureOpenAI
-from apis.utils.config import get_openai_client
+from apis.utils.llmServices import gpt4o_service  # Import the service function
 
 # CONFIGURE LOGGING
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-# Initialize OpenAI client
-client = get_openai_client()
-
-# Fixed deployment model
-DEPLOYMENT = 'gpt-4o'
 
 def create_api_response(data, status_code=200):
     """Helper function to create consistent API responses"""
@@ -223,36 +216,34 @@ def gpt4o_route():
         # Log API usage
         logger.info(f"GPT-4o API called by user: {user_id}")
         
-        # Make request to LLM
-        response = client.chat.completions.create(
-            model=DEPLOYMENT,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": f"Provided text: {user_input}"}
-            ],
+        # Use the service function instead of direct API call
+        service_response = gpt4o_service(
+            system_prompt=system_prompt,
+            user_input=user_input,
             temperature=temperature,
-            response_format={"type": "json_object"} if json_output else {"type": "text"}
+            json_output=json_output
         )
         
-        # Extract response data
-        result = response.choices[0].message.content
-        input_tokens = response.usage.prompt_tokens
-        completion_tokens = response.usage.completion_tokens
-        output_tokens = response.usage.total_tokens
-        cached_tokens = response.usage.cached_tokens if hasattr(response.usage, 'cached_tokens') else None
+        if not service_response["success"]:
+            logger.error(f"GPT-4o API error: {service_response['error']}")
+            status_code = 500 if not str(service_response["error"]).startswith("4") else 400
+            return create_api_response({
+                "response": str(status_code),
+                "message": service_response["error"]
+            }, status_code)
         
         # Prepare successful response with user details
         return create_api_response({
             "response": "200",
-            "message": result,
+            "message": service_response["result"],
             "user_id": user_details["id"],
             "user_name": user_details["user_name"],
             "user_email": user_details["user_email"],
-            "model": DEPLOYMENT,
-            "input_tokens": input_tokens,
-            "completion_tokens": completion_tokens,
-            "output_tokens": output_tokens,
-            "cached_tokens": cached_tokens
+            "model": service_response["model"],
+            "input_tokens": service_response["input_tokens"],
+            "completion_tokens": service_response["completion_tokens"],
+            "output_tokens": service_response["output_tokens"],
+            "cached_tokens": service_response.get("cached_tokens")
         }, 200)
         
     except Exception as e:
