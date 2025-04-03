@@ -41,7 +41,7 @@ LLM_ENDPOINTS = {
 LLM_SERVICES = {
     "gpt-4o": gpt4o_service,
     "gpt-4o-mini": gpt4o_mini_service,
-    "gpt-o1-mini": o1_mini_service,
+    "o1-mini": o1_mini_service,
     "deepseek-r1": deepseek_r1_service,
     "llama": llama_service
 }
@@ -50,7 +50,7 @@ LLM_SERVICES = {
 LLM_CREDIT_COSTS = {
     "gpt-4o": 2,
     "gpt-4o-mini": 0.5,
-    "gpt-o1-mini": 5,
+    "o1-mini": 5,
     "deepseek-r1": 3,
     "llama": 3
 }
@@ -184,7 +184,7 @@ def create_chat_route():
           properties:
             llm:
               type: string
-              enum: [gpt-4o, gpt-4o-mini, gpt-o1-mini, deepseek-r1, llama]
+              enum: [gpt-4o, gpt-4o-mini, o1-mini, deepseek-r1, llama]
               description: LLM model to use for conversation
             assistant_type:
               type: string
@@ -437,6 +437,7 @@ def create_chat_route():
         input_tokens = service_response.get("input_tokens", 0)
         completion_tokens = service_response.get("completion_tokens", 0)
         output_tokens = service_response.get("output_tokens", 0)
+        cached_tokens = service_response.get("cached_tokens", 0)
         
         # Create response
         response_data = {
@@ -448,6 +449,10 @@ def create_chat_route():
             "completion_tokens": completion_tokens,
             "output_tokens": output_tokens
         }
+        
+        # Add cached tokens if available
+        if cached_tokens:
+            response_data["cached_tokens"] = cached_tokens
         
         return create_api_response(response_data, 200)
         
