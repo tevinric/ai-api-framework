@@ -10,18 +10,15 @@ import json
 import requests
 import base64
 import os
-from apis.utils.config import IMAGE_GENERATION_CONTAINER, STORAGE_ACCOUNT
+from apis.utils.config import STORAGE_ACCOUNT
 from apis.utils.logMiddleware import api_logger
 from apis.utils.balanceMiddleware import check_balance
-from apis.utils.fileService import FileService
+from apis.utils.fileService import FileService, FILE_UPLOAD_CONTAINER
 
 # CONFIGURE LOGGING
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Azure Blob Storage container for images
-BLOB_CONTAINER_NAME = IMAGE_GENERATION_CONTAINER
-BASE_BLOB_URL = f"https://{STORAGE_ACCOUNT}.blob.core.windows.net/{BLOB_CONTAINER_NAME}"
 
 # Stable Diffusion Ultra API configuration
 STABLE_DIFFUSION_API_URL = 'https://StableDiffusion-Image-Ultra.eastus.models.ai.azure.com/images/generations'
@@ -334,7 +331,7 @@ def stable_diffusion_ultra_route():
 
         # Create the file object and upload using FileService
         file_obj = MockFileObj(image_data, image_name, content_type)
-        file_info, error = FileService.upload_file(file_obj, g.user_id, IMAGE_GENERATION_CONTAINER)
+        file_info, error = FileService.upload_file(file_obj, g.user_id, FILE_UPLOAD_CONTAINER)
 
         if error:
             logger.error(f"Failed to upload generated image: {error}")

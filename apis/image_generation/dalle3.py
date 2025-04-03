@@ -12,7 +12,7 @@ from apis.utils.config import get_openai_client, get_azure_blob_client, IMAGE_GE
 from apis.utils.logMiddleware import api_logger
 from apis.utils.balanceMiddleware import check_balance
 from azure.storage.blob import BlobServiceClient, ContentSettings
-from apis.utils.fileService import FileService
+from apis.utils.fileService import FileService, FILE_UPLOAD_CONTAINER
 
 # CONFIGURE LOGGING
 logging.basicConfig(level=logging.INFO)
@@ -325,7 +325,7 @@ def custom_image_generation_route():
 
         # Create the file object and upload using FileService
         file_obj = MockFileObj(image_data, image_name, 'image/png')
-        file_info, error = FileService.upload_file(file_obj, g.user_id, IMAGE_GENERATION_CONTAINER)
+        file_info, error = FileService.upload_file(file_obj, g.user_id, FILE_UPLOAD_CONTAINER)
 
         if error:
             logger.error(f"Failed to upload generated image: {error}")
