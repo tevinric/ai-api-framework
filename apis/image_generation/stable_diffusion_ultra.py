@@ -13,7 +13,7 @@ import os
 from apis.utils.config import IMAGE_GENERATION_CONTAINER, STORAGE_ACCOUNT
 from apis.utils.logMiddleware import api_logger
 from apis.utils.balanceMiddleware import check_balance
-from apis.utils.fileServices import upload_file
+from apis.utils.fileService import FileService
 
 # CONFIGURE LOGGING
 logging.basicConfig(level=logging.INFO)
@@ -323,7 +323,7 @@ def stable_diffusion_ultra_route():
         content_type = f"image/{output_format}"
         
         # Upload the image directly using fileServices
-        file_id = upload_file(
+        file_id = FileService.upload_file(
             user_id=g.user_id,
             file_content=image_data,
             filename=image_name,
