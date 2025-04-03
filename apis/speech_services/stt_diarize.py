@@ -3,6 +3,7 @@ from apis.utils.tokenService import TokenService
 from apis.utils.databaseService import DatabaseService
 from apis.utils.logMiddleware import api_logger
 from apis.utils.balanceMiddleware import check_balance
+from apis.utils.fileService import FileService  # Import FileService
 import logging
 import os
 import pytz
@@ -280,26 +281,20 @@ def enhanced_speech_to_text_route():
         }, 400)
     
     try:
-        # Get file URL from file-upload system
-        file_url_response = requests.post(
-            f"{request.url_root.rstrip('/')}/get-file-url",
-            headers={"X-Token": token},
-            json={"file_id": file_id}
-        )
-        
-        if file_url_response.status_code != 200:
+        # Get file URL using FileService directly
+        file_info, error = FileService.get_file_url(file_id, g.user_id)
+        if error:
             return create_api_response({
                 "error": "File Error",
-                "message": f"Error retrieving file URL: {file_url_response.json().get('message', 'Unknown error')}"
-            }, file_url_response.status_code)
-        
-        file_info = file_url_response.json()
+                "message": f"Error retrieving file URL: {error}"
+            }, 404 if "not found" in error.lower() else 500)
+            
         file_url = file_info.get('file_url')
         
         if not file_url:
             return create_api_response({
                 "error": "File Error",
-                "message": "File URL not found in response"
+                "message": "File URL not found"
             }, 500)
         
         # Transcribe the audio file
@@ -366,15 +361,10 @@ def enhanced_speech_to_text_route():
             # Combine the processed chunks
             enhanced_transcript = "\n\n".join(enhanced_chunks)
         
-        # Delete the uploaded file to avoid storage bloat
-        delete_response = requests.delete(
-            f"{request.url_root.rstrip('/')}/delete-file",
-            headers={"X-Token": token},
-            json={"file_id": file_id}
-        )
-        
-        if delete_response.status_code != 200:
-            logger.warning(f"Failed to delete uploaded file {file_id}: {delete_response.text}")
+        # Delete the uploaded file to avoid storage bloat using FileService directly
+        success, message = FileService.delete_file(file_id, g.user_id)
+        if not success:
+            logger.warning(f"Failed to delete uploaded file {file_id}: {message}")
         
         # Prepare the response
         response_data = {
