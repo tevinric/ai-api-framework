@@ -12,7 +12,7 @@ from apis.utils.config import get_openai_client, get_azure_blob_client, IMAGE_GE
 from apis.utils.logMiddleware import api_logger
 from apis.utils.balanceMiddleware import check_balance
 from azure.storage.blob import BlobServiceClient, ContentSettings
-from apis.utils.fileService import FileService
+from apis.utils.fileServices import upload_file
 
 # CONFIGURE LOGGING
 logging.basicConfig(level=logging.INFO)
@@ -314,9 +314,11 @@ def custom_image_generation_route():
         image_name = f"image-{uuid.uuid4()}.png"
         
         # Upload the image directly using fileServices
-        file_id = FileService.upload_file(
+        # Creating BytesIO object to simulate a file object
+        file_obj = io.BytesIO(image_data)
+        file_id = upload_file(
             user_id=g.user_id,
-            file_content=image_data,
+            file=file_obj,
             filename=image_name,
             content_type='image/png'
         )
