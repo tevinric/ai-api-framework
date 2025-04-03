@@ -4,6 +4,7 @@ from apis.utils.databaseService import DatabaseService
 from apis.utils.logMiddleware import api_logger
 from apis.utils.balanceMiddleware import check_balance
 from apis.utils.fileService import FileService  # Import FileService
+from apis.utils.llmServices import gpt4o_mini_service  # Import LLM service
 import logging
 import os
 import pytz
@@ -150,26 +151,21 @@ def process_transcript_with_llm(transcript, token, chunk_number=None, total_chun
         """
     
     try:
-        response = requests.post(
-            f"{request.url_root.rstrip('/')}/llm/gpt-4o-mini",
-            headers={"X-Token": token},
-            json={
-                "system_prompt": system_prompt,
-                "user_input": transcript,
-                "temperature": 0.2
-            }
+        # Use the LLM service directly instead of making an API call
+        llm_response = gpt4o_mini_service(
+            system_prompt=system_prompt,
+            user_input=transcript,
+            temperature=0.2
         )
         
-        if response.status_code != 200:
-            logger.error(f"LLM API error: {response.text}")
+        if not llm_response.get("success", False):
+            logger.error(f"LLM service error: {llm_response.get('error')}")
             return None, {
                 "error": "LLM Processing Error",
-                "message": f"Error from LLM API: {response.json().get('message', 'Unknown error')}",
-                "status_code": response.status_code
+                "message": f"Error from LLM service: {llm_response.get('error', 'Unknown error')}"
             }
         
-        result = response.json()
-        return result.get("message"), None
+        return llm_response.get("result"), None
         
     except Exception as e:
         logger.error(f"Error in LLM processing: {str(e)}")
