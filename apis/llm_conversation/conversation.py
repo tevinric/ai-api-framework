@@ -32,7 +32,7 @@ BASE_BLOB_URL = f"https://{STORAGE_ACCOUNT}.blob.core.windows.net/{CONVERSATION_
 LLM_ENDPOINTS = {
     "gpt-4o": "/llm/gpt-4o",
     "gpt-4o-mini": "/llm/gpt-4o-mini",
-    "gpt-o1-mini": "/llm/gpt-o1-mini",
+    "o1-mini": "/llm/o1-mini",
     "deepseek-r1": "/llm/deepseek-r1",
     "llama": "/llm/llama"
 }
