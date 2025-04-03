@@ -27,8 +27,90 @@ def upload_file_route():
     tags:
       - File Management
     summary: Upload one or more files to Azure Blob Storage
-    description: Uploads one or more files to Azure Blob Storage and stores metadata in the database.
-                Executable files (.exe, .bat, .cmd, .sh, .ps1, .dll, .msi, etc.) are not allowed.
+    description: Uploads one or more files to Azure Blob Storage and stores metadata in the database. Executable files (.exe, .bat, .cmd, .sh, .ps1, .dll, .msi, etc.) are not allowed.
+    parameters:
+      - name: X-Token
+        in: header
+        type: string
+        required: true
+        description: Valid token for authentication
+      - name: files
+        in: formData
+        type: file
+        required: true
+        description: Files to upload (can be multiple). Executable files are not permitted.
+    consumes:
+      - multipart/form-data
+    produces:
+      - application/json
+    responses:
+      200:
+        description: Files uploaded successfully
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              example: Files uploaded successfully
+            uploaded_files:
+              type: array
+              items:
+                type: object
+                properties:
+                  file_name:
+                    type: string
+                    example: document.pdf
+                  file_id:
+                    type: string
+                    example: 12345678-1234-1234-1234-123456789012
+                  content_type:
+                    type: string
+                    example: application/pdf
+      400:
+        description: Bad request
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Bad Request
+            message:
+              type: string
+              enum:
+                - No files part in the request
+                - No files selected for upload
+                - File type .exe is not allowed for security reasons
+                - File type .bat is not allowed for security reasons
+                - File type .cmd is not allowed for security reasons
+                - File type .sh is not allowed for security reasons
+                - File type .ps1 is not allowed for security reasons
+                - File type .dll is not allowed for security reasons
+                - File type .msi is not allowed for security reasons
+      401:
+        description: Authentication error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Authentication Error
+            message:
+              type: string
+              enum:
+                - Missing X-Token header
+                - Invalid token
+                - Token has expired
+      500:
+        description: Server error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Server Error
+            message:
+              type: string
+              example: Error uploading files
     """
     # Get token from X-Token header
     token = request.headers.get('X-Token')
@@ -128,6 +210,96 @@ def get_file_url_route():
       - File Management
     summary: Get access URL for a previously uploaded file
     description: Returns file details including access URL, content type, and upload date
+    parameters:
+      - name: X-Token
+        in: header
+        type: string
+        required: true
+        description: Valid token for authentication
+      - name: file_id
+        in: query
+        type: string
+        required: true
+        description: Unique file identifier
+    produces:
+      - application/json
+    responses:
+      200:
+        description: File URL retrieved successfully
+        schema:
+          type: object
+          properties:
+            file_name:
+              type: string
+              example: document.pdf
+            file_url:
+              type: string
+              example: https://storage.blob.core.windows.net/file-uploads/12345678-1234-1234-1234-123456789012.pdf
+            content_type:
+              type: string
+              example: application/pdf
+            upload_date:
+              type: string
+              format: date-time
+              example: 2024-03-16T10:30:45.123456+02:00
+      400:
+        description: Bad request
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Bad Request
+            message:
+              type: string
+              example: file_id is required as a query parameter
+      401:
+        description: Authentication error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Authentication Error
+            message:
+              type: string
+              enum:
+                - Missing X-Token header
+                - Invalid token
+                - Token has expired
+      403:
+        description: Forbidden
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Forbidden
+            message:
+              type: string
+              example: You don't have permission to access this file
+      404:
+        description: File not found
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Not Found
+            message:
+              type: string
+              example: File with ID 12345678-1234-1234-1234-123456789012 not found
+      500:
+        description: Server error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Server Error
+            message:
+              type: string
+              example: Error retrieving file URL
     """
     # Get token from X-Token header
     token = request.headers.get('X-Token')
@@ -201,6 +373,89 @@ def delete_file_route():
       - File Management
     summary: Delete a previously uploaded file
     description: Deletes file from Azure Blob Storage and removes the database entry
+    parameters:
+      - name: X-Token
+        in: header
+        type: string
+        required: true
+        description: Valid token for authentication
+      - name: file_id
+        in: query
+        type: string
+        required: true
+        description: Unique file identifier
+    produces:
+      - application/json
+    responses:
+      200:
+        description: File deleted successfully
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              example: File deleted successfully
+            file_id:
+              type: string
+              example: 12345678-1234-1234-1234-123456789012
+      400:
+        description: Bad request
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Bad Request
+            message:
+              type: string
+              example: file_id is required as a query parameter
+      401:
+        description: Authentication error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Authentication Error
+            message:
+              type: string
+              enum:
+                - Missing X-Token header
+                - Invalid token
+                - Token has expired
+      403:
+        description: Forbidden
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Forbidden
+            message:
+              type: string
+              example: You don't have permission to delete this file
+      404:
+        description: File not found
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Not Found
+            message:
+              type: string
+              example: File with ID 12345678-1234-1234-1234-123456789012 not found
+      500:
+        description: Server error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Server Error
+            message:
+              type: string
+              example: Error deleting file
     """
     # Get token from X-Token header
     token = request.headers.get('X-Token')
@@ -277,6 +532,87 @@ def list_user_files_route():
       - File Management
     summary: List all files uploaded by the user
     description: Returns a list of all files uploaded by the authenticated user. Admin users can see all files.
+    parameters:
+      - name: API-Key
+        in: header
+        type: string
+        required: false
+        description: API Key for authentication
+      - name: X-Token
+        in: header
+        type: string
+        required: false
+        description: Valid token for authentication
+    produces:
+      - application/json
+    responses:
+      200:
+        description: Files retrieved successfully
+        schema:
+          type: object
+          properties:
+            files:
+              type: array
+              items:
+                type: object
+                properties:
+                  file_id:
+                    type: string
+                    example: "12345678-1234-1234-1234-123456789012"
+                  file_name:
+                    type: string
+                    example: "document.pdf"
+                  content_type:
+                    type: string
+                    example: "application/pdf"
+                  upload_date:
+                    type: string
+                    format: date-time
+                    example: "2024-03-16T10:30:45+02:00"
+                  file_size:
+                    type: integer
+                    example: 1024
+                  user_id:
+                    type: string
+                    description: Only returned for admin users
+                    example: "12345678-1234-1234-1234-123456789012"
+                  user_name:
+                    type: string
+                    description: Only returned for admin users
+                    example: "johndoe"
+      401:
+        description: Authentication error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Authentication Error
+            message:
+              type: string
+              example: Missing authentication headers
+      403:
+        description: Forbidden
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Forbidden
+            message:
+              type: string
+              example: Authentication token has expired
+      500:
+        description: Server error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Server Error
+            message:
+              type: string
+              example: Error retrieving files
     """
     # Check authentication - try both API-Key and X-Token
     api_key = request.headers.get('API-Key')
