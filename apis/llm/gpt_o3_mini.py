@@ -4,17 +4,11 @@ from apis.utils.databaseService import DatabaseService
 import logging
 import pytz
 from datetime import datetime
-from openai import AzureOpenAI
-from apis.utils.config import O3_MINI_API_KEY
+from apis.utils.llmServices import o3_mini_service  # Import the service function
 
 # CONFIGURE LOGGING
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-# Fixed deployment endpoint
-ENDPOINT = "https://ai-coe-services-dev.openai.azure.com/"
-DEPLOYMENT = "o3-mini"
-API_VERSION = "2024-12-01-preview"
 
 def create_api_response(data, status_code=200):
     """Helper function to create consistent API responses"""
@@ -231,77 +225,34 @@ def o3_mini_route():
         # Log API usage
         logger.info(f"O3-Mini API called by user: {user_id}")
         
-        # Get API key for Azure OpenAI
-        api_key = O3_MINI_API_KEY
-        if not api_key:
-            raise Exception("Azure OpenAI API key not found")
-        
-        # Initialize Azure OpenAI client with API key authentication
-        client = AzureOpenAI(
-            azure_endpoint=ENDPOINT,
-            api_key=api_key,
-            api_version=API_VERSION,
+        # Use the service function instead of direct API call
+        service_response = o3_mini_service(
+            system_prompt=system_prompt,
+            user_input=user_input,
+            max_completion_tokens=max_completion_tokens,
+            reasoning_effort=reasoning_effort,
+            json_output=json_output
         )
         
-        # Prepare messages for the model
-        chat_prompt = [
-            {
-                "role": "developer",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": system_prompt
-                    }
-                ]
-            },
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": user_input
-                    }
-                ]
-            }
-        ]
-        
-        # Prepare additional parameters
-        additional_params = {
-            "max_completion_tokens": max_completion_tokens,
-            "reasoning_effort": reasoning_effort
-        }
-        
-        # Add response format if JSON output is requested
-        if json_output:
-            additional_params["response_format"] = {"type": "json_object"}
-        
-        # Make request to LLM
-        completion = client.chat.completions.create(
-            model=DEPLOYMENT,
-            messages=chat_prompt,
-            **additional_params,
-            stop=None,
-            stream=False
-        )
-        
-        # Extract response data
-        result = completion.choices[0].message.content
-        input_tokens = completion.usage.prompt_tokens
-        completion_tokens = completion.usage.completion_tokens
-        output_tokens = input_tokens + completion_tokens
-        model_name = completion.model if hasattr(completion, 'model') else DEPLOYMENT
+        if not service_response["success"]:
+            logger.error(f"O3-Mini API error: {service_response['error']}")
+            status_code = 500 if not str(service_response["error"]).startswith("4") else 400
+            return create_api_response({
+                "response": str(status_code),
+                "message": service_response["error"]
+            }, status_code)
         
         # Prepare successful response with user details
         return create_api_response({
             "response": "200",
-            "message": result,
+            "message": service_response["result"],
             "user_id": user_details["id"],
             "user_name": user_details["user_name"],
             "user_email": user_details["user_email"],
-            "model": model_name,
-            "input_tokens": input_tokens,
-            "completion_tokens": completion_tokens,
-            "output_tokens": output_tokens
+            "model": service_response["model"],
+            "input_tokens": service_response["input_tokens"],
+            "completion_tokens": service_response["completion_tokens"],
+            "output_tokens": service_response["output_tokens"]
         }, 200)
         
     except Exception as e:
