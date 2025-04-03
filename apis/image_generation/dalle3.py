@@ -12,6 +12,7 @@ from apis.utils.config import get_openai_client, get_azure_blob_client, IMAGE_GE
 from apis.utils.logMiddleware import api_logger
 from apis.utils.balanceMiddleware import check_balance
 from azure.storage.blob import BlobServiceClient, ContentSettings
+from apis.utils.fileServices import upload_file
 
 # CONFIGURE LOGGING
 logging.basicConfig(level=logging.INFO)
@@ -312,52 +313,20 @@ def custom_image_generation_route():
         # Generate a unique name for the image
         image_name = f"image-{uuid.uuid4()}.png"
         
-        # Instead of saving directly to blob storage, use the upload-file endpoint
-        # Create a temporary file-like object to send to the upload endpoint
-        import io
-        from werkzeug.datastructures import FileStorage
-        
-        image_file = FileStorage(
-            stream=io.BytesIO(image_data),
+        # Upload the image directly using fileServices
+        file_id = upload_file(
+            user_id=g.user_id,
+            file_content=image_data,
             filename=image_name,
             content_type='image/png'
         )
-
-        # Create a files dictionary for the upload-file endpoint
-        # Explicitly set the content type to image/png to ensure proper file type recognition
-        files = {'files': (image_name, io.BytesIO(image_data), 'image/png')}
         
-        # Call upload-file endpoint using internal Flask request
-        from flask import current_app
-
-        # Create a new request to the upload-file endpoint
-        upload_url = f"{request.url_root.rstrip('/')}/file"
-        
-        # Make the POST request to upload-file endpoint
-        upload_response = requests.post(
-            upload_url,
-            headers={'X-Token': token},
-            files=files
-        )
-        
-        # Check if the upload was successful
-        if upload_response.status_code != 200:
-            logger.error(f"Failed to upload image: {upload_response.json()}")
+        if not file_id:
+            logger.error("Failed to upload generated image")
             return create_api_response({
                 "response": "500",
-                "message": f"Failed to upload generated image: {upload_response.json().get('message', 'Unknown error')}"
+                "message": "Failed to upload generated image"
             }, 500)
-        
-        # Extract the file_id from the upload response
-        upload_data = upload_response.json()
-        if 'uploaded_files' not in upload_data or not upload_data['uploaded_files']:
-            logger.error(f"No file information in upload response: {upload_data}")
-            return create_api_response({
-                "response": "500",
-                "message": "Failed to upload generated image: No file information returned"
-            }, 500)
-            
-        file_id = upload_data['uploaded_files'][0]['file_id']
         
         # Prepare successful response with user details
         return create_api_response({
