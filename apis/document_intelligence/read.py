@@ -451,11 +451,12 @@ def document_read_route():
                     if options['language']:
                         analyzer_options["features"] = ["languages"]
                     
-                    # Start the document analysis using the file content
+                    # Start the document analysis with the file content
                     with open(temp_file_path, "rb") as document_file:
+                        file_content = document_file.read()
                         poller = document_client.begin_analyze_document(
-                            "prebuilt-read",
-                            document=document_file,
+                            model_id="prebuilt-read",
+                            analyze_request=AnalyzeDocumentRequest(base64_source=base64.b64encode(file_content).decode()),
                             **analyzer_options
                         )
                     
