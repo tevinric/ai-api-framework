@@ -30,6 +30,8 @@ from langchain_community.document_loaders import (
     CSVLoader,
     UnstructuredExcelLoader
 )
+# Import FileService directly
+from apis.utils.fileService import FileService
 
 # CONFIGURE LOGGING
 logging.basicConfig(level=logging.INFO)
@@ -406,20 +408,13 @@ def create_advanced_vectorstore_route():
         
         for file_id in file_ids:
             try:
-                # Get file URL from the file ID
-                file_url_endpoint = f"{request.url_root.rstrip('/')}/file/url?file_id={file_id}"
-                headers = {"X-Token": token}
+                # Use FileService directly instead of API call
+                file_info, error = FileService.get_file_url(file_id, user_id)
                 
-                file_url_response = requests.get(
-                    file_url_endpoint,
-                    headers=headers
-                )
-                
-                if file_url_response.status_code != 200:
-                    logger.error(f"Error retrieving file URL: Status {file_url_response.status_code}")
+                if error:
+                    logger.error(f"Error retrieving file URL: {error}")
                     continue
                 
-                file_info = file_url_response.json()
                 file_url = file_info.get("file_url")
                 file_name = file_info.get("file_name")
                 
