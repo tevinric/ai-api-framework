@@ -513,7 +513,8 @@ def format_docx_summary(summary_data):
         "key_points": key_points,
         "document_structure": summary_data.get("document_structure", {}),
         "pages_processed": summary_data.get("pages_processed", 0),
-        "tokens": token_info
+        "tokens": token_info,
+        "model": summary_data.get("model", "")
     }
     
     return formatted
@@ -541,7 +542,8 @@ def format_pdf_summary(summary_data):
         "key_points": key_points,
         "document_structure": summary_data.get("document_structure", {}),
         "pages_processed": summary_data.get("pages_processed", 0),
-        "tokens": token_info
+        "tokens": token_info,
+        "model": summary_data.get("model", "")
     }
     
     return formatted
@@ -569,7 +571,8 @@ def format_pptx_summary(summary_data):
         "key_points": key_points,
         "slides_processed": summary_data.get("pages_processed", 0),
         "presentation_structure": summary_data.get("document_structure", {}),
-        "tokens": token_info
+        "tokens": token_info,
+        "model": summary_data.get("model", "")
     }
     
     return formatted
@@ -597,7 +600,8 @@ def format_xlsx_summary(summary_data):
         "key_points": key_points,
         "sheets_processed": summary_data.get("pages_processed", 0),
         "data_insights": summary_data.get("document_structure", {}),
-        "tokens": token_info
+        "tokens": token_info,
+        "model": summary_data.get("model", "")
     }
     
     return formatted
@@ -623,6 +627,7 @@ def chunk_and_summarize(text, total_pages, summary_options):
     
     all_summaries = []
     token_usage = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
+    models_used = []  # Track models used for each chunk
     
     for idx, chunk in enumerate(chunks):
         logger.info(f"Processing chunk {idx+1}/{len(chunks)} (length: {len(chunk)})")
@@ -707,6 +712,9 @@ def chunk_and_summarize(text, total_pages, summary_options):
                         temperature=summary_options.get('temperature', 0.3),
                         json_output=True
                     )
+                    if response.get("success", False) and "model" in response:
+                        if response["model"] not in models_used:
+                            models_used.append(response["model"])
                 else:
                     logger.info(f"Using gpt4o_mini_service for summarization (attempt {retry_count+1}/{max_retries})")
                     response = gpt4o_mini_service(
@@ -715,6 +723,9 @@ def chunk_and_summarize(text, total_pages, summary_options):
                         temperature=summary_options.get('temperature', 0.3),
                         json_output=True
                     )
+                    if response.get("success", False) and "model" in response:
+                        if response["model"] not in models_used:
+                            models_used.append(response["model"])
                 
                 if response.get("success", False):
                     success = True
@@ -740,8 +751,11 @@ def chunk_and_summarize(text, total_pages, summary_options):
                             }),
                             "input_tokens": 0,
                             "completion_tokens": 0,
-                            "output_tokens": 0
+                            "output_tokens": 0,
+                            "model": "unknown"
                         }
+                        if "unknown" not in models_used:
+                            models_used.append("unknown")
             
             except Exception as e:
                 logger.error(f"Exception during LLM API call: {str(e)}")
@@ -764,8 +778,11 @@ def chunk_and_summarize(text, total_pages, summary_options):
                         }),
                         "input_tokens": 0,
                         "completion_tokens": 0,
-                        "output_tokens": 0
+                        "output_tokens": 0,
+                        "model": "unknown"
                     }
+                    if "unknown" not in models_used:
+                        models_used.append("unknown")
         
         if not response or not response.get("success", False):
             logger.error(f"Error from LLM service: {response.get('error', 'Unknown error') if response else 'No response'}")
@@ -773,8 +790,11 @@ def chunk_and_summarize(text, total_pages, summary_options):
             all_summaries.append({
                 "summary": f"Error: Unable to process document chunk {idx+1}: {response.get('error', 'Unknown error') if response else 'No response'}",
                 "key_points": ["Error occurred during processing"],
-                "document_structure": {}
+                "document_structure": {},
+                "model": "unknown"
             })
+            if "unknown" not in models_used:
+                models_used.append("unknown")
             continue
         
         # Extract token usage information
@@ -825,6 +845,9 @@ def chunk_and_summarize(text, total_pages, summary_options):
             
             if "document_structure" not in summary_result:
                 summary_result["document_structure"] = {}
+                
+            # Add model information from response
+            summary_result["model"] = response.get("model", "unknown")
             
             all_summaries.append(summary_result)
             logger.info(f"Successfully processed chunk {idx+1}, summary length: {len(summary_result['summary'])}")
@@ -834,7 +857,8 @@ def chunk_and_summarize(text, total_pages, summary_options):
             all_summaries.append({
                 "summary": f"Error processing document chunk {idx+1}: {str(e)}",
                 "key_points": ["Error occurred during processing"],
-                "document_structure": {}
+                "document_structure": {},
+                "model": response.get("model", "unknown")
             })
     
     # If no summaries were generated at all, create a fallback
@@ -845,7 +869,8 @@ def chunk_and_summarize(text, total_pages, summary_options):
             "key_points": ["Document processing failed"],
             "document_structure": {},
             "pages_processed": total_pages,
-            "tokens": token_usage
+            "tokens": token_usage,
+            "model": "unknown"
         }
     
     # For multiple chunks, we need to combine them
@@ -895,6 +920,8 @@ def chunk_and_summarize(text, total_pages, summary_options):
                     )
                     
                     if response["success"]:
+                        if "model" in response and response["model"] not in models_used:
+                            models_used.append(response["model"])
                         break
                     
                     logger.warning(f"Error generating final summary (attempt {retry_attempt+1}): {response.get('error', 'Unknown error')}")
@@ -937,6 +964,9 @@ def chunk_and_summarize(text, total_pages, summary_options):
                             "document_structure": combined_structure
                         }
                     
+                    # Add model information from response
+                    final_summary["model"] = response.get("model", "unknown")
+                    
                     # If the final summary doesn't include enough key points, check and add them
                     existing_key_points = final_summary.get("key_points", [])
                     if not existing_key_points:
@@ -957,7 +987,8 @@ def chunk_and_summarize(text, total_pages, summary_options):
                     final_summary = {
                         "summary": combined_text[:2000] + "... [Summary truncated due to processing error]",
                         "key_points": all_key_points[:20],  # Include at most 20 key points
-                        "document_structure": combined_structure
+                        "document_structure": combined_structure,
+                        "model": response.get("model", "unknown")
                     }
         else:
             # If combined text is manageable, use the last summary as the final one
@@ -992,6 +1023,14 @@ def chunk_and_summarize(text, total_pages, summary_options):
             final_summary["key_points"] = key_points
         if token_info and (token_info["prompt_tokens"] > 0 or token_info["completion_tokens"] > 0 or token_info["total_tokens"] > 0):
             final_summary["tokens"] = token_info
+            
+    # Set model info in the final summary
+    if "model" not in final_summary or not final_summary["model"]:
+        # If multiple models were used, list them joined by a comma
+        if models_used:
+            final_summary["model"] = ", ".join(models_used)
+        else:
+            final_summary["model"] = "unknown"
     
     logger.info(f"Final summary generated with token usage: {token_usage}")
     return final_summary
@@ -1030,6 +1069,7 @@ def upload_summary_to_blob(summary_content, file_name, user_id, token):
         text_content += f"- Tokens Used: {summary_content.get('tokens', {}).get('total_tokens', 0)}\n"
         text_content += f"  - Prompt Tokens: {summary_content.get('tokens', {}).get('prompt_tokens', 0)}\n"
         text_content += f"  - Completion Tokens: {summary_content.get('tokens', {}).get('completion_tokens', 0)}\n"
+        text_content += f"- Model: {summary_content.get('model', 'unknown')}\n"
     else:
         # If it's not a dict, just use the content directly
         text_content = summary_content
@@ -1216,6 +1256,9 @@ def document_summarization_route():
                 total_tokens:
                   type: integer
               description: Token usage statistics
+            model:
+              type: string
+              description: The AI model used for generating the summary
       400:
         description: Bad request
         schema:
@@ -1534,6 +1577,9 @@ def document_summarization_route():
         # Extract token usage directly from original response if available
         token_usage = formatted_summary.get("tokens", {})
         
+        # Get model information
+        model = formatted_summary.get("model", "unknown")
+        
         # Handle case where summary is a JSON object
         if isinstance(summary_text, dict):
             logger.warning("Summary is a dictionary, extracting message field")
@@ -1620,7 +1666,8 @@ def document_summarization_route():
             "summary_file_id": summary_file_id if summary_file_id else None,
             "summary": summary_text,
             "key_points": key_points,
-            "token_usage": token_usage  # Ensure token usage is included
+            "token_usage": token_usage,  # Ensure token usage is included
+            "model": model  # Include the model information
         }
         
         # Add the appropriate page/slide/sheet count
