@@ -576,4 +576,3 @@ def document_read_route():
 def register_document_intelligence_read_routes(app):
     """Register document intelligence routes with the Flask app"""
     app.route('/docint/read', methods=['POST'])(api_logger(check_balance(document_read_route)))
-    
