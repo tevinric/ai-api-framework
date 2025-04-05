@@ -3,12 +3,12 @@ from apis.utils.tokenService import TokenService
 from apis.utils.databaseService import DatabaseService
 from apis.utils.logMiddleware import api_logger
 from apis.utils.balanceMiddleware import check_balance
+from apis.utils.fileService import FileService
 import logging
 import pytz
 from datetime import datetime
 import os
 import json
-import requests
 import tempfile
 
 # For Azure AI Document Intelligence
@@ -372,42 +372,24 @@ def document_read_route():
     
     for file_id in file_ids:
         try:
-            # Get file URL from the file ID
-            headers = {"X-Token": token}
-            logger.info(f"Getting file URL for file ID: {file_id}")
-            # Make a request to the file/url endpoint using GET method
-            # The endpoint expects file_id as a query parameter
-            file_url_endpoint = f"{request.url_root.rstrip('/')}/file/url?file_id={file_id}"
-            logger.info(f"Requesting file URL from endpoint: {file_url_endpoint}")
+            # Get file URL using FileService instead of making an HTTP request
+            file_info, error = FileService.get_file_url(file_id, g.user_id)
             
-            file_url_response = requests.get(
-                file_url_endpoint,
-                headers=headers
-            )
-            
-            # Log the response details for debugging
-            logger.info(f"File URL response status: {file_url_response.status_code}")
-            if file_url_response.status_code != 200:
-                logger.error(f"File URL response error: {file_url_response.text}")
-            else:
-                logger.info(f"File URL response: {file_url_response.text[:100]}...")
-            
-            if file_url_response.status_code != 200:
-                logger.error(f"Error retrieving file URL: Status {file_url_response.status_code}, Response: {file_url_response.text[:500]}")
+            if error:
+                logger.error(f"Error retrieving file URL: {error}")
                 results.append({
                     "file_id": file_id,
-                    "error": f"File not found or you don't have access"
+                    "error": error
                 })
                 continue
             
-            file_info = file_url_response.json()
             file_url = file_info.get("file_url")
             file_name = file_info.get("file_name")
             
             logger.info(f"Retrieved file URL: {file_url} for file: {file_name}")
             
             if not file_url:
-                logger.error("Missing file_url in response from get-file-url endpoint")
+                logger.error("Missing file_url in file info")
                 results.append({
                     "file_id": file_id,
                     "file_name": file_name if file_name else "Unknown",
@@ -482,7 +464,7 @@ def document_read_route():
                         style.is_handwritten for style in result.styles if hasattr(style, 'is_handwritten')
                     )
                 
-                                    # Process each requested page
+                # Process each requested page
                 for page in result.pages:
                     # Skip pages not in the requested range
                     if page.page_number not in pages_to_process:
@@ -594,3 +576,4 @@ def document_read_route():
 def register_document_intelligence_read_routes(app):
     """Register document intelligence routes with the Flask app"""
     app.route('/docint/read', methods=['POST'])(api_logger(check_balance(document_read_route)))
+    
