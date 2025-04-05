@@ -139,68 +139,14 @@ def create_vectorstore_route():
     responses:
       200:
         description: Vectorstore created successfully
-        schema:
-          type: object
-          properties:
-            message:
-              type: string
-              example: "Vectorstore created successfully"
-            vectorstore_id:
-              type: string
-              example: "12345678-1234-1234-1234-123456789012"
-            path:
-              type: string
-              example: "user123-12345678-1234-1234-1234-123456789012"
-            file_count:
-              type: integer
-              example: 3
-            documents_processed:
-              type: integer
-              example: 42
       400:
         description: Bad request
-        schema:
-          type: object
-          properties:
-            error:
-              type: string
-              example: "Bad Request"
-            message:
-              type: string
-              example: "Missing required field: file_ids"
       401:
         description: Authentication error
-        schema:
-          type: object
-          properties:
-            error:
-              type: string
-              example: "Authentication Error"
-            message:
-              type: string
-              example: "Token has expired"
       404:
         description: Not found
-        schema:
-          type: object
-          properties:
-            error:
-              type: string
-              example: "Not Found"
-            message:
-              type: string
-              example: "One or more files not found"
       500:
         description: Server error
-        schema:
-          type: object
-          properties:
-            error:
-              type: string
-              example: "Server Error"
-            message:
-              type: string
-              example: "Error creating vectorstore"
     """
     # Get token from X-Token header
     token = request.headers.get('X-Token')
@@ -285,13 +231,22 @@ def create_vectorstore_route():
         
         for file_id in file_ids:
             try:
-                # Use FileService directly instead of API call
-                file_info, error = FileService.get_file_url(file_id, user_id)
+                # Get file URL from the file ID - via API call with proper authentication
+                file_url_endpoint = f"{request.url_root.rstrip('/')}/file/url"
+                headers = {"X-Token": token}
+                params = {"file_id": file_id}
                 
-                if error:
-                    logger.error(f"Error retrieving file URL: {error}")
+                file_url_response = requests.get(
+                    file_url_endpoint,
+                    headers=headers,
+                    params=params
+                )
+                
+                if file_url_response.status_code != 200:
+                    logger.error(f"Error retrieving file URL: Status {file_url_response.status_code}")
                     continue
                 
+                file_info = file_url_response.json()
                 file_url = file_info.get("file_url")
                 file_name = file_info.get("file_name")
                 
@@ -299,9 +254,13 @@ def create_vectorstore_route():
                     logger.error(f"Missing file_url or file_name in response")
                     continue
                 
-                # Download the file
-                import requests
-                file_response = requests.get(file_url, stream=True)
+                # Download the file with proper authentication headers
+                file_response = requests.get(
+                    file_url,
+                    headers={"X-Token": token},  # Include token in download request
+                    stream=True
+                )
+                
                 if file_response.status_code != 200:
                     logger.error(f"Failed to download file: Status {file_response.status_code}")
                     continue
