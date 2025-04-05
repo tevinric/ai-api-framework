@@ -612,7 +612,13 @@ def chunk_and_summarize(text, total_pages, summary_options):
     Returns:
         Combined summary and token usage
     """
-    chunks = chunk_text(text, max_chunk_size=summary_options.get('chunk_size', 12000))
+    import time  # Add time import for sleep functionality
+    
+    # Use a smaller default chunk size to prevent timeouts in production
+    chunk_size = min(summary_options.get('chunk_size', 8000), 8000)  # Cap at 8000 to prevent timeouts
+    logger.info(f"Using chunk size: {chunk_size}")
+    
+    chunks = chunk_text(text, max_chunk_size=chunk_size)
     logger.info(f"Document split into {len(chunks)} chunks for processing")
     
     all_summaries = []
@@ -672,33 +678,100 @@ def chunk_and_summarize(text, total_pages, summary_options):
         }}
         """
         
-        # Prepare the user content
-        user_content = f"Here's the document content to summarize:\n\n{chunk}"
+        # Add retry logic with exponential backoff
+        max_retries = 3
+        retry_count = 0
+        success = False
+        response = None
         
-        # Use gpt4o_mini_service or gpt4o_service from llmServices based on document complexity
-        # For larger documents or final summary, use the more powerful model
-        if len(chunk) > 8000 or (len(chunks) > 1 and idx == len(chunks) - 1):
-            logger.info("Using gpt4o_service for complex summarization")
-            response = gpt4o_service(
-                system_prompt=full_system_prompt.strip(),
-                user_input=user_content,
-                temperature=summary_options.get('temperature', 0.3),
-                json_output=True
-            )
-        else:
-            logger.info("Using gpt4o_mini_service for summarization")
-            response = gpt4o_mini_service(
-                system_prompt=full_system_prompt.strip(),
-                user_input=user_content,
-                temperature=summary_options.get('temperature', 0.3),
-                json_output=True
-            )
+        while retry_count < max_retries and not success:
+            try:
+                # Adjust chunk size if previous attempts failed
+                if retry_count > 0:
+                    logger.warning(f"Retry {retry_count}/{max_retries} - Reducing content size for reliability")
+                    # Progressively reduce the chunk size on retries
+                    reduced_size = int(len(chunk) * (0.7 ** retry_count))
+                    reduced_chunk = chunk[:reduced_size]
+                    user_content = f"Here's the document content to summarize:\n\n{reduced_chunk}"
+                    logger.info(f"Reduced chunk size from {len(chunk)} to {reduced_size} characters")
+                else:
+                    user_content = f"Here's the document content to summarize:\n\n{chunk}"
+                
+                # Use gpt4o_mini_service or gpt4o_service based on content size
+                # For larger documents or final summary, use the more powerful model
+                if len(chunk) > 6000 or (len(chunks) > 1 and idx == len(chunks) - 1):
+                    logger.info(f"Using gpt4o_service for complex summarization (attempt {retry_count+1}/{max_retries})")
+                    response = gpt4o_service(
+                        system_prompt=full_system_prompt.strip(),
+                        user_input=user_content,
+                        temperature=summary_options.get('temperature', 0.3),
+                        json_output=True
+                    )
+                else:
+                    logger.info(f"Using gpt4o_mini_service for summarization (attempt {retry_count+1}/{max_retries})")
+                    response = gpt4o_mini_service(
+                        system_prompt=full_system_prompt.strip(),
+                        user_input=user_content,
+                        temperature=summary_options.get('temperature', 0.3),
+                        json_output=True
+                    )
+                
+                if response.get("success", False):
+                    success = True
+                    logger.info(f"Successfully processed chunk {idx+1} on attempt {retry_count+1}")
+                else:
+                    logger.warning(f"LLM API call failed: {response.get('error', 'Unknown error')}")
+                    retry_count += 1
+                    
+                    if retry_count < max_retries:
+                        # Exponential backoff
+                        sleep_time = 2 ** retry_count
+                        logger.info(f"Waiting {sleep_time} seconds before retry...")
+                        time.sleep(sleep_time)
+                    else:
+                        logger.error(f"Failed to process chunk after {max_retries} attempts")
+                        # Create a minimal response to continue processing
+                        response = {
+                            "success": True,
+                            "result": json.dumps({
+                                "summary": f"[Processing error: Unable to summarize chunk {idx+1} after multiple attempts.]",
+                                "key_points": ["Error occurred during processing"],
+                                "document_structure": {}
+                            }),
+                            "input_tokens": 0,
+                            "completion_tokens": 0,
+                            "output_tokens": 0
+                        }
+            
+            except Exception as e:
+                logger.error(f"Exception during LLM API call: {str(e)}")
+                retry_count += 1
+                
+                if retry_count < max_retries:
+                    # Exponential backoff
+                    sleep_time = 2 ** retry_count
+                    logger.info(f"Waiting {sleep_time} seconds before retry...")
+                    time.sleep(sleep_time)
+                else:
+                    logger.error(f"Failed to process chunk after {max_retries} attempts due to exception: {str(e)}")
+                    # Create a minimal response to continue processing
+                    response = {
+                        "success": True,
+                        "result": json.dumps({
+                            "summary": f"[Error: Unable to process this section of the document. Technical error: {str(e)}]",
+                            "key_points": ["Error occurred during processing"],
+                            "document_structure": {}
+                        }),
+                        "input_tokens": 0,
+                        "completion_tokens": 0,
+                        "output_tokens": 0
+                    }
         
-        if not response["success"]:
-            logger.error(f"Error from LLM service: {response.get('error', 'Unknown error')}")
+        if not response or not response.get("success", False):
+            logger.error(f"Error from LLM service: {response.get('error', 'Unknown error') if response else 'No response'}")
             # Create a fallback summary if API request fails
             all_summaries.append({
-                "summary": f"Error: Unable to process document chunk {idx+1}: {response.get('error', 'Unknown error')}",
+                "summary": f"Error: Unable to process document chunk {idx+1}: {response.get('error', 'Unknown error') if response else 'No response'}",
                 "key_points": ["Error occurred during processing"],
                 "document_structure": {}
             })
@@ -809,13 +882,33 @@ def chunk_and_summarize(text, total_pages, summary_options):
             
             combined_content = f"Here are all the partial summaries to combine:\n\n{combined_text}\n\nAnd all key points:\n\n{json.dumps(all_key_points)}"
             
-            # Use gpt4o_service for the final summary as it's more complex
-            response = gpt4o_service(
-                system_prompt=final_system_prompt,
-                user_input=combined_content,
-                temperature=summary_options.get('temperature', 0.3),
-                json_output=True
-            )
+            # Add retry logic for final summary generation
+            max_retries = 2
+            for retry_attempt in range(max_retries):
+                try:
+                    # Use gpt4o_service for the final summary as it's more complex
+                    response = gpt4o_service(
+                        system_prompt=final_system_prompt,
+                        user_input=combined_content,
+                        temperature=summary_options.get('temperature', 0.3),
+                        json_output=True
+                    )
+                    
+                    if response["success"]:
+                        break
+                    
+                    logger.warning(f"Error generating final summary (attempt {retry_attempt+1}): {response.get('error', 'Unknown error')}")
+                    
+                    if retry_attempt < max_retries - 1:
+                        # Reduce content size for retry
+                        max_length = 10000 - (retry_attempt * 2000)  # Reduce by 2000 chars each retry
+                        combined_content = f"Here are all the partial summaries to combine:\n\n{combined_text[:max_length]}\n\nAnd key points:\n\n{json.dumps(all_key_points[:min(15, len(all_key_points))])}"
+                        time.sleep(2 ** retry_attempt)  # Exponential backoff
+                    
+                except Exception as e:
+                    logger.error(f"Exception during final summary generation (attempt {retry_attempt+1}): {str(e)}")
+                    if retry_attempt < max_retries - 1:
+                        time.sleep(2 ** retry_attempt)  # Exponential backoff
             
             if not response["success"]:
                 logger.error(f"Error generating final summary: {response.get('error', 'Unknown error')}")
@@ -862,8 +955,8 @@ def chunk_and_summarize(text, total_pages, summary_options):
                 except Exception as e:
                     logger.error(f"Error processing final summary: {str(e)}")
                     final_summary = {
-                        "summary": combined_text,
-                        "key_points": all_key_points,
+                        "summary": combined_text[:2000] + "... [Summary truncated due to processing error]",
+                        "key_points": all_key_points[:20],  # Include at most 20 key points
                         "document_structure": combined_structure
                     }
         else:
@@ -1237,7 +1330,7 @@ def document_summarization_route():
         'temperature': data.get('temperature', 0.3),
         'include_file_upload': data.get('include_file_upload', True),
         'token': token,  # Pass token for FileService
-        'chunk_size': 12000  # Default chunk size for text processing
+        'chunk_size': 8000  # Default chunk size for text processing - reduced for production
     }
     
     # Validate length parameter
@@ -1579,4 +1672,3 @@ def document_summarization_route():
 def register_document_intelligence_routes(app):
     """Register document intelligence routes with the Flask app"""
     app.route('/docint/summarization', methods=['POST'])(api_logger(check_balance(document_summarization_route)))
-    
