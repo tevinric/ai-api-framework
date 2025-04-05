@@ -226,9 +226,9 @@ class VectorstoreCreator:
         
         return vectorstore
 
-def create_vectorstore_route():
+def create_advanced_vectorstore_route():
     """
-    Create a FAISS vectorstore from files
+    Create an advanced FAISS vectorstore from files with enhanced processing
     ---
     tags:
       - RAG
@@ -256,12 +256,20 @@ def create_vectorstore_route():
               description: Optional name for the vectorstore
             chunk_size:
               type: integer
-              default: 1000
+              default: 3000
               description: Size of text chunks for splitting documents
             chunk_overlap:
               type: integer
               default: 200
               description: Overlap between chunks
+            batch_size:
+              type: integer
+              default: 50
+              description: Number of documents to process in each batch
+            max_retries:
+              type: integer
+              default: 3
+              description: Maximum number of retries for batch processing
     produces:
       - application/json
     responses:
@@ -337,9 +345,11 @@ def create_vectorstore_route():
     
     # Extract parameters with defaults
     file_ids = data.get('file_ids', [])
-    vectorstore_name = data.get('vectorstore_name', f"vectorstore-{datetime.now().strftime('%Y%m%d-%H%M%S')}")
-    chunk_size = int(data.get('chunk_size', 1000))
+    vectorstore_name = data.get('vectorstore_name', f"advanced-vs-{datetime.now().strftime('%Y%m%d-%H%M%S')}")
+    chunk_size = int(data.get('chunk_size', 3000))
     chunk_overlap = int(data.get('chunk_overlap', 200))
+    batch_size = int(data.get('batch_size', 50))
+    max_retries = int(data.get('max_retries', 3))
     
     # Ensure file_ids is a list
     if not isinstance(file_ids, list):
@@ -352,6 +362,21 @@ def create_vectorstore_route():
         
         # Ensure container exists
         ensure_container_exists(VECTORSTORE_CONTAINER)
+        
+        # Initialize processing statistics
+        processing_stats = {
+            'start_time': time.time(),
+            'total_files': len(file_ids),
+            'processed_files': 0,
+            'total_pages': 0,
+            'total_documents': 0,
+            'total_chunks': 0,
+            'duplicates_removed': 0,
+            'files_details': []
+        }
+        
+        # Initialize document processor
+        doc_processor = DocumentProcessor()
         
         # Process each file
         all_documents = []
@@ -396,22 +421,58 @@ def create_vectorstore_route():
                 
                 local_files.append(local_file_path)
                 
-                # Process the file
-                metadata = {
-                    "source": file_name,
-                    "file_id": file_id
-                }
+                # Process the file - use enhanced PDF processing for PDFs
+                file_documents = []
+                if file_name.lower().endswith('.pdf'):
+                    file_documents = doc_processor.process_pdf(local_file_path)
+                else:
+                    # For non-PDF files, create a basic document
+                    with open(local_file_path, 'r', errors='ignore') as f:
+                        content = f.read()
+                    
+                    metadata = {
+                        "source": file_name,
+                        "file_id": file_id,
+                        "file_path": local_file_path,
+                        "file_size": os.path.getsize(local_file_path),
+                        "last_modified": time.ctime(os.path.getmtime(local_file_path))
+                    }
+                    
+                    # Preprocess the document
+                    doc = doc_processor.preprocess_document(content, metadata)
+                    
+                    # Add if not a duplicate
+                    if doc.metadata['content_hash'] not in doc_processor.processed_hashes:
+                        file_documents.append(doc)
+                        doc_processor.processed_hashes.add(doc.metadata['content_hash'])
                 
-                docs = process_file(local_file_path, metadata)
-                all_documents.extend(docs)
-                files_processed += 1
+                # Update statistics
+                if file_documents:
+                    file_stats = {
+                        "file_name": file_name,
+                        "file_id": file_id,
+                        "documents_extracted": len(file_documents),
+                        "file_size": os.path.getsize(local_file_path),
+                        "content_hashes": [doc.metadata['content_hash'] for doc in file_documents]
+                    }
+                    processing_stats['files_details'].append(file_stats)
+                    
+                    all_documents.extend(file_documents)
+                    processing_stats['total_documents'] += len(file_documents)
+                    
+                    if file_name.lower().endswith('.pdf'):
+                        # For PDFs, count pages
+                        processing_stats['total_pages'] += file_documents[-1].metadata.get('total_pages', 0) if file_documents else 0
+                    
+                    files_processed += 1
+                    processing_stats['processed_files'] += 1
                 
-                logger.info(f"Processed file {file_name}, extracted {len(docs)} documents")
+                logger.info(f"Processed file {file_name}, extracted {len(file_documents)} documents")
                 
             except Exception as e:
                 logger.error(f"Error processing file ID {file_id}: {str(e)}")
                 continue
-                
+        
         # Close the connection when done
         conn.close()
         
@@ -423,13 +484,19 @@ def create_vectorstore_route():
         
         # Create text splitter
         text_splitter = RecursiveCharacterTextSplitter(
+            separators=["\n\n", "\n", ". ", " ", ""],
             chunk_size=chunk_size,
-            chunk_overlap=chunk_overlap
+            chunk_overlap=chunk_overlap,
+            length_function=len
         )
         
         # Split documents
         chunks = text_splitter.split_documents(all_documents)
         logger.info(f"Split {len(all_documents)} documents into {len(chunks)} chunks")
+        
+        # Update statistics
+        processing_stats['total_chunks'] = len(chunks)
+        processing_stats['duplicates_removed'] = len(doc_processor.processed_hashes) - processing_stats['total_documents']
         
         # Generate vectorstore ID
         vectorstore_id = str(uuid.uuid4())
@@ -439,11 +506,19 @@ def create_vectorstore_route():
         embeddings = AzureOpenAIEmbeddings(
             azure_deployment=os.environ.get("AZURE_OPENAI_EMBEDDING_DEPLOYMENT", "text-embedding-3-large"),
             api_key=os.environ.get("OPENAI_API_KEY"),
-            azure_endpoint=os.environ.get("OPENAI_API_ENDPOINT")
+            azure_endpoint=os.environ.get("OPENAI_API_ENDPOINT"),
+            chunk_size=chunk_size
         )
         
-        # Create FAISS index
-        vectorstore = FAISS.from_documents(chunks, embeddings)
+        # Create vectorstore creator
+        creator = VectorstoreCreator(embeddings)
+        
+        # Create FAISS index with batch processing
+        vectorstore = creator.create_batched_vectorstore(
+            chunks, 
+            batch_size=batch_size,
+            max_retries=max_retries
+        )
         
         # Create a temporary path to save the vectorstore
         temp_vs_path = os.path.join(temp_dir, "vectorstore")
@@ -466,6 +541,10 @@ def create_vectorstore_route():
                 with open(local_file_path, "rb") as data:
                     container_client.upload_blob(name=blob_path, data=data, overwrite=True)
         
+        # Update final statistics
+        processing_stats['end_time'] = time.time()
+        processing_stats['processing_time_seconds'] = processing_stats['end_time'] - processing_stats['start_time']
+        
         # Store metadata in database
         conn = None
         cursor = None
@@ -473,7 +552,7 @@ def create_vectorstore_route():
             conn = DatabaseService.get_connection()
             cursor = conn.cursor()
             
-            # Insert vectorstore metadata
+            # Insert vectorstore metadata - updated to include last_accessed column
             query = """
             INSERT INTO vectorstores (
                 id, 
@@ -507,6 +586,7 @@ def create_vectorstore_route():
             
         except Exception as e:
             logger.error(f"Error storing vectorstore metadata: {str(e)}")
+            raise
         finally:
             if cursor:
                 cursor.close()
@@ -515,20 +595,21 @@ def create_vectorstore_route():
         
         # Return success response
         return create_api_response({
-            "message": "Vectorstore created successfully",
+            "message": "Advanced vectorstore created successfully",
             "vectorstore_id": vectorstore_id,
             "path": vectorstore_path,
             "name": vectorstore_name,
             "file_count": files_processed,
             "document_count": len(all_documents),
-            "chunk_count": len(chunks)
+            "chunk_count": len(chunks),
+            "processing_stats": processing_stats
         }, 200)
         
     except Exception as e:
-        logger.error(f"Error creating vectorstore: {str(e)}")
+        logger.error(f"Error creating advanced vectorstore: {str(e)}")
         return create_api_response({
             "error": "Server Error",
-            "message": f"Error creating vectorstore: {str(e)}"
+            "message": f"Error creating advanced vectorstore: {str(e)}"
         }, 500)
     finally:
         # Clean up temporary directory
@@ -536,6 +617,7 @@ def create_vectorstore_route():
             shutil.rmtree(temp_dir)
         except Exception as e:
             logger.error(f"Error cleaning up temporary directory: {str(e)}")
+            
             
 def register_advanced_vectorstore_routes(app):
     """Register advanced vectorstore routes with the Flask app"""
