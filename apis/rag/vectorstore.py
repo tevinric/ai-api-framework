@@ -229,38 +229,32 @@ def create_vectorstore_route():
         all_documents = []
         files_processed = 0
         
+        # Get a database connection to access file data directly
+        conn = DatabaseService.get_connection()
+        
         for file_id in file_ids:
             try:
-                # Get file URL from the file ID - via API call with proper authentication
-                file_url_endpoint = f"{request.url_root.rstrip('/')}/file/url"
-                headers = {"X-Token": token}
-                params = {"file_id": file_id}
+                # Directly query the database for file information
+                cursor = conn.cursor()
+                query = """
+                SELECT id, user_id, original_filename, blob_name, blob_url, content_type
+                FROM file_uploads
+                WHERE id = ?
+                """
+                cursor.execute(query, [file_id])
+                file_record = cursor.fetchone()
+                cursor.close()
                 
-                file_url_response = requests.get(
-                    file_url_endpoint,
-                    headers=headers,
-                    params=params
-                )
-                
-                if file_url_response.status_code != 200:
-                    logger.error(f"Error retrieving file URL: Status {file_url_response.status_code}")
+                if not file_record:
+                    logger.error(f"File record not found for ID {file_id}")
                     continue
                 
-                file_info = file_url_response.json()
-                file_url = file_info.get("file_url")
-                file_name = file_info.get("file_name")
+                file_name = file_record[2]
+                blob_url = file_record[4]
                 
-                if not file_url or not file_name:
-                    logger.error(f"Missing file_url or file_name in response")
-                    continue
-                
-                # Download the file with proper authentication headers
-                file_response = requests.get(
-                    file_url,
-                    headers={"X-Token": token},  # Include token in download request
-                    stream=True
-                )
-                
+                # Download the file using the blob_url
+                import requests
+                file_response = requests.get(blob_url, stream=True)
                 if file_response.status_code != 200:
                     logger.error(f"Failed to download file: Status {file_response.status_code}")
                     continue
@@ -289,6 +283,9 @@ def create_vectorstore_route():
             except Exception as e:
                 logger.error(f"Error processing file ID {file_id}: {str(e)}")
                 continue
+                
+        # Close the connection when done
+        conn.close()
         
         if not all_documents:
             return create_api_response({
@@ -411,7 +408,7 @@ def create_vectorstore_route():
             shutil.rmtree(temp_dir)
         except Exception as e:
             logger.error(f"Error cleaning up temporary directory: {str(e)}")
-
+            
 def delete_vectorstore_route():
     """
     Delete a FAISS vectorstore
