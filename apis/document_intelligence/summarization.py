@@ -16,6 +16,7 @@ import json
 import base64
 import time
 import re
+import requests
 
 # For document processing
 import fitz  # PyMuPDF for PDF processing
@@ -1262,6 +1263,7 @@ def document_summarization_route():
             "message": "Temperature must be between 0.0 and 1.0"
         }, 400)
     
+    temp_file_path = None
     try:
         # Get file URL using FileService instead of making an HTTP request
         file_info, error = FileService.get_file_url(file_id, g.user_id)
@@ -1287,7 +1289,6 @@ def document_summarization_route():
         
         # Download the file from the URL with better error handling
         try:
-            import requests
             logger.info(f"Downloading file from URL: {file_url}")
             
             # Try first with standard request
@@ -1365,7 +1366,10 @@ def document_summarization_route():
                 summary_options['document_type'] = 'xlsx'
             else:
                 # Clean up the temporary file
-                os.unlink(temp_file_path)
+                if temp_file_path and os.path.exists(temp_file_path):
+                    os.unlink(temp_file_path)
+                    temp_file_path = None
+                    
                 logger.error(f"Unsupported file extension: {file_extension}")
                 return create_api_response({
                     "error": "Unsupported Media Type",
@@ -1373,7 +1377,9 @@ def document_summarization_route():
                 }, 415)
             
             # Clean up the temporary file
-            os.unlink(temp_file_path)
+            if temp_file_path and os.path.exists(temp_file_path):
+                os.unlink(temp_file_path)
+                temp_file_path = None
             
             # Validate extracted text
             if not text_content or not text_content.strip():
@@ -1394,8 +1400,9 @@ def document_summarization_route():
             
         except Exception as e:
             # Clean up the temporary file if it exists
-            if 'temp_file_path' in locals() and os.path.exists(temp_file_path):
+            if temp_file_path and os.path.exists(temp_file_path):
                 os.unlink(temp_file_path)
+                temp_file_path = None
             
             logger.error(f"Error extracting text from file: {str(e)}")
             return create_api_response({
@@ -1559,6 +1566,10 @@ def document_summarization_route():
         return create_api_response(response_data, 200)
         
     except Exception as e:
+        # Clean up the temporary file if it exists
+        if temp_file_path and os.path.exists(temp_file_path):
+            os.unlink(temp_file_path)
+        
         logger.error(f"Error in document summarization: {str(e)}")
         return create_api_response({
             "error": "Server Error",
@@ -1568,3 +1579,4 @@ def document_summarization_route():
 def register_document_intelligence_routes(app):
     """Register document intelligence routes with the Flask app"""
     app.route('/docint/summarization', methods=['POST'])(api_logger(check_balance(document_summarization_route)))
+    
