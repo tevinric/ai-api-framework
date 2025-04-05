@@ -4,6 +4,8 @@ from apis.utils.databaseService import DatabaseService
 from apis.utils.logMiddleware import api_logger
 from apis.utils.balanceMiddleware import check_balance
 from apis.utils.config import get_azure_blob_client, ensure_container_exists
+from apis.utils.fileService import FileService
+from apis.utils.llmServices import gpt4o_mini_service, gpt4o_service
 import logging
 import uuid
 import pytz
@@ -11,7 +13,6 @@ from datetime import datetime
 import os
 import io
 import json
-import requests
 import base64
 import time
 import re
@@ -600,13 +601,12 @@ def format_xlsx_summary(summary_data):
     
     return formatted
 
-def chunk_and_summarize(text, total_pages, llm_endpoint, summary_options):
+def chunk_and_summarize(text, total_pages, summary_options):
     """
-    Process text in chunks and combine summaries
+    Process text in chunks and combine summaries using the llmServices module
     Args:
         text: Full text content
         total_pages: Number of pages in document
-        llm_endpoint: Endpoint for LLM API
         summary_options: Configuration for summarization
     Returns:
         Combined summary and token usage
@@ -671,130 +671,58 @@ def chunk_and_summarize(text, total_pages, llm_endpoint, summary_options):
         }}
         """
         
-        # Prepare the API request to the LLM endpoint
-        headers = {
-            "X-Token": summary_options.get('token'),
-            "Content-Type": "application/json"
-        }
-        
-        # Create the combined prompt with system instructions and user content
-        system_prompt = full_system_prompt.strip()
+        # Prepare the user content
         user_content = f"Here's the document content to summarize:\n\n{chunk}"
         
-        data = {
-            "system_message": system_prompt,
-            "user_input": user_content,
-            "temperature": summary_options.get('temperature', 0.3),
-            "response_format": {"type": "json_object"}
-        }
+        # Use gpt4o_mini_service or gpt4o_service from llmServices based on document complexity
+        # For larger documents or final summary, use the more powerful model
+        if len(chunk) > 8000 or (len(chunks) > 1 and idx == len(chunks) - 1):
+            logger.info("Using gpt4o_service for complex summarization")
+            response = gpt4o_service(
+                system_prompt=full_system_prompt.strip(),
+                user_input=user_content,
+                temperature=summary_options.get('temperature', 0.3),
+                json_output=True
+            )
+        else:
+            logger.info("Using gpt4o_mini_service for summarization")
+            response = gpt4o_mini_service(
+                system_prompt=full_system_prompt.strip(),
+                user_input=user_content,
+                temperature=summary_options.get('temperature', 0.3),
+                json_output=True
+            )
         
-        # Log request details for debugging
-        logger.info(f"Sending request to LLM endpoint: {llm_endpoint}")
-        
-        # Make the request to the LLM endpoint with better error handling
-        try:
-            response = requests.post(llm_endpoint, headers=headers, json=data, timeout=120)  # Increased timeout for larger content
-            
-            if response.status_code != 200:
-                logger.error(f"Error from LLM API: Status {response.status_code}")
-                raise Exception(f"LLM API error: {response.status_code}")
-            
-            # Log response received
-            logger.info(f"Received response from LLM API for chunk {idx+1}")
-            
-            result = response.json()
-            logger.info(f"Successfully parsed JSON response")
-            
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Request failed: {str(e)}")
+        if not response["success"]:
+            logger.error(f"Error from LLM service: {response.get('error', 'Unknown error')}")
             # Create a fallback summary if API request fails
             all_summaries.append({
-                "summary": f"Error: Unable to process document chunk {idx+1} due to API connection issue: {str(e)}",
-                "key_points": ["Error occurred during processing"],
-                "document_structure": {}
-            })
-            continue
-            
-        except json.JSONDecodeError as e:
-            logger.error(f"Failed to parse JSON response: Error: {str(e)}")
-            # Create a fallback with the raw response if JSON parsing fails
-            all_summaries.append({
-                "summary": f"Error: Unable to process document chunk {idx+1}. Raw response not parseable as JSON.",
+                "summary": f"Error: Unable to process document chunk {idx+1}: {response.get('error', 'Unknown error')}",
                 "key_points": ["Error occurred during processing"],
                 "document_structure": {}
             })
             continue
         
         # Extract token usage information
-        if "usage" in result:
-            token_usage["prompt_tokens"] += result["usage"].get("prompt_tokens", 0)
-            token_usage["completion_tokens"] += result["usage"].get("completion_tokens", 0)
-            token_usage["total_tokens"] += result["usage"].get("total_tokens", 0)
-            logger.info(f"Token usage from 'usage' field: {result['usage'].get('total_tokens', 0)} tokens for chunk {idx+1}")
-        else:
-            # Try to extract token information from other fields
-            extracted_tokens = extract_token_info_from_llm_response(result)
-            if extracted_tokens["total_tokens"] > 0:
-                token_usage["prompt_tokens"] += extracted_tokens["prompt_tokens"]
-                token_usage["completion_tokens"] += extracted_tokens["completion_tokens"]
-                token_usage["total_tokens"] += extracted_tokens["total_tokens"]
-                logger.info(f"Token usage extracted from response: {extracted_tokens['total_tokens']} tokens for chunk {idx+1}")
-            else:
-                logger.warning(f"No token usage information in LLM response for chunk {idx+1}")
+        token_usage["prompt_tokens"] += response.get("input_tokens", 0)
+        token_usage["completion_tokens"] += response.get("completion_tokens", 0)
+        token_usage["total_tokens"] += response.get("output_tokens", 0)
+        logger.info(f"Token usage for chunk {idx+1}: {response.get('output_tokens', 0)} tokens")
         
-        # Parse the response with improved error handling
+        # Parse the LLM response into structured data
         try:
-            # Handle different response formats that might be returned by the LLM
-            if "choices" in result and result["choices"]:
-                choice = result["choices"][0]
-                
-                if "message" in choice and "content" in choice["message"]:
-                    content = choice["message"]["content"]
-                    logger.info(f"Found content in standard format, length: {len(content)}")
-                elif "text" in choice:
-                    # Alternative format some LLMs might use
-                    content = choice["text"]
-                    logger.info(f"Found content in alternate format, length: {len(content)}")
-                else:
-                    # Last resort, try to use the whole choice
-                    content = json.dumps(choice)
-                    logger.warning(f"Could not find standard content field, using whole choice")
-            else:
-                # If no choices field, try to use the whole result
-                content = json.dumps(result)
-                logger.warning(f"No choices in response, using whole result")
+            result_text = response["result"]
             
-            # Parse content, handling potential JSON wrapping
-            parsed_content, metadata = parse_llm_response_json(content)
-
-            if parsed_content != content:
-                logger.info(f"Successfully extracted content from JSON wrapper")
+            # Handle different response formats that might be returned by the LLM
+            try:
+                # Try to parse as JSON
+                summary_result = json.loads(result_text)
+                logger.info(f"Successfully parsed response as JSON")
+            except json.JSONDecodeError:
+                logger.warning(f"Failed to parse response as JSON, using raw text")
                 summary_result = {
-                    "summary": parsed_content,
-                    "key_points": [],
-                    "document_structure": {}
-                }
-                
-                # Add any extracted metadata
-                if metadata:
-                    summary_result["tokens"] = metadata
-            elif content and (content.strip().startswith('{') and content.strip().endswith('}')):
-                try:
-                    summary_result = json.loads(content)
-                    logger.info(f"Successfully parsed content as JSON")
-                except json.JSONDecodeError as e:
-                    logger.error(f"Content looks like JSON but failed to parse: Error: {str(e)}")
-                    summary_result = {
-                        "summary": content,  # Use full content without truncation
-                        "key_points": [],
-                        "document_structure": {}
-                    }
-            else:
-                # If not JSON, use as raw text
-                logger.warning(f"Content is not in JSON format")
-                summary_result = {
-                    "summary": content,  # Use full content without truncation
-                    "key_points": [],
+                    "summary": result_text,
+                    "key_points": extract_key_points_from_content(result_text),
                     "document_structure": {}
                 }
             
@@ -802,7 +730,7 @@ def chunk_and_summarize(text, total_pages, llm_endpoint, summary_options):
             if not isinstance(summary_result, dict):
                 logger.warning(f"Summary result is not a dictionary: {type(summary_result)}")
                 summary_result = {
-                    "summary": str(summary_result),  # Convert to string but don't truncate
+                    "summary": str(summary_result),
                     "key_points": [],
                     "document_structure": {}
                 }
@@ -810,8 +738,8 @@ def chunk_and_summarize(text, total_pages, llm_endpoint, summary_options):
             if "summary" not in summary_result or not summary_result["summary"]:
                 logger.warning("Missing or empty summary field in result")
                 # Extract a summary from the content if possible
-                if isinstance(content, str) and len(content) > 0:
-                    summary_result["summary"] = content  # Use full content without truncation
+                if isinstance(result_text, str) and len(result_text) > 0:
+                    summary_result["summary"] = result_text
                 else:
                     summary_result["summary"] = f"Summary could not be generated for chunk {idx+1}."
             
@@ -861,11 +789,7 @@ def chunk_and_summarize(text, total_pages, llm_endpoint, summary_options):
         
         # Create final combined summary
         if len(combined_text) > 12000:
-            # If combined text is still too long, summarize it again
-            headers = {
-                "X-Token": summary_options.get('token'),
-                "Content-Type": "application/json"
-            }
+            # If combined text is still too long, create a final summary using LLM
             
             # Create full prompt with all instructions
             final_system_prompt = f"""You are a document summarization expert tasked with creating a final cohesive summary from multiple partial summaries.
@@ -884,105 +808,68 @@ def chunk_and_summarize(text, total_pages, llm_endpoint, summary_options):
             
             combined_content = f"Here are all the partial summaries to combine:\n\n{combined_text}\n\nAnd all key points:\n\n{json.dumps(all_key_points)}"
             
-            data = {
-                "system_message": final_system_prompt,
-                "user_input": combined_content,
-                "temperature": summary_options.get('temperature', 0.3),
-                "response_format": {"type": "json_object"}
-            }
+            # Use gpt4o_service for the final summary as it's more complex
+            response = gpt4o_service(
+                system_prompt=final_system_prompt,
+                user_input=combined_content,
+                temperature=summary_options.get('temperature', 0.3),
+                json_output=True
+            )
             
-            try:
-                response = requests.post(llm_endpoint, headers=headers, json=data, timeout=120)  # Increased timeout for larger content
+            if not response["success"]:
+                logger.error(f"Error generating final summary: {response.get('error', 'Unknown error')}")
+                # Use the last summary as fallback but preserve ALL key points
+                final_summary = all_summaries[-1]
+                final_summary["key_points"] = all_key_points
+                final_summary["document_structure"] = combined_structure
+            else:
+                # Add token usage
+                token_usage["prompt_tokens"] += response.get("input_tokens", 0)
+                token_usage["completion_tokens"] += response.get("completion_tokens", 0)
+                token_usage["total_tokens"] += response.get("output_tokens", 0)
                 
-                if response.status_code != 200:
-                    logger.error(f"Error from LLM API during final summary: Status {response.status_code}")
-                    # Use the last summary as fallback but preserve ALL key points
-                    final_summary = all_summaries[-1]
-                    final_summary["key_points"] = all_key_points  # No limit on key points
-                    final_summary["document_structure"] = combined_structure
-                else:
-                    result = response.json()
-                    
-                    # Add token usage
-                    if "usage" in result:
-                        token_usage["prompt_tokens"] += result["usage"].get("prompt_tokens", 0)
-                        token_usage["completion_tokens"] += result["usage"].get("completion_tokens", 0)
-                        token_usage["total_tokens"] += result["usage"].get("total_tokens", 0)
-                    else:
-                        # Try to extract token info from the response
-                        extracted_tokens = extract_token_info_from_llm_response(result)
-                        if extracted_tokens["total_tokens"] > 0:
-                            token_usage["prompt_tokens"] += extracted_tokens["prompt_tokens"]
-                            token_usage["completion_tokens"] += extracted_tokens["completion_tokens"]
-                            token_usage["total_tokens"] += extracted_tokens["total_tokens"]
+                # Parse response
+                try:
+                    result_text = response["result"]
                     
                     try:
-                        if "choices" in result and result["choices"] and "message" in result["choices"][0]:
-                            content = result["choices"][0]["message"].get("content", "{}")
-                            
-                            # Try to parse out JSON response
-                            parsed_content, metadata = parse_llm_response_json(content)
-                            if parsed_content != content:
-                                final_summary = {
-                                    "summary": parsed_content,
-                                    "key_points": extract_key_points_from_content(parsed_content),
-                                    "document_structure": combined_structure
-                                }
-                                # Add any metadata
-                                if metadata:
-                                    final_summary["tokens"] = metadata
-                            else:
-                                # Try to parse as JSON
-                                try:
-                                    final_summary = json.loads(content)
-                                except json.JSONDecodeError:
-                                    logger.error(f"Failed to parse JSON in final summary")
-                                    final_summary = {
-                                        "summary": content,  # Use full content
-                                        "key_points": all_key_points,  # No limit on key points
-                                        "document_structure": combined_structure
-                                    }
-                            
-                            # If the final summary doesn't include enough key points, check and add them
-                            existing_key_points = final_summary.get("key_points", [])
-                            if not existing_key_points:
-                                logger.warning(f"Final summary contains no key points. Extracting from summary or using collected points.")
-                                summary_text = final_summary.get("summary", "")
-                                extracted_points = extract_key_points_from_content(summary_text)
-                                
-                                if extracted_points:
-                                    final_summary["key_points"] = extracted_points
-                                else:
-                                    final_summary["key_points"] = all_key_points
-                            elif len(existing_key_points) < min(5, len(all_key_points)):
-                                logger.warning(f"Final summary contains too few key points ({len(existing_key_points)}). Adding all collected points.")
-                                final_summary["key_points"] = all_key_points
-                                
-                        else:
-                            logger.warning("Unexpected format in final summary response")
-                            final_summary = {
-                                "summary": combined_text,  # Use full combined text instead of truncated
-                                "key_points": all_key_points,  # No limit on key points
-                                "document_structure": combined_structure
-                            }
+                        # Try to parse as JSON
+                        final_summary = json.loads(result_text)
                     except json.JSONDecodeError:
                         logger.error(f"Failed to parse JSON in final summary")
                         final_summary = {
-                            "summary": content,  # Use full content
-                            "key_points": all_key_points,  # No limit on key points
+                            "summary": result_text,
+                            "key_points": all_key_points,
                             "document_structure": combined_structure
                         }
-            except Exception as e:
-                logger.error(f"Error during final summary generation: {str(e)}")
-                # Use the last summary as fallback
-                final_summary = all_summaries[-1]
-                final_summary["key_points"] = all_key_points  # No limit on key points
-                final_summary["document_structure"] = combined_structure
+                    
+                    # If the final summary doesn't include enough key points, check and add them
+                    existing_key_points = final_summary.get("key_points", [])
+                    if not existing_key_points:
+                        logger.warning(f"Final summary contains no key points. Extracting from summary or using collected points.")
+                        summary_text = final_summary.get("summary", "")
+                        extracted_points = extract_key_points_from_content(summary_text)
+                        
+                        if extracted_points:
+                            final_summary["key_points"] = extracted_points
+                        else:
+                            final_summary["key_points"] = all_key_points
+                    elif len(existing_key_points) < min(5, len(all_key_points)):
+                        logger.warning(f"Final summary contains too few key points ({len(existing_key_points)}). Adding all collected points.")
+                        final_summary["key_points"] = all_key_points
+                        
+                except Exception as e:
+                    logger.error(f"Error processing final summary: {str(e)}")
+                    final_summary = {
+                        "summary": combined_text,
+                        "key_points": all_key_points,
+                        "document_structure": combined_structure
+                    }
         else:
             # If combined text is manageable, use the last summary as the final one
             # but enrich it with all key points and structure
             final_summary = all_summaries[-1]
-            final_summary["key_points"] = all_key_points  # No limit on key points
+            final_summary["key_points"] = all_key_points
             final_summary["document_structure"] = combined_structure
     else:
         # For single chunk documents, just use the one summary
@@ -1017,14 +904,14 @@ def chunk_and_summarize(text, total_pages, llm_endpoint, summary_options):
 
 def upload_summary_to_blob(summary_content, file_name, user_id, token):
     """
-    Upload summary to blob storage and return file ID
+    Upload summary using FileService
     Args:
         summary_content: The summary content to upload
         file_name: Original file name to use as a base
         user_id: User ID for the request
         token: Authentication token
     Returns:
-        File ID from the upload endpoint
+        File ID from the FileService
     """
     # Create a text file with the summary
     summary_file_name = f"summary_{os.path.splitext(file_name)[0]}.txt"
@@ -1074,32 +961,30 @@ def upload_summary_to_blob(summary_content, file_name, user_id, token):
         # Upload each part
         uploaded_ids = []
         for part_name, part_content in parts:
-            file_data = io.BytesIO(part_content.encode('utf-8'))
-            file_data.name = part_name
+            # Create a custom file-like object that mimics Flask's file object
+            class MockFileObj:
+                def __init__(self, data, filename, content_type):
+                    self._io = io.BytesIO(data)
+                    self.filename = filename
+                    self.content_type = content_type
+                
+                def read(self):
+                    return self._io.getvalue()
+                
+                def save(self, dst):
+                    with open(dst, 'wb') as f:
+                        f.write(self._io.getvalue())
             
-            # Create multipart form data
-            files = {'files': (part_name, file_data, 'text/plain')}
+            file_obj = MockFileObj(part_content.encode('utf-8'), part_name, 'text/plain')
             
-            # Prepare headers
-            headers = {"X-Token": token}
+            # Use FileService to upload the file
+            file_info, error = FileService.upload_file(file_obj, user_id, FILE_UPLOAD_CONTAINER)
             
-            # Make POST request to upload-file endpoint
-            upload_response = requests.post(
-                f"{request.url_root.rstrip('/')}/upload-file",
-                headers=headers,
-                files=files
-            )
+            if error:
+                logger.error(f"Failed to upload summary file part {part_name}: {error}")
+                raise Exception(f"Failed to upload summary file part {part_name}: {error}")
             
-            if upload_response.status_code != 200:
-                logger.error(f"Failed to upload summary file part {part_name}: {upload_response.text}")
-                raise Exception(f"Failed to upload summary file part {part_name}: {upload_response.text}")
-            
-            upload_result = upload_response.json()
-            if "uploaded_files" in upload_result and len(upload_result["uploaded_files"]) > 0:
-                uploaded_ids.append(upload_result["uploaded_files"][0]["file_id"])
-            else:
-                logger.error(f"No file ID in upload response for part {part_name}: {upload_result}")
-                raise Exception(f"No file ID returned from upload endpoint for part {part_name}")
+            uploaded_ids.append(file_info["file_id"])
         
         # Create a manifest file that lists all the parts
         manifest = f"# Summary Split into Multiple Files\n\nThis summary was split into {len(parts)} files due to size limitations.\n\n"
@@ -1108,58 +993,43 @@ def upload_summary_to_blob(summary_content, file_name, user_id, token):
         
         # Upload the manifest
         manifest_name = f"{summary_file_name}.manifest"
-        manifest_data = io.BytesIO(manifest.encode('utf-8'))
-        manifest_data.name = manifest_name
+        manifest_file = MockFileObj(manifest.encode('utf-8'), manifest_name, 'text/plain')
         
-        files = {'files': (manifest_name, manifest_data, 'text/plain')}
-        headers = {"X-Token": token}
+        manifest_info, error = FileService.upload_file(manifest_file, user_id, FILE_UPLOAD_CONTAINER)
         
-        upload_response = requests.post(
-            f"{request.url_root.rstrip('/')}/upload-file",
-            headers=headers,
-            files=files
-        )
-        
-        if upload_response.status_code != 200:
-            logger.error(f"Failed to upload manifest file: {upload_response.text}")
+        if error:
+            logger.error(f"Failed to upload manifest file: {error}")
             # Return the first part ID if manifest upload fails
             return uploaded_ids[0] if uploaded_ids else None
         
-        upload_result = upload_response.json()
-        if "uploaded_files" in upload_result and len(upload_result["uploaded_files"]) > 0:
-            return upload_result["uploaded_files"][0]["file_id"]
-        else:
-            # Return the first part ID if manifest result parsing fails
-            return uploaded_ids[0] if uploaded_ids else None
+        return manifest_info["file_id"]
+    
     else:
-        # Normal upload for reasonable sized files
-        # Prepare file data
-        file_data = io.BytesIO(text_content.encode('utf-8'))
-        file_data.name = summary_file_name
+        # Normal upload for reasonably sized files
+        # Create a custom file-like object that mimics Flask's file object
+        class MockFileObj:
+            def __init__(self, data, filename, content_type):
+                self._io = io.BytesIO(data)
+                self.filename = filename
+                self.content_type = content_type
+            
+            def read(self):
+                return self._io.getvalue()
+            
+            def save(self, dst):
+                with open(dst, 'wb') as f:
+                    f.write(self._io.getvalue())
         
-        # Create multipart form data
-        files = {'files': (summary_file_name, file_data, 'text/plain')}
+        file_obj = MockFileObj(text_content.encode('utf-8'), summary_file_name, 'text/plain')
         
-        # Prepare headers
-        headers = {"X-Token": token}
+        # Use FileService to upload the file
+        file_info, error = FileService.upload_file(file_obj, user_id, FILE_UPLOAD_CONTAINER)
         
-        # Make POST request to upload-file endpoint
-        upload_response = requests.post(
-            f"{request.url_root.rstrip('/')}/upload-file",
-            headers=headers,
-            files=files
-        )
+        if error:
+            logger.error(f"Failed to upload summary file: {error}")
+            raise Exception(f"Failed to upload summary file: {error}")
         
-        if upload_response.status_code != 200:
-            logger.error(f"Failed to upload summary file: {upload_response.text}")
-            raise Exception(f"Failed to upload summary file: {upload_response.text}")
-        
-        upload_result = upload_response.json()
-        if "uploaded_files" in upload_result and len(upload_result["uploaded_files"]) > 0:
-            return upload_result["uploaded_files"][0]["file_id"]
-        else:
-            logger.error(f"No file ID in upload response: {upload_result}")
-            raise Exception("No file ID returned from upload endpoint")
+        return file_info["file_id"]
 
 def document_summarization_route():
     """
@@ -1365,7 +1235,7 @@ def document_summarization_route():
         'include_structure': data.get('include_structure', True),
         'temperature': data.get('temperature', 0.3),
         'include_file_upload': data.get('include_file_upload', True),
-        'token': token,  # Pass token for LLM API calls
+        'token': token,  # Pass token for FileService
         'chunk_size': 12000  # Default chunk size for text processing
     }
     
@@ -1393,30 +1263,23 @@ def document_summarization_route():
         }, 400)
     
     try:
-        # Get file URL from the file ID
-        headers = {"X-Token": token}
-        logger.info(f"Getting file URL for file ID: {file_id}")
-        file_url_response = requests.post(
-            f"{request.url_root.rstrip('/')}/get-file-url",
-            headers=headers,
-            json={"file_id": file_id}
-        )
+        # Get file URL using FileService instead of making an HTTP request
+        file_info, error = FileService.get_file_url(file_id, g.user_id)
         
-        if file_url_response.status_code != 200:
-            logger.error(f"Error retrieving file URL: Status {file_url_response.status_code}, Response: {file_url_response.text[:500]}")
+        if error:
+            logger.error(f"Error retrieving file URL: {error}")
             return create_api_response({
                 "error": "Not Found",
                 "message": f"File with ID {file_id} not found or you don't have access"
             }, 404)
         
-        file_info = file_url_response.json()
         file_url = file_info.get("file_url")
         file_name = file_info.get("file_name")
         
         logger.info(f"Retrieved file URL: {file_url} for file: {file_name}")
         
         if not file_url:
-            logger.error("Missing file_url in response from get-file-url endpoint")
+            logger.error("Missing file_url in file info")
             return create_api_response({
                 "error": "Server Error",
                 "message": "Failed to retrieve file URL"
@@ -1424,6 +1287,7 @@ def document_summarization_route():
         
         # Download the file from the URL with better error handling
         try:
+            import requests
             logger.info(f"Downloading file from URL: {file_url}")
             
             # Try first with standard request
@@ -1470,7 +1334,7 @@ def document_summarization_route():
                     "message": "Downloaded file is empty or not accessible"
                 }, 500)
                 
-        except requests.exceptions.RequestException as e:
+        except Exception as e:
             logger.error(f"Error downloading file: {str(e)}")
             return create_api_response({
                 "error": "Server Error",
@@ -1539,11 +1403,9 @@ def document_summarization_route():
                 "message": f"Error extracting text from file: {str(e)}"
             }, 500)
             
-        # Set endpoint for LLM summarization
-        llm_endpoint = f"{request.url_root.rstrip('/')}/llm/gpt-4o-mini"
-        
-        # Process text and generate summary
-        summary_result = chunk_and_summarize(text_content, total_pages, llm_endpoint, summary_options)
+        # Process text and generate summary using our chunk_and_summarize function
+        # that now uses llmServices directly instead of making HTTP requests
+        summary_result = chunk_and_summarize(text_content, total_pages, summary_options)
         
         # Format the summary based on document type
         if summary_options['document_type'] == 'pdf':
