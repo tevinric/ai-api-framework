@@ -9,11 +9,12 @@ import pytz
 from datetime import datetime
 import os
 import json
+import tempfile
+import requests
 
 # For Azure AI Document Intelligence
 from azure.core.credentials import AzureKeyCredential
 from azure.ai.documentintelligence import DocumentIntelligenceClient
-from azure.ai.documentintelligence.models import AnalyzeDocumentRequest
 from azure.core.exceptions import HttpResponseError
 
 # CONFIGURE LOGGING
@@ -370,6 +371,7 @@ def document_read_route():
     total_pages = 0
     
     for file_id in file_ids:
+        temp_file_path = None
         try:
             # Get file URL using FileService
             file_info, error = FileService.get_file_url(file_id, g.user_id)
@@ -411,140 +413,224 @@ def document_read_route():
             
             logger.info(f"File type validation passed for file: {file_name} with extension: {file_extension}")
             
-            # Call Document Intelligence to analyze the document
+            # Download the file content
             try:
-                logger.info(f"Sending document to Document Intelligence service: {file_url}")
+                logger.info(f"Downloading file from URL: {file_url}")
                 
-                # Create analyzer options based on requested features
-                analyzer_options = {}
-                if options['language']:
-                    analyzer_options["features"] = ["languages"]
+                # Download the file directly
+                response = requests.get(file_url, timeout=60)
                 
-                # Start the document analysis using URL-based approach (original method)
-                poller = document_client.begin_analyze_document(
-                    "prebuilt-read",
-                    AnalyzeDocumentRequest(url_source=file_url),
-                    **analyzer_options
-                )
+                # If it's an Azure blob URL, we might need to add authorization
+                if response.status_code != 200 and "blob.core.windows.net" in file_url:
+                    response = requests.get(
+                        file_url,
+                        headers={"Authorization": f"Bearer {token}"},
+                        timeout=60
+                    )
                 
-                logger.info(f"Waiting for Document Intelligence to complete analysis...")
-                result = poller.result()
-                
-                # Check if document was analyzed successfully
-                if not result or not result.pages:
-                    logger.warning(f"No results returned from Document Intelligence for file: {file_name}")
+                if response.status_code != 200:
+                    logger.error(f"Failed to download file: Status {response.status_code}")
                     results.append({
                         "file_id": file_id,
                         "file_name": file_name,
-                        "error": "No text content detected in document"
+                        "error": f"Failed to download file: Status {response.status_code}"
                     })
                     continue
                 
-                # Determine which pages to process
-                document_page_count = len(result.pages)
-                if options['page_selection'] == 'range' and options['page_range']:
-                    pages_to_process = parse_page_range(options['page_range'], document_page_count)
-                else:
-                    pages_to_process = list(range(1, document_page_count + 1))
+                content_length = len(response.content)
+                logger.info(f"Downloaded {content_length} bytes for file {file_name}")
                 
-                # Format results for the response
-                document_result = {
-                    "file_id": file_id,
-                    "file_name": file_name,
-                    "total_pages": document_page_count,
-                    "processed_pages": len(pages_to_process),
-                    "has_handwritten_content": False,  # Will update if handwritten content is detected
-                    "pages": []
-                }
+                if content_length == 0:
+                    logger.error("Downloaded file is empty")
+                    results.append({
+                        "file_id": file_id,
+                        "file_name": file_name,
+                        "error": "Downloaded file is empty"
+                    })
+                    continue
                 
-                # Check for handwritten content if styles are available
-                if hasattr(result, 'styles') and result.styles:
-                    document_result["has_handwritten_content"] = any(
-                        style.is_handwritten for style in result.styles if hasattr(style, 'is_handwritten')
-                    )
+                # Save to a temporary file
+                temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=file_extension)
+                temp_file_path = temp_file.name
+                temp_file.write(response.content)
+                temp_file.close()
                 
-                # Process each requested page
-                for page in result.pages:
-                    # Skip pages not in the requested range
-                    if page.page_number not in pages_to_process:
+                logger.info(f"Saved file to temporary location: {temp_file_path}")
+                
+                # Call Document Intelligence to analyze the document from the file
+                try:
+                    logger.info(f"Sending document to Document Intelligence service")
+                    
+                    # Create analyzer options based on requested features
+                    analyzer_options = {}
+                    if options['language']:
+                        analyzer_options["features"] = ["languages"]
+                    
+                    # Open the file and use it directly with Document Intelligence
+                    with open(temp_file_path, "rb") as document_file:
+                        # Start the document analysis using the file content
+                        poller = document_client.begin_analyze_document(
+                            "prebuilt-read",
+                            document_file,
+                            **analyzer_options
+                        )
+                    
+                    logger.info(f"Waiting for Document Intelligence to complete analysis...")
+                    result = poller.result()
+                    
+                    # Check if document was analyzed successfully
+                    if not result or not result.pages:
+                        logger.warning(f"No results returned from Document Intelligence for file: {file_name}")
+                        results.append({
+                            "file_id": file_id,
+                            "file_name": file_name,
+                            "error": "No text content detected in document"
+                        })
+                        
+                        # Clean up the temporary file
+                        if temp_file_path and os.path.exists(temp_file_path):
+                            os.unlink(temp_file_path)
+                            temp_file_path = None
+                            
                         continue
                     
-                    page_info = {
-                        "page_number": page.page_number,
-                        "width": page.width,
-                        "height": page.height,
-                        "unit": page.unit,
-                        "has_handwritten_content": False,  # Will update based on styles
-                        "text": []
+                    # Determine which pages to process
+                    document_page_count = len(result.pages)
+                    if options['page_selection'] == 'range' and options['page_range']:
+                        pages_to_process = parse_page_range(options['page_range'], document_page_count)
+                    else:
+                        pages_to_process = list(range(1, document_page_count + 1))
+                    
+                    # Format results for the response
+                    document_result = {
+                        "file_id": file_id,
+                        "file_name": file_name,
+                        "total_pages": document_page_count,
+                        "processed_pages": len(pages_to_process),
+                        "has_handwritten_content": False,  # Will update if handwritten content is detected
+                        "pages": []
                     }
                     
-                    # Extract all line content
-                    line_contents = [line.content for line in page.lines if line.content.strip()]
-                    
-                    # Group lines into paragraphs
-                    paragraphs = group_lines_into_paragraphs(line_contents)
-                    
-                    # Add paragraphs to the response
-                    for paragraph in paragraphs:
-                        if paragraph.strip():  # Skip empty paragraphs
-                            page_info["text"].append({
-                                "type": "paragraph",
-                                "content": paragraph
-                            })
-                    
-                    # Create page_text_all with all paragraphs from this page
-                    page_text_all = ""
-                    for text_item in page_info["text"]:
-                        if text_item["type"] == "paragraph" and text_item["content"].strip():
-                            page_text_all += text_item["content"] + "\n\n"
-                    
-                    # Add the consolidated page text
-                    page_info["page_text_all"] = page_text_all.strip()
-                    
-                    # If language detection was requested, include that
-                    if options['language'] and hasattr(page, 'languages') and page.languages:
-                        page_info["detected_languages"] = [
-                            {
-                                "language": lang.locale,
-                                "confidence": lang.confidence
-                            } 
-                            for lang in page.languages
-                        ]
-                    
-                    # Check if page has handwritten content (safely)
+                    # Check for handwritten content if styles are available
                     if hasattr(result, 'styles') and result.styles:
-                        for style in result.styles:
-                            if (hasattr(style, 'is_handwritten') and 
-                                style.is_handwritten and 
-                                hasattr(style, 'page_number') and
-                                style.page_number == page.page_number):
-                                page_info["has_handwritten_content"] = True
-                                break
+                        document_result["has_handwritten_content"] = any(
+                            style.is_handwritten for style in result.styles if hasattr(style, 'is_handwritten')
+                        )
                     
-                    # Add to results
-                    document_result["pages"].append(page_info)
-                
-                # Add to overall results
-                results.append(document_result)
-                total_documents += 1
-                total_pages += len(document_result["pages"])
-                
-            except HttpResponseError as e:
-                logger.error(f"Azure Document Intelligence service error: {str(e)}")
-                results.append({
-                    "file_id": file_id,
-                    "file_name": file_name,
-                    "error": f"Document analysis error: {str(e)}"
-                })
-                continue
-                
+                    # Process each requested page
+                    for page in result.pages:
+                        # Skip pages not in the requested range
+                        if page.page_number not in pages_to_process:
+                            continue
+                        
+                        page_info = {
+                            "page_number": page.page_number,
+                            "width": page.width,
+                            "height": page.height,
+                            "unit": page.unit,
+                            "has_handwritten_content": False,  # Will update based on styles
+                            "text": []
+                        }
+                        
+                        # Extract all line content
+                        line_contents = [line.content for line in page.lines if line.content.strip()]
+                        
+                        # Group lines into paragraphs
+                        paragraphs = group_lines_into_paragraphs(line_contents)
+                        
+                        # Add paragraphs to the response
+                        for paragraph in paragraphs:
+                            if paragraph.strip():  # Skip empty paragraphs
+                                page_info["text"].append({
+                                    "type": "paragraph",
+                                    "content": paragraph
+                                })
+                        
+                        # Create page_text_all with all paragraphs from this page
+                        page_text_all = ""
+                        for text_item in page_info["text"]:
+                            if text_item["type"] == "paragraph" and text_item["content"].strip():
+                                page_text_all += text_item["content"] + "\n\n"
+                        
+                        # Add the consolidated page text
+                        page_info["page_text_all"] = page_text_all.strip()
+                        
+                        # If language detection was requested, include that
+                        if options['language'] and hasattr(page, 'languages') and page.languages:
+                            page_info["detected_languages"] = [
+                                {
+                                    "language": lang.locale,
+                                    "confidence": lang.confidence
+                                } 
+                                for lang in page.languages
+                            ]
+                        
+                        # Check if page has handwritten content (safely)
+                        if hasattr(result, 'styles') and result.styles:
+                            for style in result.styles:
+                                if (hasattr(style, 'is_handwritten') and 
+                                    style.is_handwritten and 
+                                    hasattr(style, 'page_number') and
+                                    style.page_number == page.page_number):
+                                    page_info["has_handwritten_content"] = True
+                                    break
+                        
+                        # Add to results
+                        document_result["pages"].append(page_info)
+                    
+                    # Clean up the temporary file
+                    if temp_file_path and os.path.exists(temp_file_path):
+                        os.unlink(temp_file_path)
+                        temp_file_path = None
+                    
+                    # Add to overall results
+                    results.append(document_result)
+                    total_documents += 1
+                    total_pages += len(document_result["pages"])
+                    
+                except HttpResponseError as e:
+                    logger.error(f"Azure Document Intelligence service error: {str(e)}")
+                    results.append({
+                        "file_id": file_id,
+                        "file_name": file_name,
+                        "error": f"Document analysis error: {str(e)}"
+                    })
+                    
+                    # Clean up the temporary file
+                    if temp_file_path and os.path.exists(temp_file_path):
+                        os.unlink(temp_file_path)
+                        temp_file_path = None
+                        
+                    continue
+                    
+                except Exception as e:
+                    logger.error(f"Error analyzing document: {str(e)}")
+                    results.append({
+                        "file_id": file_id,
+                        "file_name": file_name,
+                        "error": f"Document analysis error: {str(e)}"
+                    })
+                    
+                    # Clean up the temporary file
+                    if temp_file_path and os.path.exists(temp_file_path):
+                        os.unlink(temp_file_path)
+                        temp_file_path = None
+                        
+                    continue
+                    
             except Exception as e:
-                logger.error(f"Error analyzing document: {str(e)}")
+                logger.error(f"Error downloading or processing file: {str(e)}")
                 results.append({
                     "file_id": file_id,
-                    "file_name": file_name,
-                    "error": f"Document analysis error: {str(e)}"
+                    "file_name": file_name if file_name else "Unknown",
+                    "error": f"Error downloading or processing file: {str(e)}"
                 })
+                
+                # Clean up the temporary file if it exists
+                if temp_file_path and os.path.exists(temp_file_path):
+                    os.unlink(temp_file_path)
+                    temp_file_path = None
+                    
                 continue
                 
         except Exception as e:
@@ -553,6 +639,11 @@ def document_read_route():
                 "file_id": file_id,
                 "error": f"Processing error: {str(e)}"
             })
+            
+            # Clean up the temporary file if it exists
+            if temp_file_path and os.path.exists(temp_file_path):
+                os.unlink(temp_file_path)
+                
             continue
     
     # If no documents were processed successfully, return an error
