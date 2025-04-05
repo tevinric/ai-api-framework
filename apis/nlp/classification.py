@@ -1,11 +1,13 @@
 from flask import jsonify, request, g, make_response
 from apis.utils.tokenService import TokenService
 from apis.utils.databaseService import DatabaseService
+from apis.utils.balanceService import BalanceService
+from apis.utils.llmServices import gpt4o_service, gpt4o_mini_service
 import logging
 import pytz
 from datetime import datetime
-import requests
 import json
+import uuid
 
 # CONFIGURE LOGGING
 logging.basicConfig(level=logging.INFO)
@@ -211,6 +213,31 @@ def simple_classification_route():
         }, 400)
     
     try:
+        # Deduct AI credits based on model
+        # Get endpoint ID for this request
+        endpoint_id = DatabaseService.get_endpoint_id_by_path(request.path)
+        if not endpoint_id:
+            endpoint_id = str(uuid.uuid4())  # Use a placeholder if endpoint not found
+            
+        # Determine credit cost based on model
+        if model == 'gpt-4o-mini':
+            credit_cost = 0.5
+        else:  # model == 'gpt-4o'
+            credit_cost = 2.0
+            
+        # Check and deduct balance
+        success, result = BalanceService.check_and_deduct_balance(user_id, endpoint_id, credit_cost)
+        if not success:
+            if result == "Insufficient balance":
+                return create_api_response({
+                    "error": "Insufficient Balance",
+                    "message": "Your API call balance is depleted. Please upgrade your plan for additional calls."
+                }, 402)
+            return create_api_response({
+                "error": "Balance Error",
+                "message": f"Error processing balance: {result}"
+            }, 500)
+        
         # Create system message for classification
         system_prompt = """You are a text classification system. Your task is to classify the provided text into exactly one of the given categories.
 Respond ONLY with the category name that best matches the text. Do not include any explanations, punctuation, or additional text.
@@ -220,35 +247,21 @@ Use the format: category_name"""
         categories_list = ', '.join(categories)
         user_message = f"Categories: {categories_list}\n\nText to classify: {user_input}"
         
-        # Determine which LLM endpoint to call based on model selection
-        llm_endpoint = f"{request.url_root.rstrip('/')}/llm/{model}"
+        # Use appropriate LLM service from llmServices based on model parameter
+        if model == 'gpt-4o-mini':
+            llm_result = gpt4o_mini_service(system_prompt, user_message, temperature=0.0)
+        else:  # model == 'gpt-4o'
+            llm_result = gpt4o_service(system_prompt, user_message, temperature=0.0)
         
-        # Prepare payload for LLM request
-        llm_request_data = {
-            "system_prompt": system_prompt,
-            "user_input": user_message,
-            "temperature": 0.0  # Set temperature to 0 for deterministic results
-        }
-        
-        # Call selected LLM API
-        logger.info(f"Calling {model} for simple classification")
-        headers = {"X-Token": token, "Content-Type": "application/json"}
-        llm_response = requests.post(
-            llm_endpoint,
-            headers=headers,
-            json=llm_request_data
-        )
-        
-        if llm_response.status_code != 200:
-            logger.error(f"Error from LLM API: {llm_response.text}")
+        if not llm_result.get("success", False):
+            logger.error(f"Error from LLM service: {llm_result.get('error', 'Unknown error')}")
             return create_api_response({
                 "error": "Server Error",
-                "message": f"Error from LLM API: {llm_response.text[:200]}"
+                "message": f"Error from LLM service: {llm_result.get('error', 'Unknown error')[:200]}"
             }, 500)
         
         # Extract response and token usage
-        llm_result = llm_response.json()
-        result_class = llm_result.get("message", "").strip()
+        result_class = llm_result.get("result", "").strip()
         
         # Validate that the result is one of the provided categories
         # The LLM might occasionally return something not in the list despite our prompt
@@ -499,6 +512,31 @@ def multiclass_classification_route():
         }, 400)
     
     try:
+        # Deduct AI credits based on model
+        # Get endpoint ID for this request
+        endpoint_id = DatabaseService.get_endpoint_id_by_path(request.path)
+        if not endpoint_id:
+            endpoint_id = str(uuid.uuid4())  # Use a placeholder if endpoint not found
+            
+        # Determine credit cost based on model
+        if model == 'gpt-4o-mini':
+            credit_cost = 0.5
+        else:  # model == 'gpt-4o'
+            credit_cost = 2.0
+            
+        # Check and deduct balance
+        success, result = BalanceService.check_and_deduct_balance(user_id, endpoint_id, credit_cost)
+        if not success:
+            if result == "Insufficient balance":
+                return create_api_response({
+                    "error": "Insufficient Balance",
+                    "message": "Your API call balance is depleted. Please upgrade your plan for additional calls."
+                }, 402)
+            return create_api_response({
+                "error": "Balance Error",
+                "message": f"Error processing balance: {result}"
+            }, 500)
+        
         # Create system message for multiclass classification
         system_prompt = """You are a text classification system. Your task is to classify the provided text into the given categories, with confidence scores for each category.
 
@@ -522,45 +560,26 @@ The sum of confidence scores does not need to equal 1. Assign each category a sc
         categories_list = ', '.join(categories)
         user_message = f"Categories: {categories_list}\n\nText to classify: {user_input}"
         
-        # Determine which LLM endpoint to call based on model selection
-        llm_endpoint = f"{request.url_root.rstrip('/')}/llm/{model}"
+        # Use appropriate LLM service from llmServices based on model parameter
+        if model == 'gpt-4o-mini':
+            llm_result = gpt4o_mini_service(system_prompt, user_message, temperature=0.0, json_output=True)
+        else:  # model == 'gpt-4o'
+            llm_result = gpt4o_service(system_prompt, user_message, temperature=0.0, json_output=True)
         
-        # Prepare payload for LLM request
-        llm_request_data = {
-            "system_prompt": system_prompt,
-            "user_input": user_message,
-            "temperature": 0.0  # Set temperature to 0 for deterministic results
-        }
-        
-        # Call selected LLM API
-        logger.info(f"Calling {model} for multiclass classification")
-        headers = {"X-Token": token, "Content-Type": "application/json"}
-        llm_response = requests.post(
-            llm_endpoint,
-            headers=headers,
-            json=llm_request_data
-        )
-        
-        if llm_response.status_code != 200:
-            logger.error(f"Error from LLM API: {llm_response.text}")
+        if not llm_result.get("success", False):
+            logger.error(f"Error from LLM service: {llm_result.get('error', 'Unknown error')}")
             return create_api_response({
                 "error": "Server Error",
-                "message": f"Error from LLM API: {llm_response.text[:200]}"
+                "message": f"Error from LLM service: {llm_result.get('error', 'Unknown error')[:200]}"
             }, 500)
         
         # Extract response and token usage
-        llm_result = llm_response.json()
-        llm_message = llm_result.get("message", "").strip()
+        llm_message = llm_result.get("result", "").strip()
         
         # Parse the JSON response from the LLM
         try:
-            # Find JSON content in the LLM's response (it might include other text)
-            import re
-            json_match = re.search(r'({[\s\S]*})', llm_message)
-            if json_match:
-                classifications_json = json.loads(json_match.group(1))
-            else:
-                classifications_json = json.loads(llm_message)
+            # Parse the JSON response
+            classifications_json = json.loads(llm_message)
             
             # Extract classifications list
             classifications = classifications_json.get("classifications", [])
@@ -656,7 +675,7 @@ The sum of confidence scores does not need to equal 1. Assign each category a sc
 def register_nlp_routes(app):
     """Register NLP routes with the Flask app"""
     from apis.utils.logMiddleware import api_logger
-    from apis.utils.balanceMiddleware import check_balance
     
-    app.route('/nlp/classify', methods=['POST'])(api_logger(check_balance(simple_classification_route)))
-    app.route('/nlp/classify/multi', methods=['POST'])(api_logger(check_balance(multiclass_classification_route)))
+    # No longer using balanceMiddleware's check_balance since we're handling billing directly in the route
+    app.route('/nlp/classify', methods=['POST'])(api_logger(simple_classification_route))
+    app.route('/nlp/classify/multi', methods=['POST'])(api_logger(multiclass_classification_route))
