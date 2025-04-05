@@ -9,7 +9,6 @@ import pytz
 import os
 import uuid
 import tempfile
-import requests
 import shutil
 from datetime import datetime
 from langchain_openai import AzureOpenAIEmbeddings
@@ -21,6 +20,11 @@ from langchain_community.document_loaders import (
     Docx2txtLoader,
     CSVLoader,
     UnstructuredExcelLoader
+)
+# Import LLM services directly
+from apis.utils.llmServices import (
+    gpt4o_service,
+    gpt4o_mini_service
 )
 
 # CONFIGURE LOGGING
@@ -329,38 +333,29 @@ def consume_git_policies_route():
                     Always maintain a helpful, informative tone."""
                 
                 # Prepare request for the LLM model
-                llm_request_data = {
-                    "system_prompt": system_prompt,
-                    "user_input": f"Context: {context}\n\nQuestion: {query}\n\nAnswer the question based on the context provided.",
-                    "temperature": temperature
-                }
+                user_input = f"Context: {context}\n\nQuestion: {query}\n\nAnswer the question based on the context provided."
                 
-                # Use gpt-4o endpoint
-                llm_endpoint = f"{request.url_root.rstrip('/')}/llm/gpt-4o"
-                
-                # Call LLM API
-                headers = {"X-Token": token, "Content-Type": "application/json"}
-                llm_response = requests.post(
-                    llm_endpoint,
-                    headers=headers,
-                    json=llm_request_data
+                # Use gpt4o_service directly instead of making an API call
+                service_response = gpt4o_service(
+                    system_prompt=system_prompt,
+                    user_input=user_input,
+                    temperature=temperature
                 )
                 
-                if llm_response.status_code != 200:
-                    logger.error(f"Error from LLM API: {llm_response.text}")
+                if not service_response["success"]:
+                    logger.error(f"Error from LLM service: {service_response['error']}")
                     return create_api_response({
                         "error": "Server Error",
-                        "message": f"Error from LLM API: {llm_response.text[:200]}"
+                        "message": f"Error from LLM service: {service_response['error']}"
                     }, 500)
                 
                 # Extract the response data
-                llm_result = llm_response.json()
-                answer = llm_result.get("message")
+                answer = service_response["result"]
                 
                 # Extract token usage
-                input_tokens = llm_result.get("input_tokens", 0)
-                completion_tokens = llm_result.get("completion_tokens", 0)
-                output_tokens = llm_result.get("output_tokens", 0)
+                input_tokens = service_response.get("input_tokens", 0)
+                completion_tokens = service_response.get("completion_tokens", 0)
+                output_tokens = service_response.get("output_tokens", 0)
                 
                 # Update the last_accessed timestamp
                 update_vectorstore_access_timestamp(vectorstore_id)
@@ -747,42 +742,37 @@ def consume_vectorstore_route():
                     If the context doesn't contain the answer, say you don't know based on the available information.
                     Always maintain a helpful, informative tone."""
                 
-                # Prepare request for the LLM model
-                llm_request_data = {
-                    "system_prompt": system_prompt,
-                    "user_input": f"Context: {context}\n\nQuestion: {query}\n\nAnswer the question based on the context provided.",
-                    "temperature": temperature
-                }
+                # Prepare user input for the LLM model
+                user_input = f"Context: {context}\n\nQuestion: {query}\n\nAnswer the question based on the context provided."
                 
-                # Determine LLM endpoint based on selected model
+                # Use LLM service directly instead of making an API call
                 if model == 'gpt-4o':
-                    llm_endpoint = f"{request.url_root.rstrip('/')}/llm/gpt-4o"
+                    service_response = gpt4o_service(
+                        system_prompt=system_prompt,
+                        user_input=user_input,
+                        temperature=temperature
+                    )
                 else:  # Default to gpt-4o-mini
-                    llm_endpoint = f"{request.url_root.rstrip('/')}/llm/gpt-4o-mini"
+                    service_response = gpt4o_mini_service(
+                        system_prompt=system_prompt,
+                        user_input=user_input,
+                        temperature=temperature
+                    )
                 
-                # Call LLM API
-                headers = {"X-Token": token, "Content-Type": "application/json"}
-                llm_response = requests.post(
-                    llm_endpoint,
-                    headers=headers,
-                    json=llm_request_data
-                )
-                
-                if llm_response.status_code != 200:
-                    logger.error(f"Error from LLM API: {llm_response.text}")
+                if not service_response["success"]:
+                    logger.error(f"Error from LLM service: {service_response['error']}")
                     return create_api_response({
                         "error": "Server Error",
-                        "message": f"Error from LLM API: {llm_response.text[:200]}"
+                        "message": f"Error from LLM service: {service_response['error']}"
                     }, 500)
                 
                 # Extract the response data
-                llm_result = llm_response.json()
-                answer = llm_result.get("message")
+                answer = service_response["result"]
                 
                 # Extract token usage
-                input_tokens = llm_result.get("input_tokens", 0)
-                completion_tokens = llm_result.get("completion_tokens", 0)
-                output_tokens = llm_result.get("output_tokens", 0)
+                input_tokens = service_response.get("input_tokens", 0)
+                completion_tokens = service_response.get("completion_tokens", 0)
+                output_tokens = service_response.get("output_tokens", 0)
                 
                 # Update the last_accessed timestamp
                 update_vectorstore_access_timestamp(vectorstore_id)
