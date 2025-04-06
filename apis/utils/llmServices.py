@@ -420,7 +420,7 @@ def llama_service(system_prompt, user_input, temperature=0.8, json_output=False,
         prompt_tokens = response.usage.prompt_tokens
         completion_tokens = response.usage.completion_tokens
         total_tokens = response.usage.total_tokens
-        model_name = response.model if hasattr(response, 'model') else "llama-3-1-405b"
+        model_name = "llama-3-1-405b"
         cached_tokens = response.usage.cached_tokens if hasattr(response.usage, 'cached_tokens') else 0
         
         return {
