@@ -229,8 +229,8 @@ def extract_vehicle_data(result, token):
                         barcode_json = create_json_barcode(barcode.value)
                         if barcode_json:
                             # Add document processing information
-                            barcode_json["num_documents_processed"] = 1
-                            barcode_json["num_pages_processed"] = len(result.pages)
+                            barcode_json["documents_processed"] = 1
+                            barcode_json["pages_processed"] = len(result.pages)
                             barcode_json["prompt_tokens"] = 0
                             barcode_json["completion_tokens"] = 0
                             barcode_json["total_tokens"] = 0
@@ -256,8 +256,8 @@ def extract_vehicle_data(result, token):
         
         if vehicle_json:
             # Add document processing information
-            vehicle_json["num_documents_processed"] = 1
-            vehicle_json["num_pages_processed"] = len(result.pages)
+            vehicle_json["documents_processed"] = 1
+            vehicle_json["pages_processed"] = len(result.pages)
             vehicle_json["extraction_method"] = "image ocr"
             
         return vehicle_json
@@ -329,10 +329,10 @@ def vehicle_license_disc_route():
             extraction_method:
               type: string
               description: Method used to extract the data (barcode analysis or image ocr)
-            num_documents_processed:
+            documents_processed:
               type: integer
               description: Number of documents processed
-            num_pages_processed:
+            pages_processed:
               type: integer
               description: Number of pages processed
             prompt_tokens:

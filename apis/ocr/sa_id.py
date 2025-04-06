@@ -213,8 +213,8 @@ def extract_id_data(result, token):
                         barcode_json = create_json_barcode(barcode.value)
                         if barcode_json:
                             # Add document processing information
-                            barcode_json["num_documents_processed"] = 1
-                            barcode_json["num_pages_processed"] = len(result.pages)
+                            barcode_json["documents_processed"] = 1
+                            barcode_json["pages_processed"] = len(result.pages)
                             barcode_json["prompt_tokens"] = 0
                             barcode_json["completion_tokens"] = 0
                             barcode_json["total_tokens"] = 0
@@ -239,8 +239,8 @@ def extract_id_data(result, token):
         
         if id_json:
             # Add document processing information
-            id_json["num_documents_processed"] = 1
-            id_json["num_pages_processed"] = len(result.pages)
+            id_json["documents_processed"] = 1
+            id_json["pages_processed"] = len(result.pages)
             
         return id_json
     except Exception as ex:
@@ -299,10 +299,10 @@ def sa_id_ocr_route():
             country_of_birth:
               type: string
               description: Country where ID holder was born
-            num_documents_processed:
+            documents_processed:
               type: integer
               description: Number of documents processed
-            num_pages_processed:
+            pages_processed:
               type: integer
               description: Number of pages processed
             prompt_tokens:
