@@ -226,16 +226,16 @@
         
         @keyframes zoomDots {
             0% {
-                transform: scale(0.3);
-                opacity: 0.1;
-            }
-            50% {
-                transform: scale(0.7);
+                transform: scale(0.8);
                 opacity: 0.15;
             }
+            50% {
+                transform: scale(1.0);
+                opacity: 0.2;
+            }
             100% {
-                transform: scale(0.3);
-                opacity: 0.1;
+                transform: scale(0.8);
+                opacity: 0.15;
             }
         }
         
@@ -1173,12 +1173,15 @@
             <div class="cta-container">
                 <h2>Ready to Get Started?</h2>
                 <p>Download our Postman Collection for quick integration or explore our API documentation to learn more.</p>
-                <div style="display: flex; justify-content: center; margin: 2rem 0; gap: 2rem;">
-                    <a href="/static/files/ai-api-postman-collection.json" class="cta-btn" style="margin-right: 3rem;">
+                <div style="display: flex; justify-content: center; flex-wrap: wrap; margin: 2rem 0; gap: 1.5rem;">
+                    <a href="/static/files/ai-api-postman-collection.json" class="cta-btn" style="background: linear-gradient(to right, var(--magenta-dark), #03001A); color: white;">
                         <i class="fas fa-download"></i> Download Postman Collection
                     </a>
-                    <a href="/apidocs/" class="cta-btn cta-btn-secondary">
+                    <a href="/apidocs/" class="cta-btn" style="background: linear-gradient(to right, var(--magenta-dark), #03001A); color: white;">
                         <i class="fas fa-book"></i> Explore API Docs
+                    </a>
+                    <a href="/swagger/" class="cta-btn" style="background: linear-gradient(to right, var(--magenta-dark), #03001A); color: white;">
+                        <i class="fas fa-code"></i> Swagger API Docs
                     </a>
                 </div>
             </div>
