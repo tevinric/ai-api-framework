@@ -29,8 +29,7 @@ from apis.utils.llmServices import (
     deepseek_v3_service,
     o1_mini_service,
     o3_mini_service,
-    llama_service,
-    gpt4o_document_intelligence_service
+    llama_service
 )
 
 # CONFIGURE LOGGING
@@ -50,7 +49,7 @@ LLM_SERVICES = {
     'deepseek-v3': deepseek_v3_service,
     'o1-mini': o1_mini_service,
     'o3-mini': o3_mini_service,
-    'llama-3-1-405b': llama_service,
+    'llama-3': llama_service,
 }
 
 def create_api_response(data, status_code=200):
@@ -105,21 +104,9 @@ def consume_git_policies_route():
             query:
               type: string
               description: User query to answer using the git policies vectorstore
-            model:
-              type: string
-              enum: [gpt-4o-mini, gpt-4o, deepseek-r1, deepseek-v3, o1-mini, o3-mini, llama-3-1-405b]
-              default: gpt-4o
-              description: LLM model to use for generating the answer
             system_prompt:
               type: string
               description: Custom system prompt to guide model behavior (optional)
-            temperature:
-              type: number
-              format: float
-              minimum: 0
-              maximum: 1
-              default: 0.15
-              description: Controls randomness (0=focused, 1=creative)
             include_sources:
               type: boolean
               default: false 
@@ -138,30 +125,21 @@ def consume_git_policies_route():
             answer:
               type: string
               example: "Based on the context, the answer to your question is..."
-            model_used:
+            model:
               type: string
               example: "gpt-4o"
             vectorstore_id:
               type: string
-              example: "f5e57660-79a7-4742-a240-c0fa6fc81b0d"
-            vectorstore_name:
-              type: string
-              example: "Git Policies"
-            prompt_tokens:
+              example: "abc123456789"
+            input_tokens:
               type: integer
               example: 125
             completion_tokens:
               type: integer
               example: 84
-            total_tokens:
+            output_tokens:
               type: integer
               example: 209
-            cached_tokens:
-              type: integer
-              example: 0
-            embedded_tokens:
-              type: integer
-              example: 42
             sources:
               type: array
               items:
@@ -366,9 +344,6 @@ def consume_git_policies_route():
                 # Perform vector search to get relevant documents
                 docs = vectorstore.similarity_search(query, k=4)
                 
-                # Estimate embedded tokens (4 tokens per word)
-                embedded_tokens = len(query.split()) * 4  # Rough estimate for the query
-                
                 # Prepare context from retrieved documents
                 context = "\n\n".join([doc.page_content for doc in docs])
                 
@@ -383,13 +358,22 @@ def consume_git_policies_route():
                 # Prepare request for the LLM model
                 user_input = f"Context: {context}\n\nQuestion: {query}\n\nAnswer the question based on the context provided."
                 
-                # Use the selected LLM service
+                # Use LLM service directly instead of making an API call
                 llm_service = LLM_SERVICES[model]
-                service_response = llm_service(
-                    system_prompt=system_prompt,
-                    user_input=user_input,
-                    temperature=temperature
-                )
+                
+                # Special handling for o3-mini which uses different parameters
+                if model == 'o3-mini':
+                    service_response = llm_service(
+                        system_prompt=system_prompt,
+                        user_input=user_input,
+                        reasoning_effort="medium" if temperature > 0.5 else "high"
+                    )
+                else:
+                    service_response = llm_service(
+                        system_prompt=system_prompt,
+                        user_input=user_input,
+                        temperature=temperature
+                    )
                 
                 if not service_response["success"]:
                     logger.error(f"Error from LLM service: {service_response['error']}")
@@ -402,10 +386,9 @@ def consume_git_policies_route():
                 answer = service_response["result"]
                 
                 # Extract token usage
-                prompt_tokens = service_response.get("prompt_tokens", 0)
+                input_tokens = service_response.get("prompt_tokens", 0)
                 completion_tokens = service_response.get("completion_tokens", 0)
-                total_tokens = service_response.get("total_tokens", 0)
-                cached_tokens = service_response.get("cached_tokens", 0)
+                output_tokens = service_response.get("total_tokens", 0)
                 
                 # Update the last_accessed timestamp
                 update_vectorstore_access_timestamp(vectorstore_id)
@@ -414,14 +397,12 @@ def consume_git_policies_route():
                 response_data = {
                     "message": "Query processed successfully",
                     "answer": answer,
-                    "model_used": model,
+                    "model": model,
                     "vectorstore_id": vectorstore_id,
                     "vectorstore_name": vectorstore_name,
-                    "prompt_tokens": prompt_tokens,
+                    "input_tokens": input_tokens,
                     "completion_tokens": completion_tokens,
-                    "total_tokens": total_tokens,
-                    "cached_tokens": cached_tokens,
-                    "embedded_tokens": embedded_tokens
+                    "output_tokens": output_tokens
                 }
                 
                 # Add source documents if requested
@@ -490,7 +471,7 @@ def consume_vectorstore_route():
               description: User query to answer using the vectorstore
             model:
               type: string
-              enum: [gpt-4o-mini, gpt-4o, deepseek-r1, deepseek-v3, o1-mini, o3-mini, llama-3-1-405b]
+              enum: [gpt-4o-mini, gpt-4o]
               default: gpt-4o-mini
               description: LLM model to use for generating the answer
             system_prompt:
@@ -521,30 +502,21 @@ def consume_vectorstore_route():
             answer:
               type: string
               example: "Based on the context, the answer to your question is..."
-            model_used:
+            model:
               type: string
               example: "gpt-4o-mini"
             vectorstore_id:
               type: string
               example: "12345678-1234-1234-1234-123456789012"
-            vectorstore_name:
-              type: string
-              example: "My Vectorstore"
-            prompt_tokens:
+            input_tokens:
               type: integer
               example: 125
             completion_tokens:
               type: integer
               example: 84
-            total_tokens:
+            output_tokens:
               type: integer
               example: 209
-            cached_tokens:
-              type: integer
-              example: 0
-            embedded_tokens:
-              type: integer
-              example: 42
             sources:
               type: array
               items:
@@ -792,9 +764,6 @@ def consume_vectorstore_route():
                 # Perform vector search to get relevant documents
                 docs = vectorstore.similarity_search(query, k=4)
                 
-                # Estimate embedded tokens (4 tokens per word)
-                embedded_tokens = len(query.split()) * 4  # Rough estimate for the query
-                
                 # Prepare context from retrieved documents
                 context = "\n\n".join([doc.page_content for doc in docs])
                 
@@ -808,13 +777,22 @@ def consume_vectorstore_route():
                 # Prepare user input for the LLM model
                 user_input = f"Context: {context}\n\nQuestion: {query}\n\nAnswer the question based on the context provided."
                 
-                # Use the selected LLM service
+                # Use LLM service directly instead of making an API call
                 llm_service = LLM_SERVICES[model]
-                service_response = llm_service(
-                    system_prompt=system_prompt,
-                    user_input=user_input,
-                    temperature=temperature
-                )
+                
+                # Special handling for o3-mini which uses different parameters
+                if model == 'o3-mini':
+                    service_response = llm_service(
+                        system_prompt=system_prompt,
+                        user_input=user_input,
+                        reasoning_effort="medium" if temperature > 0.5 else "high"
+                    )
+                else:
+                    service_response = llm_service(
+                        system_prompt=system_prompt,
+                        user_input=user_input,
+                        temperature=temperature
+                    )
                 
                 if not service_response["success"]:
                     logger.error(f"Error from LLM service: {service_response['error']}")
@@ -827,10 +805,9 @@ def consume_vectorstore_route():
                 answer = service_response["result"]
                 
                 # Extract token usage
-                prompt_tokens = service_response.get("prompt_tokens", 0)
+                input_tokens = service_response.get("prompt_tokens", 0)
                 completion_tokens = service_response.get("completion_tokens", 0)
-                total_tokens = service_response.get("total_tokens", 0)
-                cached_tokens = service_response.get("cached_tokens", 0)
+                output_tokens = service_response.get("total_tokens", 0)
                 
                 # Update the last_accessed timestamp
                 update_vectorstore_access_timestamp(vectorstore_id)
@@ -839,14 +816,12 @@ def consume_vectorstore_route():
                 response_data = {
                     "message": "Query processed successfully",
                     "answer": answer,
-                    "model_used": model,
+                    "model": model,
                     "vectorstore_id": vectorstore_id,
                     "vectorstore_name": vectorstore_name,
-                    "prompt_tokens": prompt_tokens,
+                    "input_tokens": input_tokens,
                     "completion_tokens": completion_tokens,
-                    "total_tokens": total_tokens,
-                    "cached_tokens": cached_tokens,
-                    "embedded_tokens": embedded_tokens
+                    "output_tokens": output_tokens
                 }
                 
                 # Add source documents if requested
