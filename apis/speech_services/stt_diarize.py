@@ -95,49 +95,13 @@ def calculate_audio_duration(transcription_result):
     """
     Calculate the total audio duration in seconds from the transcription result
     
-    The Microsoft Speech API returns offsetInTicks and durationInTicks for each recognized phrase.
-    Ticks are units of 100 nanoseconds (10^-7 seconds).
+    The Microsoft Speech API returns duration in milliseconds
     """
     try:
-        # Initialize duration
-        total_duration_seconds = 0
-        
-        # Check if we have phrases in the result
-        if 'recognizedPhrases' in transcription_result:
-            # Find the last phrase's offset + duration to get total duration
-            phrases = transcription_result['recognizedPhrases']
-            if phrases:
-                # Microsoft API provides timing in "ticks" (100-nanosecond units)
-                # Convert ticks to seconds: ticks / 10,000,000
-                for phrase in phrases:
-                    if 'offsetInTicks' in phrase and 'durationInTicks' in phrase:
-                        end_time = (phrase['offsetInTicks'] + phrase['durationInTicks']) / 10000000
-                        if end_time > total_duration_seconds:
-                            total_duration_seconds = end_time
-                
-                return total_duration_seconds
-        
-        # Alternative approach using combinedPhrases if available
-        if 'combinedPhrases' in transcription_result and transcription_result['combinedPhrases']:
-            combined_duration = 0
-            for phrase in transcription_result['combinedPhrases']:
-                if 'offsetInTicks' in phrase and 'durationInTicks' in phrase:
-                    end_time = (phrase['offsetInTicks'] + phrase['durationInTicks']) / 10000000
-                    if end_time > combined_duration:
-                        combined_duration = end_time
-            
-            if combined_duration > 0:
-                return combined_duration
-        
-        # If we can't determine from phrases, check if audio length is available
-        if 'audioLengthInSeconds' in transcription_result:
-            return transcription_result['audioLengthInSeconds']
-            
-        # Default to an estimated duration based on word count if available
-        if 'combinedPhrases' in transcription_result and transcription_result['combinedPhrases']:
-            # Estimate ~3 words per second as fallback
-            word_count = sum(len(phrase['text'].split()) for phrase in transcription_result['combinedPhrases'])
-            return word_count / 3
+        # Check if duration is directly available in milliseconds
+        if 'duration' in transcription_result:
+            # Convert milliseconds to seconds
+            return transcription_result['duration'] / 1000.0
             
         # If all else fails, return a default value
         return 0
@@ -220,7 +184,19 @@ def process_transcript_with_llm(transcript, token, chunk_number=None, total_chun
                 "message": f"Error from LLM service: {llm_response.get('error', 'Unknown error')}"
             }
         
-        return llm_response.get("result"), None
+        # Add token usage information to the response
+        result = {
+            "text": llm_response.get("result"),
+            "token_usage": {
+                "prompt_tokens": llm_response.get("prompt_tokens", 0),
+                "completion_tokens": llm_response.get("completion_tokens", 0),
+                "total_tokens": llm_response.get("total_tokens", 0),
+                "cached_tokens": llm_response.get("cached_tokens", 0),
+                "embedded_tokens": llm_response.get("embedded_tokens", 0)
+            }
+        }
+        
+        return result, None
         
     except Exception as e:
         logger.error(f"Error in LLM processing: {str(e)}")
@@ -382,9 +358,16 @@ def enhanced_speech_to_text_route():
         
         enhanced_transcript = ""
         
+        # Initialize token usage counters
+        total_prompt_tokens = 0
+        total_completion_tokens = 0
+        total_tokens = 0
+        total_cached_tokens = 0
+        total_embedded_tokens = 0
+        
         if token_count <= MAX_CHUNK_TOKENS:
             # Process the entire transcript at once
-            processed_transcript, error = process_transcript_with_llm(raw_transcript, token)
+            processed_result, error = process_transcript_with_llm(raw_transcript, token)
             if error:
                 return create_api_response({
                     "error": "LLM Processing Error",
@@ -392,7 +375,16 @@ def enhanced_speech_to_text_route():
                     "details": error
                 }, 500)
             
-            enhanced_transcript = processed_transcript
+            enhanced_transcript = processed_result["text"]
+            
+            # Track token usage
+            token_usage = processed_result.get("token_usage", {})
+            total_prompt_tokens = token_usage.get("prompt_tokens", 0)
+            total_completion_tokens = token_usage.get("completion_tokens", 0)
+            total_tokens = token_usage.get("total_tokens", 0)
+            total_cached_tokens = token_usage.get("cached_tokens", 0)
+            total_embedded_tokens = token_usage.get("embedded_tokens", 0)
+            
         else:
             # Split the transcript into chunks and process each one
             chunks = split_transcript_into_chunks(raw_transcript)
@@ -402,7 +394,7 @@ def enhanced_speech_to_text_route():
             enhanced_chunks = []
             for i, chunk in enumerate(chunks):
                 logger.info(f"Processing chunk {i+1}/{total_chunks}, token count: {count_tokens(chunk)}")
-                processed_chunk, error = process_transcript_with_llm(
+                processed_result, error = process_transcript_with_llm(
                     chunk, token, chunk_number=i+1, total_chunks=total_chunks
                 )
                 
@@ -413,7 +405,15 @@ def enhanced_speech_to_text_route():
                         "details": error
                     }, 500)
                 
-                enhanced_chunks.append(processed_chunk)
+                enhanced_chunks.append(processed_result["text"])
+                
+                # Accumulate token usage
+                token_usage = processed_result.get("token_usage", {})
+                total_prompt_tokens += token_usage.get("prompt_tokens", 0)
+                total_completion_tokens += token_usage.get("completion_tokens", 0)
+                total_tokens += token_usage.get("total_tokens", 0)
+                total_cached_tokens += token_usage.get("cached_tokens", 0)
+                total_embedded_tokens += token_usage.get("embedded_tokens", 0)
             
             # Combine the processed chunks
             enhanced_transcript = "\n\n".join(enhanced_chunks)
@@ -428,7 +428,14 @@ def enhanced_speech_to_text_route():
             "message": "Audio processed successfully",
             "raw_transcript": raw_transcript,
             "enhanced_transcript": enhanced_transcript,
-            "seconds_processed": seconds_processed
+            "seconds_processed": seconds_processed,
+            "token_usage": {
+                "prompt_tokens": total_prompt_tokens,
+                "completion_tokens": total_completion_tokens,
+                "total_tokens": total_tokens,
+                "cached_tokens": total_cached_tokens,
+                "embedded_tokens": total_embedded_tokens
+            }
         }
         
         return create_api_response(response_data, 200)
