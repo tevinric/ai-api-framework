@@ -85,18 +85,20 @@ def deepseek_r1_service(system_prompt, user_input, temperature=0.5, json_output=
         
         # Extract response data
         result = response.choices[0].message.content
-        input_tokens = response.usage.prompt_tokens
+        prompt_tokens = response.usage.prompt_tokens
         completion_tokens = response.usage.completion_tokens
-        output_tokens = response.usage.total_tokens
+        total_tokens = response.usage.total_tokens
         model_name = response.model if hasattr(response, 'model') else "deepseek-r1-aiapi"
+        cached_tokens = 0  # Default to 0 as this model doesn't support cached tokens
         
         return {
             "success": True,
             "result": result,
             "model": model_name,
-            "input_tokens": input_tokens,
+            "prompt_tokens": prompt_tokens,
             "completion_tokens": completion_tokens,
-            "output_tokens": output_tokens
+            "total_tokens": total_tokens,
+            "cached_tokens": cached_tokens
         }
         
     except Exception as e:
@@ -146,18 +148,20 @@ def deepseek_v3_service(system_prompt, user_input, temperature=0.7, json_output=
         
         # Extract response data
         result = response.choices[0].message.content
-        input_tokens = response.usage.prompt_tokens
+        prompt_tokens = response.usage.prompt_tokens
         completion_tokens = response.usage.completion_tokens
-        output_tokens = response.usage.total_tokens
+        total_tokens = response.usage.total_tokens
         model_name = response.model if hasattr(response, 'model') else MODEL_NAME
+        cached_tokens = 0  # Default to 0 as this model doesn't support cached tokens
         
         return {
             "success": True,
             "result": result,
             "model": model_name,
-            "input_tokens": input_tokens,
+            "prompt_tokens": prompt_tokens,
             "completion_tokens": completion_tokens,
-            "output_tokens": output_tokens
+            "total_tokens": total_tokens,
+            "cached_tokens": cached_tokens
         }
         
     except Exception as e:
@@ -186,18 +190,18 @@ def gpt4o_service(system_prompt, user_input, temperature=0.5, json_output=False)
         
         # Extract response data
         result = response.choices[0].message.content
-        input_tokens = response.usage.prompt_tokens
+        prompt_tokens = response.usage.prompt_tokens
         completion_tokens = response.usage.completion_tokens
-        output_tokens = response.usage.total_tokens
-        cached_tokens = response.usage.cached_tokens if hasattr(response.usage, 'cached_tokens') else None
+        total_tokens = response.usage.total_tokens
+        cached_tokens = response.usage.cached_tokens if hasattr(response.usage, 'cached_tokens') else 0
         
         return {
             "success": True,
             "result": result,
             "model": DEPLOYMENT,
-            "input_tokens": input_tokens,
+            "prompt_tokens": prompt_tokens,
             "completion_tokens": completion_tokens,
-            "output_tokens": output_tokens,
+            "total_tokens": total_tokens,
             "cached_tokens": cached_tokens
         }
         
@@ -227,18 +231,18 @@ def gpt4o_mini_service(system_prompt, user_input, temperature=0.5, json_output=F
         
         # Extract response data
         result = response.choices[0].message.content
-        input_tokens = response.usage.prompt_tokens
+        prompt_tokens = response.usage.prompt_tokens
         completion_tokens = response.usage.completion_tokens
-        output_tokens = response.usage.total_tokens
-        cached_tokens = response.usage.cached_tokens if hasattr(response.usage, 'cached_tokens') else None
+        total_tokens = response.usage.total_tokens
+        cached_tokens = response.usage.cached_tokens if hasattr(response.usage, 'cached_tokens') else 0
         
         return {
             "success": True,
             "result": result,
             "model": DEPLOYMENT,
-            "input_tokens": input_tokens,
+            "prompt_tokens": prompt_tokens,
             "completion_tokens": completion_tokens,
-            "output_tokens": output_tokens,
+            "total_tokens": total_tokens,
             "cached_tokens": cached_tokens
         }
         
@@ -269,18 +273,18 @@ def o1_mini_service(system_prompt, user_input, temperature=0.5, json_output=Fals
         
         # Extract response data
         result = response.choices[0].message.content
-        input_tokens = response.usage.prompt_tokens
+        prompt_tokens = response.usage.prompt_tokens
         completion_tokens = response.usage.completion_tokens
-        output_tokens = response.usage.total_tokens
-        cached_tokens = response.usage.cached_tokens if hasattr(response.usage, 'cached_tokens') else None
+        total_tokens = response.usage.total_tokens
+        cached_tokens = response.usage.cached_tokens if hasattr(response.usage, 'cached_tokens') else 0
         
         return {
             "success": True,
             "result": result,
             "model": DEPLOYMENT,
-            "input_tokens": input_tokens,
+            "prompt_tokens": prompt_tokens,
             "completion_tokens": completion_tokens,
-            "output_tokens": output_tokens,
+            "total_tokens": total_tokens,
             "cached_tokens": cached_tokens
         }
         
@@ -349,18 +353,20 @@ def o3_mini_service(system_prompt, user_input, max_completion_tokens=100000, rea
         
         # Extract response data
         result = completion.choices[0].message.content
-        input_tokens = completion.usage.prompt_tokens
+        prompt_tokens = completion.usage.prompt_tokens
         completion_tokens = completion.usage.completion_tokens
-        output_tokens = input_tokens + completion_tokens
+        total_tokens = prompt_tokens + completion_tokens
         model_name = completion.model if hasattr(completion, 'model') else DEPLOYMENT
+        cached_tokens = completion.usage.cached_tokens if hasattr(completion.usage, 'cached_tokens') else 0
         
         return {
             "success": True,
             "result": result,
             "model": model_name,
-            "input_tokens": input_tokens,
+            "prompt_tokens": prompt_tokens,
             "completion_tokens": completion_tokens,
-            "output_tokens": output_tokens
+            "total_tokens": total_tokens,
+            "cached_tokens": cached_tokens
         }
         
     except Exception as e:
@@ -411,18 +417,20 @@ def llama_service(system_prompt, user_input, temperature=0.8, json_output=False,
         
         # Extract response data
         result = response.choices[0].message.content
-        input_tokens = response.usage.prompt_tokens
+        prompt_tokens = response.usage.prompt_tokens
         completion_tokens = response.usage.completion_tokens
-        output_tokens = response.usage.total_tokens
+        total_tokens = response.usage.total_tokens
         model_name = response.model if hasattr(response, 'model') else "llama-3-1-405b"
+        cached_tokens = response.usage.cached_tokens if hasattr(response.usage, 'cached_tokens') else 0
         
         return {
             "success": True,
             "result": result,
             "model": model_name,
-            "input_tokens": input_tokens,
+            "prompt_tokens": prompt_tokens,
             "completion_tokens": completion_tokens,
-            "output_tokens": output_tokens
+            "total_tokens": total_tokens,
+            "cached_tokens": cached_tokens
         }
         
     except Exception as e:
@@ -662,9 +670,10 @@ def gpt4o_document_intelligence_service(system_prompt, user_input, temperature=0
         
         # Extract response data
         result = response.choices[0].message.content
-        input_tokens = response.usage.prompt_tokens
+        prompt_tokens = response.usage.prompt_tokens
         completion_tokens = response.usage.completion_tokens
-        output_tokens = response.usage.total_tokens
+        total_tokens = response.usage.total_tokens
+        cached_tokens = response.usage.cached_tokens if hasattr(response.usage, 'cached_tokens') else 0
         
         # Total files processed
         total_files_processed = file_stats["documents_processed"] + file_stats["images_processed"] + file_stats["text_files_processed"]
@@ -680,9 +689,10 @@ def gpt4o_document_intelligence_service(system_prompt, user_input, temperature=0
             "success": True,
             "result": result,
             "model": DEPLOYMENT,
-            "input_tokens": input_tokens,
+            "prompt_tokens": prompt_tokens,
             "completion_tokens": completion_tokens,
-            "output_tokens": output_tokens,
+            "total_tokens": total_tokens,
+            "cached_tokens": cached_tokens,
             "files_processed": total_files_processed,
             "file_processing_details": file_stats
         }
