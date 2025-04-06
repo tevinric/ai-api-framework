@@ -72,49 +72,13 @@ def calculate_audio_duration(transcription_result):
     """
     Calculate the total audio duration in seconds from the transcription result
     
-    The Microsoft Speech API returns offsetInTicks and durationInTicks for each recognized phrase.
-    Ticks are units of 100 nanoseconds (10^-7 seconds).
+    The Microsoft Speech API returns duration in milliseconds
     """
     try:
-        # Initialize duration
-        total_duration_seconds = 0
-        
-        # Check if we have phrases in the result
-        if 'recognizedPhrases' in transcription_result:
-            # Find the last phrase's offset + duration to get total duration
-            phrases = transcription_result['recognizedPhrases']
-            if phrases:
-                # Microsoft API provides timing in "ticks" (100-nanosecond units)
-                # Convert ticks to seconds: ticks / 10,000,000
-                for phrase in phrases:
-                    if 'offsetInTicks' in phrase and 'durationInTicks' in phrase:
-                        end_time = (phrase['offsetInTicks'] + phrase['durationInTicks']) / 10000000
-                        if end_time > total_duration_seconds:
-                            total_duration_seconds = end_time
-                
-                return total_duration_seconds
-        
-        # Alternative approach using combinedPhrases if available
-        if 'combinedPhrases' in transcription_result and transcription_result['combinedPhrases']:
-            combined_duration = 0
-            for phrase in transcription_result['combinedPhrases']:
-                if 'offsetInTicks' in phrase and 'durationInTicks' in phrase:
-                    end_time = (phrase['offsetInTicks'] + phrase['durationInTicks']) / 10000000
-                    if end_time > combined_duration:
-                        combined_duration = end_time
-            
-            if combined_duration > 0:
-                return combined_duration
-        
-        # If we can't determine from phrases, check if audio length is available
-        if 'audioLengthInSeconds' in transcription_result:
-            return transcription_result['audioLengthInSeconds']
-            
-        # Default to an estimated duration based on word count if available
-        if 'combinedPhrases' in transcription_result and transcription_result['combinedPhrases']:
-            # Estimate ~3 words per second as fallback
-            word_count = sum(len(phrase['text'].split()) for phrase in transcription_result['combinedPhrases'])
-            return word_count / 3
+        # Check if duration is directly available in milliseconds
+        if 'duration' in transcription_result:
+            # Convert milliseconds to seconds
+            return transcription_result['duration'] / 1000.0
             
         # If all else fails, return a default value
         return 0
