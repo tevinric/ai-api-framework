@@ -186,10 +186,12 @@ def create_json_gpt(text, token):
             "country_of_birth": results.get("Country of Birth", ""),
         }
             
-        # Store LLM token usage
-        id_json["input_tokens"] = llm_result.get("input_tokens", 0)
+        # Store LLM token usage - UPDATED TOKEN REFERENCES
+        id_json["prompt_tokens"] = llm_result.get("prompt_tokens", 0)
         id_json["completion_tokens"] = llm_result.get("completion_tokens", 0)
-        id_json["output_tokens"] = llm_result.get("output_tokens", 0)
+        id_json["total_tokens"] = llm_result.get("total_tokens", 0)
+        id_json["cached_tokens"] = llm_result.get("cached_tokens", 0)
+        id_json["model_used"] = llm_result.get("model", "gpt-4o-mini")
         
         return id_json
     except Exception as ex:
@@ -213,9 +215,11 @@ def extract_id_data(result, token):
                             # Add document processing information
                             barcode_json["num_documents_processed"] = 1
                             barcode_json["num_pages_processed"] = len(result.pages)
-                            barcode_json["input_tokens"] = 0
+                            barcode_json["prompt_tokens"] = 0
                             barcode_json["completion_tokens"] = 0
-                            barcode_json["output_tokens"] = 0
+                            barcode_json["total_tokens"] = 0
+                            barcode_json["cached_tokens"] = 0
+                            barcode_json["model_used"] = "none"
                             return barcode_json
                             
         # If no barcode found or valid barcode data extracted, fall back to OCR + GPT
@@ -301,15 +305,21 @@ def sa_id_ocr_route():
             num_pages_processed:
               type: integer
               description: Number of pages processed
-            input_tokens:
+            prompt_tokens:
               type: integer
-              description: Number of input tokens consumed (if GPT was used)
+              description: Number of prompt tokens consumed (if GPT was used)
             completion_tokens:
               type: integer
               description: Number of completion tokens consumed (if GPT was used)
-            output_tokens:
+            total_tokens:
               type: integer
               description: Total number of tokens consumed (if GPT was used)
+            cached_tokens:
+              type: integer
+              description: Number of cached tokens (if available)
+            model_used:
+              type: string
+              description: The LLM model used for processing (or "none" if barcode was used)
       400:
         description: Bad request
         schema:
