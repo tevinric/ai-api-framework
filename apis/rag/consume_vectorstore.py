@@ -50,7 +50,7 @@ LLM_SERVICES = {
     'deepseek-v3': deepseek_v3_service,
     'o1-mini': o1_mini_service,
     'o3-mini': o3_mini_service,
-    'llama-3': llama_service,
+    'llama-3-1-405b': llama_service,
 }
 
 def create_api_response(data, status_code=200):
@@ -107,7 +107,7 @@ def consume_git_policies_route():
               description: User query to answer using the git policies vectorstore
             model:
               type: string
-              enum: [gpt-4o-mini, gpt-4o, deepseek-r1, deepseek-v3, o1-mini, o3-mini, llama-3]
+              enum: [gpt-4o-mini, gpt-4o, deepseek-r1, deepseek-v3, o1-mini, o3-mini, llama-3-1-405b]
               default: gpt-4o
               description: LLM model to use for generating the answer
             system_prompt:
@@ -490,7 +490,7 @@ def consume_vectorstore_route():
               description: User query to answer using the vectorstore
             model:
               type: string
-              enum: [gpt-4o-mini, gpt-4o, deepseek-r1, deepseek-v3, o1-mini, o3-mini, llama-3]
+              enum: [gpt-4o-mini, gpt-4o, deepseek-r1, deepseek-v3, o1-mini, o3-mini, llama-3-1-405b]
               default: gpt-4o-mini
               description: LLM model to use for generating the answer
             system_prompt:
