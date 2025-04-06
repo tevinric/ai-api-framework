@@ -429,13 +429,11 @@ def enhanced_speech_to_text_route():
             "raw_transcript": raw_transcript,
             "enhanced_transcript": enhanced_transcript,
             "seconds_processed": seconds_processed,
-            "token_usage": {
-                "prompt_tokens": total_prompt_tokens,
-                "completion_tokens": total_completion_tokens,
-                "total_tokens": total_tokens,
-                "cached_tokens": total_cached_tokens,
-                "embedded_tokens": total_embedded_tokens
-            }
+            "prompt_tokens": total_prompt_tokens,
+            "completion_tokens": total_completion_tokens,
+            "total_tokens": total_tokens,
+            "cached_tokens": total_cached_tokens,
+            "embedded_tokens": total_embedded_tokens
         }
         
         return create_api_response(response_data, 200)
