@@ -68,6 +68,61 @@ def transcribe_audio(file_url):
             "status_code": getattr(e.response, 'status_code', None)
         }
 
+def calculate_audio_duration(transcription_result):
+    """
+    Calculate the total audio duration in seconds from the transcription result
+    
+    The Microsoft Speech API returns offsetInTicks and durationInTicks for each recognized phrase.
+    Ticks are units of 100 nanoseconds (10^-7 seconds).
+    """
+    try:
+        # Initialize duration
+        total_duration_seconds = 0
+        
+        # Check if we have phrases in the result
+        if 'recognizedPhrases' in transcription_result:
+            # Find the last phrase's offset + duration to get total duration
+            phrases = transcription_result['recognizedPhrases']
+            if phrases:
+                # Microsoft API provides timing in "ticks" (100-nanosecond units)
+                # Convert ticks to seconds: ticks / 10,000,000
+                for phrase in phrases:
+                    if 'offsetInTicks' in phrase and 'durationInTicks' in phrase:
+                        end_time = (phrase['offsetInTicks'] + phrase['durationInTicks']) / 10000000
+                        if end_time > total_duration_seconds:
+                            total_duration_seconds = end_time
+                
+                return total_duration_seconds
+        
+        # Alternative approach using combinedPhrases if available
+        if 'combinedPhrases' in transcription_result and transcription_result['combinedPhrases']:
+            combined_duration = 0
+            for phrase in transcription_result['combinedPhrases']:
+                if 'offsetInTicks' in phrase and 'durationInTicks' in phrase:
+                    end_time = (phrase['offsetInTicks'] + phrase['durationInTicks']) / 10000000
+                    if end_time > combined_duration:
+                        combined_duration = end_time
+            
+            if combined_duration > 0:
+                return combined_duration
+        
+        # If we can't determine from phrases, check if audio length is available
+        if 'audioLengthInSeconds' in transcription_result:
+            return transcription_result['audioLengthInSeconds']
+            
+        # Default to an estimated duration based on word count if available
+        if 'combinedPhrases' in transcription_result and transcription_result['combinedPhrases']:
+            # Estimate ~3 words per second as fallback
+            word_count = sum(len(phrase['text'].split()) for phrase in transcription_result['combinedPhrases'])
+            return word_count / 3
+            
+        # If all else fails, return a default value
+        return 0
+            
+    except Exception as e:
+        logger.error(f"Error calculating audio duration: {str(e)}")
+        return 0
+
 def speech_to_text_route():
     """
     Convert speech to text using Microsoft Speech to Text API
@@ -110,6 +165,9 @@ def speech_to_text_route():
             transcription_details:
               type: object
               description: Full details of the transcription results
+            seconds_processed:
+              type: number
+              description: Duration of the processed audio in seconds
       400:
         description: Bad request
       401:
@@ -202,6 +260,9 @@ def speech_to_text_route():
         else:
             transcript = "No transcript available"
         
+        # Calculate the duration of the audio file
+        seconds_processed = calculate_audio_duration(transcription_result)
+        
         # Delete the uploaded file to avoid storage bloat using FileService directly
         success, message = FileService.delete_file(file_id, g.user_id)
         if not success:
@@ -211,7 +272,8 @@ def speech_to_text_route():
         response_data = {
             "message": "Audio transcribed successfully",
             "transcript": transcript,
-            "transcription_details": transcription_result
+            "transcription_details": transcription_result,
+            "seconds_processed": seconds_processed
         }
         
         return create_api_response(response_data, 200)
