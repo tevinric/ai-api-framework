@@ -202,10 +202,12 @@ def create_json_gpt(text, token):
             "veh_expiry": results.get("Date of expiry/Vervaldatum", "")
         }
             
-        # Store LLM token usage
-        vehicle_json["input_tokens"] = llm_result.get("input_tokens", 0)
+        # Store LLM token usage - UPDATED TOKEN REFERENCES
+        vehicle_json["prompt_tokens"] = llm_result.get("prompt_tokens", 0)
         vehicle_json["completion_tokens"] = llm_result.get("completion_tokens", 0)
-        vehicle_json["output_tokens"] = llm_result.get("output_tokens", 0)
+        vehicle_json["total_tokens"] = llm_result.get("total_tokens", 0)
+        vehicle_json["cached_tokens"] = llm_result.get("cached_tokens", 0)
+        vehicle_json["model_used"] = llm_result.get("model", "gpt-4o-mini")
         
         return vehicle_json
     except Exception as ex:
@@ -229,9 +231,11 @@ def extract_vehicle_data(result, token):
                             # Add document processing information
                             barcode_json["num_documents_processed"] = 1
                             barcode_json["num_pages_processed"] = len(result.pages)
-                            barcode_json["input_tokens"] = 0
+                            barcode_json["prompt_tokens"] = 0
                             barcode_json["completion_tokens"] = 0
-                            barcode_json["output_tokens"] = 0
+                            barcode_json["total_tokens"] = 0
+                            barcode_json["cached_tokens"] = 0
+                            barcode_json["model_used"] = "none"
                             barcode_json["extraction_method"] = "barcode analysis"
                             return barcode_json
                             
@@ -331,15 +335,21 @@ def vehicle_license_disc_route():
             num_pages_processed:
               type: integer
               description: Number of pages processed
-            input_tokens:
+            prompt_tokens:
               type: integer
-              description: Number of input tokens consumed (if GPT was used)
+              description: Number of prompt tokens consumed (if GPT was used)
             completion_tokens:
               type: integer
               description: Number of completion tokens consumed (if GPT was used)
-            output_tokens:
+            total_tokens:
               type: integer
               description: Total number of tokens consumed (if GPT was used)
+            cached_tokens:
+              type: integer
+              description: Number of cached tokens (if available)
+            model_used:
+              type: string
+              description: The LLM model used for processing (or "none" if barcode was used)
       400:
         description: Bad request
         schema:
