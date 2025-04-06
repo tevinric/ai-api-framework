@@ -585,11 +585,11 @@ The sum of confidence scores does not need to equal 1. Assign each category a sc
         elif model == 'gpt-4o':
             llm_result = gpt4o_service(system_prompt, user_message, temperature=0.1, json_output=True)
         elif model == 'deepseek-r1':
-            llm_result = deepseek_r1_service(system_prompt, user_message, temperature=0.1, json_output=False)
+            llm_result = deepseek_r1_service(system_prompt, user_message, temperature=0.1, json_output=True)
         elif model == 'deepseek-v3':
-            llm_result = deepseek_v3_service(system_prompt, user_message, temperature=0.1, json_output=False)
+            llm_result = deepseek_v3_service(system_prompt, user_message, temperature=0.1, json_output=True)
         elif model == 'o1-mini':
-            llm_result = o1_mini_service(system_prompt, user_message, temperature=0.1, json_output=False)
+            llm_result = o1_mini_service(system_prompt, user_message, temperature=0.1, json_output=True)
         elif model == 'o3-mini':
             llm_result = o3_mini_service(system_prompt, user_message, reasoning_effort="medium", json_output=True)
         elif model == 'llama-3-1-405b':
