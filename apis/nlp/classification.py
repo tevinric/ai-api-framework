@@ -8,6 +8,7 @@ import pytz
 from datetime import datetime
 import json
 import uuid
+import re
 
 # CONFIGURE LOGGING
 logging.basicConfig(level=logging.INFO)
@@ -253,19 +254,19 @@ Use the format: category_name"""
         
         # Use appropriate LLM service from llmServices based on model parameter
         if model == 'gpt-4o-mini':
-            llm_result = gpt4o_mini_service(system_prompt, user_message, temperature=0.0)
+            llm_result = gpt4o_mini_service(system_prompt, user_message, temperature=0.1)
         elif model == 'gpt-4o':
-            llm_result = gpt4o_service(system_prompt, user_message, temperature=0.0)
+            llm_result = gpt4o_service(system_prompt, user_message, temperature=0.1)
         elif model == 'deepseek-r1':
-            llm_result = deepseek_r1_service(system_prompt, user_message, temperature=0.0)
+            llm_result = deepseek_r1_service(system_prompt, user_message, temperature=0.1)
         elif model == 'deepseek-v3':
-            llm_result = deepseek_v3_service(system_prompt, user_message, temperature=0.0)
+            llm_result = deepseek_v3_service(system_prompt, user_message, temperature=0.1)
         elif model == 'o1-mini':
-            llm_result = o1_mini_service(system_prompt, user_message, temperature=0.0)
+            llm_result = o1_mini_service(system_prompt, user_message, temperature=0.1)
         elif model == 'o3-mini':
             llm_result = o3_mini_service(system_prompt, user_message, reasoning_effort="medium")
         elif model == 'llama-3-1-405b':
-            llm_result = llama_service(system_prompt, user_message, temperature=0.0)
+            llm_result = llama_service(system_prompt, user_message, temperature=0.1)
         
         if not llm_result.get("success", False):
             logger.error(f"Error from LLM service: {llm_result.get('error', 'Unknown error')}")
@@ -308,6 +309,19 @@ Use the format: category_name"""
             "error": "Server Error",
             "message": f"Error processing classification request: {str(e)}"
         }, 500)
+
+
+def extract_json_from_response(text):
+    """Helper function to attempt to extract JSON from text output"""
+    # Try to find JSON-like content in response text
+    json_match = re.search(r'(\{.*\})', text, re.DOTALL)
+    if json_match:
+        try:
+            json_content = json_match.group(1)
+            return json.loads(json_content)
+        except json.JSONDecodeError:
+            return None
+    return None
 
 
 def multiclass_classification_route():
@@ -580,20 +594,25 @@ The sum of confidence scores does not need to equal 1. Assign each category a sc
         user_message = f"Categories: {categories_list}\n\nText to classify: {user_input}"
         
         # Use appropriate LLM service from llmServices based on model parameter
+        use_json_output = True
+        if model in ['deepseek-r1', 'deepseek-v3', 'o1-mini']:
+            # These models have issues with json_output, use regular output
+            use_json_output = False
+        
         if model == 'gpt-4o-mini':
-            llm_result = gpt4o_mini_service(system_prompt, user_message, temperature=0.1, json_output=True)
+            llm_result = gpt4o_mini_service(system_prompt, user_message, temperature=0.1, json_output=use_json_output)
         elif model == 'gpt-4o':
-            llm_result = gpt4o_service(system_prompt, user_message, temperature=0.1, json_output=True)
+            llm_result = gpt4o_service(system_prompt, user_message, temperature=0.1, json_output=use_json_output)
         elif model == 'deepseek-r1':
-            llm_result = deepseek_r1_service(system_prompt, user_message, temperature=0.1, json_output=True)
+            llm_result = deepseek_r1_service(system_prompt, user_message, temperature=0.1)
         elif model == 'deepseek-v3':
-            llm_result = deepseek_v3_service(system_prompt, user_message, temperature=0.1, json_output=True)
+            llm_result = deepseek_v3_service(system_prompt, user_message, temperature=0.1)
         elif model == 'o1-mini':
-            llm_result = o1_mini_service(system_prompt, user_message, temperature=0.1, json_output=True)
+            llm_result = o1_mini_service(system_prompt, user_message, temperature=0.1)
         elif model == 'o3-mini':
-            llm_result = o3_mini_service(system_prompt, user_message, reasoning_effort="medium", json_output=True)
+            llm_result = o3_mini_service(system_prompt, user_message, reasoning_effort="medium", json_output=use_json_output)
         elif model == 'llama-3-1-405b':
-            llm_result = llama_service(system_prompt, user_message, temperature=0.1, json_output=True)
+            llm_result = llama_service(system_prompt, user_message, temperature=0.1, json_output=use_json_output)
         
         if not llm_result.get("success", False):
             logger.error(f"Error from LLM service: {llm_result.get('error', 'Unknown error')}")
@@ -607,8 +626,16 @@ The sum of confidence scores does not need to equal 1. Assign each category a sc
         
         # Parse the JSON response from the LLM
         try:
-            # Parse the JSON response
-            classifications_json = json.loads(llm_message)
+            # For models with JSON output issues, try to extract JSON from text
+            classifications_json = None
+            if model in ['deepseek-r1', 'deepseek-v3', 'o1-mini']:
+                extracted_json = extract_json_from_response(llm_message)
+                if extracted_json:
+                    classifications_json = extracted_json
+                else:
+                    raise json.JSONDecodeError("Could not extract JSON", llm_message, 0)
+            else:
+                classifications_json = json.loads(llm_message)
             
             # Extract classifications list
             classifications = classifications_json.get("classifications", [])
