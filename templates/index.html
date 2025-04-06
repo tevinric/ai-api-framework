@@ -226,15 +226,15 @@
         
         @keyframes zoomDots {
             0% {
-                transform: scale(0.8);
+                transform: scale(1.2);
                 opacity: 0.15;
             }
             50% {
-                transform: scale(1.0);
+                transform: scale(1.5);
                 opacity: 0.2;
             }
             100% {
-                transform: scale(0.8);
+                transform: scale(1.2);
                 opacity: 0.15;
             }
         }
@@ -682,7 +682,8 @@
         .cta-section {
             padding: 5rem 3rem;
             text-align: center;
-            background-color: var(--white-color);
+            background: linear-gradient(135deg, rgba(1, 0, 15, 1) 0%, rgba(35, 0, 33, 1) 100%);
+            color: var(--white-color);
         }
         
         .cta-container {
@@ -1172,15 +1173,12 @@
         <section class="cta-section">
             <div class="cta-container">
                 <h2>Ready to Get Started?</h2>
-                <p>Download our Postman Collection for quick integration or explore our API documentation to learn more.</p>
+                <p>Download our Postman Collection for quick integration or explore our Swagger API documentation.</p>
                 <div style="display: flex; justify-content: center; flex-wrap: wrap; margin: 2rem 0; gap: 1.5rem;">
-                    <a href="/static/files/ai-api-postman-collection.json" class="cta-btn" style="background: linear-gradient(to right, var(--magenta-dark), #03001A); color: white;">
+                    <a href="/static/files/ai-api-postman-collection.json" class="cta-btn" style="background-color: var(--accent-color); color: var(--dark-color);">
                         <i class="fas fa-download"></i> Download Postman Collection
                     </a>
-                    <a href="/apidocs/" class="cta-btn" style="background: linear-gradient(to right, var(--magenta-dark), #03001A); color: white;">
-                        <i class="fas fa-book"></i> Explore API Docs
-                    </a>
-                    <a href="/swagger/" class="cta-btn" style="background: linear-gradient(to right, var(--magenta-dark), #03001A); color: white;">
+                    <a href="/swagger/" class="cta-btn" style="background-color: var(--accent-color); color: var(--dark-color);">
                         <i class="fas fa-code"></i> Swagger API Docs
                     </a>
                 </div>
