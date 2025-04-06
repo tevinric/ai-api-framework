@@ -356,7 +356,7 @@ def o3_mini_service(system_prompt, user_input, max_completion_tokens=100000, rea
         prompt_tokens = completion.usage.prompt_tokens
         completion_tokens = completion.usage.completion_tokens
         total_tokens = prompt_tokens + completion_tokens
-        model_name = completion.model if hasattr(completion, 'model') else DEPLOYMENT
+        model_name = DEPLOYMENT
         cached_tokens = completion.usage.cached_tokens if hasattr(completion.usage, 'cached_tokens') else 0
         
         return {
