@@ -19,3 +19,5 @@ pandas
 azure.ai.documentintelligence
 faiss_cpu
 pymupdf
+pypdf
+azure.ai.formrecognizer

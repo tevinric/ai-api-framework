@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Balance Management - AI API Platform</title>
+    <link rel="icon" href="/static/images/Telesure-logo.png" type="image/png">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
@@ -14,6 +15,9 @@
             --text-color: #333;
             --white-color: #ffffff;
             --accent-color: #00d4ff;
+            --accent-gradient: linear-gradient(90deg, #00d4ff 0%, #6c63ff 100%);
+            --magenta-dark: #3B0138; /* Updated dark magenta color */
+            --magenta-gradient: linear-gradient(90deg, #3B0138 0%, #4a6fe3 100%);
             --sidebar-width: 280px;
             --header-height: 60px;
         }
@@ -40,14 +44,13 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-size: cover;
-            opacity: 0.05;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%234a6fe3' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
             z-index: -1;
             pointer-events: none;
         }
         
         .header {
-            background-color: var(--dark-color);
+            background-color: #03001A;
             color: var(--white-color);
             padding: 0 2rem;
             position: fixed;
@@ -56,7 +59,7 @@
             width: 100%;
             height: var(--header-height);
             z-index: 1000;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -107,13 +110,15 @@
             padding: 0.5rem 1rem;
             border-radius: 4px;
             font-weight: 600;
-            transition: background-color 0.3s, transform 0.2s;
+            transition: all 0.3s;
+            box-shadow: 0 4px 10px rgba(0, 212, 255, 0.3);
         }
         
         .swagger-btn:hover {
             background-color: #00b8e6;
             transform: translateY(-2px);
             color: var(--dark-color);
+            box-shadow: 0 6px 15px rgba(0, 212, 255, 0.4);
         }
         
         /* Mobile menu toggle */
@@ -177,177 +182,401 @@
             text-align: center;
         }
         
+        .sidebar-submenu {
+            margin-left: 1rem;
+        }
+        
+        .sidebar-submenu .sidebar-link {
+            padding-left: 3rem;
+            font-size: 0.9rem;
+        }
+        
         /* Main content */
         .main-content {
             margin-left: var(--sidebar-width);
             margin-top: var(--header-height);
-            padding: 2rem;
+            padding: 0;
             min-height: calc(100vh - var(--header-height));
+        }
+        
+        /* Hero */
+        .hero {
+            background: linear-gradient(135deg, rgba(1, 0, 15, 1) 0%, rgba(35, 0, 33, 1) 100%);
+            color: var(--white-color);
+            padding: 5rem 3rem;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        .hero::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23FFFFFF' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
+            opacity: 0.12;
+            pointer-events: none;
+            animation: zoomDots 20s linear infinite;
+            transform-origin: center;
+            z-index: 0;
+        }
+        
+        @keyframes zoomDots {
+            0% {
+                transform: scale(0.3);
+                opacity: 0.1;
+            }
+            50% {
+                transform: scale(0.7);
+                opacity: 0.15;
+            }
+            100% {
+                transform: scale(0.3);
+                opacity: 0.1;
+            }
+        }
+        
+        .hero-container {
+            max-width: 1440px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .hero h2 {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+            max-width: 840px;
+            background: linear-gradient(to left, var(--white-color), var(--accent-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: fadeInUp 0.8s ease-out;
+        }
+        
+        .hero p {
+            font-size: 1.2rem;
+            max-width: 700px;
+            margin-bottom: 2rem;
+            line-height: 1.7;
+            color: rgba(255, 255, 255, 0.9);
+            animation: fadeInUp 1s ease-out;
+        }
+        
+        /* Features highlights */
+        .features-highlight {
+            padding: 2rem 3rem;
+            background-color: var(--white-color);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .features-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .highlight-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .highlight-icon {
+            font-size: 1.5rem;
+            width: 3.5rem;
+            height: 3.5rem;
+            border-radius: 50%;
+            background: var(--accent-gradient);
+            color: var(--white-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .highlight-text h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.2rem;
+            color: var(--dark-color);
+        }
+        
+        .highlight-text p {
+            font-size: 0.9rem;
+            color: #666;
         }
         
         /* Content sections */
         .content-section {
-            background-color: var(--white-color);
-            border-radius: 8px;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            padding: 5rem 3rem;
+            position: relative;
         }
         
-        .content-section h2 {
-            font-size: 1.8rem;
-            margin-bottom: 1.5rem;
-            color: var(--dark-color);
-            border-bottom: 2px solid var(--light-color);
-            padding-bottom: 0.5rem;
+        .content-section.alt-bg {
+            background-color: #f8faff;
         }
         
-        .content-section h3 {
-            font-size: 1.3rem;
-            margin: 1.5rem 0 1rem;
-            color: var(--primary-color);
+        .section-container {
+            max-width: 1200px;
+            margin: 0 auto;
         }
         
-        .content-section p {
-            margin-bottom: 1rem;
-            line-height: 1.6;
-        }
-        
-        .content-section ul, 
-        .content-section ol {
-            margin-bottom: 1.5rem;
-            padding-left: 1.5rem;
-        }
-        
-        .content-section li {
-            margin-bottom: 0.5rem;
-            line-height: 1.6;
-        }
-        
-        /* Code blocks */
-        .api-endpoints {
-            background-color: #f8f9fa;
-            border-radius: 6px;
-            padding: 1rem;
-            margin-bottom: 1.5rem;
-        }
-        
-        .endpoint {
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: flex-start;
-        }
-        
-        .endpoint-method {
-            display: inline-block;
-            padding: 0.2rem 0.5rem;
-            border-radius: 4px;
-            font-family: monospace;
-            font-weight: bold;
-            margin-right: 0.5rem;
-            min-width: 60px;
+        .section-header {
             text-align: center;
+            margin-bottom: 3rem;
+            animation: fadeInUp 0.6s ease-out;
         }
         
-        .method-get {
-            background-color: #e7f5ff;
-            color: #1971c2;
-        }
-        
-        .method-post {
-            background-color: #e3fafc;
-            color: #0c8599;
-        }
-        
-        .method-put {
-            background-color: #fff9db;
-            color: #e67700;
-        }
-        
-        .method-delete {
-            background-color: #fff5f5;
-            color: #e03131;
-        }
-        
-        .endpoint-path {
+        .section-header h2 {
+            font-size: 2.5rem;
+            color: var(--dark-color);
+            margin-bottom: 1rem;
+            position: relative;
             display: inline-block;
-            background-color: var(--dark-color);
-            color: var(--white-color);
-            padding: 0.3rem 0.7rem;
-            border-radius: 4px;
-            font-family: monospace;
-            margin-right: 0.5rem;
         }
         
-        .endpoint-description {
+        .section-header h2::after {
+            content: "";
+            position: absolute;
+            left: 50%;
+            bottom: -10px;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: var(--accent-gradient);
+            border-radius: 2px;
+        }
+        
+        .section-header p {
             color: #666;
-            flex: 1;
-        }
-        
-        .code-block {
-            background-color: #2d2d2d;
-            color: #fff;
-            padding: 1rem;
-            border-radius: 6px;
-            font-family: monospace;
-            overflow-x: auto;
-            margin-bottom: 1.5rem;
-            line-height: 1.4;
+            font-size: 1.1rem;
+            max-width: 700px;
+            margin: 0 auto;
         }
         
         /* Info boxes */
         .info-box {
-            display: flex;
             background-color: #e7f5ff;
-            border-left: 4px solid #1971c2;
-            padding: 1.5rem;
-            border-radius: 6px;
-            margin-bottom: 2rem;
+            border-left: 4px solid var(--primary-color);
+            padding: 2rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            position: relative;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
         }
         
         .info-box-icon {
-            font-size: 1.8rem;
-            color: #1971c2;
-            margin-right: 1.5rem;
+            color: var(--primary-color);
+            font-size: 1.5rem;
+            position: absolute;
+            top: 2rem;
+            left: 2rem;
+        }
+        
+        .info-box-content {
+            padding-left: 2.5rem;
         }
         
         .info-box-content h4 {
-            margin-bottom: 0.5rem;
-            color: #1971c2;
-        }
-        
-        .info-box-content p, .info-box-content li {
-            color: #495057;
-        }
-        
-        /* Footer */
-        .footer {
-            background-color: var(--dark-color);
-            color: var(--white-color);
-            text-align: center;
-            padding: 2rem;
-            margin-top: 3rem;
-            margin-left: var(--sidebar-width);
-        }
-        
-        .footer p {
+            color: var(--primary-color);
             margin-bottom: 1rem;
+            font-size: 1.4rem;
         }
         
-        .social-links {
+        .info-box-content p {
+            color: #495057;
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+        
+        .info-box-content ul, .info-box-content ol {
+            color: #495057;
+            margin-left: 1.5rem;
+            margin-bottom: 0;
+        }
+        
+        .info-box-content li {
+            margin-bottom: 0.8rem;
+            line-height: 1.6;
+        }
+        
+        /* Code block */
+        .code-block {
+            background-color: #2d2d2d;
+            color: #fff;
+            padding: 1.5rem;
+            border-radius: 6px;
+            font-family: monospace;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            line-height: 1.5;
+            position: relative;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .code-block pre {
+            margin: 0;
+            padding: 0;
+            overflow-x: auto;
+        }
+        
+        .code-block code {
+            display: block;
+            padding: 0;
+            font-family: 'Consolas', 'Monaco', 'Andale Mono', monospace;
+            font-size: 14px;
+            color: #f8f8f2;
+        }
+        
+        .code-label {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: var(--accent-gradient);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.8rem;
+            border-radius: 0 6px 0 6px;
+        }
+        
+        .code-keyword {
+            color: #f92672;
+        }
+        
+        .code-string {
+            color: #a6e22e;
+        }
+        
+        .code-comment {
+            color: #75715e;
+        }
+        
+        .code-property {
+            color: #66d9ef;
+        }
+        
+        .code-number {
+            color: #ae81ff;
+        }
+        
+        /* Dashboard cards */
+        .dashboard-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+        
+        .dashboard-card {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+            padding: 2rem;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
             display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+        }
+        
+        .dashboard-card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .dashboard-card-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 8px;
+            background: var(--accent-gradient);
+            color: white;
+            display: flex;
+            align-items: center;
             justify-content: center;
-            gap: 1rem;
-        }
-        
-        .social-link {
-            color: var(--white-color);
             font-size: 1.5rem;
-            transition: color 0.3s;
+            margin-right: 1rem;
         }
         
-        .social-link:hover {
-            color: var(--accent-color);
+        .dashboard-card-title {
+            font-size: 1.4rem;
+            color: var(--dark-color);
+            margin: 0;
+        }
+        
+        .dashboard-card-content {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+            flex-grow: 1;
+        }
+        
+        .dashboard-card-footer {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: auto;
+        }
+        
+        .card-btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+        
+        .cta-btn {
+            display: inline-flex;
+            align-items: center;
+            background: var(--magenta-gradient);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(59, 1, 56, 0.15);
+        }
+        
+        .cta-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(59, 1, 56, 0.2);
+        }
+        
+        .cta-btn i {
+            margin-left: 0.5rem;
+        }
+        
+        /* Animation keyframes */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
         }
         
         /* Responsive styles */
@@ -373,6 +602,10 @@
             .menu-toggle {
                 display: block;
             }
+            
+            .features-container {
+                flex-direction: column;
+            }
         }
         
         @media (max-width: 768px) {
@@ -382,6 +615,30 @@
             
             .nav-item:not(.swagger-btn) {
                 display: none;
+            }
+            
+            .hero {
+                padding: 3rem 1.5rem;
+            }
+            
+            .hero h2 {
+                font-size: 2rem;
+            }
+            
+            .content-section {
+                padding: 3rem 1.5rem;
+            }
+            
+            .section-header h2 {
+                font-size: 2rem;
+            }
+            
+            .features-highlight {
+                padding: 1.5rem;
+            }
+            
+            .dashboard-cards {
+                grid-template-columns: 1fr;
             }
         }
         
@@ -402,32 +659,38 @@
                 display: block;
             }
         }
+        
+        /* Footer */
+        .footer {
+            background-color: #03001A;
+            color: var(--white-color);
+            text-align: center;
+            padding: 3rem;
+            margin-top: 0;
+            margin-left: var(--sidebar-width);
+            position: relative;
+        }
+        
+        .footer::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%234a6fe3' fill-opacity='0.05' fill-rule='evenodd'%3E%3Ccircle cx='3' cy='3' r='3'/%3E%3Ccircle cx='13' cy='13' r='3'/%3E%3C/g%3E%3C/svg%3E");
+            opacity: 0.1;
+            pointer-events: none;
+        }
+        
+        .footer p {
+            margin-bottom: 1rem;
+            position: relative;
+        }
     </style>
 </head>
 <body>
-    <header class="header">
-        <div class="logo">
-            <img src="/static/images/Telesure-logo.png" alt="TIH AI API Platform Logo" style="height: 40px; margin-right: 0.5rem;">
-            <h1>AI API Platform</h1>
-        </div>
-        <nav class="nav">
-            <div class="menu-toggle" id="menu-toggle">
-                <i class="fas fa-bars"></i>
-            </div>
-            <a href="{{ url_for('home') }}" class="nav-item">
-                <i class="fas fa-home"></i>Home
-            </a>
-            <a href="{{ url_for('getting_started') }}" class="nav-item">
-                <i class="fas fa-rocket"></i>Geting Started
-            </a>
-            <a href="/templates/docs/faq.html" class="nav-item">
-                <i class="fas fa-question-circle"></i>FAQ
-            </a>
-            <a href="/apidocs/" class="nav-item swagger-btn">
-                <i class="fas fa-book"></i>Swagger
-            </a>
-        </nav>
-    </header>
+    {% include 'header.html' %}
     
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
     
@@ -435,154 +698,270 @@
     <aside class="sidebar">
         {% include 'sidebar.html' %}
     </aside>
-            
+    
     <main class="main-content">
+        <section class="hero">
+            <div class="hero-container">
+                <h2>Balance Management</h2>
+                <p>Monitor and manage your API credit consumption with our comprehensive Balance Management endpoints. Track your usage, view detailed statistics, and optimize your AI utilization across different services.</p>
+            </div>
+        </section>
+        
+        <section class="features-highlight">
+            <div class="features-container">
+                <div class="highlight-item">
+                    <div class="highlight-icon">
+                        <i class="fas fa-credit-card"></i>
+                    </div>
+                    <div class="highlight-text">
+                        <h3>Credit-Based System</h3>
+                        <p>Monthly credit allocation based on your account tier</p>
+                    </div>
+                </div>
+                <div class="highlight-item">
+                    <div class="highlight-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="highlight-text">
+                        <h3>Usage Analytics</h3>
+                        <p>Track consumption patterns across all endpoints</p>
+                    </div>
+                </div>
+                <div class="highlight-item">
+                    <div class="highlight-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="highlight-text">
+                        <h3>Department Insights</h3>
+                        <p>Monitor team usage with aggregated statistics</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
         <section class="content-section">
-            <h2>Balance Management</h2>
-            
-            <p>The Balance Management endpoints allow you to check your current API credit balance and monitor usage statistics. These services help you track your API consumption across different endpoints and time periods.</p>
-            
-            <div class="info-box">
-                <div class="info-box-icon"><i class="fas fa-info-circle"></i></div>
-                <div class="info-box-content">
-                    <h4>Credit System</h4>
-                    <p>Our API platform uses a credit-based system:</p>
-                    <ul>
-                        <li>Each API endpoint consumes a specific number of AI credits per call</li>
-                        <li>Credits are allocated monthly based on your account tier</li>
-                        <li>Usage statistics help you monitor and optimize your AI credit consumption</li>
-                    </ul>
-                    <p>If you need additional AI credits, please contact our support team.</p>
+            <div class="section-container">
+                <div class="info-box">
+                    <div class="info-box-icon"><i class="fas fa-info-circle"></i></div>
+                    <div class="info-box-content">
+                        <h4>Credit System</h4>
+                        <p>Our API platform uses a credit-based system:</p>
+                        <ul>
+                            <li>Each API endpoint consumes a specific number of AI credits per call</li>
+                            <li>Credits are allocated monthly based on your account tier</li>
+                            <li>Usage statistics help you monitor and optimize your AI credit consumption</li>
+                        </ul>
+                        <p>If you need additional AI credits, please contact our support team.</p>
+                    </div>
+                </div>
+                
+                <div class="section-header">
+                    <h2>Available Endpoints</h2>
+                    <p>Comprehensive tools for monitoring and managing your API credit usage</p>
+                </div>
+                
+                <div style="overflow-x: auto; margin: 2rem 0;">
+                    <table style="width: 100%; border-collapse: collapse; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);">
+                        <thead>
+                            <tr style="background: linear-gradient(90deg, #3B0138, #4a6fe3); color: white;">
+                                <th style="padding: 1.2rem; text-align: left; font-size: 1.1rem;">Endpoint</th>
+                                <th style="padding: 1.2rem; text-align: left; font-size: 1.1rem;">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Check Balance -->
+                            <tr style="background-color: white;">
+                                <td style="padding: 1.5rem; border-bottom: 1px solid #f0f0f0;">
+                                    <div style="margin-bottom: 0.5rem;">
+                                        <span class="endpoint-method method-get" style="font-size: 0.9rem;">GET</span>
+                                    </div>
+                                    <div style="font-family: monospace; background-color: var(--dark-color); color: white; padding: 0.4rem 0.8rem; border-radius: 4px; display: inline-block;">/usage/balance</div>
+                                </td>
+                                <td style="padding: 1.5rem; border-bottom: 1px solid #f0f0f0;">
+                                    <p style="color: #444; line-height: 1.6;">Check your current AI credit balance for the current month. Returns current balance, scope, tier description and month information.</p>
+                                </td>
+                            </tr>
+                            
+                            <!-- User Usage Stats -->
+                            <tr style="background-color: #f9fafc;">
+                                <td style="padding: 1.5rem; border-bottom: 1px solid #f0f0f0;">
+                                    <div style="margin-bottom: 0.5rem;">
+                                        <span class="endpoint-method method-get" style="font-size: 0.9rem;">GET</span>
+                                    </div>
+                                    <div style="font-family: monospace; background-color: var(--dark-color); color: white; padding: 0.4rem 0.8rem; border-radius: 4px; display: inline-block;">/usage/user</div>
+                                </td>
+                                <td style="padding: 1.5rem; border-bottom: 1px solid #f0f0f0;">
+                                    <p style="color: #444; line-height: 1.6;">Get detailed usage statistics for a specific user, including tokens generated, endpoints used, and credits consumed.</p>
+                                </td>
+                            </tr>
+                            
+                            <!-- Department Stats -->
+                            <tr style="background-color: white;">
+                                <td style="padding: 1.5rem; border-bottom: 1px solid #f0f0f0;">
+                                    <div style="margin-bottom: 0.5rem;">
+                                        <span class="endpoint-method method-get" style="font-size: 0.9rem;">GET</span>
+                                    </div>
+                                    <div style="font-family: monospace; background-color: var(--dark-color); color: white; padding: 0.4rem 0.8rem; border-radius: 4px; display: inline-block;">/usage/department</div>
+                                </td>
+                                <td style="padding: 1.5rem; border-bottom: 1px solid #f0f0f0;">
+                                    <p style="color: #444; line-height: 1.6;">Get aggregated usage statistics for an entire department, including active users and consumption breakdown by user.</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
-            
-            <h3>Available Endpoints</h3>
-            
-            <div class="api-endpoints">
-                <div class="endpoint">
-                    <span class="endpoint-method method-get">GET</span>
-                    <span class="endpoint-path">/usage/balance</span>
-                    <span class="endpoint-description">Check your current AI credit balance</span>
+        </section>
+        
+        <section class="content-section alt-bg">
+            <div class="section-container">
+                <div class="section-header">
+                    <h2>Managing Your Balance</h2>
+                    <p>Tools and examples for tracking and optimizing your API credit usage</p>
                 </div>
-                <div class="endpoint">
-                    <span class="endpoint-method method-get">GET</span>
-                    <span class="endpoint-path">/usage/user</span>
-                    <span class="endpoint-description">Get usage statistics for a specific user</span>
-                </div>
-                <div class="endpoint">
-                    <span class="endpoint-method method-get">GET</span>
-                    <span class="endpoint-path">/usage/department</span>
-                    <span class="endpoint-description">Get usage statistics for a department</span>
-                </div>
-                <div class="endpoint">
-                    <span class="endpoint-method method-put">PUT</span>
-                    <span class="endpoint-path">/admin/balance</span>
-                    <span class="endpoint-description">Update a user's AI credit balance (Admin only)</span>
-                </div>
-            </div>
-            
-            <h3>Checking Your Balance</h3>
-            <p>You can check your current API credit balance using the <code>/usage/balance</code> endpoint. This provides information about your current balance, total allocated credits, and usage statistics.</p>
-            
-            <div class="code-block">
-                <pre>
-                    <code>
-                        {
-                            "user_id": "12345678-1234-5678-1234-567812345678",
-                            "user_email": "user@example.com",
-                            "current_balance": 2500,
-                            "total_allocated": 3000,
-                            "credits_used": 500,
-                            "reset_date": "2025-04-01T00:00:00Z"
-                        }
-                    </code>
-                </pre>
-            </div>
-            </div>
-            
-            <h3>Monitoring Usage Statistics</h3>
-            <p>The usage statistics endpoints provide detailed information about API consumption for specific users or departments. You can filter statistics by time period to track usage trends.</p>
-            
-            <div class="code-block">
-                <pre>
-                    <code>
-                        # Example request to /usage/user
-                        {
-                        
-                            "user_id": "12345678-1234-5678-1234-567812345678",
-                            "time_period": "2025-03"
-                        }
+                
+                <div class="dashboard-cards">
+                    <!-- Checking Balance Card -->
+                    <div class="dashboard-card">
+                        <div class="dashboard-card-header">
+                            <div class="dashboard-card-icon">
+                                <i class="fas fa-wallet"></i>
+                            </div>
+                            <h3 class="dashboard-card-title">Checking Your Balance</h3>
+                        </div>
+                        <p class="dashboard-card-content">
+                            You can check your current API credit balance using the <code>/usage/balance</code> endpoint. This provides information about your current balance, total allocated credits, and usage statistics.
+                        </p>
+                        <div class="code-block">
+                            <span class="code-label">Response Example</span>
+<pre><code>{
+  <span class="code-property">"user_id"</span>: <span class="code-string">"12345678-1234-5678-1234-567812345678"</span>,
+  <span class="code-property">"user_email"</span>: <span class="code-string">"user@example.com"</span>,
+  <span class="code-property">"current_balance"</span>: <span class="code-number">2500</span>,
+  <span class="code-property">"scope"</span>: <span class="code-number">2</span>,
+  <span class="code-property">"tier_description"</span>: <span class="code-string">"Production Tier 2 - Professional"</span>,
+  <span class="code-property">"month"</span>: <span class="code-string">"March 2025"</span>
+}</code></pre>
+                        </div>
+                        <div class="dashboard-card-footer">
+                            <a href="/apidocs/#/Balance%20Management/check_balance_route" class="cta-btn">
+                                Swagger API Docs <i class="fas fa-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- Usage Statistics Card -->
+                    <div class="dashboard-card">
+                        <div class="dashboard-card-header">
+                            <div class="dashboard-card-icon">
+                                <i class="fas fa-chart-bar"></i>
+                            </div>
+                            <h3 class="dashboard-card-title">Monitoring Usage Statistics</h3>
+                        </div>
+                        <p class="dashboard-card-content">
+                            The usage statistics endpoints provide detailed information about API consumption for specific users. You can filter statistics by time period to track usage trends.
+                        </p>
+                        <div class="code-block">
+                            <span class="code-label">Request Example</span>
+<pre><code><span class="code-comment"># Request to /usage/user</span>
+GET /usage/user?user_id=12345678-1234-5678-1234-567812345678&time_period=2025-03
 
-                        # Example response
-                        {
-                            "name": "John Doe",
-                            "user_id": "12345678-1234-5678-1234-567812345678",
-                            "company": "TIH",
-                            "department": "Data Science",
-                            "tokens_generated": 42,
-                            "endpoints_used": [
-                                {
-                                    "endpoint_name": "GPT-4o",
-                                    "endpoint_id": "gpt-4o",
-                                    "number_calls": 20,
-                                    "number_successful_calls": 19,
-                                    "number_failed_calls": 1,
-                                    "average_response_time": 1250.5,
-                                    "credits_consumed": 40
-                                },
-                                {
-                                    "endpoint_name": "DALL-E 3",
-                                    "endpoint_id": "dall-e-3",
-                                    "number_calls": 5,
-                                    "number_successful_calls": 5,
-                                    "number_failed_calls": 0,
-                                    "average_response_time": 2500.3,
-                                    "credits_consumed": 15
-                                }
-                            ],
-                            "credits_consumed": 55
-                        }
-                    </code>
-                </pre>
+<span class="code-comment"># Headers</span>
+X-Token: eyJhbGciOiJIUzI1NiIsInR5...</code></pre>
+                        </div>
+                        <div class="dashboard-card-footer">
+                            <a href="/apidocs/#/Balance%20Management/usage_by_user_route" class="cta-btn">
+                                Swagger API Docs <i class="fas fa-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="code-block" style="margin-top: 3rem;">
+                    <span class="code-label">User Statistics Response</span>
+<pre><code>{
+  <span class="code-property">"name"</span>: <span class="code-string">"John Doe"</span>,
+  <span class="code-property">"user_id"</span>: <span class="code-string">"12345678-1234-5678-1234-567812345678"</span>,
+  <span class="code-property">"company"</span>: <span class="code-string">"TIH"</span>,
+  <span class="code-property">"department"</span>: <span class="code-string">"Data Science"</span>,
+  <span class="code-property">"tokens_generated"</span>: <span class="code-number">42</span>,
+  <span class="code-property">"endpoints_used"</span>: [
+    {
+      <span class="code-property">"endpoint_name"</span>: <span class="code-string">"GPT-4o"</span>,
+      <span class="code-property">"endpoint_id"</span>: <span class="code-string">"gpt-4o"</span>,
+      <span class="code-property">"number_calls"</span>: <span class="code-number">20</span>,
+      <span class="code-property">"number_successful_calls"</span>: <span class="code-number">19</span>,
+      <span class="code-property">"number_failed_calls"</span>: <span class="code-number">1</span>,
+      <span class="code-property">"average_response_time"</span>: <span class="code-number">1250.5</span>,
+      <span class="code-property">"credits_consumed"</span>: <span class="code-number">40</span>
+    },
+    {
+      <span class="code-property">"endpoint_name"</span>: <span class="code-string">"DALL-E 3"</span>,
+      <span class="code-property">"endpoint_id"</span>: <span class="code-string">"dall-e-3"</span>,
+      <span class="code-property">"number_calls"</span>: <span class="code-number">5</span>,
+      <span class="code-property">"number_successful_calls"</span>: <span class="code-number">5</span>,
+      <span class="code-property">"number_failed_calls"</span>: <span class="code-number">0</span>,
+      <span class="code-property">"average_response_time"</span>: <span class="code-number">2500.3</span>,
+      <span class="code-property">"credits_consumed"</span>: <span class="code-number">15</span>
+    }
+  ],
+  <span class="code-property">"credits_consumed"</span>: <span class="code-number">55</span>
+}</code></pre>
+                </div>
             </div>
-            
-            <h3>Department Statistics</h3>
-            <p>If you're a department manager or administrator, you can view usage statistics for your entire department, including a breakdown by user.</p>
-            
-            <div class="code-block">
-                <pre>
-                    <code>
-                        # Example request to /usage/department
-                        {
-                            "department": "Engineering",
-                            "time_period": "2025-03"
-                        }
-                    </code>
-                </pre>
+        </section>
+        
+        <section class="content-section">
+            <div class="section-container">
+                <div class="section-header">
+                    <h2>Department Features</h2>
+                    <p>Advanced tools for team and department managers</p>
+                </div>
+                
+                <div class="dashboard-cards">
+                    <!-- Department Statistics Card -->
+                    <div class="dashboard-card">
+                        <div class="dashboard-card-header">
+                            <div class="dashboard-card-icon">
+                                <i class="fas fa-building"></i>
+                            </div>
+                            <h3 class="dashboard-card-title">Department Statistics</h3>
+                        </div>
+                        <p class="dashboard-card-content">
+                            If you're a department manager or administrator, you can view usage statistics for your entire department, including a breakdown by user.
+                        </p>
+                        <div class="code-block">
+                            <span class="code-label">Request Example</span>
+<pre><code><span class="code-comment"># Request to /usage/department</span>
+GET /usage/department?department=Engineering&time_period=2025-03
+
+<span class="code-comment"># Headers</span>
+X-Token: eyJhbGciOiJIUzI1NiIsInR5...</code></pre>
+                        </div>
+                        <div class="dashboard-card-footer">
+                            <a href="/apidocs/#/Balance%20Management/usage_by_department_route" class="cta-btn">
+                                Swagger API Docs <i class="fas fa-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 4rem; text-align: center;">
+                    <p style="margin-bottom: 1.5rem; font-size: 1.1rem;">For complete details and examples, please refer to our documentation:</p>
+                    <div style="display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap;">
+                        <a href="/apidocs/" style="display: inline-flex; align-items: center; background: var(--magenta-gradient); color: white; padding: 0.75rem 1.5rem; border-radius: 6px; text-decoration: none; font-weight: 600; transition: all 0.3s; box-shadow: 0 4px 15px rgba(59, 1, 56, 0.15);">
+                            <i class="fas fa-book" style="margin-right: 0.5rem;"></i> Swagger API Docs
+                        </a>
+                        <a href="/static/files/ai-api-postman-collection.json" style="display: inline-flex; align-items: center; background-color: #f5f6fa; color: var(--dark-color); padding: 0.75rem 1.5rem; border-radius: 6px; text-decoration: none; font-weight: 600; transition: all 0.3s; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);">
+                            <i class="fas fa-download" style="margin-right: 0.5rem;"></i> Download Postman Collection
+                        </a>
+                    </div>
+                </div>
             </div>
-            
-            <h3>Admin Functions</h3>
-            <p>Administrators can update user balances using the <code>/admin/balance</code> endpoint. This requires admin privileges and a valid token.</p>
-            
-            <div class="code-block">
-                <pre>
-                    <code>
-                        # Example request to /admin/balance (admin only)
-                        {
-                            "user_id": "12345678-1234-5678-1234-567812345678",
-                            "new_balance": 5000
-                        }
-                    </code>
-                </pre>
-            </div>
-            
-            <p>For complete details and examples, please refer to our <a href="/apidocs/">Swagger Documentation</a> or download our <a href="/static/files/ai-api-postman-collection.json">Postman Collection</a>.</p>
         </section>
     </main>
     
-    <footer class="footer">
-        <p>© 2025 TIH AI API Portal. Powered by the TIH AI Center of Excellence.</p>
-    </footer>
+    {% include 'footer.html' %}
     
     <script>
         // Toggle sidebar on mobile
@@ -610,6 +989,26 @@
                     link.classList.add('active');
                 }
             });
+            
+            // Add scroll animation for elements
+            const animateOnScroll = function() {
+                const elements = document.querySelectorAll('.dashboard-card, .section-header, .info-box');
+                
+                elements.forEach(element => {
+                    const elementPosition = element.getBoundingClientRect().top;
+                    const screenPosition = window.innerHeight / 1.2;
+                    
+                    if (elementPosition < screenPosition) {
+                        element.style.animation = 'fadeInUp 0.6s ease-out forwards';
+                    }
+                });
+            };
+            
+            // Run on load
+            animateOnScroll();
+            
+            // Run on scroll
+            window.addEventListener('scroll', animateOnScroll);
         });
     </script>
 </body>

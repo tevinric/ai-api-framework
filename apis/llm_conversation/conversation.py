@@ -3,14 +3,21 @@ from apis.utils.tokenService import TokenService
 from apis.utils.databaseService import DatabaseService
 from apis.utils.logMiddleware import api_logger
 from apis.utils.balanceMiddleware import check_balance
+from apis.utils.balanceService import BalanceService
 from apis.utils.config import get_azure_blob_client, ensure_container_exists
 import logging
 import pytz
 import os
 import uuid
 import json
-import requests
 from datetime import datetime
+from apis.utils.llmServices import (
+    deepseek_r1_service,
+    gpt4o_service,
+    gpt4o_mini_service,
+    o1_mini_service,
+    llama_service
+)
 
 # CONFIGURE LOGGING
 logging.basicConfig(level=logging.INFO)
@@ -21,14 +28,35 @@ CONVERSATION_CONTAINER = "llm-conversations"
 STORAGE_ACCOUNT = os.environ.get("AZURE_STORAGE_ACCOUNT")
 BASE_BLOB_URL = f"https://{STORAGE_ACCOUNT}.blob.core.windows.net/{CONVERSATION_CONTAINER}"
 
-# Available LLMs and their endpoints
+# Available LLMs and their endpoints (kept for reference)
 LLM_ENDPOINTS = {
     "gpt-4o": "/llm/gpt-4o",
     "gpt-4o-mini": "/llm/gpt-4o-mini",
-    "gpt-o1-mini": "/llm/gpt-o1-mini",
+    "o1-mini": "/llm/o1-mini",
     "deepseek-r1": "/llm/deepseek-r1",
     "llama": "/llm/llama"
 }
+
+# Map LLM types to their service functions
+LLM_SERVICES = {
+    "gpt-4o": gpt4o_service,
+    "gpt-4o-mini": gpt4o_mini_service,
+    "o1-mini": o1_mini_service,
+    "deepseek-r1": deepseek_r1_service,
+    "llama": llama_service
+}
+
+# Map LLM types to their credit costs
+LLM_CREDIT_COSTS = {
+    "gpt-4o": 2,
+    "gpt-4o-mini": 0.5,
+    "o1-mini": 5,
+    "deepseek-r1": 3,
+    "llama": 3
+}
+
+# Map LLM types to their endpoint IDs for logging
+LLM_ENDPOINT_IDS = {}
 
 # Assistant types and their system messages
 ASSISTANT_TYPES = {
@@ -156,7 +184,7 @@ def create_chat_route():
           properties:
             llm:
               type: string
-              enum: [gpt-4o, gpt-4o-mini, gpt-o1-mini, deepseek-r1, llama]
+              enum: [gpt-4o, gpt-4o-mini, o1-mini, deepseek-r1, llama]
               description: LLM model to use for conversation
             assistant_type:
               type: string
@@ -224,6 +252,17 @@ def create_chat_route():
             message:
               type: string
               example: Token has expired
+      402:
+        description: Payment required
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Insufficient Balance
+            message:
+              type: string
+              example: Your API call balance is depleted. Please upgrade your plan for additional calls.
       500:
         description: Server error
         schema:
@@ -299,10 +338,10 @@ def create_chat_route():
     temperature = float(data.get('temperature', 0.7))
     
     # Validate LLM selection
-    if llm not in LLM_ENDPOINTS:
+    if llm not in LLM_SERVICES:
         return create_api_response({
             "error": "Bad Request",
-            "message": f"Invalid LLM selection. Must be one of: {', '.join(LLM_ENDPOINTS.keys())}"
+            "message": f"Invalid LLM selection. Must be one of: {', '.join(LLM_SERVICES.keys())}"
         }, 400)
     
     # Validate assistant type
@@ -319,34 +358,58 @@ def create_chat_route():
         # Get system message based on assistant type
         system_message = ASSISTANT_TYPES.get(assistant_type, ASSISTANT_TYPES["general"])
         
-        # Prepare LLM request
-        llm_endpoint = f"{request.url_root.rstrip('/')}{LLM_ENDPOINTS[llm]}"
+        # Get the endpoint ID for the LLM type, cache it if not already cached
+        if llm not in LLM_ENDPOINT_IDS:
+            endpoint_path = LLM_ENDPOINTS[llm]
+            endpoint_id = DatabaseService.get_endpoint_id_by_path(endpoint_path)
+            if not endpoint_id:
+                logger.error(f"Endpoint not found for {llm} at path {endpoint_path}")
+                return create_api_response({
+                    "error": "Configuration Error",
+                    "message": "Endpoint not configured for balance tracking"
+                }, 500)
+            LLM_ENDPOINT_IDS[llm] = endpoint_id
         
-        # Format request for LLM
-        llm_request_data = {
-            "system_prompt": system_message,
-            "user_input": user_message,
-            "temperature": temperature
-        }
+        # Deduct balance based on LLM credit cost
+        endpoint_id = LLM_ENDPOINT_IDS[llm]
+        credit_cost = LLM_CREDIT_COSTS.get(llm, 1)  # Default to 1 if not specified
         
-        # Call LLM API
-        headers = {"X-Token": token, "Content-Type": "application/json"}
-        llm_response = requests.post(
-            llm_endpoint,
-            headers=headers,
-            json=llm_request_data
+        # Check and deduct user balance
+        success, result = BalanceService.check_and_deduct_balance(g.user_id, endpoint_id, credit_cost)
+        if not success:
+            if result == "Insufficient balance":
+                logger.warning(f"Insufficient balance for user {g.user_id}")
+                return create_api_response({
+                    "error": "Insufficient Balance",
+                    "message": "Your API call balance is depleted. Please upgrade your plan for additional calls."
+                }, 402)  # 402 Payment Required
+            
+            logger.error(f"Balance error for user {g.user_id}: {result}")
+            return create_api_response({
+                "error": "Balance Error",
+                "message": f"Error processing balance: {result}"
+            }, 500)
+        
+        # Log successful balance deduction
+        logger.info(f"Balance successfully deducted for user {g.user_id}, endpoint {endpoint_id}, cost {credit_cost}")
+        
+        # Use the appropriate service function directly instead of making an API call
+        service_function = LLM_SERVICES[llm]
+        service_response = service_function(
+            system_prompt=system_message,
+            user_input=user_message,
+            temperature=temperature
         )
         
-        if llm_response.status_code != 200:
-            logger.error(f"Error from LLM API: {llm_response.text}")
+        if not service_response["success"]:
+            logger.error(f"Error from LLM service: {service_response['error']}")
             return create_api_response({
                 "error": "Server Error",
-                "message": f"Error from LLM API: {llm_response.text[:200]}"
+                "message": f"Error from LLM service: {service_response['error']}"
             }, 500)
         
         # Extract the response data
-        llm_result = llm_response.json()
-        assistant_message = llm_result.get("message")
+        assistant_message = service_response["result"]
         
         # Create conversation history
         conversation = {
@@ -371,9 +434,10 @@ def create_chat_route():
             }, 500)
         
         # Extract token usage
-        input_tokens = llm_result.get("input_tokens", 0)
-        completion_tokens = llm_result.get("completion_tokens", 0)
-        output_tokens = llm_result.get("output_tokens", 0)
+        input_tokens = service_response.get("input_tokens", 0)
+        completion_tokens = service_response.get("completion_tokens", 0)
+        output_tokens = service_response.get("output_tokens", 0)
+        cached_tokens = service_response.get("cached_tokens", 0)
         
         # Create response
         response_data = {
@@ -385,6 +449,10 @@ def create_chat_route():
             "completion_tokens": completion_tokens,
             "output_tokens": output_tokens
         }
+        
+        # Add cached tokens if available
+        if cached_tokens:
+            response_data["cached_tokens"] = cached_tokens
         
         return create_api_response(response_data, 200)
         
@@ -473,6 +541,17 @@ def continue_conversation_route():
             message:
               type: string
               example: Token has expired
+      402:
+        description: Payment required
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Insufficient Balance
+            message:
+              type: string
+              example: Your API call balance is depleted. Please upgrade your plan for additional calls.
       404:
         description: Not found
         schema:
@@ -575,27 +654,29 @@ def continue_conversation_route():
         # Format conversation for LLM
         llm_request_data = format_conversation_for_llm(conversation)
         
-        # Get LLM endpoint
-        llm_endpoint = f"{request.url_root.rstrip('/')}{LLM_ENDPOINTS[llm]}"
-        
-        # Call LLM API
-        headers = {"X-Token": token, "Content-Type": "application/json"}
-        llm_response = requests.post(
-            llm_endpoint,
-            headers=headers,
-            json=llm_request_data
-        )
-        
-        if llm_response.status_code != 200:
-            logger.error(f"Error from LLM API: {llm_response.text}")
+        # Use the appropriate service function directly instead of making an API call
+        if llm not in LLM_SERVICES:
             return create_api_response({
                 "error": "Server Error",
-                "message": f"Error from LLM API: {llm_response.text[:200]}"
+                "message": f"Invalid LLM type in conversation: {llm}"
+            }, 500)
+            
+        service_function = LLM_SERVICES[llm]
+        service_response = service_function(
+            system_prompt=llm_request_data["system_prompt"],
+            user_input=llm_request_data["user_input"],
+            temperature=temperature
+        )
+        
+        if not service_response["success"]:
+            logger.error(f"Error from LLM service: {service_response['error']}")
+            return create_api_response({
+                "error": "Server Error",
+                "message": f"Error from LLM service: {service_response['error']}"
             }, 500)
         
         # Extract the response data
-        llm_result = llm_response.json()
-        assistant_message = llm_result.get("message")
+        assistant_message = service_response["result"]
         
         # Add assistant message to conversation
         conversation["messages"].append({"role": "assistant", "content": assistant_message})
@@ -612,9 +693,9 @@ def continue_conversation_route():
             }, 500)
         
         # Extract token usage
-        input_tokens = llm_result.get("input_tokens", 0)
-        completion_tokens = llm_result.get("completion_tokens", 0)
-        output_tokens = llm_result.get("output_tokens", 0)
+        input_tokens = service_response.get("input_tokens", 0)
+        completion_tokens = service_response.get("completion_tokens", 0)
+        output_tokens = service_response.get("output_tokens", 0)
         
         # Create response
         response_data = {
@@ -778,6 +859,7 @@ def delete_conversation_route():
 
 def register_llm_conversation_routes(app):
     """Register LLM conversation routes with the Flask app"""
-    app.route('/llm/conversation/chat', methods=['POST'])(api_logger(check_balance(create_chat_route)))
-    app.route('/llm/conversation/continue', methods=['POST'])(api_logger(check_balance(continue_conversation_route)))
-    app.route('/llm/conversation', methods=['DELETE'])(api_logger(check_balance(delete_conversation_route)))
+    # We handle balance checking inside the route functions now, but keep the api_logger
+    app.route('/llm/conversation/chat', methods=['POST'])(api_logger(create_chat_route))
+    app.route('/llm/conversation/continue', methods=['POST'])(api_logger(continue_conversation_route))
+    app.route('/llm/conversation', methods=['DELETE'])(api_logger(delete_conversation_route))

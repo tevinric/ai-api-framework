@@ -3,6 +3,8 @@ from apis.utils.tokenService import TokenService
 from apis.utils.databaseService import DatabaseService
 from apis.utils.logMiddleware import api_logger
 from apis.utils.balanceMiddleware import check_balance
+from apis.utils.fileService import FileService
+from apis.utils.llmServices import gpt4o_mini_service
 import logging
 import pytz
 from datetime import datetime
@@ -11,7 +13,6 @@ import io
 import re
 import json
 import requests
-from openai import AzureOpenAI
 
 # CONFIGURE LOGGING
 logging.basicConfig(level=logging.INFO)
@@ -146,47 +147,40 @@ def create_json_gpt(text, token):
             VIN Number/Vinaginemr is an alphanumeric value that is unique to each vehicle.
         """
 
-        # Call the internal gpt-4o-mini API endpoint
-        llm_endpoint = f"{request.url_root.rstrip('/')}/llm/gpt-4o-mini"
+        user_input = f"""    
+            Please ensure that the resulting JSON contains only plain characters and no special characters from this text: '''{text}'''
+            Respond in the following JSON format, without additional code blocks or any new lines. 
+            {{
+                "RSA NO.": "answer",
+                "License no./Lisensienr.": "answer",
+                "Veh. register no./Vrt.registerer.": "answer",
+                "VIN": "answer",
+                "Fees/Gelde": "answer",
+                "Engine no./Enjinnr.": "answer",
+                "GVM/PVM": "answer",
+                "Tare/Tarra": "answer",
+                "Make": "answer",
+                "Description/Beskrywing": "answer",
+                "Persons/Personne": "answer",
+                "Seated/Sittende": "answer",
+                "Date of expiry/Vervaldatum": "answer"
+            }}
+        """
         
-        payload = {
-            "system_prompt": system_prompt,
-            "user_input": f"""    
-                Please ensure that the resulting JSON contains only plain characters and no special characters from this text: '''{text}'''
-                Respond in the following JSON format, without additional code blocks or any new lines. 
-                {{
-                    "RSA NO.": "answer",
-                    "License no./Lisensienr.": "answer",
-                    "Veh. register no./Vrt.registerer.": "answer",
-                    "VIN": "answer",
-                    "Fees/Gelde": "answer",
-                    "Engine no./Enjinnr.": "answer",
-                    "GVM/PVM": "answer",
-                    "Tare/Tarra": "answer",
-                    "Make": "answer",
-                    "Description/Beskrywing": "answer",
-                    "Persons/Personne": "answer",
-                    "Seated/Sittende": "answer",
-                    "Date of expiry/Vervaldatum": "answer"
-                }}
-            """,
-            "temperature": 0.3,
-            "json_output": True
-        }
-        
-        logger.info("Calling gpt-4o-mini API for vehicle license disc data extraction")
-        llm_response = requests.post(
-            llm_endpoint,
-            headers={'X-Token': token},
-            json=payload
+        # Use gpt4o_mini_service from llmServices instead of making HTTP request
+        logger.info("Calling gpt-4o-mini for vehicle license disc data extraction")
+        llm_result = gpt4o_mini_service(
+            system_prompt=system_prompt,
+            user_input=user_input,
+            temperature=0.3,
+            json_output=True
         )
         
-        if llm_response.status_code != 200:
-            logger.error(f"GPT API error: {llm_response.text}")
+        if not llm_result.get("success", False):
+            logger.error(f"GPT API error: {llm_result.get('error')}")
             return None
             
-        llm_result = llm_response.json()
-        result_content = llm_result.get("message", "{}")
+        result_content = llm_result.get("result", "{}")
         
         # Ensure the content is valid JSON
         if isinstance(result_content, str):
@@ -436,24 +430,18 @@ def vehicle_license_disc_route():
     file_id = data['file_id']
     
     try:
-        # Call the file URL endpoint to get the file URL
-        file_url_endpoint = f"{request.url_root.rstrip('/')}/file/url"
-        file_url_response = requests.get(
-            file_url_endpoint,
-            headers={'X-Token': token},
-            json={'file_id': file_id}
-        )
+        # Use FileService to get file URL instead of making HTTP request
+        file_info, error = FileService.get_file_url(file_id, g.user_id)
         
-        # Check if the request was successful
-        if file_url_response.status_code != 200:
-            logger.error(f"Failed to get file URL: {file_url_response.json()}")
+        # Check if there was an error
+        if error:
+            logger.error(f"Failed to get file URL: {error}")
             return create_api_response({
                 "error": "Bad Request",
                 "message": "File ID not found"
             }, 400)
         
         # Extract the file URL and content type
-        file_info = file_url_response.json()
         file_url = file_info.get('file_url')
         content_type = file_info.get('content_type')
         file_name = file_info.get('file_name')
@@ -466,7 +454,7 @@ def vehicle_license_disc_route():
                 "message": f"Unsupported file type. Supported types: {', '.join(ALLOWED_EXTENSIONS)}"
             }, 400)
         
-        # Download the file
+        # Download the file (still need to use HTTP request for this)
         file_response = requests.get(file_url)
         if file_response.status_code != 200:
             logger.error(f"Failed to download file: {file_response.status_code}")
@@ -506,19 +494,14 @@ def vehicle_license_disc_route():
                 "message": "Failed to extract data from vehicle license disc"
             }, 500)
         
-        # Delete the file after successful processing
+        # Delete the file after successful processing using FileService
         try:
-            delete_file_endpoint = f"{request.url_root.rstrip('/')}/file"
-            delete_response = requests.delete(
-                delete_file_endpoint,
-                headers={'X-Token': token},
-                json={'file_id': file_id}
-            )
+            success, message = FileService.delete_file(file_id, g.user_id)
             
-            if delete_response.status_code == 200:
+            if success:
                 logger.info(f"Successfully deleted file {file_id} after processing")
             else:
-                logger.warning(f"Failed to delete file {file_id}: {delete_response.status_code}, {delete_response.text}")
+                logger.warning(f"Failed to delete file {file_id}: {message}")
         except Exception as delete_error:
             # Log but don't fail if deletion fails
             logger.warning(f"Error deleting file {file_id}: {str(delete_error)}")

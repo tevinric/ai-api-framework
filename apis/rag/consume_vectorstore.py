@@ -9,7 +9,6 @@ import pytz
 import os
 import uuid
 import tempfile
-import requests
 import shutil
 from datetime import datetime
 from langchain_openai import AzureOpenAIEmbeddings
@@ -21,6 +20,11 @@ from langchain_community.document_loaders import (
     Docx2txtLoader,
     CSVLoader,
     UnstructuredExcelLoader
+)
+# Import LLM services directly
+from apis.utils.llmServices import (
+    gpt4o_service,
+    gpt4o_mini_service
 )
 
 # CONFIGURE LOGGING
@@ -38,6 +42,372 @@ def create_api_response(data, status_code=200):
     response.status_code = status_code
     return response
 
+def update_vectorstore_access_timestamp(vectorstore_id):
+    """Update the last_accessed timestamp for a vectorstore"""
+    try:
+        conn = DatabaseService.get_connection()
+        cursor = conn.cursor()
+        
+        # Update the last_accessed timestamp
+        query = """
+        UPDATE vectorstores
+        SET last_accessed = DATEADD(HOUR, 2, GETUTCDATE())
+        WHERE id = ?
+        """
+        
+        cursor.execute(query, [vectorstore_id])
+        conn.commit()
+        
+        cursor.close()
+        conn.close()
+        
+        logger.info(f"Updated last_accessed timestamp for vectorstore {vectorstore_id}")
+    except Exception as e:
+        logger.error(f"Error updating last_accessed timestamp: {str(e)}")
+
+def consume_git_policies_route():
+    """
+    Consume the Git policies vectorstore with a query - RAG-based conversational assistant
+    ---
+    tags:
+      - RAG
+    parameters:
+      - name: X-Token
+        in: header
+        type: string
+        required: true
+        description: Authentication token
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+            - query
+          properties:
+            query:
+              type: string
+              description: User query to answer using the git policies vectorstore
+            system_prompt:
+              type: string
+              description: Custom system prompt to guide model behavior (optional)
+            include_sources:
+              type: boolean
+              default: false 
+              description: Whether to include source documents in the response
+    produces:
+      - application/json
+    responses:
+      200:
+        description: Query answered successfully
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              example: "Query processed successfully"
+            answer:
+              type: string
+              example: "Based on the context, the answer to your question is..."
+            model:
+              type: string
+              example: "gpt-4o"
+            vectorstore_id:
+              type: string
+              example: "abc123456789"
+            input_tokens:
+              type: integer
+              example: 125
+            completion_tokens:
+              type: integer
+              example: 84
+            output_tokens:
+              type: integer
+              example: 209
+            sources:
+              type: array
+              items:
+                type: string
+              example: ["document1.pdf", "document2.docx"]
+              description: Source documents used for the answer (only included if include_sources is true)
+      400:
+        description: Bad request
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: "Bad Request"
+            message:
+              type: string
+              example: "Missing required field: query"
+      401:
+        description: Authentication error
+      403:
+        description: Forbidden
+      404:
+        description: Not found
+      500:
+        description: Server error
+    """
+    # Get token from X-Token header
+    token = request.headers.get('X-Token')
+    if not token:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "Missing X-Token header"
+        }, 401)
+    
+    # Validate token from database
+    token_details = DatabaseService.get_token_details_by_value(token)
+    if not token_details:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "Invalid token - not found in database"
+        }, 401)
+    
+    # Store token ID and user ID in g for logging and balance check
+    g.token_id = token_details["id"]
+    g.user_id = token_details["user_id"]
+    
+    # Check if token is expired
+    now = datetime.now(pytz.UTC)
+    expiration_time = token_details["token_expiration_time"]
+    
+    # Ensure expiration_time is timezone-aware
+    if expiration_time.tzinfo is None:
+        johannesburg_tz = pytz.timezone('Africa/Johannesburg')
+        expiration_time = johannesburg_tz.localize(expiration_time)
+        
+    if now > expiration_time:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "Token has expired"
+        }, 401)
+    
+    # Get user details
+    user_id = token_details["user_id"]
+    user_details = DatabaseService.get_user_by_id(user_id)
+    if not user_details:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "User associated with token not found"
+        }, 401)
+    
+    # Get request data
+    data = request.get_json()
+    if not data:
+        return create_api_response({
+            "error": "Bad Request",
+            "message": "Request body is required"
+        }, 400)
+    
+    # Validate required fields
+    if 'query' not in data:
+        return create_api_response({
+            "error": "Bad Request",
+            "message": "Missing required field: query"
+        }, 400)
+    
+    # Extract parameters
+    query = data.get('query')
+    system_prompt = data.get('system_prompt', None)
+    include_sources = data.get('include_sources', False)
+    
+    # Set hardcoded parameters for git policies
+    vectorstore_id = "f5e57660-79a7-4742-a240-c0fa6fc81b0d"
+    model = "gpt-4o"
+    temperature = 0.15
+    
+    try:
+        # Check if vectorstore exists and user has access
+        conn = None
+        cursor = None
+        try:
+            conn = DatabaseService.get_connection()
+            cursor = conn.cursor()
+            
+            # Get vectorstore info
+            query_db = """
+            SELECT id, user_id, path, name
+            FROM vectorstores 
+            WHERE id = ?
+            """
+            
+            cursor.execute(query_db, [vectorstore_id])
+            vectorstore_info = cursor.fetchone()
+            
+            if not vectorstore_info:
+                return create_api_response({
+                    "error": "Not Found",
+                    "message": f"Git policies vectorstore with ID {vectorstore_id} not found"
+                }, 404)
+            
+            # Check if vectorstore belongs to user (or if admin)
+            vs_user_id = vectorstore_info[1]
+            if vs_user_id != user_id and user_details.get("scope", 1) != 0:  # Not owner and not admin
+                return create_api_response({
+                    "error": "Forbidden",
+                    "message": "You don't have permission to access this vectorstore"
+                }, 403)
+            
+            # Extract vectorstore info
+            vectorstore_path = vectorstore_info[2]
+            vectorstore_name = vectorstore_info[3]
+            
+        except Exception as e:
+            logger.error(f"Error checking vectorstore: {str(e)}")
+            return create_api_response({
+                "error": "Server Error",
+                "message": f"Error checking vectorstore: {str(e)}"
+            }, 500)
+        finally:
+            if cursor:
+                cursor.close()
+            if conn:
+                conn.close()
+        
+        # Create temporary directory to download vectorstore
+        temp_dir = tempfile.mkdtemp()
+        local_vs_path = os.path.join(temp_dir, "vectorstore")
+        os.makedirs(local_vs_path)
+        
+        try:
+            # Download vectorstore from blob storage
+            blob_service_client = get_azure_blob_client()
+            container_client = blob_service_client.get_container_client(VECTORSTORE_CONTAINER)
+            
+            # Download all blobs with the vectorstore path prefix
+            blobs = list(container_client.list_blobs(name_starts_with=vectorstore_path))
+            if not blobs:
+                return create_api_response({
+                    "error": "Not Found",
+                    "message": f"Git policies vectorstore files not found in storage for ID {vectorstore_id}"
+                }, 404)
+            
+            # Download each blob
+            for blob in blobs:
+                # Get relative path from vectorstore_path
+                rel_path = blob.name[len(vectorstore_path) + 1:] if blob.name.startswith(vectorstore_path + "/") else blob.name
+                # Construct local path
+                local_blob_path = os.path.join(local_vs_path, rel_path)
+                
+                # Create directory if it doesn't exist
+                os.makedirs(os.path.dirname(local_blob_path), exist_ok=True)
+                
+                # Download blob
+                blob_client = container_client.get_blob_client(blob.name)
+                with open(local_blob_path, "wb") as download_file:
+                    download_file.write(blob_client.download_blob().readall())
+            
+            # Load the vectorstore
+            try:
+                # Initialize embeddings
+                embeddings = AzureOpenAIEmbeddings(
+                    azure_deployment=os.environ.get("AZURE_OPENAI_EMBEDDING_DEPLOYMENT", "text-embedding-3-large"),
+                    api_key=os.environ.get("OPENAI_API_KEY"),
+                    azure_endpoint=os.environ.get("OPENAI_API_ENDPOINT")
+                )
+                
+                # Load the vectorstore
+                vectorstore = FAISS.load_local(
+                    local_vs_path,
+                    embeddings,
+                    allow_dangerous_deserialization=True
+                )
+                
+                logger.info(f"Successfully loaded git policies vectorstore {vectorstore_id}")
+                
+                # Perform vector search to get relevant documents
+                docs = vectorstore.similarity_search(query, k=4)
+                
+                # Prepare context from retrieved documents
+                context = "\n\n".join([doc.page_content for doc in docs])
+                
+                # Set default system prompt if not provided
+                if not system_prompt:
+                    system_prompt = """You are a Git policy assistant that answers questions based on the company's git policies and guidelines.
+                    When answering, use only information from the provided context.
+                    If the context doesn't contain the answer, say you don't know based on the available information.
+                    Format your answers in a clear, concise manner and provide examples where appropriate.
+                    Always maintain a helpful, informative tone."""
+                
+                # Prepare request for the LLM model
+                user_input = f"Context: {context}\n\nQuestion: {query}\n\nAnswer the question based on the context provided."
+                
+                # Use gpt4o_service directly instead of making an API call
+                service_response = gpt4o_service(
+                    system_prompt=system_prompt,
+                    user_input=user_input,
+                    temperature=temperature
+                )
+                
+                if not service_response["success"]:
+                    logger.error(f"Error from LLM service: {service_response['error']}")
+                    return create_api_response({
+                        "error": "Server Error",
+                        "message": f"Error from LLM service: {service_response['error']}"
+                    }, 500)
+                
+                # Extract the response data
+                answer = service_response["result"]
+                
+                # Extract token usage
+                input_tokens = service_response.get("input_tokens", 0)
+                completion_tokens = service_response.get("completion_tokens", 0)
+                output_tokens = service_response.get("output_tokens", 0)
+                
+                # Update the last_accessed timestamp
+                update_vectorstore_access_timestamp(vectorstore_id)
+                
+                # Create the response
+                response_data = {
+                    "message": "Query processed successfully",
+                    "answer": answer,
+                    "model": model,
+                    "vectorstore_id": vectorstore_id,
+                    "vectorstore_name": vectorstore_name,
+                    "input_tokens": input_tokens,
+                    "completion_tokens": completion_tokens,
+                    "output_tokens": output_tokens
+                }
+                
+                # Add source documents if requested
+                if include_sources:
+                    sources = []
+                    for doc in docs:
+                        if 'source' in doc.metadata:
+                            sources.append(doc.metadata['source'])
+                    response_data["sources"] = list(set(sources))  # Remove duplicates
+                
+                return create_api_response(response_data, 200)
+                
+            except Exception as e:
+                logger.error(f"Error processing query with git policies vectorstore: {str(e)}")
+                return create_api_response({
+                    "error": "Server Error",
+                    "message": f"Error processing query: {str(e)}"
+                }, 500)
+            
+        except Exception as e:
+            logger.error(f"Error loading git policies vectorstore from storage: {str(e)}")
+            return create_api_response({
+                "error": "Server Error",
+                "message": f"Error loading git policies vectorstore: {str(e)}"
+            }, 500)
+        finally:
+            # Clean up temporary directory
+            try:
+                shutil.rmtree(temp_dir)
+            except Exception as e:
+                logger.error(f"Error cleaning up temporary directory: {str(e)}")
+                
+    except Exception as e:
+        logger.error(f"Error in consume_git_policies_route: {str(e)}")
+        return create_api_response({
+            "error": "Server Error",
+            "message": f"Error processing query: {str(e)}"
+        }, 500)
 
 def consume_vectorstore_route():
     """
@@ -81,10 +451,10 @@ def consume_vectorstore_route():
               maximum: 1
               default: 0.5
               description: Controls randomness (0=focused, 1=creative)
-            json_output:
+            include_sources:
               type: boolean
               default: false
-              description: Format response as JSON
+              description: Whether to include source documents in the response
     produces:
       - application/json
     responses:
@@ -114,6 +484,12 @@ def consume_vectorstore_route():
             output_tokens:
               type: integer
               example: 209
+            sources:
+              type: array
+              items:
+                type: string
+              example: ["document1.pdf", "document2.docx"]
+              description: Source documents used for the answer (only included if include_sources is true)
       400:
         description: Bad request
         schema:
@@ -237,7 +613,7 @@ def consume_vectorstore_route():
     model = data.get('model', 'gpt-4o-mini')  # Default to gpt-4o-mini
     system_prompt = data.get('system_prompt', None)
     temperature = float(data.get('temperature', 0.5))
-    json_output = data.get('json_output', False)
+    include_sources = data.get('include_sources', False)
     
     # Validate model
     valid_models = ['gpt-4o-mini', 'gpt-4o']
@@ -366,43 +742,40 @@ def consume_vectorstore_route():
                     If the context doesn't contain the answer, say you don't know based on the available information.
                     Always maintain a helpful, informative tone."""
                 
-                # Prepare request for the LLM model
-                llm_request_data = {
-                    "system_prompt": system_prompt,
-                    "user_input": f"Context: {context}\n\nQuestion: {query}\n\nAnswer the question based on the context provided.",
-                    "temperature": temperature,
-                    "json_output": json_output
-                }
+                # Prepare user input for the LLM model
+                user_input = f"Context: {context}\n\nQuestion: {query}\n\nAnswer the question based on the context provided."
                 
-                # Determine LLM endpoint based on selected model
+                # Use LLM service directly instead of making an API call
                 if model == 'gpt-4o':
-                    llm_endpoint = f"{request.url_root.rstrip('/')}/llm/gpt-4o"
+                    service_response = gpt4o_service(
+                        system_prompt=system_prompt,
+                        user_input=user_input,
+                        temperature=temperature
+                    )
                 else:  # Default to gpt-4o-mini
-                    llm_endpoint = f"{request.url_root.rstrip('/')}/llm/gpt-4o-mini"
+                    service_response = gpt4o_mini_service(
+                        system_prompt=system_prompt,
+                        user_input=user_input,
+                        temperature=temperature
+                    )
                 
-                # Call LLM API
-                headers = {"X-Token": token, "Content-Type": "application/json"}
-                llm_response = requests.post(
-                    llm_endpoint,
-                    headers=headers,
-                    json=llm_request_data
-                )
-                
-                if llm_response.status_code != 200:
-                    logger.error(f"Error from LLM API: {llm_response.text}")
+                if not service_response["success"]:
+                    logger.error(f"Error from LLM service: {service_response['error']}")
                     return create_api_response({
                         "error": "Server Error",
-                        "message": f"Error from LLM API: {llm_response.text[:200]}"
+                        "message": f"Error from LLM service: {service_response['error']}"
                     }, 500)
                 
                 # Extract the response data
-                llm_result = llm_response.json()
-                answer = llm_result.get("message")
+                answer = service_response["result"]
                 
                 # Extract token usage
-                input_tokens = llm_result.get("input_tokens", 0)
-                completion_tokens = llm_result.get("completion_tokens", 0)
-                output_tokens = llm_result.get("output_tokens", 0)
+                input_tokens = service_response.get("input_tokens", 0)
+                completion_tokens = service_response.get("completion_tokens", 0)
+                output_tokens = service_response.get("output_tokens", 0)
+                
+                # Update the last_accessed timestamp
+                update_vectorstore_access_timestamp(vectorstore_id)
                 
                 # Create the response
                 response_data = {
@@ -416,8 +789,8 @@ def consume_vectorstore_route():
                     "output_tokens": output_tokens
                 }
                 
-                # Add source documents if desired
-                if data.get('include_sources', False):
+                # Add source documents if requested
+                if include_sources:
                     sources = []
                     for doc in docs:
                         if 'source' in doc.metadata:
@@ -456,3 +829,4 @@ def consume_vectorstore_route():
 
 def register_consume_vectorstore_routes(app):
   app.route('/rag/vectorstore/consume', methods=['POST'])(api_logger(check_balance(consume_vectorstore_route)))
+  app.route('/rag/vectorstore/consume/git_policies', methods=['POST'])(api_logger(check_balance(consume_git_policies_route)))

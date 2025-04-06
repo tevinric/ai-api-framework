@@ -3,19 +3,19 @@ from apis.utils.tokenService import TokenService
 from apis.utils.databaseService import DatabaseService
 from apis.utils.logMiddleware import api_logger
 from apis.utils.balanceMiddleware import check_balance
+from apis.utils.fileService import FileService
 import logging
 import pytz
 from datetime import datetime
 import os
 import json
-import requests
 import tempfile
 import re
+import requests
 
 # For Azure AI Document Intelligence
 from azure.core.credentials import AzureKeyCredential
 from azure.ai.documentintelligence import DocumentIntelligenceClient
-from azure.ai.documentintelligence.models import AnalyzeDocumentRequest
 from azure.core.exceptions import HttpResponseError
 
 # CONFIGURE LOGGING
@@ -490,43 +490,26 @@ def document_layout_route():
     total_pages = 0
     
     for file_id in file_ids:
+        temp_file_path = None
         try:
-            # Get file URL from the file ID
-            headers = {"X-Token": token}
-            logger.info(f"Getting file URL for file ID: {file_id}")
-            # Make a request to the file/url endpoint using GET method
-            # The endpoint expects file_id as a query parameter
-            file_url_endpoint = f"{request.url_root.rstrip('/')}/file/url?file_id={file_id}"
-            logger.info(f"Requesting file URL from endpoint: {file_url_endpoint}")
+            # Get file URL using FileService instead of making an HTTP request
+            file_info, error = FileService.get_file_url(file_id, g.user_id)
             
-            file_url_response = requests.get(
-                file_url_endpoint,
-                headers=headers
-            )
-            
-            # Log the response details for debugging
-            logger.info(f"File URL response status: {file_url_response.status_code}")
-            if file_url_response.status_code != 200:
-                logger.error(f"File URL response error: {file_url_response.text}")
-            else:
-                logger.info(f"File URL response: {file_url_response.text[:100]}...")
-            
-            if file_url_response.status_code != 200:
-                logger.error(f"Error retrieving file URL: Status {file_url_response.status_code}, Response: {file_url_response.text[:500]}")
+            if error:
+                logger.error(f"Error retrieving file URL: {error}")
                 results.append({
                     "file_id": file_id,
-                    "error": f"File not found or you don't have access"
+                    "error": error
                 })
                 continue
             
-            file_info = file_url_response.json()
             file_url = file_info.get("file_url")
             file_name = file_info.get("file_name")
             
             logger.info(f"Retrieved file URL: {file_url} for file: {file_name}")
             
             if not file_url:
-                logger.error("Missing file_url in response from get-file-url endpoint")
+                logger.error("Missing file_url in file info")
                 results.append({
                     "file_id": file_id,
                     "file_name": file_name if file_name else "Unknown",
@@ -549,235 +532,313 @@ def document_layout_route():
             
             logger.info(f"File type validation passed for file: {file_name} with extension: {file_extension}")
             
-            # Call Document Intelligence to analyze the document
+            # Download the file content - REFACTORED: Instead of passing URL directly, download file first
             try:
-                logger.info(f"Sending document to Document Intelligence layout service: {file_url}")
+                logger.info(f"Downloading file from URL: {file_url}")
                 
-                # Create analyzer options based on requested features
-                analyzer_options = {}
-                features = []
+                # Download the file directly
+                response = requests.get(file_url, timeout=60)
                 
-                if options['include_language']:
-                    features.append("languages")
+                # If it's an Azure blob URL, we might need to add authorization
+                if response.status_code != 200 and "blob.core.windows.net" in file_url:
+                    response = requests.get(
+                        file_url,
+                        headers={"Authorization": f"Bearer {token}"},
+                        timeout=60
+                    )
                 
-                if options['include_keyvalue_pairs']:
-                    features.append("keyValuePairs")
-                
-                if options['include_barcode']:
-                    features.append("barcodes")
-                
-                if features:
-                    analyzer_options["features"] = features
-                
-                # Start the document analysis
-                poller = document_client.begin_analyze_document(
-                    "prebuilt-layout",  # Use layout model to get structured content
-                    AnalyzeDocumentRequest(url_source=file_url),
-                    **analyzer_options
-                )
-                
-                logger.info(f"Waiting for Document Intelligence to complete layout analysis...")
-                result = poller.result()
-                
-                # Check if document was analyzed successfully
-                if not result or not result.pages:
-                    logger.warning(f"No results returned from Document Intelligence for file: {file_name}")
+                if response.status_code != 200:
+                    logger.error(f"Failed to download file: Status {response.status_code}")
                     results.append({
                         "file_id": file_id,
                         "file_name": file_name,
-                        "error": "No content detected in document"
+                        "error": f"Failed to download file: Status {response.status_code}"
                     })
                     continue
                 
-                # Determine which pages to process
-                document_page_count = len(result.pages)
-                if options['page_selection'] == 'range' and options['page_range']:
-                    pages_to_process = parse_page_range(options['page_range'], document_page_count)
-                else:
-                    pages_to_process = list(range(1, document_page_count + 1))
+                content_length = len(response.content)
+                logger.info(f"Downloaded {content_length} bytes for file {file_name}")
                 
-                # Format results for the response
-                document_result = {
-                    "file_id": file_id,
-                    "file_name": file_name,
-                    "total_pages": document_page_count,
-                    "processed_pages": len(pages_to_process),
-                    "has_handwritten_content": False,  # Will update if handwritten content is detected
-                    "pages": []
-                }
+                if content_length == 0:
+                    logger.error("Downloaded file is empty")
+                    results.append({
+                        "file_id": file_id,
+                        "file_name": file_name,
+                        "error": "Downloaded file is empty"
+                    })
+                    continue
                 
-                # Check for handwritten content if styles are available
-                if hasattr(result, 'styles') and result.styles:
-                    document_result["has_handwritten_content"] = any(
-                        style.is_handwritten for style in result.styles if hasattr(style, 'is_handwritten')
-                    )
+                # Save to a temporary file
+                temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=file_extension)
+                temp_file_path = temp_file.name
+                temp_file.write(response.content)
+                temp_file.close()
                 
-                # Process key-value pairs if requested
-                if options['include_keyvalue_pairs'] and hasattr(result, 'key_value_pairs') and result.key_value_pairs:
-                    document_result["key_value_pairs"] = process_keyvalue_pairs(result, options['output_format'])
+                logger.info(f"Saved file to temporary location: {temp_file_path}")
                 
-                # Process each requested page
-                for page in result.pages:
-                    # Skip pages not in the requested range
-                    if page.page_number not in pages_to_process:
+                # Call Document Intelligence to analyze the document from the file
+                try:
+                    logger.info(f"Sending document to Document Intelligence layout service")
+                    
+                    # Create analyzer options based on requested features
+                    analyzer_options = {}
+                    features = []
+                    
+                    if options['include_language']:
+                        features.append("languages")
+                    
+                    if options['include_keyvalue_pairs']:
+                        features.append("keyValuePairs")
+                    
+                    if options['include_barcode']:
+                        features.append("barcodes")
+                    
+                    if features:
+                        analyzer_options["features"] = features
+                    
+                    # REFACTORED: Use local file instead of URL
+                    with open(temp_file_path, "rb") as document_file:
+                        # Start the document analysis
+                        poller = document_client.begin_analyze_document(
+                            "prebuilt-layout",  # Use layout model to get structured content
+                            document_file,
+                            **analyzer_options
+                        )
+                    
+                    logger.info(f"Waiting for Document Intelligence to complete layout analysis...")
+                    result = poller.result()
+                    
+                    # Check if document was analyzed successfully
+                    if not result or not result.pages:
+                        logger.warning(f"No results returned from Document Intelligence for file: {file_name}")
+                        results.append({
+                            "file_id": file_id,
+                            "file_name": file_name,
+                            "error": "No content detected in document"
+                        })
                         continue
                     
-                    page_info = {
-                        "page_number": page.page_number,
-                        "width": page.width,
-                        "height": page.height,
-                        "unit": page.unit,
-                        "has_handwritten_content": False,  # Will update based on styles
+                    # Determine which pages to process
+                    document_page_count = len(result.pages)
+                    if options['page_selection'] == 'range' and options['page_range']:
+                        pages_to_process = parse_page_range(options['page_range'], document_page_count)
+                    else:
+                        pages_to_process = list(range(1, document_page_count + 1))
+                    
+                    # Format results for the response
+                    document_result = {
+                        "file_id": file_id,
+                        "file_name": file_name,
+                        "total_pages": document_page_count,
+                        "processed_pages": len(pages_to_process),
+                        "has_handwritten_content": False,  # Will update if handwritten content is detected
+                        "pages": []
                     }
                     
-                    # Check if page has handwritten content (safely)
+                    # Check for handwritten content if styles are available
                     if hasattr(result, 'styles') and result.styles:
-                        for style in result.styles:
-                            if (hasattr(style, 'is_handwritten') and 
-                                style.is_handwritten and 
-                                hasattr(style, 'page_number') and
-                                style.page_number == page.page_number):
-                                page_info["has_handwritten_content"] = True
-                                break
+                        document_result["has_handwritten_content"] = any(
+                            style.is_handwritten for style in result.styles if hasattr(style, 'is_handwritten')
+                        )
                     
-                    # Process text paragraphs
-                    if hasattr(page, 'paragraphs') and page.paragraphs:
-                        # Use paragraphs from the layout analysis
-                        page_info["text"] = []
-                        for para in page.paragraphs:
-                            if para.content.strip():  # Skip empty paragraphs
-                                page_info["text"].append({
-                                    "type": "paragraph",
-                                    "content": para.content,
-                                    "role": para.role if hasattr(para, 'role') else None
-                                })
-                    elif hasattr(page, 'lines') and page.lines:
-                        # Fall back to lines if paragraphs aren't available
-                        page_info["text"] = []
-                        for line in page.lines:
-                            if line.content.strip():  # Skip empty lines
-                                page_info["text"].append({
-                                    "type": "line",
-                                    "content": line.content
-                                })
+                    # Process key-value pairs if requested
+                    if options['include_keyvalue_pairs'] and hasattr(result, 'key_value_pairs') and result.key_value_pairs:
+                        document_result["key_value_pairs"] = process_keyvalue_pairs(result, options['output_format'])
                     
-                    # Process selection marks (checkboxes)
-                    if hasattr(page, 'selection_marks') and page.selection_marks:
-                        page_info["selection_marks"] = []
-                        for mark in page.selection_marks:
-                            page_info["selection_marks"].append({
-                                "state": mark.state,
-                                "confidence": mark.confidence
-                            })
-                    
-                    # Process barcodes if requested
-                    if options['include_barcode'] and hasattr(page, 'barcodes') and page.barcodes:
-                        page_info["barcodes"] = []
-                        for barcode in page.barcodes:
-                            page_info["barcodes"].append({
-                                "value": barcode.value,
-                                "type": barcode.type,
-                                "confidence": barcode.confidence
-                            })
-                    
-                    # Process tables for this page
-                    if hasattr(result, 'tables') and result.tables:
-                        page_tables = []
-                        for table in result.tables:
-                            # Check if this table belongs to the current page
-                            if (hasattr(table, 'bounding_regions') and 
-                                any(region.page_number == page.page_number for region in table.bounding_regions)):
-                                
-                                # Create a table structure
-                                try:
-                                    table_obj = {
-                                        "row_count": table.row_count,
-                                        "column_count": table.column_count,
-                                        "cells": []
-                                    }
-                                    
-                                    # Extract table content
-                                    for cell in table.cells:
-                                        if not hasattr(cell, 'content'):
-                                            continue
-                                            
-                                        table_obj["cells"].append({
-                                            "row_index": cell.row_index,
-                                            "column_index": cell.column_index,
-                                            "row_span": cell.row_span,
-                                            "column_span": cell.column_span,
-                                            "content": cell.content,
-                                            "kind": cell.kind if hasattr(cell, 'kind') else None
-                                        })
-                                    
-                                    # Format table according to requested output format
-                                    if options['output_format'] == 'markdown':
-                                        table_obj["formatted"] = format_table_markdown(table)
-                                    else:
-                                        table_obj["formatted"] = format_table_text(table)
-                                    
-                                    # Always include a markdown version of the table as table_summary
-                                    table_obj["table_summary"] = format_table_markdown(table)
-                                    
-                                    page_tables.append(table_obj)
-                                except Exception as e:
-                                    logger.error(f"Error processing table: {str(e)}")
+                    # Process each requested page
+                    for page in result.pages:
+                        # Skip pages not in the requested range
+                        if page.page_number not in pages_to_process:
+                            continue
                         
-                        if page_tables:
-                            page_info["tables"] = page_tables
+                        page_info = {
+                            "page_number": page.page_number,
+                            "width": page.width,
+                            "height": page.height,
+                            "unit": page.unit,
+                            "has_handwritten_content": False,  # Will update based on styles
+                        }
+                        
+                        # Check if page has handwritten content (safely)
+                        if hasattr(result, 'styles') and result.styles:
+                            for style in result.styles:
+                                if (hasattr(style, 'is_handwritten') and 
+                                    style.is_handwritten and 
+                                    hasattr(style, 'page_number') and
+                                    style.page_number == page.page_number):
+                                    page_info["has_handwritten_content"] = True
+                                    break
+                        
+                        # Process text paragraphs
+                        if hasattr(page, 'paragraphs') and page.paragraphs:
+                            # Use paragraphs from the layout analysis
+                            page_info["text"] = []
+                            for para in page.paragraphs:
+                                if para.content.strip():  # Skip empty paragraphs
+                                    page_info["text"].append({
+                                        "type": "paragraph",
+                                        "content": para.content,
+                                        "role": para.role if hasattr(para, 'role') else None
+                                    })
+                        elif hasattr(page, 'lines') and page.lines:
+                            # Fall back to lines if paragraphs aren't available
+                            page_info["text"] = []
+                            for line in page.lines:
+                                if line.content.strip():  # Skip empty lines
+                                    page_info["text"].append({
+                                        "type": "line",
+                                        "content": line.content
+                                    })
+                        
+                        # Process selection marks (checkboxes)
+                        if hasattr(page, 'selection_marks') and page.selection_marks:
+                            page_info["selection_marks"] = []
+                            for mark in page.selection_marks:
+                                page_info["selection_marks"].append({
+                                    "state": mark.state,
+                                    "confidence": mark.confidence
+                                })
+                        
+                        # Process barcodes if requested
+                        if options['include_barcode'] and hasattr(page, 'barcodes') and page.barcodes:
+                            page_info["barcodes"] = []
+                            for barcode in page.barcodes:
+                                page_info["barcodes"].append({
+                                    "value": barcode.value,
+                                    "type": barcode.type,
+                                    "confidence": barcode.confidence
+                                })
+                        
+                        # Process tables for this page
+                        if hasattr(result, 'tables') and result.tables:
+                            page_tables = []
+                            for table in result.tables:
+                                # Check if this table belongs to the current page
+                                if (hasattr(table, 'bounding_regions') and 
+                                    any(region.page_number == page.page_number for region in table.bounding_regions)):
+                                    
+                                    # Create a table structure
+                                    try:
+                                        table_obj = {
+                                            "row_count": table.row_count,
+                                            "column_count": table.column_count,
+                                            "cells": []
+                                        }
+                                        
+                                        # Extract table content
+                                        for cell in table.cells:
+                                            if not hasattr(cell, 'content'):
+                                                continue
+                                                
+                                            table_obj["cells"].append({
+                                                "row_index": cell.row_index,
+                                                "column_index": cell.column_index,
+                                                "row_span": cell.row_span,
+                                                "column_span": cell.column_span,
+                                                "content": cell.content,
+                                                "kind": cell.kind if hasattr(cell, 'kind') else None
+                                            })
+                                        
+                                        # Format table according to requested output format
+                                        if options['output_format'] == 'markdown':
+                                            table_obj["formatted"] = format_table_markdown(table)
+                                        else:
+                                            table_obj["formatted"] = format_table_text(table)
+                                        
+                                        # Always include a markdown version of the table as table_summary
+                                        table_obj["table_summary"] = format_table_markdown(table)
+                                        
+                                        page_tables.append(table_obj)
+                                    except Exception as e:
+                                        logger.error(f"Error processing table: {str(e)}")
+                            
+                            if page_tables:
+                                page_info["tables"] = page_tables
+                        
+                        # Create page_text_all with all paragraphs from this page
+                        page_text_all = ""
+                        
+                        # Add text content
+                        if "text" in page_info:
+                            for text_item in page_info["text"]:
+                                if text_item.get("content", "").strip():
+                                    page_text_all += text_item["content"] + "\n\n"
+                        
+                        # Add tables if present
+                        if "tables" in page_info and page_info["tables"]:
+                            for table in page_info["tables"]:
+                                if "formatted" in table:
+                                    page_text_all += table["formatted"] + "\n\n"
+                        
+                        # Add the consolidated page text
+                        page_info["page_text_all"] = page_text_all.strip()
+                        
+                        # If language detection was requested, include that
+                        if options['include_language'] and hasattr(page, 'languages') and page.languages:
+                            page_info["detected_languages"] = [
+                                {
+                                    "language": lang.locale,
+                                    "confidence": lang.confidence
+                                } 
+                                for lang in page.languages
+                            ]
+                        
+                        # Add to results
+                        document_result["pages"].append(page_info)
                     
-                    # Create page_text_all with all paragraphs from this page
-                    page_text_all = ""
+                    # Clean up the temporary file
+                    if temp_file_path and os.path.exists(temp_file_path):
+                        os.unlink(temp_file_path)
+                        temp_file_path = None
                     
-                    # Add text content
-                    if "text" in page_info:
-                        for text_item in page_info["text"]:
-                            if text_item.get("content", "").strip():
-                                page_text_all += text_item["content"] + "\n\n"
+                    # Add to overall results
+                    results.append(document_result)
+                    total_documents += 1
+                    total_pages += len(document_result["pages"])
                     
-                    # Add tables if present
-                    if "tables" in page_info and page_info["tables"]:
-                        for table in page_info["tables"]:
-                            if "formatted" in table:
-                                page_text_all += table["formatted"] + "\n\n"
+                except HttpResponseError as e:
+                    logger.error(f"Azure Document Intelligence service error: {str(e)}")
+                    results.append({
+                        "file_id": file_id,
+                        "file_name": file_name,
+                        "error": f"Document analysis error: {str(e)}"
+                    })
                     
-                    # Add the consolidated page text
-                    page_info["page_text_all"] = page_text_all.strip()
+                    # Clean up the temporary file
+                    if temp_file_path and os.path.exists(temp_file_path):
+                        os.unlink(temp_file_path)
+                        temp_file_path = None
+                        
+                    continue
                     
-                    # If language detection was requested, include that
-                    if options['include_language'] and hasattr(page, 'languages') and page.languages:
-                        page_info["detected_languages"] = [
-                            {
-                                "language": lang.locale,
-                                "confidence": lang.confidence
-                            } 
-                            for lang in page.languages
-                        ]
+                except Exception as e:
+                    logger.error(f"Error analyzing document: {str(e)}")
+                    results.append({
+                        "file_id": file_id,
+                        "file_name": file_name,
+                        "error": f"Document analysis error: {str(e)}"
+                    })
                     
-                    # Add to results
-                    document_result["pages"].append(page_info)
-                
-                # Add to overall results
-                results.append(document_result)
-                total_documents += 1
-                total_pages += len(document_result["pages"])
-                
-            except HttpResponseError as e:
-                logger.error(f"Azure Document Intelligence service error: {str(e)}")
-                results.append({
-                    "file_id": file_id,
-                    "file_name": file_name,
-                    "error": f"Document analysis error: {str(e)}"
-                })
-                continue
+                    # Clean up the temporary file
+                    if temp_file_path and os.path.exists(temp_file_path):
+                        os.unlink(temp_file_path)
+                        temp_file_path = None
+                        
+                    continue
                 
             except Exception as e:
-                logger.error(f"Error analyzing document: {str(e)}")
+                logger.error(f"Error downloading or processing file: {str(e)}")
                 results.append({
                     "file_id": file_id,
-                    "file_name": file_name,
-                    "error": f"Document analysis error: {str(e)}"
+                    "file_name": file_name if file_name else "Unknown",
+                    "error": f"Error downloading or processing file: {str(e)}"
                 })
+                
+                # Clean up the temporary file if it exists
+                if temp_file_path and os.path.exists(temp_file_path):
+                    os.unlink(temp_file_path)
+                    temp_file_path = None
+                    
                 continue
                 
         except Exception as e:
@@ -786,6 +847,11 @@ def document_layout_route():
                 "file_id": file_id,
                 "error": f"Processing error: {str(e)}"
             })
+            
+            # Clean up the temporary file if it exists
+            if temp_file_path and os.path.exists(temp_file_path):
+                os.unlink(temp_file_path)
+                
             continue
     
     # If no documents were processed successfully, return an error

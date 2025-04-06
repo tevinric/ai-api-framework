@@ -120,6 +120,26 @@ def rag():
 def nlp():
     return render_template('docs/nlp.html')
 
+## file management
+@app.route('/docs/file_portal')
+def file_portal():
+    return render_template('docs/file_portal.html')
+
+##FAQ
+@app.route('/docs/faq')
+def faq():
+    return render_template('docs/faq.html')
+
+## TECHNICAL SUPPORT 
+@app.route('/docs/technical_support')
+def technical_support():    
+    return render_template('docs/technical_support.html')
+
+## CHANGELOG
+@app.route('/docs/changelog')
+def changelog():    
+    return render_template('docs/changelog.html')
+
 # TOKEN SERVICE ENDPOINTS
 ## GET TOKEN
 from apis.token_services.get_token import register_routes as get_token_endpoint 
@@ -164,6 +184,13 @@ register_llm_gpt_4o(app)
 from apis.llm.gpt_o1_mini import register_llm_o1_mini
 register_llm_o1_mini(app)
 
+from apis.llm.deepseekv3 import register_llm_deepseek_v3
+register_llm_deepseek_v3(app)
+
+from apis.llm.gpt_o3_mini import register_llm_o3_mini
+register_llm_o3_mini(app)
+
+
 from apis.rag_query import register_rag_query_routes
 register_rag_query_routes(app)
 
@@ -205,6 +232,9 @@ register_vectorstore_routes(app)
 
 from apis.rag.consume_vectorstore import register_consume_vectorstore_routes
 register_consume_vectorstore_routes(app)
+
+from apis.rag.vectorstore_advanced import register_advanced_vectorstore_routes
+register_advanced_vectorstore_routes(app)
 
 from apis.llm_conversation.conversation import register_llm_conversation_routes
 register_llm_conversation_routes(app)

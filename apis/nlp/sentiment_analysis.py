@@ -1,12 +1,14 @@
 from flask import jsonify, request, g, make_response
 from apis.utils.tokenService import TokenService
 from apis.utils.databaseService import DatabaseService
+from apis.utils.balanceService import BalanceService
+from apis.utils.llmServices import gpt4o_service, gpt4o_mini_service
 import logging
 import pytz
 from datetime import datetime
-import requests
 import json
 import re
+import uuid
 
 # CONFIGURE LOGGING
 logging.basicConfig(level=logging.INFO)
@@ -245,6 +247,31 @@ def sentiment_analysis_route():
         }, 400)
     
     try:
+        # Deduct AI credits based on model
+        # Get endpoint ID for this request
+        endpoint_id = DatabaseService.get_endpoint_id_by_path(request.path)
+        if not endpoint_id:
+            endpoint_id = str(uuid.uuid4())  # Use a placeholder if endpoint not found
+            
+        # Determine credit cost based on model
+        if model == 'gpt-4o-mini':
+            credit_cost = 0.5
+        else:  # model == 'gpt-4o'
+            credit_cost = 2.0
+            
+        # Check and deduct balance
+        success, result = BalanceService.check_and_deduct_balance(user_id, endpoint_id, credit_cost)
+        if not success:
+            if result == "Insufficient balance":
+                return create_api_response({
+                    "error": "Insufficient Balance",
+                    "message": "Your API call balance is depleted. Please upgrade your plan for additional calls."
+                }, 402)
+            return create_api_response({
+                "error": "Balance Error",
+                "message": f"Error processing balance: {result}"
+            }, 500)
+        
         # Create system message for sentiment analysis
         system_prompt = """You are a sentiment analysis system. Your task is to classify the provided text into one of three sentiment categories: positive, neutral, or negative.
 
@@ -266,44 +293,26 @@ Only use "positive", "neutral", and "negative" as sentiment values."""
         # Create user message with text to analyze
         user_message = f"Text to analyze: {user_input}"
         
-        # Determine which LLM endpoint to call based on model selection
-        llm_endpoint = f"{request.url_root.rstrip('/')}/llm/{model}"
+        # Use appropriate LLM service from llmServices based on model parameter
+        if model == 'gpt-4o-mini':
+            llm_result = gpt4o_mini_service(system_prompt, user_message, temperature=0.0, json_output=True)
+        else:  # model == 'gpt-4o'
+            llm_result = gpt4o_service(system_prompt, user_message, temperature=0.0, json_output=True)
         
-        # Prepare payload for LLM request
-        llm_request_data = {
-            "system_prompt": system_prompt,
-            "user_input": user_message,
-            "temperature": 0.0  # Set temperature to 0 for deterministic results
-        }
-        
-        # Call selected LLM API
-        logger.info(f"Calling {model} for sentiment analysis")
-        headers = {"X-Token": token, "Content-Type": "application/json"}
-        llm_response = requests.post(
-            llm_endpoint,
-            headers=headers,
-            json=llm_request_data
-        )
-        
-        if llm_response.status_code != 200:
-            logger.error(f"Error from LLM API: {llm_response.text}")
+        if not llm_result.get("success", False):
+            logger.error(f"Error from LLM service: {llm_result.get('error', 'Unknown error')}")
             return create_api_response({
                 "error": "Server Error",
-                "message": f"Error from LLM API: {llm_response.text[:200]}"
+                "message": f"Error from LLM service: {llm_result.get('error', 'Unknown error')[:200]}"
             }, 500)
         
         # Extract response and token usage
-        llm_result = llm_response.json()
-        llm_message = llm_result.get("message", "").strip()
+        llm_message = llm_result.get("result", "").strip()
         
         # Parse the JSON response from the LLM
         try:
-            # Find JSON content in the LLM's response (it might include other text)
-            json_match = re.search(r'({[\s\S]*})', llm_message)
-            if json_match:
-                sentiment_json = json.loads(json_match.group(1))
-            else:
-                sentiment_json = json.loads(llm_message)
+            # Parse the JSON response
+            sentiment_json = json.loads(llm_message)
             
             # Extract sentiments list
             sentiments = sentiment_json.get("sentiments", [])
@@ -584,6 +593,31 @@ def advanced_sentiment_analysis_route():
         }, 400)
     
     try:
+        # Deduct AI credits based on model
+        # Get endpoint ID for this request
+        endpoint_id = DatabaseService.get_endpoint_id_by_path(request.path)
+        if not endpoint_id:
+            endpoint_id = str(uuid.uuid4())  # Use a placeholder if endpoint not found
+            
+        # Determine credit cost based on model
+        if model == 'gpt-4o-mini':
+            credit_cost = 0.5
+        else:  # model == 'gpt-4o'
+            credit_cost = 2.0
+            
+        # Check and deduct balance
+        success, result = BalanceService.check_and_deduct_balance(user_id, endpoint_id, credit_cost)
+        if not success:
+            if result == "Insufficient balance":
+                return create_api_response({
+                    "error": "Insufficient Balance",
+                    "message": "Your API call balance is depleted. Please upgrade your plan for additional calls."
+                }, 402)
+            return create_api_response({
+                "error": "Balance Error",
+                "message": f"Error processing balance: {result}"
+            }, 500)
+        
         # Create system message for advanced emotion analysis
         # Using the comprehensive EMOTION_LIST defined at the top of the file
         emotion_list_str = ", ".join(EMOTION_LIST)
@@ -610,44 +644,26 @@ Include ALL emotions detected in the text with appropriate confidence scores."""
         # Create user message with text to analyze
         user_message = f"Text to analyze: {user_input}"
         
-        # Determine which LLM endpoint to call based on model selection
-        llm_endpoint = f"{request.url_root.rstrip('/')}/llm/{model}"
+        # Use appropriate LLM service from llmServices based on model parameter
+        if model == 'gpt-4o-mini':
+            llm_result = gpt4o_mini_service(system_prompt, user_message, temperature=0.0, json_output=True)
+        else:  # model == 'gpt-4o'
+            llm_result = gpt4o_service(system_prompt, user_message, temperature=0.0, json_output=True)
         
-        # Prepare payload for LLM request
-        llm_request_data = {
-            "system_prompt": system_prompt,
-            "user_input": user_message,
-            "temperature": 0.0  # Set temperature to 0 for deterministic results
-        }
-        
-        # Call selected LLM API
-        logger.info(f"Calling {model} for advanced emotion analysis")
-        headers = {"X-Token": token, "Content-Type": "application/json"}
-        llm_response = requests.post(
-            llm_endpoint,
-            headers=headers,
-            json=llm_request_data
-        )
-        
-        if llm_response.status_code != 200:
-            logger.error(f"Error from LLM API: {llm_response.text}")
+        if not llm_result.get("success", False):
+            logger.error(f"Error from LLM service: {llm_result.get('error', 'Unknown error')}")
             return create_api_response({
                 "error": "Server Error",
-                "message": f"Error from LLM API: {llm_response.text[:200]}"
+                "message": f"Error from LLM service: {llm_result.get('error', 'Unknown error')[:200]}"
             }, 500)
         
         # Extract response and token usage
-        llm_result = llm_response.json()
-        llm_message = llm_result.get("message", "").strip()
+        llm_message = llm_result.get("result", "").strip()
         
         # Parse the JSON response from the LLM
         try:
-            # Find JSON content in the LLM's response (it might include other text)
-            json_match = re.search(r'({[\s\S]*})', llm_message)
-            if json_match:
-                emotions_json = json.loads(json_match.group(1))
-            else:
-                emotions_json = json.loads(llm_message)
+            # Parse the JSON response
+            emotions_json = json.loads(llm_message)
             
             # Extract emotions list
             emotions = emotions_json.get("emotions", [])
@@ -721,7 +737,7 @@ Include ALL emotions detected in the text with appropriate confidence scores."""
 def register_sentiment_routes(app):
     """Register sentiment analysis routes with the Flask app"""
     from apis.utils.logMiddleware import api_logger
-    from apis.utils.balanceMiddleware import check_balance
     
-    app.route('/nlp/sentiment', methods=['POST'])(api_logger(check_balance(sentiment_analysis_route)))
-    app.route('/nlp/sentiment/advanced', methods=['POST'])(api_logger(check_balance(advanced_sentiment_analysis_route)))
+    # No longer using balanceMiddleware's check_balance since we're handling billing directly in the route
+    app.route('/nlp/sentiment', methods=['POST'])(api_logger(sentiment_analysis_route))
+    app.route('/nlp/sentiment/advanced', methods=['POST'])(api_logger(advanced_sentiment_analysis_route))

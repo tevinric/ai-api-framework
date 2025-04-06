@@ -12,6 +12,7 @@ CREATE TABLE vectorstores (
     chunk_size INT NOT NULL DEFAULT 1000,
     chunk_overlap INT NOT NULL DEFAULT 200,
     created_at DATETIME2 NOT NULL,
+    last_accessed DATETIME2 NULL,
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 

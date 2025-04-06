@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Speech Services - AI API Platform</title>
+    <link rel="icon" href="/static/images/Telesure-logo.png" type="image/png">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
@@ -14,8 +15,15 @@
             --text-color: #333;
             --white-color: #ffffff;
             --accent-color: #00d4ff;
+            --accent-gradient: linear-gradient(90deg, #00d4ff 0%, #6c63ff 100%);
+            --magenta-dark: #3B0138;
+            --magenta-gradient: linear-gradient(90deg, #3B0138 0%, #4a6fe3 100%);
             --sidebar-width: 280px;
             --header-height: 60px;
+            --basic-speech-color: #1971c2;
+            --basic-speech-gradient: linear-gradient(90deg, #1971c2 0%, #4a6fe3 100%);
+            --enhanced-speech-color: #7209b7;
+            --enhanced-speech-gradient: linear-gradient(90deg, #7209b7 0%, #5231af 100%);
         }
         
         * {
@@ -40,14 +48,13 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-size: cover;
-            opacity: 0.05;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%234a6fe3' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
             z-index: -1;
             pointer-events: none;
         }
         
         .header {
-            background-color: var(--dark-color);
+            background-color: #03001A;
             color: var(--white-color);
             padding: 0 2rem;
             position: fixed;
@@ -56,7 +63,7 @@
             width: 100%;
             height: var(--header-height);
             z-index: 1000;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -107,13 +114,15 @@
             padding: 0.5rem 1rem;
             border-radius: 4px;
             font-weight: 600;
-            transition: background-color 0.3s, transform 0.2s;
+            transition: all 0.3s;
+            box-shadow: 0 4px 10px rgba(0, 212, 255, 0.3);
         }
         
         .swagger-btn:hover {
             background-color: #00b8e6;
             transform: translateY(-2px);
             color: var(--dark-color);
+            box-shadow: 0 6px 15px rgba(0, 212, 255, 0.4);
         }
         
         /* Mobile menu toggle */
@@ -181,129 +190,352 @@
         .main-content {
             margin-left: var(--sidebar-width);
             margin-top: var(--header-height);
-            padding: 2rem;
+            padding: 0;
             min-height: calc(100vh - var(--header-height));
         }
         
-        /* Content sections */
-        .content-section {
-            background-color: var(--white-color);
-            border-radius: 8px;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-        }
-        
-        .content-section h2 {
-            font-size: 1.8rem;
-            margin-bottom: 1.5rem;
-            color: var(--dark-color);
-            border-bottom: 2px solid var(--light-color);
-            padding-bottom: 0.5rem;
-        }
-        
-        .content-section h3 {
-            font-size: 1.3rem;
-            margin: 1.5rem 0 1rem;
-            color: var(--primary-color);
-        }
-        
-        .content-section h4 {
-            font-size: 1.1rem;
-            margin: 1.2rem 0 0.8rem;
-            color: var(--dark-color);
-        }
-        
-        .content-section p {
-            margin-bottom: 1rem;
-            line-height: 1.6;
-        }
-        
-        .content-section ul, 
-        .content-section ol {
-            margin-bottom: 1.5rem;
-            padding-left: 1.5rem;
-        }
-        
-        .content-section li {
-            margin-bottom: 0.5rem;
-            line-height: 1.6;
-        }
-        
-        /* Card layout for models */
-        .model-cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-        
-        .model-card {
-            background-color: var(--white-color);
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-            border: 1px solid #e0e0e0;
+        /* Hero */
+        .hero {
+            background: linear-gradient(135deg, rgba(1, 0, 15, 1) 0%, rgba(35, 0, 33, 1) 100%);
+            color: var(--white-color);
+            padding: 5rem 3rem;
+            position: relative;
             overflow: hidden;
-            transition: transform 0.3s, box-shadow 0.3s;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
         }
         
-        .model-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        .hero::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23FFFFFF' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
+            opacity: 0.12;
+            pointer-events: none;
+            animation: zoomDots 20s linear infinite;
+            transform-origin: center;
+            z-index: 0;
         }
         
-        .model-header {
-            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
-            color: white;
-            padding: 1rem;
+        @keyframes zoomDots {
+            0% {
+                transform: scale(0.3);
+                opacity: 0.1;
+            }
+            50% {
+                transform: scale(0.7);
+                opacity: 0.15;
+            }
+            100% {
+                transform: scale(0.3);
+                opacity: 0.1;
+            }
+        }
+        
+        .hero-container {
+            max-width: 1440px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .hero h2 {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+            max-width: 840px;
+            background: linear-gradient(to left, var(--white-color), var(--accent-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: fadeInUp 0.8s ease-out;
+        }
+        
+        .hero p {
+            font-size: 1.2rem;
+            max-width: 700px;
+            margin-bottom: 2rem;
+            line-height: 1.7;
+            color: rgba(255, 255, 255, 0.9);
+            animation: fadeInUp 1s ease-out;
+        }
+        
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            animation: fadeInUp 1.2s ease-out;
+        }
+        
+        .cta-btn {
+            display: inline-flex;
+            align-items: center;
+            background-color: var(--accent-color);
+            color: var(--dark-color);
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
+        }
+        
+        .cta-btn:hover {
+            background-color: #00b8e6;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 212, 255, 0.4);
+        }
+        
+        .cta-btn-secondary {
+            background-color: transparent;
+            color: var(--white-color);
+            border: 2px solid var(--white-color);
+            box-shadow: none;
+        }
+        
+        .cta-btn-secondary:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--white-color);
+            box-shadow: 0 4px 15px rgba(255, 255, 255, 0.2);
+        }
+        
+        .cta-btn i {
+            margin-right: 0.5rem;
+        }
+        
+        /* Overview section */
+        .overview-section {
+            padding: 4rem 3rem;
             position: relative;
         }
         
-        .model-header h3 {
+        .overview-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .section-header {
+            text-align: left;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid var(--light-color);
+            padding-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-icon {
+            width: 40px;
+            height: 40px;
+            margin-right: 1rem;
+            border-radius: 8px;
+            background-color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .section-icon i {
+            color: white;
+            font-size: 20px;
+        }
+        
+        .section-header h2 {
+            font-size: 2rem;
+            color: var(--dark-color);
             margin: 0;
-            font-size: 1.4rem;
-            color: white;
         }
         
-        .model-cost {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            background-color: var(--dark-color);
-            color: white;
-            padding: 0.3rem 0.6rem;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
         }
         
-        .model-body {
+        .feature-card {
+            background-color: var(--white-color);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
             padding: 1.5rem;
+            transition: all 0.3s ease;
         }
         
-        .model-description {
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .feature-icon {
+            width: 60px;
+            height: 60px;
             margin-bottom: 1rem;
+            border-radius: 12px;
+            background: var(--accent-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .feature-icon i {
+            color: white;
+            font-size: 24px;
+        }
+        
+        .feature-card h3 {
+            margin-bottom: 0.75rem;
+            color: var(--dark-color);
+        }
+        
+        .feature-card p {
             color: #666;
+            font-size: 0.95rem;
+            line-height: 1.6;
         }
         
-        .model-features {
-            padding-left: 1.2rem;
-            margin-bottom: 1.5rem;
+        /* Model sections */
+        .model-section {
+            padding: 4rem 3rem;
+            position: relative;
         }
         
-        .model-features li {
+        .model-section.alternate {
+            background-color: #f8faff;
+        }
+        
+        .model-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .model-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        
+        .model-icon {
+            width: 50px;
+            height: 50px;
+            margin-right: 1rem;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .basic-speech-icon {
+            background: var(--basic-speech-gradient);
+        }
+        
+        .basic-speech-icon i {
+            color: white;
+            font-size: 24px;
+        }
+        
+        .enhanced-speech-icon {
+            background: var(--enhanced-speech-gradient);
+        }
+        
+        .enhanced-speech-icon i {
+            color: white;
+            font-size: 24px;
+        }
+        
+        .model-info {
+            flex-grow: 1;
+        }
+        
+        .model-info h2 {
+            font-size: 2rem;
+            color: var(--dark-color);
             margin-bottom: 0.5rem;
         }
         
-        .model-endpoint {
-            background-color: #f0f2f5;
-            padding: 0.7rem;
-            border-radius: 4px;
-            font-family: monospace;
-            margin-bottom: 1rem;
+        .model-info p {
+            color: #666;
+            font-size: 1rem;
+            line-height: 1.6;
         }
         
-        /* Info boxes */
+        .model-details {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+        
+        .model-detail-card {
+            background-color: var(--white-color);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            flex: 1;
+            min-width: 280px;
+        }
+        
+        .model-detail-card h3 {
+            margin-bottom: 1rem;
+            color: var(--dark-color);
+            display: flex;
+            align-items: center;
+        }
+        
+        .model-detail-card h3 i {
+            margin-right: 0.5rem;
+            color: var(--primary-color);
+        }
+        
+        .model-detail-card ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        
+        .model-detail-card li {
+            position: relative;
+            padding-left: 1.5rem;
+            margin-bottom: 0.5rem;
+            line-height: 1.5;
+        }
+        
+        .model-detail-card li:before {
+            content: "\f00c";
+            font-family: "Font Awesome 5 Free";
+            font-weight: 900;
+            position: absolute;
+            left: 0;
+            color: var(--primary-color);
+        }
+        
+        .basic-speech-card li:before {
+            color: var(--basic-speech-color);
+        }
+        
+        .enhanced-speech-card li:before {
+            color: var(--enhanced-speech-color);
+        }
+        
+        .endpoint-box {
+            background-color: #f5f7fa;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: var(--dark-color);
+        }
+        
+        .basic-speech-card .endpoint-box {
+            border-left: 3px solid var(--basic-speech-color);
+        }
+        
+        .enhanced-speech-card .endpoint-box {
+            border-left: 3px solid var(--enhanced-speech-color);
+        }
+        
         .info-box {
             display: flex;
             background-color: #e7f5ff;
@@ -328,24 +560,238 @@
             color: #495057;
         }
         
+        .info-box-content a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        
+        .info-box-content a:hover {
+            text-decoration: underline;
+        }
+        
+        /* Examples section */
+        .examples-tabs {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 2rem;
+            overflow-x: auto;
+            padding-bottom: 1px;
+            scrollbar-width: thin;
+        }
+        
+        .examples-tabs::-webkit-scrollbar {
+            height: 4px;
+        }
+        
+        .examples-tabs::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        
+        .examples-tabs::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 10px;
+        }
+        
+        .example-tab {
+            padding: 0.75rem 1.25rem;
+            cursor: pointer;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s;
+            white-space: nowrap;
+            border-bottom: 2px solid transparent;
+        }
+        
+        .example-tab.active {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--primary-color);
+        }
+        
+        .basic-tab.active {
+            color: var(--basic-speech-color);
+            border-bottom: 2px solid var(--basic-speech-color);
+        }
+        
+        .enhanced-tab.active {
+            color: var(--enhanced-speech-color);
+            border-bottom: 2px solid var(--enhanced-speech-color);
+        }
+        
+        .example-content {
+            display: none;
+        }
+        
+        .example-content.active {
+            display: block;
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        .example-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+        
+        .example-settings {
+            background-color: var(--white-color);
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            padding: 1.5rem;
+            height: 100%;
+        }
+        
+        .settings-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .setting-group {
+            margin-bottom: 1.25rem;
+        }
+        
+        .setting-label {
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+        
+        .setting-value {
+            color: #666;
+            margin-bottom: 0.75rem;
+            line-height: 1.5;
+            background-color: #f9f9f9;
+            padding: 0.75rem;
+            border-radius: 6px;
+            border-left: 3px solid var(--primary-color);
+        }
+        
+        .basic-speech-settings .setting-value {
+            border-left-color: var(--basic-speech-color);
+        }
+        
+        .enhanced-speech-settings .setting-value {
+            border-left-color: var(--enhanced-speech-color);
+        }
+        
+        .example-result {
+            background-color: var(--white-color);
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        
+        .result-header {
+            padding: 1rem 1.5rem;
+            background-color: #f5f7fa;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .result-header h4 {
+            margin: 0;
+            color: var(--dark-color);
+            font-size: 1.1rem;
+        }
+        
+        .result-container {
+            flex-grow: 1;
+            padding: 1.5rem;
+            background-color: #fafafa;
+            position: relative;
+            overflow: auto;
+            max-height: 300px;
+        }
+        
+        .result-code {
+            font-family: monospace;
+            white-space: pre-wrap;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: #333;
+        }
+        
+        .code-block {
+            font-family: monospace;
+            background-color: #f5f7fa;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+            color: var(--dark-color);
+            white-space: pre-wrap;
+            border-left: 3px solid var(--primary-color);
+        }
+        
+        /* CTA section */
+        .cta-section {
+            padding: 5rem 3rem;
+            text-align: center;
+            background: linear-gradient(135deg, rgba(1, 0, 15, 0.95) 0%, rgba(35, 0, 33, 0.95) 100%);
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .cta-section::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23FFFFFF' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
+            opacity: 0.15;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .cta-container {
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .cta-section h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .cta-section p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+        
         /* Footer */
         .footer {
-            background-color: var(--dark-color);
+            background-color: #03001A;
             color: var(--white-color);
             text-align: center;
-            padding: 2rem;
+            padding: 3rem;
             margin-top: 3rem;
             margin-left: var(--sidebar-width);
+            position: relative;
         }
         
         .footer p {
             margin-bottom: 1rem;
+            position: relative;
         }
         
         .social-links {
             display: flex;
             justify-content: center;
             gap: 1rem;
+            margin-top: 1rem;
         }
         
         .social-link {
@@ -358,27 +804,38 @@
             color: var(--accent-color);
         }
         
-        /* Download button */
-        .download-btn {
+        /* Animation keyframes */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        .credit-badge {
             display: inline-flex;
             align-items: center;
-            background-color: var(--primary-color);
-            color: white;
-            padding: 0.75rem 1.5rem;
+            justify-content: center;
+            padding: 0.35rem 0.35rem; 
             border-radius: 4px;
-            font-weight: 600;
-            text-decoration: none;
-            transition: background-color 0.3s, transform 0.2s;
-            margin-bottom: 2rem;
-        }
-        
-        .download-btn i {
-            margin-right: 0.5rem;
-        }
-        
-        .download-btn:hover {
-            background-color: var(--secondary-color);
-            transform: translateY(-2px);
+            font-weight: 400;
+            font-size: 1.5rem; 
+            color: white;
+            background: linear-gradient(135deg, rgba(1, 0, 15, 1) 0%, rgba(74, 111, 227, 1) 100%);
+            animation: pulse 3s infinite ease-in-out;
         }
         
         /* Responsive styles */
@@ -405,8 +862,12 @@
                 display: block;
             }
             
-            .model-cards {
-                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            .example-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .features-grid {
+                grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
             }
         }
         
@@ -419,8 +880,21 @@
                 display: none;
             }
             
-            .model-cards {
-                grid-template-columns: 1fr;
+            .hero {
+                padding: 3rem 1.5rem;
+            }
+            
+            .hero h2 {
+                font-size: 2rem;
+            }
+            
+            .overview-section, .model-section {
+                padding: 3rem 1.5rem;
+            }
+            
+            .model-details {
+                flex-direction: column;
+                gap: 1.5rem;
             }
         }
         
@@ -444,182 +918,660 @@
     </style>
 </head>
 <body>
-    <header class="header">
-        <div class="logo">
-            <img src="/static/images/Telesure-logo.png" alt="TIH AI API Platform Logo" style="height: 40px; margin-right: 0.5rem;">
-            <h1>AI API Platform</h1>
-        </div>
-        <nav class="nav">
-            <div class="menu-toggle" id="menu-toggle">
-                <i class="fas fa-bars"></i>
-            </div>
-            <a href="/" class="nav-item">
-                <i class="fas fa-home"></i>Home
-            </a>
-            <a href="/docs/getting_started" class="nav-item">
-                <i class="fas fa-rocket"></i>Getting Started
-            </a>
-            <a href="/templates/docs/faq.html" class="nav-item">
-                <i class="fas fa-question-circle"></i>FAQ
-            </a>
-            <a href="/apidocs/" class="nav-item swagger-btn">
-                <i class="fas fa-book"></i>Swagger
-            </a>
-        </nav>
-    </header>
+    <!-- RENDER THE HEADER TEMPLATE-->
+    {% include 'header.html' %}
     
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
     
     <!-- RENDER THE SIDEBAR TEMPLATE-->
     <aside class="sidebar">
         {% include 'sidebar.html' %}
-    </aside>    
-
+    </aside>
+    
     <main class="main-content">
-        <section class="content-section">
-            <h2>Speech Services</h2>
-            
-            <p>Our API platform provides powerful speech-to-text conversion services using Microsoft's advanced speech recognition technology. These services enable you to transcribe audio content accurately and efficiently, with options for enhanced features like speaker diarization.</p>
-            
-            <a href="/static/files/ai-api-postman-collection.json" class="download-btn">
-                <i class="fas fa-download"></i> Download Postman Collection
-            </a>
-            
-            <div class="info-box">
-                <div class="info-box-icon"><i class="fas fa-info-circle"></i></div>
-                <div class="info-box-content">
-                    <h4>Authentication Required</h4>
-                    <p>All speech services endpoints require authentication using a token. You must include your token in the <code>X-Token</code> header for all requests.</p>
-                    <p>See the <a href="/docs/token_services">Token Services</a> documentation for details on token generation.</p>
+        <section class="hero">
+            <div class="hero-container">
+                <h2>Speech Services API</h2>
+                <p>Transform audio content into accurate text transcriptions with our powerful speech recognition services. From basic transcription to advanced speaker identification, unlock the potential of your audio data.</p>
+                <div class="cta-buttons">
+                    <a href="/static/files/ai-api-postman-collection.json" class="cta-btn">
+                        <i class="fas fa-download"></i> Download Postman Collection
+                    </a>
+                    <a href="/apidocs/#/Speech%20Services" class="cta-btn cta-btn-secondary">
+                        <i class="fas fa-book"></i> Swagger API Docs
+                    </a>
                 </div>
             </div>
-            
-            <h3>Available Services</h3>
-            
-            <div class="model-cards">
-                <div class="model-card">
-                    <div class="model-header">
-                        <h3>Basic Speech-to-Text</h3>
-                        <span class="model-cost">1 credit</span>
+        </section>
+        
+        <!-- Overview section -->
+        <section class="overview-section">
+            <div class="overview-container">
+                <div class="section-header">
+                    <div class="section-icon">
+                        <i class="fas fa-microphone"></i>
                     </div>
-                    <div class="model-body">
-                        <p class="model-description">Convert audio recordings to text using Microsoft's high-accuracy speech recognition technology.</p>
-                        <ul class="model-features">
-                            <li>High-accuracy transcription</li>
-                            <li>Multiple language support</li>
-                            <li>Profanity filtering options</li>
-                        </ul>
-                        <div class="model-endpoint">POST /speech/stt</div>
+                    <h2>Overview</h2>
+                </div>
+                
+                <p class="section-intro">Our Speech Services API provides powerful speech-to-text conversion services using Microsoft's advanced speech recognition technology. These services enable you to transcribe audio content accurately and efficiently, with options for enhanced features like speaker diarization.</p>
+                
+                <div class="info-box">
+                    <div class="info-box-icon"><i class="fas fa-info-circle"></i></div>
+                    <div class="info-box-content">
+                        <h4>Authentication Required</h4>
+                        <p>All speech services endpoints require authentication using a token. You must include your token in the <code>X-Token</code> header for all requests.</p>
+                        <p>See the <a href="/docs/token_services">Token Services</a> documentation for details on token generation.</p>
                     </div>
                 </div>
                 
-                <div class="model-card">
-                    <div class="model-header">
-                        <h3>Enhanced Speech-to-Text with Diarization</h3>
-                        <span class="model-cost">3 credits</span>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-file-audio"></i>
+                        </div>
+                        <h3>Multiple Audio Formats</h3>
+                        <p>Process a wide range of audio file formats including WAV, MP3, M4A, FLAC, and OGG for maximum flexibility.</p>
                     </div>
-                    <div class="model-body">
-                        <p class="model-description">Advanced transcription with speaker identification and timestamps, perfect for meetings and interviews.</p>
-                        <ul class="model-features">
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <h3>Speaker Identification</h3>
+                        <p>Identify different speakers in conversations with advanced diarization capabilities for meetings and interviews.</p>
+                    </div>
+                    
+
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-language"></i>
+                        </div>
+                        <h3>Language Support</h3>
+                        <p>Transcribe content in multiple languages with Microsoft's high-accuracy speech recognition technology.</p>
+                    </div>
+                </div>
+                
+                <h3>How It Works</h3>
+                
+                <p>Our speech services work in conjunction with our file management system to process audio files:</p>
+                
+                <ol style="line-height: 1.8; margin-left: 30px; margin-top: 20px; margin-bottom: 20px;">
+                    <li>First, upload your audio file using the <code>/file</code> endpoint</li>
+                    <li>Receive a <code>file_id</code> for your uploaded audio</li>
+                    <li>Submit this <code>file_id</code> to the appropriate speech service endpoint</li>
+                    <li>Receive the transcription results</li>
+                </ol>
+                
+                <p>The uploaded file is automatically deleted after processing to avoid storage bloat.</p>
+                
+                <h3>File Format Requirements</h3>
+                
+                <ul style="line-height: 1.8; margin-left: 30px; margin-top: 20px; margin-bottom: 20px;">
+                    <li><strong>Supported formats:</strong> WAV, MP3, M4A, FLAC, OGG</li>
+                    <li><strong>Maximum file size:</strong> 200MB</li>
+                    <li><strong>Maximum audio length:</strong> 2 hours per single audio file</li>
+                    <li><strong>Recommended sampling rate:</strong> 16kHz or higher</li>
+                    <li><strong>Channels:</strong> Mono or stereo (diarization works best with clear audio)</li>
+                </ul>
+            </div>
+        </section>
+        
+        <!-- Basic STT section -->
+        <section class="model-section">
+            <div class="model-container">
+                <div class="model-header" style="display: flex; align-items: center;">
+                    <div class="model-icon basic-speech-icon">
+                        <i class="fas fa-headphones"></i>
+                    </div>
+                    <div class="model-info" style="flex-grow: 1; margin-left: 1rem;">
+                        <h2 style="display: flex; justify-content: space-between; align-items: center;">
+                            Basic Speech-to-Text
+                            <div class="credit-badge">3 AI Credits</div>
+                        </h2>
+                        <p>Convert audio recordings to text using Microsoft's high-accuracy speech recognition technology with support for multiple languages and formatting options.</p>
+                    </div>
+                </div>
+                
+                <div class="model-details">
+                    <div class="model-detail-card basic-speech-card">
+                        <h3><i class="fas fa-cogs"></i> Features</h3>
+                        <ul>
+                            <li>High-accuracy transcription</li>
+                            <li>Multiple language support</li>
+                            <li>Profanity filtering options</li>
+                            <li>Fast processing for shorter audio files</li>
+                            <li>Clean, readable transcripts</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="model-detail-card basic-speech-card" style="line-height: 1.8;">
+                        <h3><i class="fas fa-code"></i> API Endpoint</h3>
+                        <div class="endpoint-box">
+                            POST /speech/stt
+                        </div>
+                        <p>Convert audio to text by sending a POST request to this endpoint with your file ID.</p>
+                        <p>Required parameters:</p>
+                        <ul>
+                            <li><strong>file_id</strong>: ID of the uploaded audio file</li>
+                            <li><strong>X-Token</strong>: Your API authentication token (header)</li>
+                        </ul>
+                        <p>Optional parameters:</p>
+                        <ul>
+                            <li><strong>language</strong>: Language code (defaults to auto-detection)</li>
+                            <li><strong>profanity_filter</strong>: Enable/disable profanity filtering</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <h3>Examples</h3>
+                <div class="examples-tabs">
+                    <div class="example-tab basic-tab active">Witness Interview</div>
+                    <div class="example-tab basic-tab">Meeting Recording</div>
+                    <div class="example-tab basic-tab">Customer Support Call</div>
+                </div>
+                
+                <!-- Example 1 - Short Monologue -->
+                <div class="example-content active">
+                    <div class="example-grid">
+                        <div class="example-settings basic-speech-settings">
+                            <h3 class="settings-title">API Request</h3>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Endpoint</span>
+                                <div class="setting-value">POST /speech/stt</div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Headers</span>
+                                <div class="setting-value">
+                                    X-Token: your_token_here<br>
+                                    Content-Type: application/json
+                                </div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">cURL Request</span>
+                                <div class="setting-value">
+                                    curl -X POST https://api.example.com/speech/stt <br>
+                                    &nbsp;&nbsp;-H "X-Token: your_token_here" <br>
+                                    &nbsp;&nbsp;-H "Content-Type: application/json" <br>
+                                    &nbsp;&nbsp;-d '{"file_id": "a1b2c3d4-5678-90ab-cdef-1234567890ab"}'
+                                </div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Audio File</span>
+                                <div class="setting-value">
+                                    witness_interview.mp3 (12:30 min)<br>
+                                    Single speaker recording of a witness statement
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="example-result">
+                            <div class="result-header">
+                                <h4>API Response</h4>
+                            </div>
+                            <div class="result-container">
+                                <div class="result-code">
+{
+  "message": "Audio transcribed successfully",
+  "transcript": "I was walking home from the grocery store when I witnessed the incident. It was approximately 9:30 PM and the street was poorly lit. I saw a silver sedan, possibly a Toyota or Honda, moving at high speed before it collided with the parked vehicle. The driver appeared to be talking on a phone before the collision occurred. After the impact, the car stopped briefly before continuing down the street. I was able to note part of the license plate which was AB7.",
+  "transcription_details": {
+    "combinedPhrases": [
+      {
+        "text": "I was walking home from the grocery store when I witnessed the incident. It was approximately 9:30 PM and the street was poorly lit. I saw a silver sedan, possibly a Toyota or Honda, moving at high speed before it collided with the parked vehicle. The driver appeared to be talking on a phone before the collision occurred. After the impact, the car stopped briefly before continuing down the street. I was able to note part of the license plate which was AB7."
+      }
+    ]
+  }
+}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Example 2 - Meeting Recording -->
+                <div class="example-content">
+                    <div class="example-grid">
+                        <div class="example-settings basic-speech-settings">
+                            <h3 class="settings-title">API Request</h3>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Endpoint</span>
+                                <div class="setting-value">POST /speech/stt</div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Headers</span>
+                                <div class="setting-value">
+                                    X-Token: your_token_here<br>
+                                    Content-Type: application/json
+                                </div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">cURL Request</span>
+                                <div class="setting-value">
+                                    curl -X POST https://api.example.com/speech/stt <br>
+                                    &nbsp;&nbsp;-H "X-Token: your_token_here" <br>
+                                    &nbsp;&nbsp;-H "Content-Type: application/json" <br>
+                                    &nbsp;&nbsp;-d '{"file_id": "b2c3d4e5-6789-01ab-cdef-23456789abcd"}'
+                                </div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Audio File</span>
+                                <div class="setting-value">
+                                    team_meeting.wav (4:30 min)<br>
+                                    Recording of a brief team meeting with multiple speakers
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="example-result">
+                            <div class="result-header">
+                                <h4>API Response</h4>
+                            </div>
+                            <div class="result-container">
+                                <div class="result-code">
+{
+  "message": "Audio processed successfully",
+  "transcript": "Hello everyone and welcome to our weekly status meeting. Let's start with updates from the development team. Thanks Sarah. The team has completed the front-end redesign and we're now working on integrating the payment gateway. We expect to finish by Friday. Great, and how about the marketing campaign? We've finalized the social media strategy and prepared all the creative assets. The campaign is scheduled to launch next Monday as planned. Excellent. Any questions or concerns anyone would like to address before we wrap up? No? Then let's adjourn and meet again next week.",
+  "metadata": {
+    "duration_seconds": 270,
+    "language_detected": "en-US",
+    "confidence_score": 0.92
+  }
+}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Example 3 - Customer Support Call -->
+                <div class="example-content">
+                    <div class="example-grid">
+                        <div class="example-settings basic-speech-settings">
+                            <h3 class="settings-title">API Request</h3>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Endpoint</span>
+                                <div class="setting-value">POST /speech/stt</div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Headers</span>
+                                <div class="setting-value">
+                                    X-Token: your_token_here<br>
+                                    Content-Type: application/json
+                                </div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">cURL Request</span>
+                                <div class="setting-value">
+                                    curl -X POST https://api.example.com/speech/stt <br>
+                                    &nbsp;&nbsp;-H "X-Token: your_token_here" <br>
+                                    &nbsp;&nbsp;-H "Content-Type: application/json" <br>
+                                    &nbsp;&nbsp;-d '{"file_id": "c3d4e5f6-7890-1abc-def2-3456789abcde"}'
+                                </div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Audio File</span>
+                                <div class="setting-value">
+                                    support_call.mp3 (3:15 min)<br>
+                                    Recording of a customer support call about account access
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="example-result">
+                            <div class="result-header">
+                                <h4>API Response</h4>
+                            </div>
+                            <div class="result-container">
+                                <div class="result-code">
+{
+  "message": "Audio processed successfully",
+  "transcript": "Thank you for calling customer support. How may I help you today? Hi, I'm having trouble logging into my account. I keep getting an incorrect password message but I'm sure I'm using the right password. I understand how frustrating that can be. Let me help you with that. Can you please verify your email address and the last four digits of your phone number? Sure, my email is johndoe@example.com and the last four digits are 5678. Thank you for verifying that information. I can see there were multiple failed login attempts which triggered our security protocol. I've reset your password and you'll receive an email with instructions shortly. Is there anything else I can assist you with today? No, that's all. Thank you for your help. You're welcome. Have a great day!",
+  "metadata": {
+    "duration_seconds": 195,
+    "language_detected": "en-US",
+    "confidence_score": 0.94
+  }
+}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Enhanced STT section -->
+        <section class="model-section alternate">
+            <div class="model-container">
+                <div class="model-header">
+                    <div class="model-icon enhanced-speech-icon">
+                        <i class="fas fa-users-cog"></i>
+                    </div>
+                    <div class="model-info">
+                        <h2 style="display: flex; justify-content: space-between; align-items: center;">
+                            Enhanced Speech-to-Text with Diarization
+                            <div class="credit-badge">3 AI Credits</div>
+                        </h2>
+                        <p>Advanced transcription with speaker identification and timestamps, perfect for meetings, interviews, and multi-speaker scenarios.</p>
+                    </div>
+                </div>
+                
+                <div class="model-details">
+                    <div class="model-detail-card enhanced-speech-card">
+                        <h3><i class="fas fa-cogs"></i> Features</h3>
+                        <ul>
                             <li>Speaker identification (Speaker 1, Speaker 2, etc.)</li>
                             <li>Accurate timestamps for each speaker turn</li>
                             <li>AI-enhanced formatting with natural paragraph breaks</li>
                             <li>Handles long audio recordings with automatic chunking</li>
+                            <li>Improved accuracy for conversational context</li>
+                            <li>Multiple language support</li>
                         </ul>
-                        <div class="model-endpoint">POST /speech/stt_diarize</div>
+                    </div>
+                    
+                    <div class="model-detail-card enhanced-speech-card">
+                        <h3><i class="fas fa-code"></i> API Endpoint</h3>
+                        <div class="endpoint-box">
+                            POST /speech/stt_diarize
+                        </div>
+                        <p>Transcribe multi-speaker audio with diarization by sending a POST request to this endpoint with your file ID.</p>
+                        <p>Required parameters:</p>
+                        <ul>
+                            <li><strong>file_id</strong>: ID of the uploaded audio file</li>
+                            <li><strong>X-Token</strong>: Your API authentication token (header)</li>
+                        </ul>
+                        <p>Optional parameters:</p>
+                        <ul>
+                            <li><strong>language</strong>: Language code (defaults to auto-detection)</li>
+                            <li><strong>min_speakers</strong>: Minimum number of speakers to detect</li>
+                            <li><strong>max_speakers</strong>: Maximum number of speakers to detect</li>
+                            <li><strong>profanity_filter</strong>: Enable/disable profanity filtering</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <h3>Examples</h3>
+                <div class="examples-tabs">
+                    <div class="example-tab enhanced-tab active">Witness Interview</div>
+                    <div class="example-tab enhanced-tab">Multi-Person Meeting</div>
+                    <div class="example-tab enhanced-tab">Panel Discussion</div>
+                </div>
+
+                <!-- Example 1 - Interview -->
+                <div class="example-content active">
+                    <div class="example-grid">
+                        <div class="example-settings enhanced-speech-settings">
+                            <h3 class="settings-title">API Request</h3>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Endpoint</span>
+                                <div class="setting-value">POST /speech/stt_diarize</div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Headers</span>
+                                <div class="setting-value">
+                                    X-Token: your_token_here<br>
+                                    Content-Type: application/json
+                                </div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">cURL Request</span>
+                                <div class="setting-value">
+                                    curl -X POST https://api.example.com/speech/stt_diarize <br>
+                                    &nbsp;&nbsp;-H "X-Token: your_token_here" <br>
+                                    &nbsp;&nbsp;-H "Content-Type: application/json" <br>
+                                    &nbsp;&nbsp;-d '{"file_id": "d4e5f6g7-8901-abcd-ef23-456789abcdef"}'
+                                </div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Audio File</span>
+                                <div class="setting-value">
+                                    witness_interview.wav (15:45 min)<br>
+                                    Recording of a witness interview with an investigator and witness
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="example-result">
+                            <div class="result-header">
+                                <h4>API Response</h4>
+                            </div>
+                            <div class="result-container">
+                                <div class="result-code">
+{
+  "message": "Audio processed successfully",
+  "raw_transcript": "Thank you for coming in today to discuss what you witnessed. Could you please state your name and address for our records? My name is Sarah Johnson and I live at 742 Evergreen Terrace. Thank you Ms. Johnson. Now, can you tell me in your own words what you saw on the evening of March 15th? Yes, I was walking my dog around 8:30 PM when I noticed a suspicious individual near the convenience store on Main Street. He was wearing a dark hoodie and seemed to be looking through the store window for some time before entering.",
+  "enhanced_transcript": "[00:00:00] Speaker 1: Thank you for coming in today to discuss what you witnessed. Could you please state your name and address for our records?\n\n[00:00:11] Speaker 2: My name is Sarah Johnson and I live at 742 Evergreen Terrace.\n\n[00:00:20] Speaker 1: Thank you Ms. Johnson. Now, can you tell me in your own words what you saw on the evening of March 15th?\n\n[00:00:29] Speaker 2: Yes, I was walking my dog around 8:30 PM when I noticed a suspicious individual near the convenience store on Main Street. He was wearing a dark hoodie and seemed to be looking through the store window for some time before entering."
+}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Example 2 - Multi-Person Meeting -->
+                <div class="example-content">
+                    <div class="example-grid">
+                        <div class="example-settings enhanced-speech-settings">
+                            <h3 class="settings-title">API Request</h3>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Endpoint</span>
+                                <div class="setting-value">POST /speech/stt_diarize</div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Headers</span>
+                                <div class="setting-value">
+                                    X-Token: your_token_here<br>
+                                    Content-Type: application/json
+                                </div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">cURL Request</span>
+                                <div class="setting-value">
+                                    curl -X POST https://api.example.com/speech/stt_diarize <br>
+                                    &nbsp;&nbsp;-H "X-Token: your_token_here" <br>
+                                    &nbsp;&nbsp;-H "Content-Type: application/json" <br>
+                                    &nbsp;&nbsp;-d '{"file_id": "e5f6g7h8-9012-abcd-ef34-56789abcdef0"}'
+                                </div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Audio File</span>
+                                <div class="setting-value">
+                                    quarterly_meeting.mp3 (15:45 min)<br>
+                                    Recording of a quarterly planning meeting with multiple team members
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="example-result">
+                            <div class="result-header">
+                                <h4>API Response</h4>
+                            </div>
+                            <div class="result-container">
+                                <div class="result-code">
+{
+  "message": "Audio processed successfully",
+  "raw_transcript": "Good morning everyone. Let's get started with our quarterly planning meeting. First, I'd like to review our Q1 results. Thank you, Michael. As you can see from the slides, we exceeded our revenue targets by 12% in Q1, primarily due to the successful launch of our new product line...",
+  "enhanced_transcript": "[00:00:00] Speaker 1: Good morning everyone. Let's get started with our quarterly planning meeting. First, I'd like to review our Q1 results.\n\n[00:00:11] Speaker 2: Thank you, Michael. As you can see from the slides, we exceeded our revenue targets by 12% in Q1, primarily due to the successful launch of our new product line.\n\n[00:00:25] Speaker 3: If I could add to that, our marketing campaign reached 40% more customers than projected, which significantly contributed to those results.\n\n[00:00:35] Speaker 4: And from the customer support side, we've seen a 15% decrease in support tickets related to the new products compared to previous launches...",
+  "metadata": {
+    "duration_seconds": 945,
+    "language_detected": "en-US",
+    "num_speakers": 4,
+    "confidence_score": 0.91
+  }
+}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Example 3 - Panel Discussion -->
+                <div class="example-content">
+                    <div class="example-grid">
+                        <div class="example-settings enhanced-speech-settings">
+                            <h3 class="settings-title">API Request</h3>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Endpoint</span>
+                                <div class="setting-value">POST /speech/stt_diarize</div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Headers</span>
+                                <div class="setting-value">
+                                    X-Token: your_token_here<br>
+                                    Content-Type: application/json
+                                </div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">cURL Request</span>
+                                <div class="setting-value">
+                                    curl -X POST https://api.example.com/speech/stt_diarize <br>
+                                    &nbsp;&nbsp;-H "X-Token: your_token_here" <br>
+                                    &nbsp;&nbsp;-H "Content-Type: application/json" <br>
+                                    &nbsp;&nbsp;-d '{"file_id": "f6g7h8i9-0123-abcd-ef45-6789abcdef01"}'
+                                </div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Audio File</span>
+                                <div class="setting-value">
+                                    industry_panel.m4a (22:30 min)<br>
+                                    Recording of an industry panel with a moderator and 4 panelists
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="example-result">
+                            <div class="result-header">
+                                <h4>API Response</h4>
+                            </div>
+                            <div class="result-container">
+                                <div class="result-code">
+{
+  "message": "Audio processed successfully",
+  "raw_transcript": "Welcome to our industry panel on the future of AI in healthcare. I'm your moderator, Dr. Johnson, and I'm joined by four distinguished experts in the field. Let's begin with Dr. Chen. Could you share your perspective on the most promising applications of AI in diagnostics?",
+  "enhanced_transcript": "[00:00:00] Speaker 1: Welcome to our industry panel on the future of AI in healthcare. I'm your moderator, Dr. Johnson, and I'm joined by four distinguished experts in the field. Let's begin with Dr. Chen. Could you share your perspective on the most promising applications of AI in diagnostics?\n\n[00:00:19] Speaker 2: Thank you for having me. I believe the most exciting developments are in medical imaging analysis, where deep learning models can now detect subtle patterns that even experienced radiologists might miss...\n\n[00:01:32] Speaker 1: Thank you, Dr. Chen. Dr. Patel, could you address how AI is transforming patient care beyond diagnostics?\n\n[00:01:40] Speaker 3: Absolutely. We're seeing remarkable advances in personalized treatment plans based on predictive analytics...",
+  "metadata": {
+    "duration_seconds": 1350,
+    "language_detected": "en-US",
+    "num_speakers": 5,
+    "confidence_score": 0.89
+  }
+}
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-            
-            <h3>How It Works</h3>
-            
-            <p>Our speech services work in conjunction with our file management system to process audio files:</p>
-            
-            <ol>
-                <li>First, upload your audio file using the <code>/file</code> endpoint</li>
-                <li>Receive a <code>file_id</code> for your uploaded audio</li>
-                <li>Submit this <code>file_id</code> to the appropriate speech service endpoint</li>
-                <li>Receive the transcription results</li>
-            </ol>
-            
-            <p>The uploaded file is automatically deleted after processing to avoid storage bloat.</p>
-            
-            <h3>File Format Requirements</h3>
-            
-            <ul>
-                <li><strong>Supported formats:</strong> WAV, MP3, M4A, FLAC, OGG</li>
-                <li><strong>Maximum file size:</strong> 100MB</li>
-                <li><strong>Recommended sampling rate:</strong> 16kHz or higher</li>
-                <li><strong>Channels:</strong> Mono or stereo (diarization works best with clear audio)</li>
-            </ul>
-            
-            <h3>Example Usage</h3>
-            
-            <h4>Step 1: Upload Audio File</h4>
-            <div class="code-block">
-POST /file
-Header: X-Token: your_token_here
-Content-Type: multipart/form-data
+        </section>
+        
+        <!-- Pro Tips section -->
+        <section class="overview-section">
+            <div class="overview-container">
+                <div class="section-header">
+                    <div class="section-icon">
+                        <i class="fas fa-lightbulb"></i>
+                    </div>
+                    <h2>Pro Tips</h2>
+                </div>
+                
+                <div class="info-box">
+                    <div class="info-box-icon"><i class="fas fa-lightbulb"></i></div>
+                    <div class="info-box-content">
+                        <h4>For Best Results with Speaker Diarization</h4>
+                        <ul style="line-height: 1.8; margin-top: 15px; margin-bottom: 15px; padding-left: 20px;">
+                            <li>Use high-quality audio recordings with minimal background noise</li>
+                            <li>Ensure speakers don't talk over each other frequently</li>
+                            <li>For longer recordings (>30 minutes), consider splitting the file into smaller segments</li>
+                            <li>When possible, use a separate microphone for each speaker</li>
+                            <li>Provide min_speakers and max_speakers parameters if you know the approximate number of participants</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <h3>Example Code Usage</h3>
+                
+                <h4>Step 1: Upload Audio File</h4>
+                <div class="code-block">
+# cURL request
+curl -X POST https://api.example.com/file \
+  -H "X-Token: your_token_here" \
+  -H "Content-Type: multipart/form-data" \
+  -F "files=@witness_recording.mp3"
 
-Form data:
-- files: [your_audio_file.mp3]
-
-Response:
+# Response
 {
   "message": "Files uploaded successfully",
   "uploaded_files": [
     {
-      "file_name": "meeting_recording.mp3",
+      "file_name": "witness_recording.mp3",
       "file_id": "a1b2c3d4-5678-90ab-cdef-1234567890ab",
       "content_type": "audio/mpeg"
     }
   ]
 }
-            </div>
-            
-            <h4>Step 2: Submit for Transcription with Diarization</h4>
-            <div class="code-block">
-POST /speech/stt_diarize
-Header: X-Token: your_token_here
-Content-Type: application/json
+                </div>
+                
+                <h4>Step 2: Submit for Transcription with Diarization</h4>
+                <div class="code-block">
+# cURL request
+curl -X POST https://api.example.com/speech/stt_diarize \
+  -H "X-Token: your_token_here" \
+  -H "Content-Type: application/json" \
+  -d '{"file_id": "a1b2c3d4-5678-90ab-cdef-1234567890ab"}'
 
-{
-  "file_id": "a1b2c3d4-5678-90ab-cdef-1234567890ab"
-}
-
-Response:
+# Response
 {
   "message": "Audio processed successfully",
-  "raw_transcript": "Hello everyone welcome to our weekly meeting. I'd like to discuss our progress on the Henderson project. Sure, I can provide an update on that. We've completed the initial analysis and are now moving into the implementation phase.",
-  "enhanced_transcript": "[00:00:00] Speaker 1: Hello everyone welcome to our weekly meeting. I'd like to discuss our progress on the Henderson project.\n\n[00:00:07] Speaker 2: Sure, I can provide an update on that. We've completed the initial analysis and are now moving into the implementation phase."
+  "raw_transcript": "Thank you for coming in today to discuss what you witnessed. Could you please state your name for our records? My name is Robert Smith. Thank you Mr. Smith. Can you tell me in your own words what you saw on the evening of June 10th?",
+  "enhanced_transcript": "[00:00:00] Speaker 1: Thank you for coming in today to discuss what you witnessed. Could you please state your name for our records?\n\n[00:00:08] Speaker 2: My name is Robert Smith.\n\n[00:00:12] Speaker 1: Thank you Mr. Smith. Can you tell me in your own words what you saw on the evening of June 10th?"
 }
-            </div>
-            
-            <div class="info-box">
-                <div class="info-box-icon"><i class="fas fa-lightbulb"></i></div>
-                <div class="info-box-content">
-                    <h4>Pro Tip</h4>
-                    <p>For best results with speaker diarization:</p>
-                    <ul>
-                        <li>Use high-quality audio recordings with minimal background noise</li>
-                        <li>Ensure speakers don't talk over each other frequently</li>
-                        <li>For longer recordings (>30 minutes), consider splitting the file into smaller segments</li>
-                    </ul>
                 </div>
             </div>
-            
-            <p>For complete details and examples, please refer to our <a href="/apidocs/">Swagger Documentation</a>.</p>
+        </section>
+        
+        <!-- CTA Section -->
+        <section class="cta-section">
+            <div class="cta-container">
+                <h2>Start Transcribing Your Audio Today</h2>
+                <p>Integrate our powerful Speech Services APIs into your applications and unlock valuable insights from your audio content.</p>
+                <div class="cta-buttons" style="justify-content: center;">
+                    <a href="/static/files/ai-api-postman-collection.json" class="cta-btn">
+                        <i class="fas fa-download"></i> Download Postman Collection
+                    </a>
+                    <a href="/apidocs/#/Speech%20Services" class="cta-btn cta-btn-secondary">
+                        <i class="fas fa-book"></i> Swagger API Docs
+                    </a>
+                </div>
+            </div>
         </section>
     </main>
     
-    <footer class="footer">
-        <p>© 2025 TIH AI API Portal. Powered by the TIH AI Center of Excellence.</p>
-        <div class="social-links">
-            <a href="#" class="social-link"><i class="fab fa-github"></i></a>
-            <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
-            <a href="#" class="social-link"><i class="fab fa-linkedin"></i></a>
-        </div>
-    </footer>
+    {% include 'footer.html' %}
     
     <script>
         // Toggle sidebar on mobile
@@ -647,6 +1599,58 @@ Response:
                     link.classList.add('active');
                 }
             });
+            
+            // Basic Speech Example tabs functionality
+            const basicTabs = document.querySelectorAll('.basic-tab');
+            const basicExamples = document.querySelectorAll('.model-section:not(.alternate) .example-content');
+            
+            basicTabs.forEach((tab, index) => {
+                tab.addEventListener('click', function() {
+                    // Remove active class from all tabs and examples
+                    basicTabs.forEach(t => t.classList.remove('active'));
+                    basicExamples.forEach(e => e.classList.remove('active'));
+                    
+                    // Add active class to clicked tab and corresponding example
+                    tab.classList.add('active');
+                    basicExamples[index].classList.add('active');
+                });
+            });
+            
+            // Enhanced Speech Example tabs functionality
+            const enhancedTabs = document.querySelectorAll('.enhanced-tab');
+            const enhancedExamples = document.querySelectorAll('.model-section.alternate .example-content');
+            
+            enhancedTabs.forEach((tab, index) => {
+                tab.addEventListener('click', function() {
+                    // Remove active class from all tabs and examples
+                    enhancedTabs.forEach(t => t.classList.remove('active'));
+                    enhancedExamples.forEach(e => e.classList.remove('active'));
+                    
+                    // Add active class to clicked tab and corresponding example
+                    tab.classList.add('active');
+                    enhancedExamples[index].classList.add('active');
+                });
+            });
+            
+            // Add scroll animation for elements
+            const animateOnScroll = function() {
+                const elements = document.querySelectorAll('.feature-card, .model-detail-card, .example-result, .section-header');
+                
+                elements.forEach(element => {
+                    const elementPosition = element.getBoundingClientRect().top;
+                    const screenPosition = window.innerHeight / 1.2;
+                    
+                    if (elementPosition < screenPosition) {
+                        element.style.animation = 'fadeInUp 0.6s ease-out forwards';
+                    }
+                });
+            };
+            
+            // Run on load
+            animateOnScroll();
+            
+            // Run on scroll
+            window.addEventListener('scroll', animateOnScroll);
         });
     </script>
 </body>
