@@ -20,6 +20,18 @@ def create_api_response(data, status_code=200):
     response.status_code = status_code
     return response
 
+def extract_json_from_response(text):
+    """Helper function to attempt to extract JSON from text output"""
+    # Try to find JSON-like content in response text
+    json_match = re.search(r'(\{.*\})', text, re.DOTALL)
+    if json_match:
+        try:
+            json_content = json_match.group(1)
+            return json.loads(json_content)
+        except json.JSONDecodeError:
+            return None
+    return None
+
 # Define comprehensive emotion list for consistent analysis
 EMOTION_LIST = [
     # Primary emotions
@@ -77,7 +89,7 @@ def sentiment_analysis_route():
               description: Text to analyze for sentiment
             model:
               type: string
-              enum: [gpt-4o-mini, gpt-4o, deepseek-r1, deepseek-v3, o1-mini, o3-mini, llama]
+              enum: [gpt-4o-mini, gpt-4o, deepseek-r1, deepseek-v3, o1-mini, o3-mini, llama-3-1-405b]
               default: gpt-4o-mini
               description: LLM model to use for sentiment analysis
     produces:
@@ -243,7 +255,7 @@ def sentiment_analysis_route():
     model = data.get('model', 'gpt-4o-mini')
     
     # Validate model selection
-    valid_models = ['gpt-4o-mini', 'gpt-4o', 'deepseek-r1', 'deepseek-v3', 'o1-mini', 'o3-mini', 'llama']
+    valid_models = ['gpt-4o-mini', 'gpt-4o', 'deepseek-r1', 'deepseek-v3', 'o1-mini', 'o3-mini', 'llama-3-1-405b']
     if model not in valid_models:
         return create_api_response({
             "error": "Bad Request",
@@ -298,20 +310,25 @@ Only use "positive", "neutral", and "negative" as sentiment values."""
         user_message = f"Text to analyze: {user_input}"
         
         # Use appropriate LLM service from llmServices based on model parameter
+        use_json_output = True
+        if model in ['deepseek-r1', 'deepseek-v3', 'o1-mini']:
+            # These models have issues with json_output, use regular output
+            use_json_output = False
+            
         if model == 'gpt-4o-mini':
-            llm_result = gpt4o_mini_service(system_prompt, user_message, temperature=0.0, json_output=True)
+            llm_result = gpt4o_mini_service(system_prompt, user_message, temperature=0.1, json_output=use_json_output)
         elif model == 'gpt-4o':
-            llm_result = gpt4o_service(system_prompt, user_message, temperature=0.0, json_output=True)
+            llm_result = gpt4o_service(system_prompt, user_message, temperature=0.1, json_output=use_json_output)
         elif model == 'deepseek-r1':
-            llm_result = deepseek_r1_service(system_prompt, user_message, temperature=0.0, json_output=True)
+            llm_result = deepseek_r1_service(system_prompt, user_message, temperature=0.1)
         elif model == 'deepseek-v3':
-            llm_result = deepseek_v3_service(system_prompt, user_message, temperature=0.0, json_output=True)
+            llm_result = deepseek_v3_service(system_prompt, user_message, temperature=0.1)
         elif model == 'o1-mini':
-            llm_result = o1_mini_service(system_prompt, user_message, temperature=0.0, json_output=True)
+            llm_result = o1_mini_service(system_prompt, user_message, temperature=0.1)
         elif model == 'o3-mini':
-            llm_result = o3_mini_service(system_prompt, user_message, reasoning_effort="medium", json_output=True)
-        elif model == 'llama':
-            llm_result = llama_service(system_prompt, user_message, temperature=0.0, json_output=True)
+            llm_result = o3_mini_service(system_prompt, user_message, reasoning_effort="medium", json_output=use_json_output)
+        elif model == 'llama-3-1-405b':
+            llm_result = llama_service(system_prompt, user_message, temperature=0.1, json_output=use_json_output)
         
         if not llm_result.get("success", False):
             logger.error(f"Error from LLM service: {llm_result.get('error', 'Unknown error')}")
@@ -325,8 +342,16 @@ Only use "positive", "neutral", and "negative" as sentiment values."""
         
         # Parse the JSON response from the LLM
         try:
-            # Parse the JSON response
-            sentiment_json = json.loads(llm_message)
+            # For models with JSON output issues, try to extract JSON from text
+            sentiment_json = None
+            if model in ['deepseek-r1', 'deepseek-v3', 'o1-mini']:
+                extracted_json = extract_json_from_response(llm_message)
+                if extracted_json:
+                    sentiment_json = extracted_json
+                else:
+                    raise json.JSONDecodeError("Could not extract JSON", llm_message, 0)
+            else:
+                sentiment_json = json.loads(llm_message)
             
             # Extract sentiments list
             sentiments = sentiment_json.get("sentiments", [])
@@ -434,7 +459,7 @@ def advanced_sentiment_analysis_route():
               description: Text to analyze for emotions
             model:
               type: string
-              enum: [gpt-4o-mini, gpt-4o, deepseek-r1, deepseek-v3, o1-mini, o3-mini, llama]
+              enum: [gpt-4o-mini, gpt-4o, deepseek-r1, deepseek-v3, o1-mini, o3-mini, llama-3-1-405b]
               default: gpt-4o-mini
               description: LLM model to use for advanced emotion analysis
     produces:
@@ -605,7 +630,7 @@ def advanced_sentiment_analysis_route():
     model = data.get('model', 'gpt-4o-mini')
     
     # Validate model selection
-    valid_models = ['gpt-4o-mini', 'gpt-4o', 'deepseek-r1', 'deepseek-v3', 'o1-mini', 'o3-mini', 'llama']
+    valid_models = ['gpt-4o-mini', 'gpt-4o', 'deepseek-r1', 'deepseek-v3', 'o1-mini', 'o3-mini', 'llama-3-1-405b']
     if model not in valid_models:
         return create_api_response({
             "error": "Bad Request",
@@ -665,20 +690,25 @@ Include ALL emotions detected in the text with appropriate confidence scores."""
         user_message = f"Text to analyze: {user_input}"
         
         # Use appropriate LLM service from llmServices based on model parameter
+        use_json_output = True
+        if model in ['deepseek-r1', 'deepseek-v3', 'o1-mini']:
+            # These models have issues with json_output, use regular output
+            use_json_output = False
+            
         if model == 'gpt-4o-mini':
-            llm_result = gpt4o_mini_service(system_prompt, user_message, temperature=0.0, json_output=True)
+            llm_result = gpt4o_mini_service(system_prompt, user_message, temperature=0.1, json_output=use_json_output)
         elif model == 'gpt-4o':
-            llm_result = gpt4o_service(system_prompt, user_message, temperature=0.0, json_output=True)
+            llm_result = gpt4o_service(system_prompt, user_message, temperature=0.1, json_output=use_json_output)
         elif model == 'deepseek-r1':
-            llm_result = deepseek_r1_service(system_prompt, user_message, temperature=0.0, json_output=True)
+            llm_result = deepseek_r1_service(system_prompt, user_message, temperature=0.1)
         elif model == 'deepseek-v3':
-            llm_result = deepseek_v3_service(system_prompt, user_message, temperature=0.0, json_output=True)
+            llm_result = deepseek_v3_service(system_prompt, user_message, temperature=0.1)
         elif model == 'o1-mini':
-            llm_result = o1_mini_service(system_prompt, user_message, temperature=0.0, json_output=True)
+            llm_result = o1_mini_service(system_prompt, user_message, temperature=0.1)
         elif model == 'o3-mini':
-            llm_result = o3_mini_service(system_prompt, user_message, reasoning_effort="medium", json_output=True)
-        elif model == 'llama':
-            llm_result = llama_service(system_prompt, user_message, temperature=0.0, json_output=True)
+            llm_result = o3_mini_service(system_prompt, user_message, reasoning_effort="medium", json_output=use_json_output)
+        elif model == 'llama-3-1-405b':
+            llm_result = llama_service(system_prompt, user_message, temperature=0.1, json_output=use_json_output)
         
         if not llm_result.get("success", False):
             logger.error(f"Error from LLM service: {llm_result.get('error', 'Unknown error')}")
@@ -692,8 +722,16 @@ Include ALL emotions detected in the text with appropriate confidence scores."""
         
         # Parse the JSON response from the LLM
         try:
-            # Parse the JSON response
-            emotions_json = json.loads(llm_message)
+            # For models with JSON output issues, try to extract JSON from text
+            emotions_json = None
+            if model in ['deepseek-r1', 'deepseek-v3', 'o1-mini']:
+                extracted_json = extract_json_from_response(llm_message)
+                if extracted_json:
+                    emotions_json = extracted_json
+                else:
+                    raise json.JSONDecodeError("Could not extract JSON", llm_message, 0)
+            else:
+                emotions_json = json.loads(llm_message)
             
             # Extract emotions list
             emotions = emotions_json.get("emotions", [])
