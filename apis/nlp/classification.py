@@ -53,7 +53,7 @@ def simple_classification_route():
               description: Text to classify
             model:
               type: string
-              enum: [gpt-4o-mini, gpt-4o, deepseek-r1, deepseek-v3, o1-mini, o3-mini, llama]
+              enum: [gpt-4o-mini, gpt-4o, deepseek-r1, deepseek-v3, o1-mini, o3-mini, llama-3-1-405b]
               default: gpt-4o-mini
               description: LLM model to use for classification
     produces:
@@ -209,7 +209,7 @@ def simple_classification_route():
         }, 400)
     
     # Validate model selection
-    valid_models = ['gpt-4o-mini', 'gpt-4o', 'deepseek-r1', 'deepseek-v3', 'o1-mini', 'o3-mini', 'llama']
+    valid_models = ['gpt-4o-mini', 'gpt-4o', 'deepseek-r1', 'deepseek-v3', 'o1-mini', 'o3-mini', 'llama-3-1-405b']
     if model not in valid_models:
         return create_api_response({
             "error": "Bad Request",
@@ -263,8 +263,8 @@ Use the format: category_name"""
         elif model == 'o1-mini':
             llm_result = o1_mini_service(system_prompt, user_message, temperature=0.0)
         elif model == 'o3-mini':
-            llm_result = o3_mini_service(system_prompt, user_message, temperature=0.0)
-        elif model == 'llama':
+            llm_result = o3_mini_service(system_prompt, user_message, reasoning_effort="medium")
+        elif model == 'llama-3-1-405b':
             llm_result = llama_service(system_prompt, user_message, temperature=0.0)
         
         if not llm_result.get("success", False):
@@ -344,7 +344,7 @@ def multiclass_classification_route():
               description: Text to classify
             model:
               type: string
-              enum: [gpt-4o-mini, gpt-4o, deepseek-r1, deepseek-v3, o1-mini, o3-mini, llama]
+              enum: [gpt-4o-mini, gpt-4o, deepseek-r1, deepseek-v3, o1-mini, o3-mini, llama-3-1-405b]
               default: gpt-4o-mini
               description: LLM model to use for classification
     produces:
@@ -523,7 +523,7 @@ def multiclass_classification_route():
         }, 400)
     
     # Validate model selection
-    valid_models = ['gpt-4o-mini', 'gpt-4o', 'deepseek-r1', 'deepseek-v3', 'o1-mini', 'o3-mini', 'llama']
+    valid_models = ['gpt-4o-mini', 'gpt-4o', 'deepseek-r1', 'deepseek-v3', 'o1-mini', 'o3-mini', 'llama-3-1-405b']
     if model not in valid_models:
         return create_api_response({
             "error": "Bad Request",
@@ -581,19 +581,19 @@ The sum of confidence scores does not need to equal 1. Assign each category a sc
         
         # Use appropriate LLM service from llmServices based on model parameter
         if model == 'gpt-4o-mini':
-            llm_result = gpt4o_mini_service(system_prompt, user_message, temperature=0.0, json_output=True)
+            llm_result = gpt4o_mini_service(system_prompt, user_message, temperature=0.1, json_output=True)
         elif model == 'gpt-4o':
-            llm_result = gpt4o_service(system_prompt, user_message, temperature=0.0, json_output=True)
+            llm_result = gpt4o_service(system_prompt, user_message, temperature=0.1, json_output=True)
         elif model == 'deepseek-r1':
-            llm_result = deepseek_r1_service(system_prompt, user_message, temperature=0.0, json_output=True)
+            llm_result = deepseek_r1_service(system_prompt, user_message, temperature=0.1, json_output=False)
         elif model == 'deepseek-v3':
-            llm_result = deepseek_v3_service(system_prompt, user_message, temperature=0.0, json_output=True)
+            llm_result = deepseek_v3_service(system_prompt, user_message, temperature=0.1, json_output=False)
         elif model == 'o1-mini':
-            llm_result = o1_mini_service(system_prompt, user_message, temperature=0.0, json_output=True)
+            llm_result = o1_mini_service(system_prompt, user_message, temperature=0.1, json_output=False)
         elif model == 'o3-mini':
             llm_result = o3_mini_service(system_prompt, user_message, reasoning_effort="medium", json_output=True)
-        elif model == 'llama':
-            llm_result = llama_service(system_prompt, user_message, temperature=0.0, json_output=True)
+        elif model == 'llama-3-1-405b':
+            llm_result = llama_service(system_prompt, user_message, temperature=0.1, json_output=True)
         
         if not llm_result.get("success", False):
             logger.error(f"Error from LLM service: {llm_result.get('error', 'Unknown error')}")
