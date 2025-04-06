@@ -2,7 +2,7 @@ from flask import jsonify, request, g, make_response
 from apis.utils.tokenService import TokenService
 from apis.utils.databaseService import DatabaseService
 from apis.utils.balanceService import BalanceService
-from apis.utils.llmServices import gpt4o_service, gpt4o_mini_service
+from apis.utils.llmServices import gpt4o_service, gpt4o_mini_service, deepseek_r1_service, deepseek_v3_service, o1_mini_service, o3_mini_service, llama_service
 import logging
 import pytz
 from datetime import datetime
@@ -77,7 +77,7 @@ def sentiment_analysis_route():
               description: Text to analyze for sentiment
             model:
               type: string
-              enum: [gpt-4o-mini, gpt-4o]
+              enum: [gpt-4o-mini, gpt-4o, deepseek-r1, deepseek-v3, o1-mini, o3-mini, llama]
               default: gpt-4o-mini
               description: LLM model to use for sentiment analysis
     produces:
@@ -112,15 +112,18 @@ def sentiment_analysis_route():
             model_used:
               type: string
               example: "gpt-4o-mini"
-            input_tokens:
+            prompt_tokens:
               type: integer
               example: 125
             completion_tokens:
               type: integer
               example: 42
-            output_tokens:
+            total_tokens:
               type: integer
               example: 167
+            cached_tokens:
+              type: integer
+              example: 0
       400:
         description: Bad request
         schema:
@@ -240,10 +243,11 @@ def sentiment_analysis_route():
     model = data.get('model', 'gpt-4o-mini')
     
     # Validate model selection
-    if model not in ['gpt-4o-mini', 'gpt-4o']:
+    valid_models = ['gpt-4o-mini', 'gpt-4o', 'deepseek-r1', 'deepseek-v3', 'o1-mini', 'o3-mini', 'llama']
+    if model not in valid_models:
         return create_api_response({
             "error": "Bad Request",
-            "message": "Model must be either 'gpt-4o-mini' or 'gpt-4o'"
+            "message": f"Model must be one of: {', '.join(valid_models)}"
         }, 400)
     
     try:
@@ -254,9 +258,9 @@ def sentiment_analysis_route():
             endpoint_id = str(uuid.uuid4())  # Use a placeholder if endpoint not found
             
         # Determine credit cost based on model
-        if model == 'gpt-4o-mini':
+        if model == 'gpt-4o-mini' or model == 'deepseek-v3' or model == 'o1-mini':
             credit_cost = 0.5
-        else:  # model == 'gpt-4o'
+        else:  # model == 'gpt-4o' or other premium models
             credit_cost = 2.0
             
         # Check and deduct balance
@@ -296,8 +300,18 @@ Only use "positive", "neutral", and "negative" as sentiment values."""
         # Use appropriate LLM service from llmServices based on model parameter
         if model == 'gpt-4o-mini':
             llm_result = gpt4o_mini_service(system_prompt, user_message, temperature=0.0, json_output=True)
-        else:  # model == 'gpt-4o'
+        elif model == 'gpt-4o':
             llm_result = gpt4o_service(system_prompt, user_message, temperature=0.0, json_output=True)
+        elif model == 'deepseek-r1':
+            llm_result = deepseek_r1_service(system_prompt, user_message, temperature=0.0, json_output=True)
+        elif model == 'deepseek-v3':
+            llm_result = deepseek_v3_service(system_prompt, user_message, temperature=0.0, json_output=True)
+        elif model == 'o1-mini':
+            llm_result = o1_mini_service(system_prompt, user_message, temperature=0.0, json_output=True)
+        elif model == 'o3-mini':
+            llm_result = o3_mini_service(system_prompt, user_message, reasoning_effort="medium", json_output=True)
+        elif model == 'llama':
+            llm_result = llama_service(system_prompt, user_message, temperature=0.0, json_output=True)
         
         if not llm_result.get("success", False):
             logger.error(f"Error from LLM service: {llm_result.get('error', 'Unknown error')}")
@@ -353,10 +367,11 @@ Only use "positive", "neutral", and "negative" as sentiment values."""
             response_data = {
                 "top_sentiment": top_sentiment,
                 "all_sentiments": sorted_sentiments,
-                "model_used": model,
-                "input_tokens": llm_result.get("input_tokens", 0),
+                "model_used": llm_result.get("model", model),
+                "prompt_tokens": llm_result.get("prompt_tokens", 0),
                 "completion_tokens": llm_result.get("completion_tokens", 0),
-                "output_tokens": llm_result.get("output_tokens", 0)
+                "total_tokens": llm_result.get("total_tokens", 0),
+                "cached_tokens": llm_result.get("cached_tokens", 0)
             }
             
             return create_api_response(response_data, 200)
@@ -374,10 +389,11 @@ Only use "positive", "neutral", and "negative" as sentiment values."""
             response_data = {
                 "top_sentiment": "neutral",
                 "all_sentiments": fallback_sentiments,
-                "model_used": model,
-                "input_tokens": llm_result.get("input_tokens", 0),
+                "model_used": llm_result.get("model", model),
+                "prompt_tokens": llm_result.get("prompt_tokens", 0),
                 "completion_tokens": llm_result.get("completion_tokens", 0),
-                "output_tokens": llm_result.get("output_tokens", 0),
+                "total_tokens": llm_result.get("total_tokens", 0),
+                "cached_tokens": llm_result.get("cached_tokens", 0),
                 "parsing_error": f"Could not parse LLM response as JSON. Using fallback sentiment analysis."
             }
             
@@ -418,7 +434,7 @@ def advanced_sentiment_analysis_route():
               description: Text to analyze for emotions
             model:
               type: string
-              enum: [gpt-4o-mini, gpt-4o]
+              enum: [gpt-4o-mini, gpt-4o, deepseek-r1, deepseek-v3, o1-mini, o3-mini, llama]
               default: gpt-4o-mini
               description: LLM model to use for advanced emotion analysis
     produces:
@@ -458,15 +474,18 @@ def advanced_sentiment_analysis_route():
             model_used:
               type: string
               example: "gpt-4o-mini"
-            input_tokens:
+            prompt_tokens:
               type: integer
               example: 125
             completion_tokens:
               type: integer
               example: 42
-            output_tokens:
+            total_tokens:
               type: integer
               example: 167
+            cached_tokens:
+              type: integer
+              example: 0
       400:
         description: Bad request
         schema:
@@ -586,10 +605,11 @@ def advanced_sentiment_analysis_route():
     model = data.get('model', 'gpt-4o-mini')
     
     # Validate model selection
-    if model not in ['gpt-4o-mini', 'gpt-4o']:
+    valid_models = ['gpt-4o-mini', 'gpt-4o', 'deepseek-r1', 'deepseek-v3', 'o1-mini', 'o3-mini', 'llama']
+    if model not in valid_models:
         return create_api_response({
             "error": "Bad Request",
-            "message": "Model must be either 'gpt-4o-mini' or 'gpt-4o'"
+            "message": f"Model must be one of: {', '.join(valid_models)}"
         }, 400)
     
     try:
@@ -600,9 +620,9 @@ def advanced_sentiment_analysis_route():
             endpoint_id = str(uuid.uuid4())  # Use a placeholder if endpoint not found
             
         # Determine credit cost based on model
-        if model == 'gpt-4o-mini':
+        if model == 'gpt-4o-mini' or model == 'deepseek-v3' or model == 'o1-mini':
             credit_cost = 0.5
-        else:  # model == 'gpt-4o'
+        else:  # model == 'gpt-4o' or other premium models
             credit_cost = 2.0
             
         # Check and deduct balance
@@ -647,8 +667,18 @@ Include ALL emotions detected in the text with appropriate confidence scores."""
         # Use appropriate LLM service from llmServices based on model parameter
         if model == 'gpt-4o-mini':
             llm_result = gpt4o_mini_service(system_prompt, user_message, temperature=0.0, json_output=True)
-        else:  # model == 'gpt-4o'
+        elif model == 'gpt-4o':
             llm_result = gpt4o_service(system_prompt, user_message, temperature=0.0, json_output=True)
+        elif model == 'deepseek-r1':
+            llm_result = deepseek_r1_service(system_prompt, user_message, temperature=0.0, json_output=True)
+        elif model == 'deepseek-v3':
+            llm_result = deepseek_v3_service(system_prompt, user_message, temperature=0.0, json_output=True)
+        elif model == 'o1-mini':
+            llm_result = o1_mini_service(system_prompt, user_message, temperature=0.0, json_output=True)
+        elif model == 'o3-mini':
+            llm_result = o3_mini_service(system_prompt, user_message, reasoning_effort="medium", json_output=True)
+        elif model == 'llama':
+            llm_result = llama_service(system_prompt, user_message, temperature=0.0, json_output=True)
         
         if not llm_result.get("success", False):
             logger.error(f"Error from LLM service: {llm_result.get('error', 'Unknown error')}")
@@ -697,10 +727,11 @@ Include ALL emotions detected in the text with appropriate confidence scores."""
                 "top_emotion": top_emotion,
                 "top_3_emotions": top_3_emotions,
                 "all_emotions": sorted_emotions,
-                "model_used": model,
-                "input_tokens": llm_result.get("input_tokens", 0),
+                "model_used": llm_result.get("model", model),
+                "prompt_tokens": llm_result.get("prompt_tokens", 0),
                 "completion_tokens": llm_result.get("completion_tokens", 0),
-                "output_tokens": llm_result.get("output_tokens", 0)
+                "total_tokens": llm_result.get("total_tokens", 0),
+                "cached_tokens": llm_result.get("cached_tokens", 0)
             }
             
             return create_api_response(response_data, 200)
@@ -717,10 +748,11 @@ Include ALL emotions detected in the text with appropriate confidence scores."""
                 "top_emotion": "neutral",
                 "top_3_emotions": ["neutral"],
                 "all_emotions": fallback_emotions,
-                "model_used": model,
-                "input_tokens": llm_result.get("input_tokens", 0),
+                "model_used": llm_result.get("model", model),
+                "prompt_tokens": llm_result.get("prompt_tokens", 0),
                 "completion_tokens": llm_result.get("completion_tokens", 0),
-                "output_tokens": llm_result.get("output_tokens", 0),
+                "total_tokens": llm_result.get("total_tokens", 0),
+                "cached_tokens": llm_result.get("cached_tokens", 0),
                 "parsing_error": f"Could not parse LLM response as JSON. Using fallback emotion analysis."
             }
             
