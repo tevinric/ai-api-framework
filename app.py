@@ -141,7 +141,7 @@ def changelog():
     return render_template('docs/changelog.html')
 
 @app.route('/docs/coding_companion')
-def changelog():    
+def coding_companion():    
     return render_template('docs/coding_companion.html')
 
 # TOKEN SERVICE ENDPOINTS
