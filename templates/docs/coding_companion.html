@@ -1,0 +1,3358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coding Companion - AI API Platform</title>
+    <link rel="icon" href="/static/images/Telesure-logo.png" type="image/png">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/dracula.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/hint/show-hint.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/fold/foldgutter.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/diff2html/3.4.35/diff2html.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/hint/show-hint.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/fold/foldcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/fold/foldgutter.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/diff2html/3.4.35/diff2html.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/diff/5.1.0/diff.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.5/marked.min.js"></script>
+    
+    <!-- Load language modes dynamically based on selection -->
+    <script id="language-mode-script"></script>
+    
+    <style>
+        :root {
+            --primary-color: #4a6fe3;
+            --secondary-color: #6c63ff;
+            --dark-color: #2a2c3b;
+            --light-color: #f5f6fa;
+            --text-color: #333;
+            --white-color: #ffffff;
+            --accent-color: #00d4ff;
+            --magenta-dark: #3B0138;
+            --sidebar-width: 280px;
+            --header-height: 60px;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --info-color: #17a2b8;
+            --gray-color: #f0f0f0;
+            --dark-gray-color: #888;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--light-color);
+            color: var(--text-color);
+            position: relative;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%234a6fe3' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        .header {
+            background-color: #03001A;
+            color: var(--white-color);
+            padding: 0 2rem;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: var(--header-height);
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo i {
+            font-size: 1.8rem;
+            margin-right: 0.5rem;
+            color: var(--accent-color);
+        }
+        
+        .logo h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+        
+        .nav {
+            display: flex;
+            align-items: center;
+        }
+        
+        .nav-item {
+            margin-left: 1.5rem;
+            color: var(--white-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+            display: flex;
+            align-items: center;
+        }
+        
+        .nav-item:hover {
+            color: var(--accent-color);
+        }
+        
+        .nav-item i {
+            margin-right: 0.5rem;
+        }
+        
+        /* Mobile menu toggle */
+        .menu-toggle {
+            display: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            top: var(--header-height);
+            left: 0;
+            height: calc(100vh - var(--header-height));
+            width: var(--sidebar-width);
+            background-color: var(--white-color);
+            border-right: 1px solid rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+            z-index: 900;
+            padding: 1.5rem 0;
+            transition: transform 0.3s ease-in-out;
+        }
+        
+        /* Main content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            margin-top: var(--header-height);
+            padding: 0;
+            min-height: calc(100vh - var(--header-height));
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Coding Companion specific styles */
+        .coding-companion-container {
+            padding: 2rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            max-width: 1800px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        
+        .section-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .section-header h2 {
+            font-size: 1.8rem;
+            color: var(--dark-color);
+            margin-right: 1rem;
+        }
+        
+        .section-header .badge {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 2rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .configuration-panel {
+            background-color: var(--white-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .config-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .config-group {
+            margin-bottom: 1rem;
+        }
+        
+        .config-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--dark-color);
+        }
+        
+        .config-group select,
+        .config-group input,
+        .config-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: var(--white-color);
+            font-size: 0.95rem;
+            transition: border-color 0.3s;
+        }
+        
+        .config-group select:focus,
+        .config-group input:focus,
+        .config-group textarea:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(74, 111, 227, 0.2);
+        }
+        
+        .radio-group {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 0.5rem;
+        }
+        
+        .radio-item {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        
+        .radio-item input[type="radio"] {
+            margin-right: 0.5rem;
+            width: auto;
+        }
+        
+        .file-upload-area {
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+            background-color: var(--gray-color);
+            position: relative;
+        }
+        
+        .file-upload-area:hover,
+        .file-upload-area.dragover {
+            border-color: var(--primary-color);
+            background-color: rgba(74, 111, 227, 0.05);
+        }
+        
+        .file-upload-area i {
+            font-size: 3rem;
+            color: var(--dark-gray-color);
+            margin-bottom: 1rem;
+        }
+        
+        .file-upload-area h3 {
+            margin-bottom: 0.5rem;
+            color: var(--dark-color);
+        }
+        
+        .file-upload-area p {
+            color: #666;
+            margin-bottom: 1rem;
+        }
+        
+        .file-upload-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 4px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+        }
+        
+        .file-upload-btn:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+        
+        .file-input {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+        
+        .uploaded-files {
+            margin-top: 1.5rem;
+        }
+        
+        .uploaded-files h3 {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            color: var(--dark-color);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .files-badge {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.2rem 0.6rem;
+            border-radius: 1rem;
+            font-size: 0.7rem;
+        }
+        
+        .file-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            padding: 0.5rem;
+            background-color: var(--white-color);
+        }
+        
+        .file-list-empty {
+            color: #888;
+            text-align: center;
+            padding: 1rem;
+        }
+        
+        .file-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.5rem;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .file-item:last-child {
+            border-bottom: none;
+        }
+        
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .file-icon {
+            color: var(--primary-color);
+            font-size: 1.2rem;
+        }
+        
+        .file-name {
+            font-size: 0.9rem;
+            color: var(--dark-color);
+        }
+        
+        .file-size {
+            font-size: 0.75rem;
+            color: #888;
+        }
+        
+        .file-remove {
+            background: none;
+            border: none;
+            color: var(--danger-color);
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+        
+        .file-remove:hover {
+            color: #c82333;
+        }
+        
+        .coding-editor-section {
+            display: flex;
+            gap: 1.5rem;
+            flex: 1;
+            min-height: 600px;
+        }
+        
+        .editor-container {
+            display: flex;
+            flex-direction: column;
+            background-color: var(--white-color);
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        .editor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .editor-title {
+            font-weight: 600;
+            color: var(--dark-color);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .editor-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .editor-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+        
+        .editor-btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .editor-btn-primary:hover {
+            background-color: var(--secondary-color);
+        }
+        
+        .editor-btn-secondary {
+            background-color: #f0f0f0;
+            color: #333;
+        }
+        
+        .editor-btn-secondary:hover {
+            background-color: #e0e0e0;
+        }
+        
+        .editor-content {
+            flex: 1;
+            position: relative;
+        }
+        
+        .CodeMirror {
+            height: 100% !important;
+            font-family: 'Fira Code', 'Courier New', monospace;
+            font-size: 14px;
+        }
+        
+        .prompt-container {
+            padding: 1rem;
+            background-color: #f8f9fa;
+            border-top: 1px solid #eee;
+        }
+        
+        .prompt-form {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .prompt-input {
+            flex: 1;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.95rem;
+        }
+        
+        .prompt-submit {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 0 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .prompt-submit:hover {
+            background-color: var(--secondary-color);
+        }
+        
+        .prompt-submit i {
+            font-size: 1.2rem;
+        }
+        
+        .response-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--white-color);
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+        
+        .response-tabs {
+            display: flex;
+            border-bottom: 1px solid #eee;
+            background-color: #f8f9fa;
+        }
+        
+        .response-tab {
+            padding: 1rem 1.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+        }
+        
+        .response-tab.active {
+            color: var(--primary-color);
+            border-bottom: 3px solid var(--primary-color);
+        }
+        
+        .response-content {
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+        }
+        
+        .tab-panel {
+            height: 100%;
+            display: none;
+        }
+        
+        .tab-panel.active {
+            display: block;
+        }
+        
+        .loading-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #666;
+        }
+        
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .diff-container {
+            height: 100%;
+            overflow: auto;
+        }
+        
+        .explanation-container {
+            height: 100%;
+            overflow: auto;
+            padding: 1rem;
+        }
+        
+        .explanation-container h3 {
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+            color: var(--dark-color);
+        }
+        
+        .explanation-container p {
+            margin-bottom: 1rem;
+            line-height: 1.6;
+            color: #333;
+        }
+        
+        .explanation-container code {
+            background-color: #f8f9fa;
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: var(--primary-color);
+        }
+        
+        .explanation-container pre {
+            background-color: #f8f9fa;
+            padding: 1rem;
+            border-radius: 4px;
+            overflow-x: auto;
+            margin-bottom: 1rem;
+        }
+        
+        .explanation-container ul, .explanation-container ol {
+            margin-bottom: 1rem;
+            padding-left: 1.5rem;
+        }
+        
+        .explanation-container li {
+            margin-bottom: 0.5rem;
+        }
+        
+        .explanation-container blockquote {
+            border-left: 4px solid var(--primary-color);
+            padding-left: 1rem;
+            margin-left: 0;
+            margin-bottom: 1rem;
+            color: #666;
+        }
+        
+        .suggestions-container {
+            height: 100%;
+            overflow: auto;
+        }
+        
+        .suggestion-card {
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .suggestion-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--dark-color);
+        }
+        
+        .suggestion-content {
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+        
+        .suggestion-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        
+        .suggestion-btn {
+            font-size: 0.8rem;
+            padding: 0.3rem 0.6rem;
+            border-radius: 3px;
+            cursor: pointer;
+            border: none;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        
+        .suggestion-btn-apply {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .suggestion-btn-apply:hover {
+            background-color: var(--secondary-color);
+        }
+        
+        .suggestion-btn-ignore {
+            background-color: #eee;
+            color: #666;
+        }
+        
+        .suggestion-btn-ignore:hover {
+            background-color: #ddd;
+        }
+        
+        .alert {
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+        
+        .alert i {
+            font-size: 1.2rem;
+            margin-top: 0.1rem;
+        }
+        
+        .alert-content {
+            flex: 1;
+        }
+        
+        .alert-success {
+            background-color: rgba(40, 167, 69, 0.1);
+            border-left: 4px solid var(--success-color);
+            color: var(--success-color);
+        }
+        
+        .alert-warning {
+            background-color: rgba(255, 193, 7, 0.1);
+            border-left: 4px solid var(--warning-color);
+            color: var(--warning-color);
+        }
+        
+        .alert-danger {
+            background-color: rgba(220, 53, 69, 0.1);
+            border-left: 4px solid var(--danger-color);
+            color: var(--danger-color);
+        }
+        
+        .alert-info {
+            background-color: rgba(23, 162, 184, 0.1);
+            border-left: 4px solid var(--info-color);
+            color: var(--info-color);
+        }
+        
+        .action-panel {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .action-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+        }
+        
+        .action-btn:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+        
+        .action-btn-secondary {
+            background-color: #f0f0f0;
+            color: #333;
+        }
+        
+        .action-btn-secondary:hover {
+            background-color: #e0e0e0;
+        }
+        
+        /* Responsive styles */
+        @media (max-width: 1200px) {
+            .coding-editor-section {
+                flex-direction: column;
+            }
+            
+            .editor-container, .response-container {
+                width: 100%;
+                min-height: 400px;
+            }
+        }
+        
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+                box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+                z-index: 1001;
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .menu-toggle {
+                display: block;
+            }
+            
+            .config-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .coding-companion-container {
+                padding: 1rem;
+            }
+            
+            .section-header h2 {
+                font-size: 1.5rem;
+            }
+            
+            .action-panel {
+                flex-direction: column;
+            }
+            
+            .action-btn {
+                width: 100%;
+            }
+        }
+        
+        /* Dark overlay when sidebar is active on mobile */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        
+        @media (max-width: 992px) {
+            .sidebar-overlay.active {
+                display: block;
+            }
+        }
+
+        /* File explorer panel */
+        .file-explorer-panel {
+            width: 250px;
+            background-color: var(--white-color);
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .explorer-header {
+            padding: 1rem;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #eee;
+            font-weight: 600;
+            color: var(--dark-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .explorer-header button {
+            background: none;
+            border: none;
+            color: var(--primary-color);
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .explorer-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.5rem;
+        }
+
+        .explorer-item {
+            padding: 0.5rem;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .explorer-item:hover {
+            background-color: #f0f0f0;
+        }
+
+        .explorer-item.active {
+            background-color: rgba(74, 111, 227, 0.1);
+            color: var(--primary-color);
+        }
+
+        .explorer-item i {
+            width: 20px;
+            color: var(--primary-color);
+        }
+
+        /* Session history panel */
+        .session-history-panel {
+            max-height: 200px;
+            background-color: var(--white-color);
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            margin-top: 1.5rem;
+        }
+
+        .history-header {
+            padding: 0.75rem 1rem;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #eee;
+            font-weight: 600;
+            color: var(--dark-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .history-content {
+            max-height: 150px;
+            overflow-y: auto;
+            padding: 0.5rem;
+        }
+
+        .history-item {
+            padding: 0.5rem;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .history-item:hover {
+            background-color: #f0f0f0;
+        }
+
+        .history-item i {
+            color: var(--primary-color);
+        }
+
+        .history-prompt {
+            text-overflow: ellipsis;
+            overflow: hidden;
+            white-space: nowrap;
+            flex: 1;
+        }
+
+        .history-time {
+            font-size: 0.75rem;
+            color: #999;
+        }
+
+        /* Code analysis and metrics */
+        .code-analysis-container {
+            background-color: var(--white-color);
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .analysis-header {
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .analysis-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .metric-card {
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-label {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        /* Context window management */
+        .context-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            background-color: #f8f9fa;
+            border-top: 1px solid #eee;
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .context-usage {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .usage-bar {
+            width: 100px;
+            height: 6px;
+            background-color: #eee;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .usage-fill {
+            height: 100%;
+            background-color: var(--primary-color);
+            border-radius: 3px;
+        }
+
+        .usage-text {
+            font-size: 0.75rem;
+        }
+
+        .token-count {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Model info badge */
+        .model-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            background-color: rgba(74, 111, 227, 0.1);
+            color: var(--primary-color);
+            padding: 0.3rem 0.6rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        /* Language icon colors */
+        .lang-python { color: #306998; }
+        .lang-javascript { color: #f7df1e; }
+        .lang-typescript { color: #007acc; }
+        .lang-java { color: #f89820; }
+        .lang-csharp { color: #9b4f96; }
+        .lang-cpp { color: #004482; }
+        .lang-go { color: #00add8; }
+        .lang-ruby { color: #cc342d; }
+        .lang-swift { color: #ffac45; }
+        .lang-kotlin { color: #a97bff; }
+        .lang-rust { color: #dea584; }
+        .lang-php { color: #777bb3; }
+    </style>
+</head>
+<body>
+    <!-- RENDER THE HEADER TEMPLATE-->
+    {% include 'header.html' %}
+    
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    
+    <!-- Main sidebar -->
+    <aside class="sidebar">
+        {% include 'sidebar.html' %}
+    </aside>
+
+    <main class="main-content">
+        <div class="coding-companion-container">
+            <div class="section-header">
+                <h2>Coding Companion</h2>
+                <span class="badge">AI-Powered Code Assistant</span>
+            </div>
+            
+            <!-- Configuration Panel -->
+            <div class="configuration-panel">
+                <div class="config-grid">
+                    <div>
+                        <div class="config-group">
+                            <label for="programmingLanguage">Programming Language</label>
+                            <select id="programmingLanguage">
+                                <option value="">Select a language...</option>
+                                <option value="python">Python</option>
+                                <option value="javascript">JavaScript</option>
+                                <option value="typescript">TypeScript</option>
+                                <option value="java">Java</option>
+                                <option value="csharp">C# (.NET)</option>
+                                <option value="cpp">C/C++</option>
+                                <option value="go">Go</option>
+                                <option value="ruby">Ruby</option>
+                                <option value="php">PHP</option>
+                                <option value="swift">Swift</option>
+                                <option value="kotlin">Kotlin</option>
+                                <option value="rust">Rust</option>
+                                <option value="html">HTML/CSS</option>
+                                <option value="sql">SQL</option>
+                                <option value="shell">Shell/Bash</option>
+                                <option value="perl">Perl</option>
+                                <option value="r">R</option>
+                                <option value="matlab">MATLAB</option>
+                                <option value="scala">Scala</option>
+                                <option value="dart">Dart</option>
+                                <option value="groovy">Groovy</option>
+                                <option value="powershell">PowerShell</option>
+                                <option value="assembly">Assembly</option>
+                                <option value="cobol">COBOL</option>
+                                <option value="fortran">Fortran</option>
+                            </select>
+                        </div>
+                        
+                        <div class="config-group">
+                            <label for="modelSelect">AI Model</label>
+                            <select id="modelSelect">
+                                <option value="gpt4o">GPT-4o (Most powerful, best for complex code)</option>
+                                <option value="gpt4o-mini">GPT-4o-mini (Fast, balanced performance)</option>
+                                <option value="deepseek-r1">DeepSeek-R1 (Optimized for reasoning)</option>
+                                <option value="deepseek-v3">DeepSeek-V3 (General purpose)</option>
+                                <option value="o1-mini">O1-mini (Good for complex tasks)</option>
+                                <option value="o3-mini">O3-mini (Best for longer contexts)</option>
+                                <option value="llama">Llama (Open source model)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div class="config-group">
+                            <label>Start with</label>
+                            <div class="radio-group">
+                                <label class="radio-item">
+                                    <input type="radio" name="startOption" value="scratch" checked>
+                                    Start from scratch
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="startOption" value="upload">
+                                    Upload existing files
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="file-upload-area" id="fileUploadArea">
+                            <input type="file" id="fileInput" class="file-input" multiple>
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <h3>Drop files here</h3>
+                            <p>or click to browse your files</p>
+                            <button class="file-upload-btn">
+                                <i class="fas fa-file-upload"></i> Select Files
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="uploaded-files">
+                    <h3>
+                        Uploaded Files
+                        <span class="files-badge" id="fileCount">0</span>
+                    </h3>
+                    <div class="file-list" id="fileList">
+                        <div class="file-list-empty" id="fileListEmpty">No files uploaded yet.</div>
+                    </div>
+                </div>
+                
+                <div class="action-panel">
+                    <button class="action-btn" id="startCodingBtn">
+                        <i class="fas fa-code"></i> Start Coding
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Main Coding Interface -->
+            <div class="coding-editor-section" id="codingInterface" style="display:none;">
+                <!-- File Explorer Panel -->
+                <div class="file-explorer-panel">
+                    <div class="explorer-header">
+                        <span>Files</span>
+                        <button id="newFileBtn" title="New File">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                    <div class="explorer-content" id="fileExplorer">
+                        <!-- File explorer items will be added here -->
+                    </div>
+                    
+                    <!-- Session History Panel -->
+                    <div class="session-history-panel">
+                        <div class="history-header">
+                            <span>Session History</span>
+                        </div>
+                        <div class="history-content" id="sessionHistory">
+                            <!-- History items will be added here -->
+                        </div>
+                    </div>
+                </div>
+            
+                <!-- Code Editor Container -->
+                <div class="editor-container">
+                    <div class="editor-header">
+                        <div class="editor-title">
+                            <i class="fas fa-file-code"></i>
+                            <span id="currentFileName">Untitled.py</span>
+                            <span class="model-badge" id="modelBadge">
+                                <i class="fas fa-robot"></i>
+                                <span>GPT-4o</span>
+                            </span>
+                        </div>
+                        <div class="editor-actions">
+                            <button class="editor-btn editor-btn-secondary" id="formatCodeBtn">
+                                <i class="fas fa-align-left"></i> Format
+                            </button>
+                            <button class="editor-btn editor-btn-secondary" id="runCodeBtn">
+                                <i class="fas fa-play"></i> Run
+                            </button>
+                            <button class="editor-btn editor-btn-primary" id="saveCodeBtn">
+                                <i class="fas fa-save"></i> Save
+                            </button>
+                        </div>
+                    </div>
+                    <div class="editor-content">
+                        <textarea id="codeEditor"></textarea>
+                    </div>
+                    <div class="prompt-container">
+                        <form id="promptForm" class="prompt-form">
+                            <input type="text" id="promptInput" class="prompt-input" placeholder="Ask anything about your code (e.g., 'Add a function to calculate average', 'Fix the bug in the loop', 'Optimize this algorithm')">
+                            <button type="submit" class="prompt-submit">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </form>
+                    </div>
+                    <div class="context-info">
+                        <div class="context-usage">
+                            <span>Context:</span>
+                            <div class="usage-bar">
+                                <div class="usage-fill" id="contextUsage" style="width: 10%;"></div>
+                            </div>
+                            <span class="usage-text" id="contextPercentage">10%</span>
+                        </div>
+                        <div class="token-count">
+                            <i class="fas fa-calculator"></i>
+                            <span id="tokenCount">0 tokens</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Response Container -->
+                <div class="response-container">
+                    <div class="response-tabs">
+                        <div class="response-tab active" data-tab="suggestions">Suggestions</div>
+                        <div class="response-tab" data-tab="diff">Changes</div>
+                        <div class="response-tab" data-tab="explanation">Explanation</div>
+                    </div>
+                    <div class="response-content">
+                        <!-- Loading Panel -->
+                        <div class="loading-container" id="loadingPanel" style="display:none;">
+                            <div class="loading-spinner"></div>
+                            <p>AI is analyzing your code...</p>
+                        </div>
+                        
+                        <!-- Suggestions Panel -->
+                        <div class="tab-panel active" id="suggestionsPanel">
+                            <div class="suggestions-container">
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle"></i>
+                                    <div class="alert-content">
+                                        <strong>Ask the AI to help with your code</strong>
+                                        <p>Type a prompt in the input field below the editor to get suggestions, fixes, or improvements for your code.</p>
+                                    </div>
+                                </div>
+                                
+                                <div id="suggestionsList">
+                                    <!-- Suggestions will be added here -->
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Diff Panel -->
+                        <div class="tab-panel" id="diffPanel">
+                            <div class="diff-container" id="diffContainer">
+                                <!-- Diff will be added here -->
+                            </div>
+                        </div>
+                        
+                        <!-- Explanation Panel -->
+                        <div class="tab-panel" id="explanationPanel">
+                            <div class="explanation-container" id="explanationContainer">
+                                <!-- Explanation will be added here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Code Analysis and Metrics (shows after coding starts) -->
+            <div class="code-analysis-container" id="codeAnalysis" style="display:none;">
+                <div class="analysis-header">
+                    <span>Code Analysis</span>
+                </div>
+                <div class="analysis-content">
+                    <div class="metric-card">
+                        <div class="metric-value" id="linesOfCode">0</div>
+                        <div class="metric-label">Lines of Code</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="fileSize">0KB</div>
+                        <div class="metric-label">File Size</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="complexityScore">N/A</div>
+                        <div class="metric-label">Complexity Score</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="estimatedQuality">N/A</div>
+                        <div class="metric-label">Code Quality</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Footer -->
+    {% include 'footer.html' %}
+    
+    <script>
+        // Global variables
+        let editor;
+        let activeToken = null;
+        let uploadedFiles = [];
+        let activeFile = null;
+        let editorHistory = [];
+        let sessionHistory = [];
+        let currentLanguage = '';
+        let currentModel = '';
+        let tokenCount = 0;
+        let contextPercentage = 0;
+        let maxContextTokens = 8000; // Default, will update based on model
+        let isProcessing = false;
+        
+        // DOM elements
+        const fileUploadArea = document.getElementById('fileUploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileList = document.getElementById('fileList');
+        const fileListEmpty = document.getElementById('fileListEmpty');
+        const fileCount = document.getElementById('fileCount');
+        const startCodingBtn = document.getElementById('startCodingBtn');
+        const codingInterface = document.getElementById('codingInterface');
+        const codeAnalysis = document.getElementById('codeAnalysis');
+        const fileExplorer = document.getElementById('fileExplorer');
+        const currentFileName = document.getElementById('currentFileName');
+        const modelBadge = document.getElementById('modelBadge');
+        const formatCodeBtn = document.getElementById('formatCodeBtn');
+        const runCodeBtn = document.getElementById('runCodeBtn');
+        const saveCodeBtn = document.getElementById('saveCodeBtn');
+        const newFileBtn = document.getElementById('newFileBtn');
+        const promptForm = document.getElementById('promptForm');
+        const promptInput = document.getElementById('promptInput');
+        const sessionHistoryEl = document.getElementById('sessionHistory');
+        const responseTabs = document.querySelectorAll('.response-tab');
+        const tabPanels = document.querySelectorAll('.tab-panel');
+        const loadingPanel = document.getElementById('loadingPanel');
+        const suggestionsList = document.getElementById('suggestionsList');
+        const diffContainer = document.getElementById('diffContainer');
+        const explanationContainer = document.getElementById('explanationContainer');
+        const contextUsage = document.getElementById('contextUsage');
+        const contextPercentageEl = document.getElementById('contextPercentage');
+        const tokenCountEl = document.getElementById('tokenCount');
+        const programmingLanguage = document.getElementById('programmingLanguage');
+        const modelSelect = document.getElementById('modelSelect');
+        const linesOfCode = document.getElementById('linesOfCode');
+        const fileSize = document.getElementById('fileSize');
+        const complexityScore = document.getElementById('complexityScore');
+        const estimatedQuality = document.getElementById('estimatedQuality');
+        
+        // File extension mapping
+        const languageExtensions = {
+            'python': 'py',
+            'javascript': 'js',
+            'typescript': 'ts',
+            'java': 'java',
+            'csharp': 'cs',
+            'cpp': 'cpp',
+            'go': 'go',
+            'ruby': 'rb',
+            'php': 'php',
+            'swift': 'swift',
+            'kotlin': 'kt',
+            'rust': 'rs',
+            'html': 'html',
+            'sql': 'sql',
+            'shell': 'sh',
+            'perl': 'pl',
+            'r': 'r',
+            'matlab': 'm',
+            'scala': 'scala',
+            'dart': 'dart',
+            'groovy': 'groovy',
+            'powershell': 'ps1',
+            'assembly': 'asm',
+            'cobol': 'cob',
+            'fortran': 'f'
+        };
+        
+        // CodeMirror language mode mapping
+        const languageModes = {
+            'python': 'python',
+            'javascript': 'javascript',
+            'typescript': 'javascript',
+            'java': 'clike',
+            'csharp': 'clike',
+            'cpp': 'clike',
+            'go': 'go',
+            'ruby': 'ruby',
+            'php': 'php',
+            'swift': 'swift',
+            'kotlin': 'clike',
+            'rust': 'rust',
+            'html': 'htmlmixed',
+            'sql': 'sql',
+            'shell': 'shell',
+            'perl': 'perl',
+            'r': 'r',
+            'matlab': 'octave',
+            'scala': 'clike',
+            'dart': 'dart',
+            'groovy': 'groovy',
+            'powershell': 'powershell',
+            'assembly': 'gas',
+            'cobol': 'cobol',
+            'fortran': 'fortran'
+        };
+        
+        // Language icons mapping
+        const languageIcons = {
+            'python': '<i class="fab fa-python lang-python"></i>',
+            'javascript': '<i class="fab fa-js-square lang-javascript"></i>',
+            'typescript': '<i class="fab fa-js-square lang-typescript"></i>',
+            'java': '<i class="fab fa-java lang-java"></i>',
+            'csharp': '<i class="fab fa-microsoft lang-csharp"></i>',
+            'cpp': '<i class="fas fa-file-code lang-cpp"></i>',
+            'go': '<i class="fas fa-file-code lang-go"></i>',
+            'ruby': '<i class="fas fa-gem lang-ruby"></i>',
+            'php': '<i class="fab fa-php lang-php"></i>',
+            'swift': '<i class="fab fa-swift lang-swift"></i>',
+            'kotlin': '<i class="fas fa-file-code lang-kotlin"></i>',
+            'rust': '<i class="fas fa-file-code lang-rust"></i>',
+            'html': '<i class="fab fa-html5"></i>',
+            'sql': '<i class="fas fa-database"></i>',
+            'shell': '<i class="fas fa-terminal"></i>',
+            'perl': '<i class="fas fa-file-code"></i>',
+            'r': '<i class="fas fa-file-code"></i>',
+            'matlab': '<i class="fas fa-calculator"></i>',
+            'scala': '<i class="fas fa-file-code"></i>',
+            'dart': '<i class="fas fa-file-code"></i>',
+            'groovy': '<i class="fas fa-file-code"></i>',
+            'powershell': '<i class="fas fa-terminal"></i>',
+            'assembly': '<i class="fas fa-microchip"></i>',
+            'cobol': '<i class="fas fa-file-code"></i>',
+            'fortran': '<i class="fas fa-file-code"></i>'
+        };
+        
+        // Model config
+        const modelConfig = {
+            'gpt4o': {
+                name: 'GPT-4o',
+                maxTokens: 128000,
+                icon: '<i class="fas fa-brain"></i>'
+            },
+            'gpt4o-mini': {
+                name: 'GPT-4o-mini',
+                maxTokens: 64000,
+                icon: '<i class="fas fa-microchip"></i>'
+            },
+            'deepseek-r1': {
+                name: 'DeepSeek-R1',
+                maxTokens: 32000,
+                icon: '<i class="fas fa-cogs"></i>'
+            },
+            'deepseek-v3': {
+                name: 'DeepSeek-V3',
+                maxTokens: 32000,
+                icon: '<i class="fas fa-robot"></i>'
+            },
+            'o1-mini': {
+                name: 'O1-mini',
+                maxTokens: 32000,
+                icon: '<i class="fas fa-lightbulb"></i>'
+            },
+            'o3-mini': {
+                name: 'O3-mini',
+                maxTokens: 128000,
+                icon: '<i class="fas fa-lightbulb"></i>'
+            },
+            'llama': {
+                name: 'Llama',
+                maxTokens: 32000,
+                icon: '<i class="fas fa-comment-dots"></i>'
+            }
+        };
+        
+        // Code templates for starting from scratch by language
+        const codeTemplates = {
+            'python': '# Python code template\n\ndef main():\n    print("Hello, World!")\n\nif __name__ == "__main__":\n    main()\n',
+            'javascript': '// JavaScript code template\n\nfunction main() {\n    console.log("Hello, World!");\n}\n\nmain();\n',
+            'typescript': '// TypeScript code template\n\nfunction main(): void {\n    console.log("Hello, World!");\n}\n\nmain();\n',
+            'java': '// Java code template\n\npublic class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello, World!");\n    }\n}\n',
+            'csharp': '// C# code template\n\nusing System;\n\nclass Program {\n    static void Main(string[] args) {\n        Console.WriteLine("Hello, World!");\n    }\n}\n',
+            'cpp': '// C++ code template\n\n#include <iostream>\n\nint main() {\n    std::cout << "Hello, World!" << std::endl;\n    return 0;\n}\n',
+            'go': '// Go code template\n\npackage main\n\nimport "fmt"\n\nfunc main() {\n    fmt.Println("Hello, World!")\n}\n',
+            'ruby': '# Ruby code template\n\ndef main\n  puts "Hello, World!"\nend\n\nmain\n',
+            'php': '<?php\n// PHP code template\n\nfunction main() {\n    echo "Hello, World!";\n}\n\nmain();\n',
+            'swift': '// Swift code template\n\nfunc main() {\n    print("Hello, World!")\n}\n\nmain()\n',
+            'kotlin': '// Kotlin code template\n\nfun main() {\n    println("Hello, World!")\n}\n',
+            'rust': '// Rust code template\n\nfn main() {\n    println!("Hello, World!");\n}\n',
+            'html': '<!DOCTYPE html>\n<html lang="en">\n<head>\n    <meta charset="UTF-8">\n    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n    <title>Document</title>\n</head>\n<body>\n    <h1>Hello, World!</h1>\n</body>\n</html>\n',
+            'sql': '-- SQL code template\n\nCREATE TABLE users (\n    id INT PRIMARY KEY,\n    name VARCHAR(100),\n    email VARCHAR(100)\n);\n\nINSERT INTO users (id, name, email) VALUES (1, "John Doe", "john@example.com");\n\nSELECT * FROM users;\n',
+            'shell': '#!/bin/bash\n# Bash shell script template\n\necho "Hello, World!"\n',
+            'default': '// Code template\n\nfunction main() {\n    console.log("Hello, World!");\n}\n\nmain();\n'
+        };
+        
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize the page
+            initPageFunctionality();
+            setupFileUploadListeners();
+            
+            // Handle start coding button
+            startCodingBtn.addEventListener('click', startCoding);
+            
+            // Tab navigation
+            responseTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    switchTab(tab.getAttribute('data-tab'));
+                });
+            });
+            
+            // Form submission
+            promptForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                handlePromptSubmission();
+            });
+            
+            // Editor actions
+            formatCodeBtn.addEventListener('click', formatCode);
+            runCodeBtn.addEventListener('click', runCode);
+            saveCodeBtn.addEventListener('click', saveCode);
+            newFileBtn.addEventListener('click', createNewFile);
+            
+            // Language and model selection
+            programmingLanguage.addEventListener('change', function() {
+                currentLanguage = this.value;
+                updateEditorMode();
+                updateFileExtension();
+            });
+            
+            modelSelect.addEventListener('change', function() {
+                currentModel = this.value;
+                updateModelInfo();
+            });
+        });
+        
+        // Toggle sidebar on mobile
+        function initPageFunctionality() {
+            const menuToggle = document.getElementById('menu-toggle');
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            
+            menuToggle?.addEventListener('click', function() {
+                sidebar.classList.toggle('active');
+                overlay.classList.toggle('active');
+            });
+            
+            overlay?.addEventListener('click', function() {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            });
+        }
+        
+        // Set up file upload listeners
+        function setupFileUploadListeners() {
+            // Drag and drop events
+            fileUploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.classList.add('dragover');
+            });
+            
+            fileUploadArea.addEventListener('dragleave', function() {
+                this.classList.remove('dragover');
+            });
+            
+            fileUploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.classList.remove('dragover');
+                
+                if (e.dataTransfer.files.length > 0) {
+                    handleFileUpload(e.dataTransfer.files);
+                }
+            });
+            
+            // File input change
+            fileInput.addEventListener('change', function() {
+                if (this.files.length > 0) {
+                    handleFileUpload(this.files);
+                }
+            });
+        }
+        
+        // Handle file upload
+        function handleFileUpload(files) {
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                
+                // Skip if file is already uploaded
+                if (uploadedFiles.some(f => f.name === file.name)) {
+                    continue;
+                }
+                
+                // Add to uploaded files list
+                uploadedFiles.push({
+                    id: generateUniqueId(),
+                    name: file.name,
+                    size: file.size,
+                    type: file.type,
+                    content: null, // Will be read later
+                    file: file
+                });
+            }
+            
+            // Update UI
+            updateFileList();
+            
+            // Read file contents
+            readFileContents();
+        }
+        
+        // Read contents of uploaded files
+        function readFileContents() {
+            uploadedFiles.forEach(fileObj => {
+                if (fileObj.content === null && fileObj.file) {
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        fileObj.content = e.target.result;
+                    };
+                    
+                    reader.readAsText(fileObj.file);
+                }
+            });
+        }
+        
+        // Update the file list UI
+        function updateFileList() {
+            fileList.innerHTML = '';
+            
+            if (uploadedFiles.length === 0) {
+                fileListEmpty.style.display = 'block';
+                fileCount.textContent = '0';
+                return;
+            }
+            
+            fileListEmpty.style.display = 'none';
+            fileCount.textContent = uploadedFiles.length;
+            
+            uploadedFiles.forEach(file => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                
+                // Determine file icon based on extension
+                const extension = file.name.split('.').pop().toLowerCase();
+                let iconClass = 'fa-file';
+                
+                if (['js', 'ts', 'jsx', 'tsx'].includes(extension)) {
+                    iconClass = 'fa-js-square';
+                } else if (['py'].includes(extension)) {
+                    iconClass = 'fa-python';
+                } else if (['java'].includes(extension)) {
+                    iconClass = 'fa-java';
+                } else if (['html', 'htm'].includes(extension)) {
+                    iconClass = 'fa-html5';
+                } else if (['css'].includes(extension)) {
+                    iconClass = 'fa-css3-alt';
+                } else if (['php'].includes(extension)) {
+                    iconClass = 'fa-php';
+                } else if (['rb'].includes(extension)) {
+                    iconClass = 'fa-gem';
+                } else if (['c', 'cpp', 'h', 'hpp', 'cs'].includes(extension)) {
+                    iconClass = 'fa-file-code';
+                } else if (['json'].includes(extension)) {
+                    iconClass = 'fa-file-code';
+                }
+                
+                fileItem.innerHTML = `
+                    <div class="file-info">
+                        <i class="file-icon ${extension === 'py' ? 'fab' : 'fas'} ${iconClass}"></i>
+                        <div>
+                            <div class="file-name">${file.name}</div>
+                            <div class="file-size">${formatFileSize(file.size)}</div>
+                        </div>
+                    </div>
+                    <button class="file-remove" data-id="${file.id}" title="Remove file">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                
+                fileList.appendChild(fileItem);
+                
+                // Add remove button event
+                const removeBtn = fileItem.querySelector('.file-remove');
+                removeBtn.addEventListener('click', function() {
+                    removeFile(this.getAttribute('data-id'));
+                });
+            });
+        }
+        
+        // Remove a file from the list
+        function removeFile(fileId) {
+            uploadedFiles = uploadedFiles.filter(file => file.id !== fileId);
+            updateFileList();
+        }
+        
+        // Start coding
+        function startCoding() {
+            // Check if language is selected
+            if (!programmingLanguage.value) {
+                alert('Please select a programming language');
+                return;
+            }
+            
+            // Check if model is selected
+            if (!modelSelect.value) {
+                alert('Please select an AI model');
+                return;
+            }
+            
+            // Set current language and model
+            currentLanguage = programmingLanguage.value;
+            currentModel = modelSelect.value;
+            
+            // Update model info
+            updateModelInfo();
+            
+            // Initialize the coding interface
+            initCodingInterface();
+            
+            // Show coding interface
+            codingInterface.style.display = 'flex';
+            codeAnalysis.style.display = 'block';
+            
+            // Hide configuration panel
+            document.querySelector('.configuration-panel').style.display = 'none';
+        }
+        
+        // Initialize the coding interface
+        function initCodingInterface() {
+            // Load the appropriate CodeMirror language mode
+            loadCodeMirrorMode();
+            
+            // Initialize CodeMirror editor
+            initCodeEditor();
+            
+            // Update file explorer
+            updateFileExplorer();
+            
+            // Calculate initial metrics
+            updateCodeMetrics();
+        }
+        
+        // Load CodeMirror language mode dynamically
+        function loadCodeMirrorMode() {
+            const mode = languageModes[currentLanguage] || 'javascript';
+            const modeScript = document.getElementById('language-mode-script');
+            
+            // Load base modes for mixed modes
+            if (mode === 'htmlmixed') {
+                // Load dependencies for htmlmixed
+                const scripts = [
+                    'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/xml/xml.min.js',
+                    'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/javascript/javascript.min.js',
+                    'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/css/css.min.js',
+                    'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/htmlmixed/htmlmixed.min.js'
+                ];
+                
+                // Load scripts sequentially
+                let promise = Promise.resolve();
+                scripts.forEach(src => {
+                    promise = promise.then(() => loadScript(src));
+                });
+                
+                promise.then(() => {
+                    initCodeEditor();
+                });
+            } else {
+                // Load single mode
+                modeScript.src = `https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/${mode}/${mode}.min.js`;
+                modeScript.onload = initCodeEditor;
+            }
+        }
+        
+        // Helper to load a script
+        function loadScript(src) {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = src;
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+        
+        // Initialize CodeMirror editor
+        function initCodeEditor() {
+            // Check if editor already exists
+            if (editor) {
+                return;
+            }
+            
+            // Get mode for language
+            const mode = languageModes[currentLanguage] || 'javascript';
+            
+            // Initialize CodeMirror
+            editor = CodeMirror.fromTextArea(document.getElementById('codeEditor'), {
+                mode: mode,
+                theme: 'dracula',
+                lineNumbers: true,
+                indentUnit: 4,
+                smartIndent: true,
+                tabSize: 4,
+                indentWithTabs: false,
+                lineWrapping: false,
+                extraKeys: {"Ctrl-Space": "autocomplete"},
+                foldGutter: true,
+                gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
+                autoCloseBrackets: true,
+                matchBrackets: true,
+                autoCloseTags: true,
+                matchTags: true,
+                search: true,
+                continueComments: true,
+                styleActiveLine: true
+            });
+            
+            // Set default content based on language
+            const startOption = document.querySelector('input[name="startOption"]:checked').value;
+            
+            if (startOption === 'scratch') {
+                // Start from template
+                const template = codeTemplates[currentLanguage] || codeTemplates.default;
+                editor.setValue(template);
+            } else if (uploadedFiles.length > 0) {
+                // Start from first uploaded file
+                activeFile = uploadedFiles[0];
+                editor.setValue(activeFile.content || '');
+                currentFileName.textContent = activeFile.name;
+            } else {
+                // No files uploaded, start from template
+                const template = codeTemplates[currentLanguage] || codeTemplates.default;
+                editor.setValue(template);
+            }
+            
+            // Set editor events
+            editor.on('change', function() {
+                // Update token count
+                estimateTokenCount();
+                
+                // Update code metrics
+                updateCodeMetrics();
+            });
+            
+            // Initial token count estimation
+            estimateTokenCount();
+        }
+        
+        // Update file explorer
+        function updateFileExplorer() {
+            fileExplorer.innerHTML = '';
+            
+            // Add uploaded files
+            uploadedFiles.forEach(file => {
+                addFileToExplorer(file);
+            });
+            
+            // If no uploaded files or starting from scratch
+            if (uploadedFiles.length === 0 || document.querySelector('input[name="startOption"]:checked').value === 'scratch') {
+                // Create default file
+                const defaultFile = {
+                    id: generateUniqueId(),
+                    name: `Untitled.${languageExtensions[currentLanguage] || 'js'}`,
+                    content: editor ? editor.getValue() : (codeTemplates[currentLanguage] || codeTemplates.default),
+                    isNew: true
+                };
+                
+                // Add to files list
+                uploadedFiles.push(defaultFile);
+                
+                // Add to explorer
+                addFileToExplorer(defaultFile);
+                
+                // Set as active file
+                activeFile = defaultFile;
+            }
+            
+            // Set active file if not set
+            if (!activeFile && uploadedFiles.length > 0) {
+                activeFile = uploadedFiles[0];
+            }
+            
+            // Update current file name
+            if (activeFile) {
+                currentFileName.textContent = activeFile.name;
+                
+                // Highlight active file in explorer
+                const fileEl = document.querySelector(`.explorer-item[data-id="${activeFile.id}"]`);
+                if (fileEl) {
+                    fileEl.classList.add('active');
+                }
+            }
+        }
+        
+        // Add file to explorer
+        function addFileToExplorer(file) {
+            const fileEl = document.createElement('div');
+            fileEl.className = 'explorer-item';
+            fileEl.setAttribute('data-id', file.id);
+            
+            // Get file extension
+            const extension = file.name.split('.').pop().toLowerCase();
+            
+            // Determine language from extension
+            let fileLanguage = 'default';
+            for (const [lang, ext] of Object.entries(languageExtensions)) {
+                if (ext === extension) {
+                    fileLanguage = lang;
+                    break;
+                }
+            }
+            
+            // Get language icon
+            const icon = languageIcons[fileLanguage] || '<i class="fas fa-file-code"></i>';
+            
+            fileEl.innerHTML = `
+                ${icon} ${file.name}
+            `;
+            
+            fileExplorer.appendChild(fileEl);
+            
+            // Add click event
+            fileEl.addEventListener('click', function() {
+                switchFile(file.id);
+            });
+        }
+        
+        // Switch between files
+        function switchFile(fileId) {
+            // Save current editor content to active file
+            if (activeFile) {
+                activeFile.content = editor.getValue();
+            }
+            
+            // Find new active file
+            const file = uploadedFiles.find(f => f.id === fileId);
+            if (!file) return;
+            
+            // Update active file
+            activeFile = file;
+            
+            // Update editor content
+            editor.setValue(activeFile.content || '');
+            
+            // Update file name
+            currentFileName.textContent = activeFile.name;
+            
+            // Update editor mode based on file extension
+            updateEditorMode();
+            
+            // Update active file in explorer
+            document.querySelectorAll('.explorer-item').forEach(el => {
+                el.classList.remove('active');
+            });
+            
+            const fileEl = document.querySelector(`.explorer-item[data-id="${fileId}"]`);
+            if (fileEl) {
+                fileEl.classList.add('active');
+            }
+        }
+        
+        // Create a new file
+        function createNewFile() {
+            // Save current file
+            if (activeFile) {
+                activeFile.content = editor.getValue();
+            }
+            
+            // Create new file
+            const newFile = {
+                id: generateUniqueId(),
+                name: `Untitled_${uploadedFiles.length + 1}.${languageExtensions[currentLanguage] || 'js'}`,
+                content: '',
+                isNew: true
+            };
+            
+            // Add to files list
+            uploadedFiles.push(newFile);
+            
+            // Add to explorer
+            addFileToExplorer(newFile);
+            
+            // Switch to new file
+            switchFile(newFile.id);
+        }
+        
+        // Update editor mode based on file extension
+        function updateEditorMode() {
+            if (!editor) return;
+            
+            let mode = languageModes[currentLanguage] || 'javascript';
+            
+            // If active file exists, get mode from extension
+            if (activeFile) {
+                const extension = activeFile.name.split('.').pop().toLowerCase();
+                for (const [lang, ext] of Object.entries(languageExtensions)) {
+                    if (ext === extension) {
+                        mode = languageModes[lang] || 'javascript';
+                        break;
+                    }
+                }
+            }
+            
+            editor.setOption('mode', mode);
+        }
+        
+        // Update file extension based on language
+        function updateFileExtension() {
+            if (!activeFile) return;
+            
+            // Only update extension if it's a new file
+            if (activeFile.isNew) {
+                const extension = languageExtensions[currentLanguage] || 'js';
+                const baseName = activeFile.name.split('.')[0];
+                activeFile.name = `${baseName}.${extension}`;
+                
+                // Update UI
+                currentFileName.textContent = activeFile.name;
+                
+                // Update file explorer
+                updateFileExplorer();
+            }
+        }
+        
+        // Update model information
+        function updateModelInfo() {
+            if (!currentModel) return;
+            
+            const model = modelConfig[currentModel];
+            
+            if (model) {
+                modelBadge.innerHTML = `
+                    ${model.icon}
+                    <span>${model.name}</span>
+                `;
+                
+                // Update max context tokens
+                maxContextTokens = model.maxTokens;
+                
+                // Update context usage
+                updateContextUsage();
+            }
+        }
+        
+        // Format code
+        function formatCode() {
+            if (!editor) return;
+            
+            const code = editor.getValue();
+            if (!code.trim()) return;
+            
+            // Save to history before formatting
+            saveToEditorHistory();
+            
+            // Show loading
+            loadingPanel.style.display = 'flex';
+            
+            // Request formatting from AI
+            const prompt = "Format this code to follow best practices for indentation, spacing, and style. Only return the formatted code, no explanation needed.";
+            
+            sendPromptToAI(prompt, code, true)
+                .then(response => {
+                    if (response.success && response.formattedCode) {
+                        editor.setValue(response.formattedCode);
+                        
+                        // Update active file content
+                        if (activeFile) {
+                            activeFile.content = response.formattedCode;
+                        }
+                        
+                        // Show success message in suggestions panel
+                        showSuggestion({
+                            title: "Code Formatted",
+                            content: "Your code has been formatted according to best practices."
+                        });
+                    } else {
+                        throw new Error("Failed to format code");
+                    }
+                })
+                .catch(error => {
+                    console.error("Error formatting code:", error);
+                    showSuggestion({
+                        title: "Format Error",
+                        content: "Couldn't format the code. Please try again or format manually.",
+                        type: "error"
+                    });
+                })
+                .finally(() => {
+                    loadingPanel.style.display = 'none';
+                });
+        }
+        
+        // Run code (simulate)
+        function runCode() {
+            if (!editor) return;
+            
+            const code = editor.getValue();
+            if (!code.trim()) return;
+            
+            // Show loading
+            loadingPanel.style.display = 'flex';
+            
+            // Build prompt based on language
+            let prompt = `Run this ${currentLanguage} code and show the output. If there are any errors, explain them. If there are no errors, just show what the program would output.`;
+            
+            // Send to AI
+            sendPromptToAI(prompt, code)
+                .then(response => {
+                    if (response.success) {
+                        // Show the execution result in the explanation panel
+                        showExplanation(response.result || "No output");
+                        
+                        // Switch to explanation tab
+                        switchTab('explanation');
+                    } else {
+                        throw new Error("Failed to run code");
+                    }
+                })
+                .catch(error => {
+                    console.error("Error running code:", error);
+                    showExplanation("**Error running code:** " + error.message);
+                })
+                .finally(() => {
+                    loadingPanel.style.display = 'none';
+                });
+        }
+        
+        // Save code
+        function saveCode() {
+            if (!editor || !activeFile) return;
+            
+            // Save current content to active file
+            activeFile.content = editor.getValue();
+            
+            // Prepare file for download
+            const blob = new Blob([activeFile.content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            
+            // Create download link
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = activeFile.name;
+            a.click();
+            
+            // Clean up
+            URL.revokeObjectURL(url);
+            
+            // Show success message
+            showSuggestion({
+                title: "File Saved",
+                content: `The file "${activeFile.name}" has been downloaded to your computer.`
+            });
+        }
+        
+        // Handle prompt submission
+        function handlePromptSubmission() {
+            const promptText = promptInput.value.trim();
+            if (!promptText || !editor || isProcessing) return;
+            
+            // Save current code to history
+            saveToEditorHistory();
+            
+            // Get current code
+            const code = editor.getValue();
+            
+            // Clear prompt input
+            promptInput.value = '';
+            
+            // Add to session history
+            addToSessionHistory(promptText);
+            
+            // Show loading
+            loadingPanel.style.display = 'flex';
+            isProcessing = true;
+            
+            // Send to AI
+            sendPromptToAI(promptText, code)
+                .then(response => {
+                    if (response.success) {
+                        processAIResponse(response, promptText, code);
+                    } else {
+                        throw new Error("Failed to get AI response");
+                    }
+                })
+                .catch(error => {
+                    console.error("Error processing prompt:", error);
+                    showSuggestion({
+                        title: "Error",
+                        content: "There was an error processing your request. Please try again.",
+                        type: "error"
+                    });
+                    
+                    // Show detailed error in explanation
+                    showExplanation(`**Error:** ${error.message || "Unknown error occurred"}`);
+                })
+                .finally(() => {
+                    loadingPanel.style.display = 'none';
+                    isProcessing = false;
+                });
+        }
+        
+        // Send prompt to AI
+        async function sendPromptToAI(prompt, code, formatOnly = false) {
+            try {
+                // Prepare system prompt
+                let systemPrompt = `You are an expert coding assistant for ${currentLanguage} programming. `;
+                
+                if (formatOnly) {
+                    systemPrompt += "Your task is to format the code according to best practices for indentation, spacing, and style. Only return the formatted code without any explanation or comments.";
+                } else {
+                    systemPrompt += `
+                    Analyze the code and respond to the user's request. If the user request requires code changes, provide:
+                    
+                    1. A clear, informative explanation of what you're doing and why
+                    2. The complete modified code with changes clearly indicated
+                    
+                    If providing suggestions without code changes, be specific and include code examples where relevant.
+                    
+                    Before suggesting changes, make sure they are necessary and improve the code.
+                    `;
+                }
+                
+                // Add context from other files if available
+                let otherFilesContext = '';
+                
+                if (uploadedFiles.length > 1) {
+                    otherFilesContext = '\n\nOther files in the project:\n\n';
+                    
+                    uploadedFiles.forEach(file => {
+                        if (file.id !== activeFile?.id && file.content) {
+                            // Add a brief snippet of each file (first 20 lines max)
+                            const contentLines = file.content.split('\n');
+                            const snippet = contentLines.slice(0, 20).join('\n');
+                            
+                            otherFilesContext += `File: ${file.name}\n\`\`\`\n${snippet}${contentLines.length > 20 ? '\n...(truncated)' : ''}\n\`\`\`\n\n`;
+                        }
+                    });
+                }
+                
+                // Combine all inputs
+                const userInput = `
+                User request: ${prompt}
+                
+                Current file (${activeFile?.name || 'main file'}):
+                \`\`\`
+                ${code}
+                \`\`\`
+                ${otherFilesContext}
+                `;
+                
+                // For now, simulate API call with a local response
+                // In a real implementation, you would call your actual LLM API here
+                const mockEndpoint = `/llm/${currentModel}`;
+                console.log(`Simulating API call to ${mockEndpoint}`);
+                console.log("System prompt:", systemPrompt);
+                console.log("User input:", userInput);
+                
+                // Simulate API response for demo purposes
+                // In real implementation, replace with actual fetch call to the API
+                await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate network delay
+                
+                if (formatOnly) {
+                    return {
+                        success: true,
+                        formattedCode: prettifyCode(code, currentLanguage),
+                        result: "Code formatted successfully."
+                    };
+                }
+                
+                // Generate "AI" response based on the prompt
+                const aiResponse = await generateMockAIResponse(prompt, code, currentLanguage);
+                
+                return {
+                    success: true,
+                    result: aiResponse.explanation,
+                    suggestedCode: aiResponse.suggestedCode,
+                    originalCode: code
+                };
+            } catch (error) {
+                console.error("Error calling AI service:", error);
+                return {
+                    success: false,
+                    error: error.message || "Unknown error"
+                };
+            }
+        }
+        
+        // Process AI response
+        function processAIResponse(response, prompt, originalCode) {
+            // If no code change, just show explanation
+            if (!response.suggestedCode || response.suggestedCode === originalCode) {
+                // Show explanation
+                showExplanation(response.result);
+                switchTab('explanation');
+                return;
+            }
+            
+            // Show explanation
+            showExplanation(response.result);
+            
+            // Generate diff
+            const diff = generateDiff(originalCode, response.suggestedCode);
+            showDiff(diff);
+            
+            // Add suggestions
+            showSuggestion({
+                title: "AI Suggestion",
+                content: "I've analyzed your code and made some suggestions. Check the 'Changes' tab to see the modifications.",
+                actions: [
+                    {
+                        label: "Apply Changes",
+                        onClick: () => applyCodeChanges(response.suggestedCode)
+                    }
+                ]
+            });
+            
+            // Switch to diff tab
+            switchTab('diff');
+        }
+        
+        // Apply code changes
+        function applyCodeChanges(newCode) {
+            if (!editor) return;
+            
+            // Save to history
+            saveToEditorHistory();
+            
+            // Apply changes
+            editor.setValue(newCode);
+            
+            // Update active file
+            if (activeFile) {
+                activeFile.content = newCode;
+            }
+            
+            // Show success message
+            showSuggestion({
+                title: "Changes Applied",
+                content: "The suggested changes have been applied to your code.",
+                type: "success"
+            });
+            
+            // Update code metrics
+            updateCodeMetrics();
+        }
+        
+        // Switch between tabs
+        function switchTab(tabName) {
+            // Update active tab
+            responseTabs.forEach(tab => {
+                if (tab.getAttribute('data-tab') === tabName) {
+                    tab.classList.add('active');
+                } else {
+                    tab.classList.remove('active');
+                }
+            });
+            
+            // Update active panel
+            tabPanels.forEach(panel => {
+                if (panel.id === `${tabName}Panel`) {
+                    panel.classList.add('active');
+                } else {
+                    panel.classList.remove('active');
+                }
+            });
+        }
+        
+        // Show explanation in the explanation panel
+        function showExplanation(markdown) {
+            explanationContainer.innerHTML = marked.parse(markdown);
+        }
+        
+        // Show diff in the diff panel
+        function showDiff(diffHtml) {
+            diffContainer.innerHTML = diffHtml;
+        }
+        
+        // Show suggestion
+        function showSuggestion(suggestion) {
+            const suggestionCard = document.createElement('div');
+            suggestionCard.className = 'suggestion-card';
+            
+            if (suggestion.type === 'error') {
+                suggestionCard.style.borderLeftColor = 'var(--danger-color)';
+            } else if (suggestion.type === 'success') {
+                suggestionCard.style.borderLeftColor = 'var(--success-color)';
+            }
+            
+            let actionsHtml = '';
+            if (suggestion.actions && suggestion.actions.length > 0) {
+                actionsHtml = '<div class="suggestion-actions">';
+                suggestion.actions.forEach((action, index) => {
+                    actionsHtml += `<button class="suggestion-btn suggestion-btn-${index === 0 ? 'apply' : 'ignore'}" data-action="${index}">${action.label}</button>`;
+                });
+                actionsHtml += '</div>';
+            }
+            
+            suggestionCard.innerHTML = `
+                <div class="suggestion-title">${suggestion.title}</div>
+                <div class="suggestion-content">${suggestion.content}</div>
+                ${actionsHtml}
+            `;
+            
+            // Add at the top of the list
+            suggestionsList.insertBefore(suggestionCard, suggestionsList.firstChild);
+            
+            // Add action event listeners
+            if (suggestion.actions && suggestion.actions.length > 0) {
+                const buttons = suggestionCard.querySelectorAll('.suggestion-btn');
+                buttons.forEach((btn, index) => {
+                    btn.addEventListener('click', suggestion.actions[index].onClick);
+                });
+            }
+            
+            // Auto-remove after 10 seconds if it's a status message
+            if (suggestion.type === 'success') {
+                setTimeout(() => {
+                    suggestionCard.style.opacity = '0';
+                    suggestionCard.style.height = '0';
+                    suggestionCard.style.margin = '0';
+                    suggestionCard.style.padding = '0';
+                    suggestionCard.style.transition = 'all 0.5s ease';
+                    
+                    setTimeout(() => {
+                        if (suggestionCard.parentNode) {
+                            suggestionCard.parentNode.removeChild(suggestionCard);
+                        }
+                    }, 500);
+                }, 10000);
+            }
+        }
+        
+        // Add to session history
+        function addToSessionHistory(prompt) {
+            // Add to history array
+            sessionHistory.push({
+                id: generateUniqueId(),
+                prompt: prompt,
+                timestamp: new Date()
+            });
+            
+            // Update UI
+            updateSessionHistory();
+        }
+        
+        // Update session history UI
+        function updateSessionHistory() {
+            sessionHistoryEl.innerHTML = '';
+            
+            if (sessionHistory.length === 0) {
+                sessionHistoryEl.innerHTML = '<div class="history-item">No history yet</div>';
+                return;
+            }
+            
+            // Display latest first
+            sessionHistory.slice().reverse().forEach(item => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'history-item';
+                historyItem.innerHTML = `
+                    <i class="fas fa-history"></i>
+                    <div class="history-prompt" title="${item.prompt}">${item.prompt}</div>
+                    <div class="history-time">${formatTime(item.timestamp)}</div>
+                `;
+                
+                // Click to repeat prompt
+                historyItem.addEventListener('click', function() {
+                    promptInput.value = item.prompt;
+                    promptInput.focus();
+                });
+                
+                sessionHistoryEl.appendChild(historyItem);
+            });
+        }
+        
+        // Save current state to editor history
+        function saveToEditorHistory() {
+            if (!editor) return;
+            
+            editorHistory.push({
+                id: generateUniqueId(),
+                content: editor.getValue(),
+                timestamp: new Date()
+            });
+            
+            // Limit history size
+            if (editorHistory.length > 50) {
+                editorHistory.shift();
+            }
+        }
+        
+        // Estimate token count for the current code
+        function estimateTokenCount() {
+            if (!editor) return;
+            
+            const code = editor.getValue();
+            
+            // Simple estimation: approx 4 characters per token
+            // This is a rough estimate - in production you'd use a proper tokenizer
+            tokenCount = Math.ceil(code.length / 4);
+            
+            // Update UI
+            tokenCountEl.textContent = `${tokenCount.toLocaleString()} tokens`;
+            
+            // Update context usage
+            updateContextUsage();
+        }
+        
+        // Update context usage visualization
+        function updateContextUsage() {
+            // Calculate percentage of max context used
+            contextPercentage = Math.min(100, Math.ceil((tokenCount / maxContextTokens) * 100));
+            
+            // Update UI
+            contextUsage.style.width = `${contextPercentage}%`;
+            contextPercentageEl.textContent = `${contextPercentage}%`;
+            
+            // Change color based on usage
+            if (contextPercentage > 80) {
+                contextUsage.style.backgroundColor = 'var(--danger-color)';
+            } else if (contextPercentage > 50) {
+                contextUsage.style.backgroundColor = 'var(--warning-color)';
+            } else {
+                contextUsage.style.backgroundColor = 'var(--primary-color)';
+            }
+        }
+        
+        // Update code metrics
+        function updateCodeMetrics() {
+            if (!editor) return;
+            
+            const code = editor.getValue();
+            
+            // Lines of code
+            const lines = code.split('\n').length;
+            linesOfCode.textContent = lines.toLocaleString();
+            
+            // File size
+            const sizeInBytes = new TextEncoder().encode(code).length;
+            fileSize.textContent = formatFileSize(sizeInBytes);
+            
+            // Simple complexity score (very basic estimation)
+            let complexity = 0;
+            
+            // Count control structures as indicators of complexity
+            const controlPatterns = [
+                /\bif\s*\(/g,
+                /\belse\b/g,
+                /\bfor\s*\(/g,
+                /\bwhile\s*\(/g,
+                /\bswitch\s*\(/g,
+                /\bcase\b/g,
+                /\bcatch\s*\(/g,
+                /\btry\b/g
+            ];
+            
+            controlPatterns.forEach(pattern => {
+                const matches = code.match(pattern);
+                if (matches) {
+                    complexity += matches.length;
+                }
+            });
+            
+            // Normalize complexity
+            let complexityRating;
+            if (complexity < 5) {
+                complexityRating = 'Low';
+                complexityScore.style.color = 'var(--success-color)';
+            } else if (complexity < 15) {
+                complexityRating = 'Medium';
+                complexityScore.style.color = 'var(--warning-color)';
+            } else {
+                complexityRating = 'High';
+                complexityScore.style.color = 'var(--danger-color)';
+            }
+            
+            complexityScore.textContent = complexityRating;
+            
+            // Estimate code quality (very simple heuristic)
+            const commentLines = (code.match(/\/\//g) || []).length + (code.match(/\/\*[\s\S]*?\*\//g) || []).length;
+            const commentRatio = commentLines / lines;
+            
+            let qualityRating;
+            if (commentRatio > 0.2 && complexity < 20) {
+                qualityRating = 'Good';
+                estimatedQuality.style.color = 'var(--success-color)';
+            } else if (commentRatio > 0.1 || complexity < 30) {
+                qualityRating = 'Average';
+                estimatedQuality.style.color = 'var(--warning-color)';
+            } else {
+                qualityRating = 'Needs Improvement';
+                estimatedQuality.style.color = 'var(--danger-color)';
+            }
+            
+            estimatedQuality.textContent = qualityRating;
+        }
+        
+        // Generate diff between original and modified code
+        function generateDiff(originalCode, newCode) {
+            // Create a diff using the diff library
+            const diff = Diff.createTwoFilesPatch(
+                'Original',
+                'Modified',
+                originalCode,
+                newCode,
+                '',
+                '',
+                { context: 3 }
+            );
+            
+            // Convert to HTML using diff2html
+            const diffHtml = Diff2Html.html(diff, {
+                drawFileList: false,
+                matching: 'lines',
+                outputFormat: 'side-by-side',
+                responsive: true
+            });
+            
+            return diffHtml;
+        }
+        
+        // Basic code prettifier (for demo purposes)
+        function prettifyCode(code, language) {
+            // In a real implementation, you would use a proper formatter
+            // like prettier, but for demo we'll just do basic indentation fixes
+            
+            // Split into lines
+            const lines = code.split('\n');
+            
+            // Track indentation level
+            let indentLevel = 0;
+            const indentSize = 4;
+            const indentChar = ' ';
+            
+            // Process each line
+            const formattedLines = lines.map(line => {
+                // Trim the line
+                let trimmedLine = line.trim();
+                
+                // Skip empty lines
+                if (!trimmedLine) return '';
+                
+                // Check for closing brackets/braces to decrease indent level
+                if (/^[\]\}\)>]/.test(trimmedLine)) {
+                    indentLevel = Math.max(0, indentLevel - 1);
+                }
+                
+                // Create indentation
+                const indent = indentChar.repeat(indentLevel * indentSize);
+                
+                // Add indentation to line
+                const formattedLine = indent + trimmedLine;
+                
+                // Check for opening brackets/braces to increase indent level
+                if (/[\[\{\(]$/.test(trimmedLine) || /\b(if|for|while|switch|else|function|class)\b.*[^;]$/.test(trimmedLine)) {
+                    indentLevel++;
+                }
+                
+                return formattedLine;
+            });
+            
+            return formattedLines.join('\n');
+        }
+        
+        // Helper function: Generate unique ID
+        function generateUniqueId() {
+            return 'id-' + Math.random().toString(36).substr(2, 9);
+        }
+        
+        // Helper function: Format file size
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        // Helper function: Format time relative to now
+        function formatTime(date) {
+            const now = new Date();
+            const diffMs = now - date;
+            const diffSec = Math.floor(diffMs / 1000);
+            
+            if (diffSec < 60) return `${diffSec}s ago`;
+            if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m ago`;
+            if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}h ago`;
+            
+            return date.toLocaleTimeString();
+        }
+        
+        // Mock AI response generator for demo purposes
+        async function generateMockAIResponse(prompt, code, language) {
+            // Simulate AI processing by analyzing the prompt and code
+            // In a real implementation, this would call the LLM API
+            
+            const promptLower = prompt.toLowerCase();
+            let explanation = '';
+            let suggestedCode = code;
+            
+            // Handle different types of requests
+            if (promptLower.includes('optimize') || promptLower.includes('improve performance')) {
+                explanation = `## Performance Optimization\n\nI've analyzed your ${language} code and found several opportunities for optimization:\n\n1. **Reduced Redundant Operations**: Moved invariant calculations outside of loops\n2. **Improved Algorithm Efficiency**: Replaced O(n²) operations with O(n log n) alternatives where possible\n3. **Memory Usage**: Minimized unnecessary object creation\n\nHere's an explanation of the key changes:`;
+                
+                // Make some mock optimizations to the code
+                suggestedCode = optimizeCode(code, language);
+                
+            } else if (promptLower.includes('add') || promptLower.includes('create') || promptLower.includes('implement')) {
+                explanation = `## New Functionality Added\n\nI've implemented the requested functionality in your ${language} code. Here's what I added:\n\n1. **New Function/Method**: Added the implementation as requested\n2. **Input Validation**: Added checks to ensure valid inputs\n3. **Documentation**: Added comments explaining the new code\n\nHere's how the new code works:`;
+                
+                // Add a mock function to the code
+                suggestedCode = addFeatureToCode(code, language, promptLower);
+                
+            } else if (promptLower.includes('fix') || promptLower.includes('bug') || promptLower.includes('error')) {
+                explanation = `## Bug Fix\n\nI found and fixed the issue in your ${language} code:\n\n1. **Problem Identified**: The bug was caused by incorrect handling of edge cases\n2. **Fix Applied**: Modified the logic to properly handle all scenarios\n3. **Additional Checks**: Added validation to prevent similar issues\n\nHere's what was causing the problem:`;
+                
+                // Fix a "bug" in the code
+                suggestedCode = fixBugInCode(code, language);
+                
+            } else if (promptLower.includes('refactor') || promptLower.includes('clean up')) {
+                explanation = `## Code Refactoring\n\nI've refactored your ${language} code to improve its structure and readability:\n\n1. **Better Organization**: Restructured code for clarity\n2. **Improved Naming**: Used more descriptive variable and function names\n3. **Reduced Duplication**: Extracted repeated code into reusable functions\n\nHere's an explanation of the refactoring:`;
+                
+                // Refactor the code
+                suggestedCode = refactorCode(code, language);
+                
+            } else if (promptLower.includes('explain') || promptLower.includes('how does') || promptLower.includes('what does')) {
+                explanation = `## Code Explanation\n\nHere's an explanation of how your ${language} code works:\n\n`;
+                
+                // Generate a mock explanation of the code
+                explanation += explainCode(code, language);
+                
+                // Don't suggest code changes for explanation requests
+                suggestedCode = code;
+                
+            } else {
+                // Generic response for other request types
+                explanation = `## Code Analysis\n\nI've analyzed your ${language} code and made several improvements:\n\n1. **Code Style**: Improved formatting and style consistency\n2. **Potential Issues**: Addressed some potential bugs and edge cases\n3. **Documentation**: Added helpful comments for clarity\n\nHere's what I changed:`;
+                
+                // Make some generic improvements
+                suggestedCode = improveCode(code, language);
+            }
+            
+            // Add more detailed explanation based on changes
+            if (code !== suggestedCode) {
+                const differences = findKeyDifferences(code, suggestedCode);
+                explanation += `\n\n### Key Changes:\n\n${differences}\n\n`;
+            }
+            
+            return {
+                explanation,
+                suggestedCode
+            };
+        }
+        
+        // Mock optimization function
+        function optimizeCode(code, language) {
+            // This is a demo function that simulates code optimization
+            // In a real implementation, the AI would actually analyze and optimize the code
+            
+            let optimized = code;
+            
+            if (language === 'python') {
+                // Replace regular loops with list comprehensions
+                optimized = optimized.replace(
+                    /for\s+(\w+)\s+in\s+(.+?):\s*\n\s+result\.append\(([^)]+)\)/g,
+                    '[$3 for $1 in $2]'
+                );
+                
+                // Cache function calls
+                optimized = optimized.replace(
+                    /([\s\(])len\(([^)]+)\)([\s\)])/g,
+                    '$1len_$2$3 # Cached length\n'
+                );
+                
+            } else if (language === 'javascript' || language === 'typescript') {
+                // Replace forEach with map/filter where appropriate
+                optimized = optimized.replace(
+                    /const\s+(\w+)\s+=\s+\[];\s*\n\s+(\w+)\.forEach\(\(?(\w+)(\)| =>)[^{]*{\s*\n\s+\1\.push\([^;]+\);\s*\n\s+}\);/g,
+                    'const $1 = $2.map($3 => $3);'
+                );
+                
+                // Cache DOM lookups
+                optimized = optimized.replace(
+                    /document\.querySelector\(['"](#\w+)['"]\)/g,
+                    'cachedElement // Cached DOM lookup'
+                );
+                
+            } else if (language === 'java' || language === 'csharp') {
+                // Use StringBuilder instead of string concatenation
+                optimized = optimized.replace(
+                    /String\s+(\w+)\s+=\s+"";\s*\n(\s+)for\s*\([^)]+\)\s*{\s*\n\s+\1\s+\+=\s+/g,
+                    'StringBuilder $1 = new StringBuilder();\n$2for (...) {\n$2    $1.append('
+                );
+                
+                // Replace for loops with streams/LINQ
+                optimized = optimized.replace(
+                    /for\s*\((\w+\s+)?(\w+)\s+:\s+(\w+)\)\s*{\s*\n\s+if\s*\(([^)]+)\)\s*{\s*\n\s+(\w+)\.add\((\w+)\);\s*\n\s+}\s*\n\s+}/g,
+                    '$3.stream().filter($2 -> $4).collect(Collectors.toList()); // Optimized with streams'
+                );
+            }
+            
+            return optimized;
+        }
+        
+        // Mock function to add a feature to code
+        function addFeatureToCode(code, language, prompt) {
+            let modified = code;
+            
+            // Extract feature name from prompt
+            const featureMatch = prompt.match(/add\s+(?:a|an)?\s*(\w+)(?:\s+function|\s+method|\s+class)?/i);
+            const featureName = featureMatch ? featureMatch[1].toLowerCase() : 'feature';
+            
+            // Determine what kind of feature to add based on the language
+            if (language === 'python') {
+                // Add a Python function
+                modified += `\n\ndef ${featureName}(data):\n    """`;
+                modified += `\n    This function performs ${featureName} operation on the provided data`;
+                modified += `\n    Args:`;
+                modified += `\n        data: The input data to process`;
+                modified += `\n    Returns:`;
+                modified += `\n        Processed data after ${featureName} operation`;
+                modified += `\n    """\n`;
+                modified += `    result = []\n`;
+                modified += `    for item in data:\n`;
+                modified += `        # Process each item based on ${featureName} logic\n`;
+                modified += `        processed_item = item * 2  # Example operation\n`;
+                modified += `        result.append(processed_item)\n`;
+                modified += `    return result\n`;
+                
+                // Add a test call if main block exists
+                if (modified.includes('if __name__ == "__main__":')){
+                    modified = modified.replace(
+                        /if\s+__name__\s+==\s+"__main__":\s*\n/,
+                        `if __name__ == "__main__":\n    # Test the ${featureName} function\n    test_data = [1, 2, 3, 4, 5]\n    result = ${featureName}(test_data)\n    print(f"${featureName} result: {result}")\n\n`
+                    );
+                }
+                
+            } else if (language === 'javascript' || language === 'typescript') {
+                // Add a JavaScript/TypeScript function
+                modified += `\n\n/**`;
+                modified += `\n * This function performs ${featureName} operation on the provided data`;
+                modified += `\n * @param {Array} data - The input data to process`;
+                modified += `\n * @returns {Array} - Processed data after ${featureName} operation`;
+                modified += `\n */\n`;
+                
+                if (language === 'typescript') {
+                    modified += `function ${featureName}(data: any[]): any[] {\n`;
+                } else {
+                    modified += `function ${featureName}(data) {\n`;
+                }
+                
+                modified += `    const result = [];\n`;
+                modified += `    for (const item of data) {\n`;
+                modified += `        // Process each item based on ${featureName} logic\n`;
+                modified += `        const processedItem = item * 2; // Example operation\n`;
+                modified += `        result.push(processedItem);\n`;
+                modified += `    }\n`;
+                modified += `    return result;\n`;
+                modified += `}\n`;
+                
+                // Add test code
+                modified += `\n// Test the ${featureName} function\n`;
+                modified += `const testData = [1, 2, 3, 4, 5];\n`;
+                modified += `const ${featureName}Result = ${featureName}(testData);\n`;
+                modified += `console.log("${featureName} result:", ${featureName}Result);\n`;
+                
+            } else if (language === 'java') {
+                // Add a Java method
+                const methodPos = modified.lastIndexOf('}');
+                
+                if (methodPos > 0) {
+                    const beforeClosing = modified.substring(0, methodPos);
+                    const closing = modified.substring(methodPos);
+                    
+                    let newMethod = `\n    /**\n`;
+                    newMethod += `     * This method performs ${featureName} operation on the provided data\n`;
+                    newMethod += `     * @param data The input data to process\n`;
+                    newMethod += `     * @return Processed data after ${featureName} operation\n`;
+                    newMethod += `     */\n`;
+                    newMethod += `    public static List<Integer> ${featureName}(List<Integer> data) {\n`;
+                    newMethod += `        List<Integer> result = new ArrayList<>();\n`;
+                    newMethod += `        for (Integer item : data) {\n`;
+                    newMethod += `            // Process each item based on ${featureName} logic\n`;
+                    newMethod += `            Integer processedItem = item * 2; // Example operation\n`;
+                    newMethod += `            result.add(processedItem);\n`;
+                    newMethod += `        }\n`;
+                    newMethod += `        return result;\n`;
+                    newMethod += `    }\n`;
+                    
+                    modified = beforeClosing + newMethod + closing;
+                    
+                    // Add import if needed
+                    if (!modified.includes('import java.util.')) {
+                        modified = "import java.util.ArrayList;\nimport java.util.List;\n\n" + modified;
+                    }
+                    
+                    // Add a test call to main method
+                    const mainMethodPos = modified.indexOf('public static void main');
+                    if (mainMethodPos > 0) {
+                        const mainBodyPos = modified.indexOf('{', mainMethodPos);
+                        if (mainBodyPos > 0) {
+                            const afterMainOpen = mainBodyPos + 1;
+                            const testCode = `\n        // Test the ${featureName} method\n`;
+                            const testCode2 = `        List<Integer> testData = new ArrayList<>();\n`;
+                            const testCode3 = `        testData.add(1); testData.add(2); testData.add(3); testData.add(4); testData.add(5);\n`;
+                            const testCode4 = `        List<Integer> ${featureName}Result = ${featureName}(testData);\n`;
+                            const testCode5 = `        System.out.println("${featureName} result: " + ${featureName}Result);\n`;
+                            
+                            modified = modified.substring(0, afterMainOpen) + 
+                                       testCode + testCode2 + testCode3 + testCode4 + testCode5 + 
+                                       modified.substring(afterMainOpen);
+                        }
+                    }
+                }
+            }
+            
+            return modified;
+        }
+        
+        // Mock function to fix bugs in code
+        function fixBugInCode(code, language) {
+            let fixed = code;
+            
+            // Simulate finding and fixing bugs
+            if (language === 'python') {
+                // Fix index out of range
+                fixed = fixed.replace(
+                    /for\s+i\s+in\s+range\(len\((\w+)\)\):\s*\n\s+(\w+)(\[i\+1\])/g,
+                    'for i in range(len($1) - 1): # Fixed index out of range error\n    $2$3'
+                );
+                
+                // Fix undefined variable
+                fixed = fixed.replace(
+                    /(\w+)\s*=\s*(\w+)\s*\+\s*1/g, 
+                    function(match, p1, p2) {
+                        if (fixed.indexOf(`${p2} =`) === -1) {
+                            return `${p1} = 1 # Fixed undefined variable ${p2}\n`;
+                        }
+                        return match;
+                    }
+                );
+                
+            } else if (language === 'javascript' || language === 'typescript') {
+                // Fix undefined reference
+                fixed = fixed.replace(
+                    /const\s+(\w+)\s*=\s*(\w+)\.map\(/g,
+                    function(match, p1, p2) {
+                        if (fixed.indexOf(`const ${p2} =`) === -1 && fixed.indexOf(`let ${p2} =`) === -1) {
+                            return `const ${p2} = []; // Fixed undefined array\nconst ${p1} = ${p2}.map(`;
+                        }
+                        return match;
+                    }
+                );
+                
+                // Fix missing await
+                fixed = fixed.replace(
+                    /const\s+(\w+)\s*=\s*fetch\(/g,
+                    'const $1 = await fetch( // Added missing await'
+                );
+                
+            } else if (language === 'java') {
+                // Fix null pointer exception
+                fixed = fixed.replace(
+                    /(\w+)\.(\w+)\(\)/g,
+                    'if ($1 != null) { $1.$2(); } else { System.err.println("Error: $1 is null"); } // Fixed potential NullPointerException'
+                );
+                
+                // Fix resource leak
+                fixed = fixed.replace(
+                    /(Scanner|FileReader|BufferedReader)\s+(\w+)\s*=\s*new\s+\1\([^)]+\);\s*\n/g,
+                    'try ($1 $2 = new $1(...)) { // Fixed resource leak with try-with-resources\n'
+                );
+            }
+            
+            return fixed;
+        }
+        
+        // Mock function to refactor code
+        function refactorCode(code, language) {
+            let refactored = code;
+            
+            if (language === 'python') {
+                // Extract repeated code into functions
+                const repeatedCodeMatch = refactored.match(/(\s+)([^\n]+\n\s+[^\n]+\n\s+[^\n]+)[\s\S]*\1\2/);
+                if (repeatedCodeMatch) {
+                    const indentation = repeatedCodeMatch[1];
+                    const repeatedCode = repeatedCodeMatch[2];
+                    
+                    // Create a function from the repeated code
+                    const functionName = 'extracted_function';
+                    const functionDef = `\ndef ${functionName}():\n${indentation}${repeatedCode.replace(/\n\s+/g, `\n${indentation}`)}\n`;
+                    
+                    // Replace repeated code with function calls
+                    refactored = refactored.replace(new RegExp(repeatedCode, 'g'), `${functionName}()`);
+                    
+                    // Add the function definition
+                    refactored = functionDef + refactored;
+                }
+                
+                // Use more descriptive variable names
+                refactored = refactored.replace(/\bi\b(?=\s*=\s*0)/g, 'index');
+                refactored = refactored.replace(/\bx\b(?=\s+in\s+)/g, 'item');
+                refactored = refactored.replace(/\bl\b(?=\s*=\s*\[)/g, 'items_list');
+                
+            } else if (language === 'javascript' || language === 'typescript') {
+                // Convert anonymous functions to arrow functions
+                refactored = refactored.replace(
+                    /function\s*\(([^)]*)\)\s*{\s*return\s+([^;]+);\s*}/g,
+                    '($1) => $2'
+                );
+                
+                // Extract repeated code into functions
+                const repeatedCodeMatch = refactored.match(/(\s+)([^\n]+\n\s+[^\n]+\n\s+[^\n]+)[\s\S]*\1\2/);
+                if (repeatedCodeMatch) {
+                    const indentation = repeatedCodeMatch[1];
+                    const repeatedCode = repeatedCodeMatch[2];
+                    
+                    // Create a function from the repeated code
+                    const functionName = 'extractedFunction';
+                    const functionDef = `\nfunction ${functionName}() {\n${indentation}${repeatedCode.replace(/\n\s+/g, `\n${indentation}`)}\n}\n`;
+                    
+                    // Replace repeated code with function calls
+                    refactored = refactored.replace(new RegExp(repeatedCode, 'g'), `${functionName}()`);
+                    
+                    // Add the function definition
+                    refactored = functionDef + refactored;
+                }
+                
+                // Use const instead of let where appropriate
+                refactored = refactored.replace(/let\s+(\w+)\s*=\s*([^;]+);(?!\s*\1\s*=)/g, 'const $1 = $2;');
+                
+            } else if (language === 'java') {
+                // Extract methods from long methods
+                const longMethodMatch = refactored.match(/(\s+)(public|private|protected)?\s+\w+\s+(\w+)\s*\([^)]*\)\s*{\s*([^}]{500,})\s*}/);
+                if (longMethodMatch) {
+                    const indentation = longMethodMatch[1];
+                    const methodModifier = longMethodMatch[2] || 'private';
+                    const methodName = longMethodMatch[3];
+                    const methodBody = longMethodMatch[4];
+                    
+                    // Split method body into chunks
+                    const lines = methodBody.split('\n');
+                    if (lines.length > 10) {
+                        const halfwayPoint = Math.floor(lines.length / 2);
+                        const firstHalf = lines.slice(0, halfwayPoint).join('\n');
+                        const secondHalf = lines.slice(halfwayPoint).join('\n');
+                        
+                        // Create new method for second half
+                        const newMethodName = methodName + 'Helper';
+                        const newMethod = `\n${indentation}${methodModifier} void ${newMethodName}() {\n${indentation}    ${secondHalf.replace(/\n\s+/g, `\n${indentation}    `)}\n${indentation}}\n`;
+                        
+                        // Replace original method with first half plus call to helper
+                        const updatedMethod = `${methodModifier} ${methodName}() {\n${indentation}    ${firstHalf.replace(/\n\s+/g, `\n${indentation}    `)}\n${indentation}    ${newMethodName}();\n${indentation}}`;
+                        
+                        // Substitute in the full code
+                        refactored = refactored.replace(new RegExp(`${methodModifier}\\s+\\w+\\s+${methodName}\\s*\\([^)]*\\)\\s*{\\s*[^}]{500,}\\s*}`), updatedMethod);
+                        
+                        // Add the new method
+                        const classEndPos = refactored.lastIndexOf('}');
+                        refactored = refactored.substring(0, classEndPos) + newMethod + refactored.substring(classEndPos);
+                    }
+                }
+            }
+            
+            return refactored;
+        }
+        
+        // Mock function to explain code
+        function explainCode(code, language) {
+            // This would normally be done by the AI model
+            // For demo purposes, we'll create a simplified explanation
+            
+            let explanation = '';
+            
+            // Split code into logical sections
+            const lines = code.split('\n');
+            let functionCount = 0;
+            let classCount = 0;
+            let loopCount = 0;
+            
+            // Look for key structures
+            for (const line of lines) {
+                if (language === 'python') {
+                    if (line.match(/^def\s+\w+/)) functionCount++;
+                    if (line.match(/^class\s+\w+/)) classCount++;
+                    if (line.match(/\s+for\s+\w+\s+in/)) loopCount++;
+                } else if (language === 'javascript' || language === 'typescript') {
+                    if (line.match(/function\s+\w+|const\s+\w+\s*=\s*\(.*\)\s*=>/)) functionCount++;
+                    if (line.match(/class\s+\w+/)) classCount++;
+                    if (line.match(/for\s*\(|while\s*\(/)) loopCount++;
+                } else if (language === 'java' || language === 'csharp') {
+                    if (line.match(/\s+(public|private|protected)\s+\w+\s+\w+\s*\(/)) functionCount++;
+                    if (line.match(/\s+(public|private|protected)\s+class\s+\w+/)) classCount++;
+                    if (line.match(/for\s*\(|while\s*\(/)) loopCount++;
+                }
+            }
+            
+            // Generate explanation
+            explanation += `This ${language} code consists of:\n\n`;
+            
+            if (classCount > 0) {
+                explanation += `- **${classCount} class${classCount > 1 ? 'es' : ''}** that define the main objects and their behavior\n`;
+            }
+            
+            if (functionCount > 0) {
+                explanation += `- **${functionCount} function${functionCount > 1 ? 's' : ''}** that encapsulate different operations\n`;
+            }
+            
+            if (loopCount > 0) {
+                explanation += `- **${loopCount} loop${loopCount > 1 ? 's' : ''}** for iterative processing\n`;
+            }
+            
+            explanation += `\n### Code Structure\n\n`;
+            
+            // Add some code-specific explanation
+            if (language === 'python') {
+                // Look for main guard
+                if (code.includes('if __name__ == "__main__"')) {
+                    explanation += "The code uses the `if __name__ == \"__main__\"` guard to ensure certain code only runs when the script is executed directly (not when imported as a module).\n\n";
+                }
+                
+                // Look for imports
+                const importMatches = code.match(/^import\s+(\w+)|^from\s+(\w+)\s+import/gm);
+                if (importMatches && importMatches.length > 0) {
+                    explanation += `It imports ${importMatches.length} module${importMatches.length > 1 ? 's' : ''} for additional functionality.\n\n`;
+                }
+            } else if (language === 'javascript' || language === 'typescript') {
+                // Look for DOM manipulation
+                if (code.includes('document.') || code.includes('querySelector')) {
+                    explanation += "The code interacts with the DOM (Document Object Model) to manipulate web page elements.\n\n";
+                }
+                
+                // Look for async functions
+                if (code.includes('async') || code.includes('await')) {
+                    explanation += "It uses asynchronous programming with `async`/`await` to handle operations that might take time (like API calls).\n\n";
+                }
+            } else if (language === 'java') {
+                // Look for main method
+                if (code.includes('public static void main')) {
+                    explanation += "The code includes a `main` method which serves as the entry point for execution.\n\n";
+                }
+                
+                // Look for exception handling
+                if (code.includes('try') && code.includes('catch')) {
+                    explanation += "It implements exception handling with try-catch blocks to manage errors gracefully.\n\n";
+                }
+            }
+            
+            explanation += `### Main Functionality\n\n`;
+            explanation += `Based on the code structure, this appears to be ${getFunctionalityDescription(code, language)}\n\n`;
+            
+            return explanation;
+        }
+        
+        // Helper to determine code functionality
+        function getFunctionalityDescription(code, language) {
+            // This is a very simplified version of what an AI would do
+            // In reality, the AI would analyze the code much more deeply
+            
+            // Check for common patterns
+            if (code.includes('fetch(') || code.includes('axios.') || code.includes('http.') || 
+                code.includes('request(') || code.includes('curl')) {
+                return "an application that communicates with external services via API calls.";
+            }
+            
+            if (code.includes('getElementById') || code.includes('querySelector') || 
+                code.includes('addEventListener') || code.includes('innerHTML')) {
+                return "a web application that manipulates the DOM and handles user interactions.";
+            }
+            
+            if (code.includes('class') && 
+                (code.includes('extends') || code.includes('super(') || code.includes('override'))) {
+                return "a program that uses object-oriented principles with inheritance and polymorphism.";
+            }
+            
+            if (code.includes('parse') && (code.includes('JSON') || code.includes('json'))) {
+                return "a program that processes and manipulates JSON data.";
+            }
+            
+            if ((code.includes('read') || code.includes('write')) && 
+                (code.includes('file') || code.includes('File') || code.includes('open('))) {
+                return "a utility that performs file operations for reading or writing data.";
+            }
+            
+            if (code.includes('sort(') || code.includes('filter(') || 
+                code.includes('map(') || code.includes('reduce(')) {
+                return "a data processing application that transforms collections of information.";
+            }
+            
+            // Default fallback
+            return "a general purpose program that performs various operations based on its inputs.";
+        }
+        
+        // Helper function to make generic improvements to code
+        function improveCode(code, language) {
+            // This would be handled by the AI in a real implementation
+            // For demo purposes, we'll make some simple improvements
+            
+            let improved = code;
+            
+            // Add comments
+            if (language === 'python') {
+                improved = improved.replace(/^def\s+(\w+)\s*\(([^)]*)\):/gm, 
+                    'def $1($2):\n    """$1 function\n    \n    Args:$3\n    Returns:\n        Result of the operation\n    """');
+                
+                // Fix parameters comment
+                improved = improved.replace(/Args:(.*?)Returns/gs, function(match, params) {
+                    let paramList = '';
+                    const paramMatches = params.match(/\s+(\w+)/g);
+                    if (paramMatches) {
+                        paramMatches.forEach(param => {
+                            paramList += `\n        ${param.trim()}: Parameter description`;
+                        });
+                    }
+                    return `Args:${paramList}\n    Returns`;
+                });
+                
+            } else if (language === 'javascript' || language === 'typescript') {
+                improved = improved.replace(/^(function|const)\s+(\w+)\s*[=\(]/gm, 
+                    '/**\n * $2 function\n * \n * @param {*} param - Parameter description\n * @returns {*} - Return value description\n */\n$1 $2');
+                
+            } else if (language === 'java' || language === 'csharp') {
+                improved = improved.replace(/^\s+(public|private|protected)\s+(\w+)\s+(\w+)\s*\(([^)]*)\)/gm, 
+                    '    /**\n     * $3 method\n     *$4\n     * @return $2 - Return value description\n     */\n    $1 $2 $3($4)');
+                
+                // Fix parameters comment
+                improved = improved.replace(/\*([^*]*)\* @return/gs, function(match, params) {
+                    let paramList = '';
+                    const paramMatches = params.match(/\s+(\w+)\s+(\w+)/g);
+                    if (paramMatches) {
+                        paramMatches.forEach(param => {
+                            const parts = param.trim().split(/\s+/);
+                            if (parts.length >= 2) {
+                                paramList += `\n     * @param ${parts[1]} - Parameter description`;
+                            }
+                        });
+                    }
+                    return `*${params}*${paramList}\n     * @return`;
+                });
+            }
+            
+            // Add error handling
+            if (language === 'python') {
+                if (!improved.includes('try:') && !improved.includes('except ')) {
+                    improved = improved.replace(/(def\s+\w+\s*\([^)]*\):(?:\s*"""[\s\S]*?""")?\s*\n)(\s+)/,
+                        '$1$2try:\n$2    # Add error handling\n$2');
+                        
+                    // Find last indented block and add except
+                    const lines = improved.split('\n');
+                    let lastIndentedLine = lines.length - 1;
+                    while (lastIndentedLine >= 0 && !lines[lastIndentedLine].match(/^\s+\S/)) {
+                        lastIndentedLine--;
+                    }
+                    
+                    if (lastIndentedLine > 0) {
+                        const indentation = lines[lastIndentedLine].match(/^(\s+)/)[1];
+                        lines.splice(lastIndentedLine + 1, 0, `${indentation}except Exception as e:`, 
+                            `${indentation}    print(f"An error occurred: {e}")`);
+                        improved = lines.join('\n');
+                    }
+                }
+                
+            } else if (language === 'javascript' || language === 'typescript') {
+                if (!improved.includes('try {') && !improved.includes('catch(')) {
+                    improved = improved.replace(/(function\s+\w+\s*\([^)]*\)\s*{)/, 
+                        '$1\n    try {');
+                    
+                    // Find closing brace and add catch
+                    const lastBraceIndex = improved.lastIndexOf('}');
+                    if (lastBraceIndex > 0) {
+                        improved = improved.substring(0, lastBraceIndex) + 
+                            '    } catch (error) {\n        console.error("An error occurred:", error);\n    }\n}' + 
+                            improved.substring(lastBraceIndex + 1);
+                    }
+                }
+            }
+            
+            return improved;
+        }
+        
+        // Find key differences between code versions
+        function findKeyDifferences(originalCode, newCode) {
+            // In a real implementation, this would be more sophisticated
+            const originalLines = originalCode.split('\n');
+            const newLines = newCode.split('\n');
+            
+            let differences = '';
+            
+            // Find added lines
+            for (let i = 0; i < newLines.length; i++) {
+                const line = newLines[i].trim();
+                if (line && !originalLines.some(l => l.trim() === line)) {
+                    // This is a new line
+                    if (line.match(/^\s*\/\/|^\s*#|^\s*\/\*|^\s*\*|^\s*"""/)) {
+                        differences += `- Added documentation/comments for clarity\n`;
+                    } else if (line.match(/try|catch|except|finally/)) {
+                        differences += `- Added error handling to improve robustness\n`;
+                    } else if (line.match(/if|else|switch|case/)) {
+                        differences += `- Added conditional logic to handle different scenarios\n`;
+                    } else if (line.match(/function|def|method/)) {
+                        differences += `- Extracted code into reusable functions\n`;
+                    } else {
+                        differences += `- Added new functionality: \`${line.substring(0, 50)}${line.length > 50 ? '...' : ''}\`\n`;
+                    }
+                }
+            }
+            
+            // Deduplicate
+            const uniqueDiffs = new Set(differences.split('\n').filter(d => d));
+            return Array.from(uniqueDiffs).join('\n');
+        }
+    </script>
+</body>
+</html>
