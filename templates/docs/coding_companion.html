@@ -2291,33 +2291,181 @@
                 ${otherFilesContext}
                 `;
                 
-                // For now, simulate API call with a local response
-                // In a real implementation, you would call your actual LLM API here
-                const mockEndpoint = `/llm/${currentModel}`;
-                console.log(`Simulating API call to ${mockEndpoint}`);
-                console.log("System prompt:", systemPrompt);
-                console.log("User input:", userInput);
+                // Get active token from localStorage or use API to generate one if needed
+                if (!activeToken) {
+                    try {
+                        // Try to get token from localStorage
+                        const storedToken = localStorage.getItem('codingCompanionToken');
+                        if (storedToken) {
+                            activeToken = storedToken;
+                        } else {
+                            // If no token, use API key to get one
+                            const apiKey = localStorage.getItem('apiKey');
+                            if (apiKey) {
+                                const tokenResponse = await fetch('/token', {
+                                    method: 'GET',
+                                    headers: {
+                                        'API-Key': apiKey
+                                    }
+                                });
+                                
+                                if (tokenResponse.ok) {
+                                    const tokenData = await tokenResponse.json();
+                                    activeToken = tokenData.access_token;
+                                    localStorage.setItem('codingCompanionToken', activeToken);
+                                } else {
+                                    throw new Error("Failed to generate token");
+                                }
+                            } else {
+                                throw new Error("No API key found");
+                            }
+                        }
+                    } catch (error) {
+                        console.error("Token error:", error);
+                        throw new Error("Authentication error: " + error.message);
+                    }
+                }
                 
-                // Simulate API response for demo purposes
-                // In real implementation, replace with actual fetch call to the API
-                await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate network delay
+                // Determine which endpoint to use based on the model
+                let endpoint = '';
+                let requestBody = {};
                 
+                // Common request structure for most models
+                const baseRequestBody = {
+                    system_prompt: systemPrompt,
+                    user_input: userInput,
+                    temperature: 0.5
+                };
+                
+                // If format-only request, add special flag
                 if (formatOnly) {
+                    baseRequestBody.format_only = true;
+                }
+                
+                // Configure endpoint and request body based on selected model
+                switch (currentModel) {
+                    case 'gpt4o':
+                        endpoint = '/llm/gpt4o';
+                        requestBody = { ...baseRequestBody };
+                        break;
+                    case 'gpt4o-mini':
+                        endpoint = '/llm/gpt4o-mini';
+                        requestBody = { ...baseRequestBody };
+                        break;
+                    case 'deepseek-r1':
+                        endpoint = '/llm/deepseek-r1';
+                        requestBody = { ...baseRequestBody };
+                        break;
+                    case 'deepseek-v3':
+                        endpoint = '/llm/deepseek-v3';
+                        requestBody = { ...baseRequestBody };
+                        break;
+                    case 'o1-mini':
+                        endpoint = '/llm/o1-mini';
+                        requestBody = { ...baseRequestBody };
+                        break;
+                    case 'o3-mini':
+                        endpoint = '/llm/o3-mini';
+                        requestBody = {
+                            ...baseRequestBody,
+                            reasoning_effort: 'high', // Request higher reasoning for code tasks
+                            max_completion_tokens: Math.min(4000, maxContextTokens / 4) // Reasonable limit
+                        };
+                        break;
+                    case 'llama':
+                        endpoint = '/llm/llama';
+                        requestBody = {
+                            ...baseRequestBody, 
+                            top_p: 0.9, // Better for code generation
+                            frequency_penalty: 0.3 // Avoid repetition
+                        };
+                        break;
+                    default:
+                        endpoint = '/llm/gpt4o'; // Default to gpt4o
+                        requestBody = { ...baseRequestBody };
+                }
+                
+                console.log(`Calling API endpoint: ${endpoint}`);
+                
+                // Call the actual LLM API endpoint
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'X-Token': activeToken,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error("API error:", response.status, errorText);
+                    
+                    // Handle token expiration
+                    if (response.status === 401) {
+                        // Clear tokens and retry
+                        localStorage.removeItem('codingCompanionToken');
+                        activeToken = null;
+                        throw new Error("Authentication error. Please try again.");
+                    }
+                    
+                    throw new Error(`API error (${response.status}): ${errorText}`);
+                }
+                
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.error || "Unknown API error");
+                }
+                
+                // Process the response
+                if (formatOnly) {
+                    // If this was a format-only request, extract the formatted code
                     return {
                         success: true,
-                        formattedCode: prettifyCode(code, currentLanguage),
+                        formattedCode: data.result,
                         result: "Code formatted successfully."
                     };
                 }
                 
-                // Generate "AI" response based on the prompt
-                const aiResponse = await generateMockAIResponse(prompt, code, currentLanguage);
+                // For normal requests, parse the LLM's response
+                let result = data.result || "";
+                let suggestedCode = code; // Default to original code
+                
+                // Extract code blocks from the response
+                const codeBlockRegex = /```(?:[\w]*)\n([\s\S]*?)```/g;
+                const codeBlocks = [];
+                let match;
+                
+                while ((match = codeBlockRegex.exec(result)) !== null) {
+                    codeBlocks.push(match[1]);
+                }
+                
+                // If code blocks were found, use the last/largest one as the suggested code
+                if (codeBlocks.length > 0) {
+                    // Find the largest code block (likely the full solution)
+                    const largestBlock = codeBlocks.reduce((a, b) => 
+                        a.length > b.length ? a : b, "");
+                    
+                    // Only use it if it's a substantial chunk of code (to avoid small snippets)
+                    if (largestBlock.length > code.length / 3) {
+                        suggestedCode = largestBlock;
+                    }
+                }
+                
+                // Remove code blocks from explanation to avoid duplication
+                const explanation = result.replace(codeBlockRegex, 
+                    '```\n[Code block moved to the Changes tab for clarity]\n```');
                 
                 return {
                     success: true,
-                    result: aiResponse.explanation,
-                    suggestedCode: aiResponse.suggestedCode,
-                    originalCode: code
+                    result: explanation,
+                    suggestedCode: suggestedCode.trim(),
+                    originalCode: code,
+                    // Include token info for context window management
+                    promptTokens: data.prompt_tokens || 0,
+                    completionTokens: data.completion_tokens || 0,
+                    totalTokens: data.total_tokens || 0
                 };
             } catch (error) {
                 console.error("Error calling AI service:", error);
@@ -2330,6 +2478,13 @@
         
         // Process AI response
         function processAIResponse(response, prompt, originalCode) {
+            // Update token count if provided by API
+            if (response.totalTokens > 0) {
+                tokenCount = response.totalTokens;
+                tokenCountEl.textContent = `${tokenCount.toLocaleString()} tokens`;
+                updateContextUsage();
+            }
+            
             // If no code change, just show explanation
             if (!response.suggestedCode || response.suggestedCode === originalCode) {
                 // Show explanation
