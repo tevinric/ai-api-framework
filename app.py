@@ -140,6 +140,10 @@ def technical_support():
 def changelog():    
     return render_template('docs/changelog.html')
 
+@app.route('/docs/coding_companion')
+def changelog():    
+    return render_template('docs/coding_companion.html')
+
 # TOKEN SERVICE ENDPOINTS
 ## GET TOKEN
 from apis.token_services.get_token import register_routes as get_token_endpoint 
