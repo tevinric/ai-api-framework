@@ -105,6 +105,12 @@ def api_logger(f):
             except:
                 response_data = None
                 
+            # Generate a log ID
+            log_id = str(uuid.uuid4())
+            
+            # Store the log ID in g for usageMiddleware to access
+            g.current_api_log_id = log_id
+                
             # Log successful request
             DatabaseService.log_api_call(
                 endpoint_id=endpoint_id,
