@@ -158,50 +158,88 @@ def log_usage_metrics(metrics):
         logger.error(f"Error logging usage metrics: {str(e)}")
         return False
 
-def get_most_recent_api_log_id(user_id, endpoint_id):
-    """
-    Query the database to find the most recent API log ID for the current request.
-    This is necessary because the log_api_call function creates its own UUID
-    rather than using the one we generate.
-    """
+def log_directly_to_api_logs(user_id, endpoint_id, method):
+    """Create an API log entry directly and return its ID"""
     try:
-        conn = DatabaseService.get_connection()
-        cursor = conn.cursor()
+        log_id = str(uuid.uuid4())
         
-        # Get the most recent API log entry for this user and endpoint
-        # Narrow the time window to 2 seconds to ensure we get the right one
-        query = """
-        SELECT TOP 1 id 
-        FROM api_logs 
-        WHERE user_id = ? 
-        AND endpoint_id = ? 
-        AND timestamp >= DATEADD(SECOND, -2, DATEADD(HOUR, 2, GETUTCDATE()))
-        ORDER BY timestamp DESC
-        """
+        result = DatabaseService.log_api_call(
+            endpoint_id=endpoint_id,
+            user_id=user_id,
+            request_method=method,
+            token_id=None,
+            request_headers=None,
+            request_body=None,
+            response_status=200,
+            response_time_ms=0,
+            user_agent=None,
+            ip_address=None,
+            error_message=None,
+            response_body=None
+        )
         
-        cursor.execute(query, [user_id, endpoint_id])
-        result = cursor.fetchone()
-        
-        cursor.close()
-        conn.close()
-        
+        # If the log_api_call function returns a value, it's the log ID
         if result:
-            return result[0]
-        
-        logger.warning(f"No recent API log found for user {user_id} and endpoint {endpoint_id}")
-        return None
+            return result
+            
+        # Otherwise, use our generated ID (less ideal but workable)
+        return log_id
         
     except Exception as e:
-        logger.error(f"Error finding API log ID: {str(e)}")
+        logger.error(f"Error creating API log entry: {str(e)}")
         return None
 
 def track_usage(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        # Execute the API function
+        # Define variables for tracking
+        user_id = None
+        endpoint_id = None
+        
+        # First, capture basic request info before executing the function
+        # This ensures we have the data even if the function modifies g
+        user_id = getattr(g, 'user_id', None)
+        if not user_id:
+            # Try to get from API-Key
+            api_key = request.headers.get('API-Key')
+            if api_key:
+                user_info = DatabaseService.validate_api_key(api_key)
+                if user_info:
+                    user_id = user_info["id"]
+            
+            # Try to get from X-Token
+            if not user_id:
+                token = request.headers.get('X-Token')
+                if token:
+                    token_details = DatabaseService.get_token_details_by_value(token)
+                    if token_details:
+                        user_id = token_details["user_id"]
+        
+        # Get endpoint ID
+        endpoint_id = DatabaseService.get_endpoint_id_by_path(request.path)
+        
+        # Store a request identifier in g
+        request_identifier = f"{user_id}_{endpoint_id}_{int(time.time() * 1000)}"
+        g.current_request_identifier = request_identifier
+        
+        # Create an API log entry directly - we'll use this if necessary
+        api_log_id = None
+        if user_id and endpoint_id:
+            try:
+                api_log_id = log_directly_to_api_logs(user_id, endpoint_id, request.method)
+                # Store this in g so api_logger can use it if needed
+                if api_log_id:
+                    g.track_usage_log_id = api_log_id
+            except:
+                pass
+        
+        # Execute the API function and get the response
         response = f(*args, **kwargs)
         
         try:
+            # Wait a short time to ensure any database writes are complete
+            time.sleep(0.1)
+            
             # Extract usage metrics from the response
             metrics = extract_usage_metrics(response)
             
@@ -213,15 +251,11 @@ def track_usage(f):
                     logger.warning(f"Cannot log usage metrics: missing endpoint_id for {request.path}")
                 return response
                 
-            # Find the actual API log ID from the database
-            # This is crucial - we need to query the most recent log entry
-            metrics["api_log_id"] = get_most_recent_api_log_id(
-                metrics["user_id"], 
-                metrics["endpoint_id"]
-            )
-            
+            # Set the API log ID to the one we created directly
+            metrics["api_log_id"] = api_log_id
+                
             if not metrics["api_log_id"]:
-                logger.warning(f"Could not find API log ID for user {metrics['user_id']} and endpoint {metrics['endpoint_id']}")
+                logger.warning(f"Could not create or find API log ID for user {metrics['user_id']} and endpoint {metrics['endpoint_id']}")
                 return response
                 
             # Log usage metrics to database
