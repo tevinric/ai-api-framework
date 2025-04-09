@@ -14,7 +14,7 @@ def extract_usage_metrics(response):
     metrics = {
         "user_id": getattr(g, 'user_id', None),
         "endpoint_id": DatabaseService.get_endpoint_id_by_path(request.path),
-        "api_log_id": getattr(g, 'current_api_log_id', None),
+        "api_log_id": None,  # Will be set later
         "images_generated": 0,
         "audio_seconds_processed": 0,
         "pages_processed": 0,
@@ -158,67 +158,41 @@ def log_usage_metrics(metrics):
         logger.error(f"Error logging usage metrics: {str(e)}")
         return False
 
-def find_or_create_api_log_id(endpoint_id, user_id):
-    """Find the most recent API log ID for this request or create a new one"""
+def get_most_recent_api_log_id(user_id, endpoint_id):
+    """
+    Query the database to find the most recent API log ID for the current request.
+    This is necessary because the log_api_call function creates its own UUID
+    rather than using the one we generate.
+    """
     try:
-        # First try to get the existing log ID from g object (if set by api_logger)
-        if hasattr(g, 'current_api_log_id') and g.current_api_log_id:
-            return g.current_api_log_id
-            
-        # As fallback, look up the most recent log entry for this endpoint and user
         conn = DatabaseService.get_connection()
         cursor = conn.cursor()
         
-        # Find the most recent API log for this endpoint and user within the last 5 seconds
+        # Get the most recent API log entry for this user and endpoint
+        # Narrow the time window to 2 seconds to ensure we get the right one
         query = """
         SELECT TOP 1 id 
         FROM api_logs 
-        WHERE endpoint_id = ? 
-        AND user_id = ? 
-        AND timestamp >= DATEADD(SECOND, -5, DATEADD(HOUR, 2, GETUTCDATE()))
+        WHERE user_id = ? 
+        AND endpoint_id = ? 
+        AND timestamp >= DATEADD(SECOND, -2, DATEADD(HOUR, 2, GETUTCDATE()))
         ORDER BY timestamp DESC
         """
         
-        cursor.execute(query, [endpoint_id, user_id])
+        cursor.execute(query, [user_id, endpoint_id])
         result = cursor.fetchone()
         
-        if result:
-            log_id = result[0]
-            # Store it in g for future use
-            g.current_api_log_id = log_id
-            return log_id
-            
-        # If no recent log found, create a new one
-        log_id = str(uuid.uuid4())
-        
-        # Store basic log info - this is a fallback and won't have all the details
-        # the api_logger would normally capture
-        insert_query = """
-        INSERT INTO api_logs (
-            id, endpoint_id, user_id, timestamp, request_method
-        )
-        VALUES (
-            ?, ?, ?, DATEADD(HOUR, 2, GETUTCDATE()), ?
-        )
-        """
-        
-        cursor.execute(insert_query, [
-            log_id,
-            endpoint_id,
-            user_id,
-            request.method
-        ])
-        
-        conn.commit()
         cursor.close()
         conn.close()
         
-        # Store it in g for future use
-        g.current_api_log_id = log_id
-        return log_id
-    
+        if result:
+            return result[0]
+        
+        logger.warning(f"No recent API log found for user {user_id} and endpoint {endpoint_id}")
+        return None
+        
     except Exception as e:
-        logger.error(f"Error finding/creating API log ID: {str(e)}")
+        logger.error(f"Error finding API log ID: {str(e)}")
         return None
 
 def track_usage(f):
@@ -231,21 +205,28 @@ def track_usage(f):
             # Extract usage metrics from the response
             metrics = extract_usage_metrics(response)
             
-            # Ensure we have an API log ID
-            if not metrics["api_log_id"] and metrics["user_id"] and metrics["endpoint_id"]:
-                metrics["api_log_id"] = find_or_create_api_log_id(
-                    metrics["endpoint_id"], 
-                    metrics["user_id"]
-                )
+            # Don't continue if we don't have the basic info needed
+            if not metrics["user_id"] or not metrics["endpoint_id"]:
+                if not metrics["user_id"]:
+                    logger.warning(f"Cannot log usage metrics: missing user_id for {request.path}")
+                if not metrics["endpoint_id"]:
+                    logger.warning(f"Cannot log usage metrics: missing endpoint_id for {request.path}")
+                return response
+                
+            # Find the actual API log ID from the database
+            # This is crucial - we need to query the most recent log entry
+            metrics["api_log_id"] = get_most_recent_api_log_id(
+                metrics["user_id"], 
+                metrics["endpoint_id"]
+            )
             
-            # Log usage metrics to database if we have user_id and endpoint_id
-            if metrics["user_id"] and metrics["endpoint_id"]:
-                log_usage_metrics(metrics)
-            elif not metrics["user_id"]:
-                logger.warning(f"Cannot log usage metrics: missing user_id for {request.path}")
-            elif not metrics["endpoint_id"]:
-                logger.warning(f"Cannot log usage metrics: missing endpoint_id for {request.path}")
-        
+            if not metrics["api_log_id"]:
+                logger.warning(f"Could not find API log ID for user {metrics['user_id']} and endpoint {metrics['endpoint_id']}")
+                return response
+                
+            # Log usage metrics to database
+            log_usage_metrics(metrics)
+            
         except Exception as e:
             # Log the error but don't affect the response
             logger.error(f"Error in usage tracking: {str(e)}")
