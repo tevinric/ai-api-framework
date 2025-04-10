@@ -91,8 +91,10 @@ Important rules:
 - Speak in clear, simple language avoiding insurance jargon
 - Confirm you understand the customer's request before proceeding
 - If a user asks about topics unrelated to insurance services, politely redirect them
+  * Example response: "I'm specialized in insurance matters and can't provide assistance with [topic]. I'd be happy to help you with insurance quotes, policy management, claims, or other insurance-related questions."
 - Never make up policy or customer information
 - Maintain customer privacy and handle personal information securely
+- Once all information for a quote is collected, provide a clear wrap-up summary of all collected information before processing the quote
 
 Use the available tools when appropriate:
 - Use get_policy_details when you need to look up a customer's policy information
@@ -123,17 +125,20 @@ FOR VEHICLE INSURANCE QUOTES:
   * If the user's response doesn't match one of these options, ask them to select a valid option
 - Ask if the car is registered in South Africa (Yes or No)
 - Ask if the car is financed (Yes or No)
-- Once you have all required information, use the get_quote tool
+- Before using the get_quote tool, provide a clear summary of all collected information and confirm with the user
+- Once you have all required information and the user confirms, use the get_quote tool
 
 FOR HOME INSURANCE QUOTES:
 - Collect personal details (name, ID number)
 - Collect relevant property information (address, type of home)
+- Provide a summary of collected information before processing
 - Once you have all required information, use the get_quote tool
 
 FOR CONTENTS INSURANCE QUOTES:
 - Collect personal details (name, ID number)
 - Collect address information
 - Ask for estimated value of contents
+- Provide a summary of collected information before processing
 - Once you have all required information, use the get_quote tool
 
 FOR POLICY MANAGEMENT:
@@ -148,11 +153,14 @@ FOR CLAIM SUBMISSIONS:
 - Call get_policy_details to verify the policy exists
 - Ask for incident details (date, time, what happened)
 - Ask for supporting information
+- Provide a summary of the claim information before processing
 - Once you have all the required information, use the submit_claim tool
 
 You'll respond conversationally while making appropriate use of tools when needed. Always keep track of where you are in the conversation flow and what information you still need to collect.
 
 As you collect information, you should extract and store the relevant details for later use in the quote process. Be especially careful to match vehicle makes, models, and colors to our predefined lists.
+
+IMPORTANT: If a user asks about topics not related to insurance (like politics, entertainment, general knowledge, technology unrelated to insurance, etc.), politely explain that you're specialized in insurance matters and redirect the conversation back to insurance topics. Do not answer questions outside the insurance domain.
 """
 
 # Conversation state codes
@@ -385,6 +393,228 @@ def find_best_match(input_text, predefined_list):
                 best_match_score = overlap
     
     return best_match
+
+# Function to detect off-topic queries
+def is_off_topic_query(query):
+    """
+    Detects if a user query is not related to insurance
+    
+    Args:
+        query (str): The user message to analyze
+        
+    Returns:
+        bool: True if the query is off-topic, False if it's insurance-related
+    """
+    # Convert to lowercase for easier matching
+    query_lower = query.lower()
+    
+    # Insurance-related keywords
+    insurance_keywords = [
+        'insurance', 'policy', 'claim', 'premium', 'coverage', 'accident', 
+        'damage', 'quote', 'vehicle', 'car', 'auto', 'home', 'house', 'property',
+        'contents', 'liability', 'excess', 'deductible', 'insure', 'underwriting',
+        'risk', 'cover', 'policy', 'policyholder', 'insured', 'compensation',
+        'benefits', 'medical', 'life', 'health', 'third-party', 'third party',
+        'comprehensive', 'broker', 'agent', 'underwriter', 'actuary', 'premium',
+        'registration', 'financed', 'toyota', 'bmw', 'vehicle', 'ford', 'honda',
+        'callback', 'contact', 'customer', 'service', 'representative', 'agent'
+    ]
+    
+    # Check if the query contains any insurance-related keywords
+    for keyword in insurance_keywords:
+        if keyword in query_lower:
+            return False
+    
+    # Common off-topic themes that might indicate a non-insurance query
+    off_topic_themes = [
+        # General knowledge
+        'what is', 'who is', 'when did', 'where is', 'tell me about', 'facts about',
+        # Current events and news
+        'news', 'latest', 'president', 'election', 'covid', 'pandemic', 'war', 'politics',
+        # Entertainment
+        'movie', 'tv show', 'netflix', 'actor', 'film', 'music', 'song', 'celebrity',
+        # Technology (unrelated to insurance)
+        'computer', 'phone', 'iphone', 'android', 'app', 'software', 'programming',
+        # Sports
+        'football', 'soccer', 'basketball', 'baseball', 'player', 'team', 'game', 'sport',
+        # Weather
+        'weather', 'forecast', 'temperature', 'rain', 'sunny', 'cold', 'hot',
+        # Food and recipes
+        'recipe', 'cook', 'bake', 'food', 'restaurant', 'meal', 'diet',
+        # Math and calculations (unless related to premiums)
+        'calculate', 'solve', 'equation', 'math problem',
+        # General chat
+        'hello', 'hi there', 'how are you', 'what can you do', 'your name', 'who are you',
+        'tell me a joke', 'tell me a story', 'fun fact'
+    ]
+    
+    # Check for common greeting patterns (which are acceptable)
+    greeting_patterns = ['hello', 'hi', 'hey', 'greetings', 'good morning', 'good afternoon', 'good evening']
+    
+    # If the query is just a greeting, it's not off-topic
+    if any(greeting in query_lower for greeting in greeting_patterns) and len(query_lower.split()) < 4:
+        return False
+    
+    # If we find any off-topic themes, consider it off-topic
+    for theme in off_topic_themes:
+        if theme in query_lower:
+            return True
+    
+    # For short queries (1-3 words) without insurance keywords, we'll be lenient
+    if len(query_lower.split()) <= 3:
+        return False
+    
+    # For longer queries without insurance keywords, likely off-topic
+    if len(query_lower.split()) > 5:
+        return True
+    
+    # If we can't determine clearly, default to on-topic to avoid false positives
+    return False
+
+def check_for_wrap_up_opportunity(conversation):
+    """
+    Check if we have all information needed for a quote and should wrap up the conversation
+    
+    Args:
+        conversation (dict): The conversation state
+        
+    Returns:
+        bool: True if we should wrap up, False otherwise
+    """
+    # Check the conversation state
+    state = conversation.get("state")
+    
+    # Only consider wrap-up for quote flows
+    if state != CONVERSATION_STATE["QUOTE_FLOW"]:
+        return False
+    
+    # Check what type of insurance is being quoted
+    extraction_data = conversation.get("extraction_data", {})
+    insurance_type = extraction_data.get("insurance_type")
+    
+    if not insurance_type:
+        return False
+    
+    # For vehicle insurance
+    if insurance_type == "vehicle":
+        # Check if we have all the required information
+        if "vehicle" not in extraction_data:
+            return False
+        
+        vehicle = extraction_data["vehicle"]
+        required_fields = ["make", "model", "year", "color", "usage", "is_registered_in_sa", "is_financed"]
+        
+        # Customer info also needed
+        if "customer_name" not in extraction_data or "id_number" not in extraction_data:
+            return False
+            
+        # Check if all required vehicle fields are present
+        for field in required_fields:
+            if field not in vehicle:
+                return False
+                
+        # If we have all information, we should wrap up
+        return True
+        
+    # For home insurance
+    elif insurance_type == "home":
+        # Check if we have all the required information
+        if "customer_name" not in extraction_data or "id_number" not in extraction_data:
+            return False
+            
+        if "address" not in extraction_data:
+            return False
+            
+        if "home" not in extraction_data or "home_type" not in extraction_data["home"]:
+            return False
+            
+        return True
+        
+    # For contents insurance
+    elif insurance_type == "contents":
+        # Check if we have all the required information
+        if "customer_name" not in extraction_data or "id_number" not in extraction_data:
+            return False
+            
+        if "address" not in extraction_data:
+            return False
+            
+        if "contents" not in extraction_data or "contents_value" not in extraction_data["contents"]:
+            return False
+            
+        return True
+    
+    return False
+
+def generate_wrap_up_summary(conversation):
+    """
+    Generate a summary of collected information for wrap-up
+    
+    Args:
+        conversation (dict): The conversation state
+        
+    Returns:
+        str: A summary string for the wrap-up
+    """
+    extraction_data = conversation.get("extraction_data", {})
+    insurance_type = extraction_data.get("insurance_type")
+    
+    if not insurance_type:
+        return "I'd like to summarize what we've discussed, but I'm not sure what type of insurance you're interested in. Can you clarify?"
+    
+    summary = "Let me summarize the information we've collected so far:\n\n"
+    
+    # Common fields
+    customer_name = extraction_data.get("customer_name", "Not provided")
+    id_number = extraction_data.get("id_number", "Not provided")
+    address = extraction_data.get("address", "Not provided")
+    
+    summary += f"- Name: {customer_name}\n"
+    summary += f"- ID Number: {id_number}\n"
+    
+    # Type-specific information
+    if insurance_type == "vehicle":
+        vehicle = extraction_data.get("vehicle", {})
+        
+        make = vehicle.get("make", "Not provided")
+        model = vehicle.get("model", "Not provided")
+        year = vehicle.get("year", "Not provided")
+        color = vehicle.get("color", "Not provided")
+        usage = vehicle.get("usage", "Not provided")
+        
+        # Format Boolean values nicely
+        is_registered_in_sa = "Yes" if vehicle.get("is_registered_in_sa") else "No"
+        is_financed = "Yes" if vehicle.get("is_financed") else "No"
+        
+        # Add to summary
+        summary += f"- Insurance Type: Vehicle Insurance\n"
+        summary += f"- Vehicle Make: {make}\n"
+        summary += f"- Vehicle Model: {model}\n"
+        summary += f"- Vehicle Year: {year}\n"
+        summary += f"- Vehicle Color: {color}\n"
+        summary += f"- Vehicle Usage: {usage}\n"
+        summary += f"- Registered in South Africa: {is_registered_in_sa}\n"
+        summary += f"- Vehicle Financed: {is_financed}\n"
+        
+    elif insurance_type == "home":
+        home = extraction_data.get("home", {})
+        home_type = home.get("home_type", "Not provided")
+        
+        summary += f"- Insurance Type: Home Insurance\n"
+        summary += f"- Address: {address}\n"
+        summary += f"- Home Type: {home_type}\n"
+        
+    elif insurance_type == "contents":
+        contents = extraction_data.get("contents", {})
+        contents_value = contents.get("contents_value", "Not provided")
+        
+        summary += f"- Insurance Type: Contents Insurance\n"
+        summary += f"- Address: {address}\n"
+        summary += f"- Contents Value: {contents_value}\n"
+    
+    summary += "\nIs all this information correct? If yes, I'll proceed with generating a quote. If anything needs to be changed, please let me know."
+    
+    return summary
 
 # Functions for handling extraction data
 def update_extraction_data(conversation, field, value):
@@ -986,6 +1216,12 @@ def insurance_chat_route():
             extraction_data:
               type: object
               description: Extracted data from the conversation
+            is_off_topic:
+              type: boolean
+              description: Whether the user query was off-topic
+            is_wrap_up:
+              type: boolean
+              description: Whether this is a wrap-up summary message
             prompt_tokens:
               type: integer
               description: Number of prompt tokens used
@@ -1121,6 +1357,10 @@ def insurance_chat_route():
         }, 500)
     
     try:
+        # Flags for special message handling
+        is_off_topic = False
+        is_wrap_up = False
+        
         # Check if this is a new conversation or continuing an existing one
         if conversation_id:
             # Get existing conversation
@@ -1137,11 +1377,112 @@ def insurance_chat_route():
             # Apply rules-based extraction to the conversation
             conversation = extract_info_from_messages(conversation)
             
+            # Check if this is an off-topic query
+            if is_off_topic_query(user_message):
+                is_off_topic = True
+                logger.info(f"Detected off-topic query: {user_message}")
+                
+                # Create a standard off-topic response
+                off_topic_response = (
+                    "I'm specialized in insurance matters and can't provide assistance with topics outside of insurance. "
+                    "I'd be happy to help you with insurance quotes, policy management, claims, or other insurance-related questions. "
+                    "How can I assist you with your insurance needs today?"
+                )
+                
+                # Add response to conversation
+                conversation["messages"].append({"role": "assistant", "content": off_topic_response})
+                
+                # Save conversation
+                success, error = save_conversation_history(conversation_id, conversation)
+                if not success:
+                    return create_api_response({
+                        "error": "Server Error",
+                        "message": f"Error saving conversation: {error}"
+                    }, 500)
+                
+                # Return the off-topic response
+                return create_api_response({
+                    "conversation_id": conversation_id,
+                    "assistant_message": off_topic_response,
+                    "conversation_state": conversation.get("state", CONVERSATION_STATE["GENERAL_QUERY"]),
+                    "extraction_data": conversation.get("extraction_data", {}),
+                    "is_off_topic": True,
+                    "is_wrap_up": False,
+                    "prompt_tokens": 0,  # We didn't call the LLM
+                    "completion_tokens": 0,
+                    "total_tokens": 0
+                }, 200)
+            
+            # Check if we should do a wrap-up summary
+            should_wrap_up = check_for_wrap_up_opportunity(conversation)
+            last_message_from_user = user_message.lower()
+            
+            # If we have all info and user seems to be confirming or asking for next steps
+            confirmation_indicators = ['yes', 'correct', 'right', 'good', 'proceed', 'quote', 'continue', 'all good', 'get a quote']
+            is_user_confirming = any(indicator in last_message_from_user for indicator in confirmation_indicators)
+            
+            if should_wrap_up and is_user_confirming:
+                # Mark this as a wrap-up message
+                is_wrap_up = True
+                
+                # Generate wrap-up summary
+                wrap_up_summary = generate_wrap_up_summary(conversation)
+                
+                # We'll proceed with normal LLM call, but tell it to generate a quote
+                # The wrap-up summary will be presented to the user
+            
         else:
             # Create new conversation
             conversation_id = str(uuid.uuid4())
             
-            # Initialize conversation with extraction_data
+            # Check if this is an off-topic query to start with
+            if is_off_topic_query(user_message):
+                is_off_topic = True
+                logger.info(f"Detected off-topic query for new conversation: {user_message}")
+                
+                # Create a standard off-topic response
+                off_topic_response = (
+                    "I'm specialized in insurance matters and can't provide assistance with topics outside of insurance. "
+                    "I'd be happy to help you with insurance quotes, policy management, claims, or other insurance-related questions. "
+                    "How can I assist you with your insurance needs today?"
+                )
+                
+                # Initialize conversation
+                conversation = {
+                    "conversation_id": conversation_id,
+                    "created_at": datetime.now().isoformat(),
+                    "updated_at": datetime.now().isoformat(),
+                    "temperature": temperature,
+                    "state": CONVERSATION_STATE["GENERAL_QUERY"],
+                    "messages": [
+                        {"role": "user", "content": user_message},
+                        {"role": "assistant", "content": off_topic_response}
+                    ],
+                    "extraction_data": {}  # Initialize empty extraction data
+                }
+                
+                # Save conversation
+                success, error = save_conversation_history(conversation_id, conversation)
+                if not success:
+                    return create_api_response({
+                        "error": "Server Error",
+                        "message": f"Error saving conversation: {error}"
+                    }, 500)
+                
+                # Return the off-topic response
+                return create_api_response({
+                    "conversation_id": conversation_id,
+                    "assistant_message": off_topic_response,
+                    "conversation_state": CONVERSATION_STATE["GENERAL_QUERY"],
+                    "extraction_data": {},
+                    "is_off_topic": True,
+                    "is_wrap_up": False,
+                    "prompt_tokens": 0,  # We didn't call the LLM
+                    "completion_tokens": 0,
+                    "total_tokens": 0
+                }, 200)
+            
+            # Initialize conversation for on-topic query
             conversation = {
                 "conversation_id": conversation_id,
                 "created_at": datetime.now().isoformat(),
@@ -1160,6 +1501,19 @@ def insurance_chat_route():
         
         # Format conversation for OpenAI API
         messages = format_conversation_for_openai(conversation)
+        
+        # If we're doing a wrap-up, add an instruction to guide the model toward quote generation
+        if is_wrap_up:
+            # Add a system message to guide the model toward quote generation
+            instruction_message = {
+                "role": "system", 
+                "content": (
+                    "The user has confirmed all their information. You should now use the get_quote tool "
+                    "to generate an insurance quote based on the collected information. Do not ask for "
+                    "any more information unless something critical is missing."
+                )
+            }
+            messages.append(instruction_message)
         
         # Call GPT-4o with tool capabilities
         response = openai_client.chat.completions.create(
@@ -1292,6 +1646,8 @@ def insurance_chat_route():
             "assistant_message": assistant_message,
             "conversation_state": conversation_state,
             "extraction_data": conversation.get("extraction_data", {}),
+            "is_off_topic": is_off_topic,
+            "is_wrap_up": is_wrap_up,
             "prompt_tokens": prompt_tokens,
             "completion_tokens": completion_tokens,
             "total_tokens": total_tokens
