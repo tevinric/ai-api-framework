@@ -31,6 +31,50 @@ INSURANCE_BOT_CREDIT_COST = 1
 # Define GPT-4o deployment model
 GPT4O_DEPLOYMENT = "gpt-4o"
 
+# Predefined lists for vehicle data validation
+CAR_MAKES = [
+    "Toyota", "Honda", "Ford", "Volkswagen", "BMW", "Mercedes-Benz", "Audi", 
+    "Nissan", "Hyundai", "Kia", "Mazda", "Subaru", "Lexus", "Chevrolet", 
+    "Jeep", "Volvo", "Land Rover", "Porsche", "Ferrari", "Tesla"
+]
+
+# Dictionary mapping makes to their models
+CAR_MODELS_BY_MAKE = {
+    "Toyota": ["Corolla", "Camry", "RAV4", "Fortuner", "Hilux", "Land Cruiser", "Avanza", "Yaris"],
+    "Honda": ["Civic", "Accord", "CR-V", "Pilot", "Fit", "HR-V", "Odyssey"],
+    "Ford": ["Mustang", "F-150", "Ranger", "Explorer", "Escape", "Focus", "Fiesta"],
+    "Volkswagen": ["Golf", "Polo", "Tiguan", "Passat", "Jetta", "Touareg", "Amarok"],
+    "BMW": ["3 Series", "5 Series", "7 Series", "X3", "X5", "X7", "i3", "i8"],
+    "Mercedes-Benz": ["C-Class", "E-Class", "S-Class", "GLA", "GLC", "GLE", "G-Class"],
+    "Audi": ["A3", "A4", "A6", "Q3", "Q5", "Q7", "TT", "R8"],
+    "Nissan": ["Micra", "Almera", "Sentra", "Altima", "X-Trail", "Qashqai", "Navara", "GTR"],
+    "Hyundai": ["i10", "i20", "i30", "Tucson", "Santa Fe", "Creta", "Venue", "Kona"],
+    "Kia": ["Picanto", "Rio", "Cerato", "Sportage", "Sorento", "Seltos", "Soul"],
+    "Mazda": ["Mazda2", "Mazda3", "Mazda6", "CX-3", "CX-5", "CX-9", "MX-5"],
+    "Subaru": ["Impreza", "Legacy", "Outback", "Forester", "XV", "WRX", "BRZ"],
+    "Lexus": ["IS", "ES", "LS", "UX", "NX", "RX", "LX", "RC", "LC"],
+    "Chevrolet": ["Spark", "Cruze", "Malibu", "Trailblazer", "Captiva", "Silverado"],
+    "Jeep": ["Renegade", "Compass", "Cherokee", "Grand Cherokee", "Wrangler", "Gladiator"],
+    "Volvo": ["S60", "S90", "V60", "V90", "XC40", "XC60", "XC90"],
+    "Land Rover": ["Discovery", "Discovery Sport", "Range Rover", "Range Rover Sport", "Range Rover Evoque", "Defender"],
+    "Porsche": ["911", "Boxster", "Cayman", "Panamera", "Cayenne", "Macan", "Taycan"],
+    "Ferrari": ["488", "F8 Tributo", "812", "Roma", "SF90", "Portofino"],
+    "Tesla": ["Model 3", "Model S", "Model X", "Model Y", "Cybertruck"]
+}
+
+# Car colors
+CAR_COLORS = [
+    "Black", "White", "Silver", "Gray", "Red", "Blue", "Green", 
+    "Yellow", "Brown", "Orange", "Purple", "Gold", "Bronze", "Beige"
+]
+
+# Vehicle usage types
+VEHICLE_USAGE_TYPES = [
+    "Private and/or travelling to work",
+    "Private and occasional business",
+    "Private and full business"
+]
+
 # Define system message for insurance bot - This guides GPT-4o on how to behave
 INSURANCE_BOT_SYSTEM_MESSAGE = """
 You are InsuranceBot, a helpful insurance customer service assistant. Your job is to help customers with various insurance-related needs:
@@ -59,10 +103,37 @@ Use the available tools when appropriate:
 Follow these conversation flows based on customer needs:
 
 FOR INSURANCE QUOTES:
-- Ask what they want to insure (vehicle, home, contents)
+- First ask what they want to insure (vehicle, home, contents)
+
+FOR VEHICLE INSURANCE QUOTES:
 - Collect personal details (name, ID number)
-- Collect relevant asset information (for vehicles: make, model, year)
+- Ask what make of car they want to insure (e.g., Toyota, BMW, Ford)
+  * Match their response to our predefined list of car makes
+  * If no match is found, suggest close alternatives
+- Ask for the year of the vehicle (e.g., 2018, 2022)
+- Ask for the model of the vehicle (e.g., Corolla, 5 Series, Ranger)
+  * Models should match the previously selected make
+  * If no match is found, suggest models available for that make
+- Ask for the color of the car (e.g., Red, White, Black)
+  * Match their response to our predefined list of colors
+- Ask what the car will be used for, with these specific options:
+  1. Private and/or travelling to work
+  2. Private and occasional business
+  3. Private and full business
+  * If the user's response doesn't match one of these options, ask them to select a valid option
+- Ask if the car is registered in South Africa (Yes or No)
+- Ask if the car is financed (Yes or No)
+- Once you have all required information, use the get_quote tool
+
+FOR HOME INSURANCE QUOTES:
+- Collect personal details (name, ID number)
+- Collect relevant property information (address, type of home)
+- Once you have all required information, use the get_quote tool
+
+FOR CONTENTS INSURANCE QUOTES:
+- Collect personal details (name, ID number)
 - Collect address information
+- Ask for estimated value of contents
 - Once you have all required information, use the get_quote tool
 
 FOR POLICY MANAGEMENT:
@@ -79,7 +150,9 @@ FOR CLAIM SUBMISSIONS:
 - Ask for supporting information
 - Once you have all the required information, use the submit_claim tool
 
-You'll respond conversationally while making appropriate use of tools when needed.
+You'll respond conversationally while making appropriate use of tools when needed. Always keep track of where you are in the conversation flow and what information you still need to collect.
+
+As you collect information, you should extract and store the relevant details for later use in the quote process. Be especially careful to match vehicle makes, models, and colors to our predefined lists.
 """
 
 # Conversation state codes
@@ -158,29 +231,63 @@ INSURANCE_TOOLS = [
                         "type": "string",
                         "description": "The customer's address"
                     },
-                    "details": {
+                    "vehicle_details": {
                         "type": "object",
-                        "description": "Details specific to the insurance type",
+                        "description": "Details specific to vehicle insurance",
                         "properties": {
-                            "vehicle_make": {
+                            "make": {
                                 "type": "string",
-                                "description": "Make of the vehicle (for vehicle insurance)"
+                                "description": "Make of the vehicle (e.g., Toyota, BMW)"
                             },
-                            "vehicle_model": {
+                            "model": {
                                 "type": "string",
-                                "description": "Model of the vehicle (for vehicle insurance)"
+                                "description": "Model of the vehicle (e.g., Corolla, X5)"
                             },
-                            "vehicle_year": {
+                            "year": {
                                 "type": "string",
-                                "description": "Year of the vehicle (for vehicle insurance)"
+                                "description": "Year of the vehicle (e.g., 2020)"
                             },
+                            "color": {
+                                "type": "string",
+                                "description": "Color of the vehicle"
+                            },
+                            "usage": {
+                                "type": "string",
+                                "description": "How the vehicle will be used",
+                                "enum": [
+                                    "Private and/or travelling to work",
+                                    "Private and occasional business",
+                                    "Private and full business"
+                                ]
+                            },
+                            "is_registered_in_sa": {
+                                "type": "boolean",
+                                "description": "Whether the vehicle is registered in South Africa"
+                            },
+                            "is_financed": {
+                                "type": "boolean",
+                                "description": "Whether the vehicle is financed"
+                            }
+                        },
+                        "required": ["make", "model", "year", "color", "usage", "is_registered_in_sa", "is_financed"]
+                    },
+                    "home_details": {
+                        "type": "object",
+                        "description": "Details specific to home insurance",
+                        "properties": {
                             "home_type": {
                                 "type": "string",
-                                "description": "Type of home (for home insurance)"
-                            },
+                                "description": "Type of home (e.g., apartment, house)"
+                            }
+                        }
+                    },
+                    "contents_details": {
+                        "type": "object",
+                        "description": "Details specific to contents insurance",
+                        "properties": {
                             "contents_value": {
                                 "type": "string",
-                                "description": "Estimated value of contents (for contents insurance)"
+                                "description": "Estimated value of contents"
                             }
                         }
                     }
@@ -250,6 +357,186 @@ INSURANCE_TOOLS = [
     }
 ]
 
+# Function to find best match in predefined lists
+def find_best_match(input_text, predefined_list):
+    """Find the best match from a predefined list based on input text"""
+    if not input_text:
+        return None
+    
+    # Convert input to lowercase for case-insensitive matching
+    input_lower = input_text.lower()
+    
+    # First try exact match (case-insensitive)
+    for item in predefined_list:
+        if item.lower() == input_lower:
+            return item
+    
+    # If no exact match, try to find a partial match
+    best_match = None
+    best_match_score = 0
+    
+    for item in predefined_list:
+        # Check if item is contained in input or input is contained in item
+        if item.lower() in input_lower or input_lower in item.lower():
+            # Calculate a simple match score based on length of overlap
+            overlap = len(set(input_lower.split()) & set(item.lower().split()))
+            if overlap > best_match_score:
+                best_match = item
+                best_match_score = overlap
+    
+    return best_match
+
+# Functions for handling extraction data
+def update_extraction_data(conversation, field, value):
+    """Add or update extraction data in the conversation"""
+    if "extraction_data" not in conversation:
+        conversation["extraction_data"] = {}
+    
+    # For vehicle details, store in a nested structure
+    if field.startswith("vehicle_"):
+        if "vehicle" not in conversation["extraction_data"]:
+            conversation["extraction_data"]["vehicle"] = {}
+        # Remove the "vehicle_" prefix and store in the vehicle object
+        actual_key = field[8:]  # Remove "vehicle_" prefix
+        conversation["extraction_data"]["vehicle"][actual_key] = value
+    elif field.startswith("home_"):
+        if "home" not in conversation["extraction_data"]:
+            conversation["extraction_data"]["home"] = {}
+        # Remove the "home_" prefix
+        actual_key = field[5:]
+        conversation["extraction_data"]["home"][actual_key] = value
+    elif field.startswith("contents_"):
+        if "contents" not in conversation["extraction_data"]:
+            conversation["extraction_data"]["contents"] = {}
+        # Remove the "contents_" prefix
+        actual_key = field[9:]
+        conversation["extraction_data"]["contents"][actual_key] = value
+    else:
+        # Store directly in the extraction data
+        conversation["extraction_data"][field] = value
+    
+    return conversation
+
+def extract_info_from_messages(conversation):
+    """
+    Extract information from conversation messages using rules-based approaches.
+    This supplements the AI's own extraction capabilities.
+    """
+    if "extraction_data" not in conversation:
+        conversation["extraction_data"] = {}
+    
+    # Get the messages from the conversation
+    messages = conversation.get("messages", [])
+    
+    # Track what type of insurance the user is interested in
+    insurance_type = conversation["extraction_data"].get("insurance_type")
+    
+    for i, message in enumerate(messages):
+        if message.get("role") == "user":
+            user_message = message.get("content", "").lower()
+            
+            # Try to identify insurance type if not already set
+            if not insurance_type:
+                if "vehicle" in user_message or "car" in user_message or "auto" in user_message:
+                    insurance_type = "vehicle"
+                    conversation["extraction_data"]["insurance_type"] = "vehicle"
+                elif "home" in user_message or "house" in user_message or "property" in user_message:
+                    insurance_type = "home"
+                    conversation["extraction_data"]["insurance_type"] = "home"
+                elif "content" in user_message or "belonging" in user_message:
+                    insurance_type = "contents"
+                    conversation["extraction_data"]["insurance_type"] = "contents"
+            
+            # If we're dealing with vehicle insurance, look for car details
+            if insurance_type == "vehicle":
+                # Extract car make
+                for make in CAR_MAKES:
+                    if make.lower() in user_message:
+                        update_extraction_data(conversation, "vehicle_make", make)
+                        break
+                
+                # Extract car model if we know the make
+                if "vehicle" in conversation["extraction_data"] and "make" in conversation["extraction_data"]["vehicle"]:
+                    make = conversation["extraction_data"]["vehicle"]["make"]
+                    if make in CAR_MODELS_BY_MAKE:
+                        for model in CAR_MODELS_BY_MAKE[make]:
+                            if model.lower() in user_message:
+                                update_extraction_data(conversation, "vehicle_model", model)
+                                break
+                
+                # Extract car color
+                for color in CAR_COLORS:
+                    if color.lower() in user_message:
+                        update_extraction_data(conversation, "vehicle_color", color)
+                        break
+                
+                # Extract car year - look for 4-digit numbers
+                import re
+                year_matches = re.findall(r'\b(19[7-9]\d|20[0-2]\d)\b', user_message)
+                if year_matches:
+                    update_extraction_data(conversation, "vehicle_year", year_matches[0])
+                
+                # Extract usage type
+                for usage_type in VEHICLE_USAGE_TYPES:
+                    if usage_type.lower() in user_message:
+                        update_extraction_data(conversation, "vehicle_usage", usage_type)
+                        break
+                
+                # Extract yes/no answers for registration and financing
+                if "registered in south africa" in user_message or "registered in sa" in user_message:
+                    is_registered = "yes" in user_message or "yeah" in user_message
+                    update_extraction_data(conversation, "vehicle_is_registered_in_sa", is_registered)
+                
+                if "financed" in user_message:
+                    is_financed = "yes" in user_message or "yeah" in user_message
+                    update_extraction_data(conversation, "vehicle_is_financed", is_financed)
+    
+    return conversation
+
+def process_tool_calls_for_extraction(conversation, tool_calls):
+    """Process tool calls to extract information into the extraction data structure"""
+    if "extraction_data" not in conversation:
+        conversation["extraction_data"] = {}
+    
+    for tool_call in tool_calls:
+        function_name = tool_call.function.name
+        function_args = json.loads(tool_call.function.arguments)
+        
+        if function_name == "get_quote":
+            # Extract insurance type
+            if "insurance_type" in function_args:
+                conversation["extraction_data"]["insurance_type"] = function_args["insurance_type"]
+            
+            # Extract customer information
+            if "customer_name" in function_args:
+                conversation["extraction_data"]["customer_name"] = function_args["customer_name"]
+            
+            if "id_number" in function_args:
+                conversation["extraction_data"]["id_number"] = function_args["id_number"]
+            
+            if "address" in function_args:
+                conversation["extraction_data"]["address"] = function_args["address"]
+            
+            # Extract vehicle details
+            if "vehicle_details" in function_args and function_args["vehicle_details"]:
+                vehicle_details = function_args["vehicle_details"]
+                for key, value in vehicle_details.items():
+                    update_extraction_data(conversation, f"vehicle_{key}", value)
+            
+            # Extract home details
+            if "home_details" in function_args and function_args["home_details"]:
+                home_details = function_args["home_details"]
+                for key, value in home_details.items():
+                    update_extraction_data(conversation, f"home_{key}", value)
+            
+            # Extract contents details
+            if "contents_details" in function_args and function_args["contents_details"]:
+                contents_details = function_args["contents_details"]
+                for key, value in contents_details.items():
+                    update_extraction_data(conversation, f"contents_{key}", value)
+    
+    return conversation
+
 # Mock functions that would be replaced with actual API calls in production
 def get_policy_details(policy_number):
     """Get details of a customer's insurance policy"""
@@ -306,23 +593,72 @@ def update_policy_address(policy_number, new_address):
             "message": f"Policy number {policy_number} not found in our system."
         }
 
-def get_quote(customer_name, id_number, insurance_type, address, details=None):
+def get_quote(customer_name, id_number, insurance_type, address, vehicle_details=None, home_details=None, contents_details=None):
     """Generate an insurance quote"""
     # This would be replaced with an actual API call
     quote_id = f"Q-{uuid.uuid4().hex[:8].upper()}"
     
     # Calculate mock premium based on insurance type
     if insurance_type == "vehicle":
-        if details and 'vehicle_year' in details:
-            year = int(details['vehicle_year'])
-            if year > 2020:
-                premium = "R1,400.00"
-            elif year > 2015:
-                premium = "R950.00"
-            else:
-                premium = "R750.00"
+        if vehicle_details:
+            # Base premium calculation using vehicle details
+            base_premium = 1000.0
+            
+            # Adjust for vehicle year
+            if 'year' in vehicle_details:
+                try:
+                    year = int(vehicle_details['year'])
+                    if year > 2022:
+                        base_premium *= 1.5  # Very new cars cost more to insure
+                    elif year > 2019:
+                        base_premium *= 1.3
+                    elif year > 2015:
+                        base_premium *= 1.1
+                    elif year > 2010:
+                        base_premium *= 0.9
+                    else:
+                        base_premium *= 0.7  # Older cars are cheaper to insure
+                except (ValueError, TypeError):
+                    # If year is not a valid number, use default premium
+                    pass
+            
+            # Adjust for vehicle make
+            if 'make' in vehicle_details:
+                make = vehicle_details['make']
+                premium_multipliers = {
+                    "BMW": 1.4,
+                    "Mercedes-Benz": 1.4,
+                    "Audi": 1.3,
+                    "Volkswagen": 1.1,
+                    "Toyota": 0.9,
+                    "Honda": 0.9,
+                    "Hyundai": 0.85,
+                    "Kia": 0.85,
+                    "Ford": 1.0
+                }
+                base_premium *= premium_multipliers.get(make, 1.0)
+            
+            # Adjust for usage type
+            if 'usage' in vehicle_details:
+                usage = vehicle_details['usage']
+                if usage == "Private and occasional business":
+                    base_premium *= 1.2  # 20% increase for occasional business use
+                elif usage == "Private and full business":
+                    base_premium *= 1.5  # 50% increase for full business use
+            
+            # Adjust for financing
+            if 'is_financed' in vehicle_details and vehicle_details['is_financed']:
+                base_premium *= 1.15  # 15% increase if financed
+            
+            # Adjust for SA registration
+            if 'is_registered_in_sa' in vehicle_details and not vehicle_details['is_registered_in_sa']:
+                base_premium *= 1.25  # 25% increase for non-SA registration
+            
+            # Round to 2 decimal places and convert to string with R prefix
+            premium = f"R{base_premium:.2f}"
         else:
-            premium = "R950.00"
+            # Default premium if no vehicle details
+            premium = "R1,200.00"
     elif insurance_type == "home":
         premium = "R850.00"
     else:  # contents
@@ -338,7 +674,17 @@ def get_quote(customer_name, id_number, insurance_type, address, details=None):
             "monthly_premium": premium,
             "excess": "R2,500.00",
             "coverage_details": "Standard coverage including theft, damage, and liability",
-            "valid_until": (datetime.now() + timedelta(days=14)).strftime("%Y-%m-%d")
+            "valid_until": (datetime.now() + timedelta(days=14)).strftime("%Y-%m-%d"),
+            # Include the extracted details for reference
+            "extracted_details": {
+                "insurance_type": insurance_type,
+                "customer_name": customer_name,
+                "id_number": id_number,
+                "address": address,
+                "vehicle_details": vehicle_details,
+                "home_details": home_details,
+                "contents_details": contents_details
+            }
         }
     }
 
@@ -560,7 +906,9 @@ def handle_tool_calls(tool_calls):
                 function_args.get("id_number"),
                 function_args.get("insurance_type"),
                 function_args.get("address"),
-                function_args.get("details")
+                function_args.get("vehicle_details"),
+                function_args.get("home_details"),
+                function_args.get("contents_details")
             )
         elif function_name == "submit_claim":
             result = submit_claim(
@@ -635,6 +983,9 @@ def insurance_chat_route():
             conversation_state:
               type: string
               description: Current state of the conversation flow
+            extraction_data:
+              type: object
+              description: Extracted data from the conversation
             prompt_tokens:
               type: integer
               description: Number of prompt tokens used
@@ -783,11 +1134,14 @@ def insurance_chat_route():
             # Update conversation with new user message
             conversation["messages"].append({"role": "user", "content": user_message})
             
+            # Apply rules-based extraction to the conversation
+            conversation = extract_info_from_messages(conversation)
+            
         else:
             # Create new conversation
             conversation_id = str(uuid.uuid4())
             
-            # Initialize conversation
+            # Initialize conversation with extraction_data
             conversation = {
                 "conversation_id": conversation_id,
                 "created_at": datetime.now().isoformat(),
@@ -797,8 +1151,12 @@ def insurance_chat_route():
                 "messages": [
                     {"role": "assistant", "content": "Hi there, how can I help you today?"},
                     {"role": "user", "content": user_message}
-                ]
+                ],
+                "extraction_data": {}  # Initialize empty extraction data
             }
+            
+            # Apply rules-based extraction to the initial message
+            conversation = extract_info_from_messages(conversation)
         
         # Format conversation for OpenAI API
         messages = format_conversation_for_openai(conversation)
@@ -829,6 +1187,9 @@ def insurance_chat_route():
                     } for tc in assistant_response.tool_calls
                 ]
             })
+            
+            # Process the tool calls for extraction
+            conversation = process_tool_calls_for_extraction(conversation, assistant_response.tool_calls)
             
             # Process the tool calls
             tool_results = handle_tool_calls(assistant_response.tool_calls)
@@ -869,6 +1230,9 @@ def insurance_chat_route():
         # Add the final assistant message to conversation history
         conversation["messages"].append({"role": "assistant", "content": assistant_message})
         
+        # Apply rules-based extraction again to catch any new information
+        conversation = extract_info_from_messages(conversation)
+        
         # Determine conversation state based on content
         conversation_state = determine_conversation_state(conversation, assistant_message, user_message)
         
@@ -877,6 +1241,42 @@ def insurance_chat_route():
         
         # Update timestamp
         conversation["updated_at"] = datetime.now().isoformat()
+        
+        # Process vehicle details to find best matches from predefined lists
+        if "extraction_data" in conversation and "vehicle" in conversation["extraction_data"]:
+            vehicle_data = conversation["extraction_data"]["vehicle"]
+            
+            # Match car make against predefined list
+            if "make" in vehicle_data:
+                best_make_match = find_best_match(vehicle_data["make"], CAR_MAKES)
+                if best_make_match:
+                    vehicle_data["make"] = best_make_match
+            
+            # Match car model against models for the selected make
+            if "make" in vehicle_data and "model" in vehicle_data:
+                make = vehicle_data["make"]
+                if make in CAR_MODELS_BY_MAKE:
+                    best_model_match = find_best_match(vehicle_data["model"], CAR_MODELS_BY_MAKE[make])
+                    if best_model_match:
+                        vehicle_data["model"] = best_model_match
+            
+            # Match color against predefined list
+            if "color" in vehicle_data:
+                best_color_match = find_best_match(vehicle_data["color"], CAR_COLORS)
+                if best_color_match:
+                    vehicle_data["color"] = best_color_match
+            
+            # Match usage type against predefined list
+            if "usage" in vehicle_data:
+                best_usage_match = find_best_match(vehicle_data["usage"], VEHICLE_USAGE_TYPES)
+                if best_usage_match:
+                    vehicle_data["usage"] = best_usage_match
+            
+            # Convert yes/no string responses to booleans
+            for field in ["is_registered_in_sa", "is_financed"]:
+                if field in vehicle_data and isinstance(vehicle_data[field], str):
+                    value = vehicle_data[field].lower()
+                    vehicle_data[field] = value in ["yes", "true", "y", "1"]
         
         # Save conversation
         success, error = save_conversation_history(conversation_id, conversation)
@@ -891,6 +1291,7 @@ def insurance_chat_route():
             "conversation_id": conversation_id,
             "assistant_message": assistant_message,
             "conversation_state": conversation_state,
+            "extraction_data": conversation.get("extraction_data", {}),
             "prompt_tokens": prompt_tokens,
             "completion_tokens": completion_tokens,
             "total_tokens": total_tokens
