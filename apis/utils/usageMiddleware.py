@@ -14,7 +14,6 @@ def extract_usage_metrics(response):
     metrics = {
         "user_id": getattr(g, 'user_id', None),
         "endpoint_id": DatabaseService.get_endpoint_id_by_path(request.path),
-        "api_log_id": None,  # Will be set later
         "images_generated": 0,
         "audio_seconds_processed": 0,
         "pages_processed": 0,
@@ -109,30 +108,28 @@ def extract_usage_metrics(response):
         logger.error(f"Error extracting usage metrics: {str(e)}")
         return metrics
 
-def log_usage_metrics(metrics):
-    """Log usage metrics to database"""
+def log_usage_metrics_and_update_api_log(metrics, api_log_id, usage_id):
+    """Log usage metrics to database and update the api_logs table with the usage ID"""
     try:
         conn = DatabaseService.get_connection()
         cursor = conn.cursor()
         
+        # 1. Insert into user_usage table
         query = """
         INSERT INTO user_usage (
-            id, api_log_id, user_id, endpoint_id, timestamp,
+            id, user_id, endpoint_id, timestamp,
             images_generated, audio_seconds_processed, pages_processed,
             documents_processed, model_used, prompt_tokens,
             completion_tokens, total_tokens, cached_tokens, files_uploaded
         )
         VALUES (
-            ?, ?, ?, ?, DATEADD(HOUR, 2, GETUTCDATE()),
+            ?, ?, ?, DATEADD(HOUR, 2, GETUTCDATE()),
             ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
         )
         """
         
-        metrics_id = str(uuid.uuid4())
-        
         cursor.execute(query, [
-            metrics_id,
-            metrics["api_log_id"],
+            usage_id,
             metrics["user_id"],
             metrics["endpoint_id"],
             metrics["images_generated"],
@@ -147,16 +144,64 @@ def log_usage_metrics(metrics):
             metrics["files_uploaded"]
         ])
         
+        # 2. Update the api_logs table with the user_usage_id
+        if api_log_id:
+            update_query = """
+            UPDATE api_logs
+            SET user_usage_id = ?
+            WHERE id = ?
+            """
+            
+            cursor.execute(update_query, [usage_id, api_log_id])
+            
+            rows_affected = cursor.rowcount
+            if rows_affected > 0:
+                logger.info(f"Updated API log {api_log_id} with usage ID {usage_id}")
+            else:
+                logger.warning(f"No API log found with ID {api_log_id} to update")
+        
         conn.commit()
         cursor.close()
         conn.close()
         
-        logger.info(f"Usage metrics logged successfully: {metrics_id}, linked to API log: {metrics['api_log_id']}")
+        logger.info(f"Usage metrics logged with ID: {usage_id}" + (f", linked to API log: {api_log_id}" if api_log_id else ""))
         return True
         
     except Exception as e:
         logger.error(f"Error logging usage metrics: {str(e)}")
         return False
+
+def find_most_recent_api_log(user_id, endpoint_id, window_seconds=10):
+    """Find the most recent API log for this user and endpoint"""
+    try:
+        conn = DatabaseService.get_connection()
+        cursor = conn.cursor()
+        
+        query = """
+        SELECT TOP 1 id
+        FROM api_logs
+        WHERE user_id = ?
+        AND endpoint_id = ?
+        AND timestamp >= DATEADD(SECOND, -?, DATEADD(HOUR, 2, GETUTCDATE()))
+        ORDER BY timestamp DESC
+        """
+        
+        cursor.execute(query, [user_id, endpoint_id, window_seconds])
+        result = cursor.fetchone()
+        
+        cursor.close()
+        conn.close()
+        
+        if result:
+            logger.info(f"Found recent API log: {result[0]}")
+            return result[0]
+        
+        logger.warning(f"No recent API log found for user {user_id} and endpoint {endpoint_id}")
+        return None
+        
+    except Exception as e:
+        logger.error(f"Error finding recent API log: {str(e)}")
+        return None
 
 def track_usage(f):
     @wraps(f)
@@ -176,40 +221,18 @@ def track_usage(f):
                     logger.warning(f"Cannot log usage metrics: missing endpoint_id for {request.path}")
                 return response
             
-            # Try multiple places to find the API log ID
-            api_log_id = None
+            # Generate a new UUID for the usage metrics
+            usage_id = str(uuid.uuid4())
             
-            # 1. Try Flask's g object first (this is what logMiddleware should set)
-            if hasattr(g, 'current_api_log_id'):
-                api_log_id = g.current_api_log_id
-                logger.info(f"Found API log ID in g.current_api_log_id: {api_log_id}")
+            # Try to find the most recent API log for this user and endpoint
+            api_log_id = find_most_recent_api_log(
+                metrics["user_id"], 
+                metrics["endpoint_id"],
+                window_seconds=10
+            )
             
-            # 2. Try request object attribute (backup method)
-            if not api_log_id and hasattr(request, '_api_log_id'):
-                api_log_id = request._api_log_id
-                logger.info(f"Found API log ID in request._api_log_id: {api_log_id}")
-            
-            # 3. If still not found, try looking up the most recent log from the database
-            if not api_log_id:
-                logger.warning("API log ID not found in g or request, trying database lookup")
-                api_log_id = DatabaseService.get_latest_api_log_id(
-                    request.path,
-                    metrics["user_id"],
-                    window_seconds=10  # Look for logs in the last 10 seconds
-                )
-                
-                if api_log_id:
-                    logger.info(f"Found API log ID via database lookup: {api_log_id}")
-            
-            if not api_log_id:
-                logger.warning(f"No API log ID found. Usage metrics will not be linked to API logs.")
-                return response
-            
-            # Set the API log ID in the metrics
-            metrics["api_log_id"] = api_log_id
-            
-            # Log usage metrics to database
-            log_usage_metrics(metrics)
+            # Log usage metrics and update the api_logs table
+            log_usage_metrics_and_update_api_log(metrics, api_log_id, usage_id)
             
         except Exception as e:
             # Log the error but don't affect the response
