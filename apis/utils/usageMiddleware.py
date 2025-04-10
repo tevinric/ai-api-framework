@@ -218,21 +218,6 @@ def track_usage(f):
         # Get endpoint ID
         endpoint_id = DatabaseService.get_endpoint_id_by_path(request.path)
         
-        # Store a request identifier in g
-        request_identifier = f"{user_id}_{endpoint_id}_{int(time.time() * 1000)}"
-        g.current_request_identifier = request_identifier
-        
-        # Create an API log entry directly - we'll use this if necessary
-        api_log_id = None
-        if user_id and endpoint_id:
-            try:
-                api_log_id = log_directly_to_api_logs(user_id, endpoint_id, request.method)
-                # Store this in g so api_logger can use it if needed
-                if api_log_id:
-                    g.track_usage_log_id = api_log_id
-            except:
-                pass
-        
         # Execute the API function and get the response
         response = f(*args, **kwargs)
         
@@ -250,12 +235,24 @@ def track_usage(f):
                 if not metrics["endpoint_id"]:
                     logger.warning(f"Cannot log usage metrics: missing endpoint_id for {request.path}")
                 return response
-                
-            # Set the API log ID to the one we created directly
+            
+            # IMPORTANT CHANGE: First check if logMiddleware has set an API log ID
+            api_log_id = getattr(g, 'current_api_log_id', None)
+            
+            if api_log_id:
+                logger.info(f"Using API log ID from logMiddleware: {api_log_id}")
+            else:
+                # Fallback: Only create a new log if one doesn't exist
+                logger.warning(f"No API log ID found from logMiddleware. Creating fallback log entry.")
+                api_log_id = log_directly_to_api_logs(user_id or metrics["user_id"], 
+                                                     endpoint_id or metrics["endpoint_id"], 
+                                                     request.method)
+            
+            # Set the API log ID in the metrics
             metrics["api_log_id"] = api_log_id
                 
             if not metrics["api_log_id"]:
-                logger.warning(f"Could not create or find API log ID for user {metrics['user_id']} and endpoint {metrics['endpoint_id']}")
+                logger.error(f"Could not create or find API log ID for user {metrics['user_id']} and endpoint {metrics['endpoint_id']}")
                 return response
                 
             # Log usage metrics to database
