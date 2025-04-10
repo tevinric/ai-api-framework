@@ -105,8 +105,8 @@ def api_logger(f):
             except:
                 response_data = None
                 
-            # Log successful request - CRITICAL CHANGE: Store the returned log_id
-            db_log_id = DatabaseService.log_api_call(
+            # Log successful request - IMPORTANT: Store the returned log_id
+            log_id = DatabaseService.log_api_call(
                 endpoint_id=endpoint_id,
                 user_id=user_id,
                 token_id=token_id,
@@ -120,10 +120,15 @@ def api_logger(f):
                 response_body=json.dumps(response_data) if response_data else None
             )
             
-            # Store the actual DB log ID in g for usageMiddleware to access
-            if db_log_id:
-                g.current_api_log_id = db_log_id
-                logger.debug(f"Stored API log ID in g.current_api_log_id: {db_log_id}")
+            # Store the log ID in g for usageMiddleware to access
+            if log_id:
+                # Set in Flask g object
+                g.current_api_log_id = log_id
+                # Also set directly on request object as a backup
+                setattr(request, '_api_log_id', log_id)
+                logger.info(f"API Log ID set: {log_id}")
+            else:
+                logger.warning("Failed to get API Log ID from DatabaseService")
             
             return response
             
@@ -155,6 +160,8 @@ def api_logger(f):
             # Store the error log ID in g
             if error_log_id:
                 g.current_api_log_id = error_log_id
+                setattr(request, '_api_log_id', error_log_id)
+                logger.info(f"Error API Log ID set: {error_log_id}")
             
             # Re-raise the exception
             raise
