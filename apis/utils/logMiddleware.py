@@ -105,14 +105,8 @@ def api_logger(f):
             except:
                 response_data = None
                 
-            # Generate a log ID
-            log_id = str(uuid.uuid4())
-            
-            # Store the log ID in g for usageMiddleware to access
-            g.current_api_log_id = log_id
-                
-            # Log successful request
-            DatabaseService.log_api_call(
+            # Log successful request - CRITICAL CHANGE: Store the returned log_id
+            db_log_id = DatabaseService.log_api_call(
                 endpoint_id=endpoint_id,
                 user_id=user_id,
                 token_id=token_id,
@@ -125,6 +119,11 @@ def api_logger(f):
                 ip_address=ip_address,
                 response_body=json.dumps(response_data) if response_data else None
             )
+            
+            # Store the actual DB log ID in g for usageMiddleware to access
+            if db_log_id:
+                g.current_api_log_id = db_log_id
+                logger.debug(f"Stored API log ID in g.current_api_log_id: {db_log_id}")
             
             return response
             
@@ -139,7 +138,7 @@ def api_logger(f):
             user_id = get_user_id_from_request()
             
             # Log failed request
-            DatabaseService.log_api_call(
+            error_log_id = DatabaseService.log_api_call(
                 endpoint_id=endpoint_id,
                 user_id=user_id,
                 token_id=token_id,
@@ -152,6 +151,10 @@ def api_logger(f):
                 ip_address=ip_address,
                 error_message=str(e)
             )
+            
+            # Store the error log ID in g
+            if error_log_id:
+                g.current_api_log_id = error_log_id
             
             # Re-raise the exception
             raise
