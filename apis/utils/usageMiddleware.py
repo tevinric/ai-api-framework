@@ -114,17 +114,19 @@ def log_usage_metrics_and_update_api_log(metrics, api_log_id, usage_id):
         conn = DatabaseService.get_connection()
         cursor = conn.cursor()
         
-        # 1. Insert into user_usage table
+        # 1. Insert into user_usage table with api_log_id field
         query = """
         INSERT INTO user_usage (
             id, user_id, endpoint_id, timestamp,
             images_generated, audio_seconds_processed, pages_processed,
             documents_processed, model_used, prompt_tokens,
-            completion_tokens, total_tokens, cached_tokens, files_uploaded
+            completion_tokens, total_tokens, cached_tokens, files_uploaded,
+            api_log_id
         )
         VALUES (
             ?, ?, ?, DATEADD(HOUR, 2, GETUTCDATE()),
-            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+            ?
         )
         """
         
@@ -141,7 +143,8 @@ def log_usage_metrics_and_update_api_log(metrics, api_log_id, usage_id):
             metrics["completion_tokens"],
             metrics["total_tokens"],
             metrics["cached_tokens"],
-            metrics["files_uploaded"]
+            metrics["files_uploaded"],
+            api_log_id  # Add api_log_id parameter
         ])
         
         # 2. Update the api_logs table with the user_usage_id
