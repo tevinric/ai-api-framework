@@ -75,6 +75,43 @@ VEHICLE_USAGE_TYPES = [
     "Private and full business"
 ]
 
+# Cover types
+COVER_TYPES = [
+    "Comprehensive",
+    "Advensure",
+    "Third Party, Fire and Theft",
+    "Auto&General Expresss 1",
+    "Auto&General Express 2",
+    "Auto&General Express 3"
+]
+
+# Insured value options
+INSURED_VALUE_OPTIONS = [
+    "Market Value",
+    "Retail value",
+    "Trade value",
+    "BetterCar"
+]
+
+# Night parking locations
+NIGHT_PARKING_LOCATIONS = [
+    "Basement",
+    "Carport",
+    "Driveway/yard",
+    "Garage",
+    "Open Parking lot",
+    "Pevement/street"
+]
+
+# Night parking security types
+NIGHT_PARKING_SECURITY_TYPES = [
+    "Security guarded access control",
+    "Electronic access control",
+    "Locked gate",
+    "None"
+]
+
+
 # Define system message for insurance bot - This guides GPT-4o on how to behave
 INSURANCE_BOT_SYSTEM_MESSAGE = """
 You are InsuranceBot, a helpful insurance customer service assistant. Your job is to help customers with various insurance-related needs:
@@ -125,6 +162,35 @@ FOR VEHICLE INSURANCE QUOTES:
   * If the user's response doesn't match one of these options, ask them to select a valid option
 - Ask if the car is registered in South Africa (Yes or No)
 - Ask if the car is financed (Yes or No)
+- Ask for the preferred cover type, with these specific options:
+  1. Comprehensive: Covers the loss of, or damage of your car due to an accident, regardless of who is at fault - theft, weather, malicious damage, fire and accidental damage you causes to someone else's car or property. 
+  2. Advensure: Comprehensive cover with some added benefits for you 4x4 or SUV cars.
+  3. Third Party, Fire and Theft: Cover for damages to your car as a direct result of fire, explosions, lightning or theft, including damages your car may cause to some else's car or property, for which you are legally liable. 
+  4. Auto&General Expresss 1: You are only covered for damages your car caused to someone else's car or property for which you are legally liable, and if your car is stolen.
+  5. Auto&General Express 2: You are covered for hail damages, damages your car caused to someone else's car or property for which you are legally liable, and if your car is written off or stolen.
+  6. Auto&General Express 3: You are covered for limited accident damage, hail damages, damages your car caused to someone else's car or property for which you are legally liable and if your car is written off or stolen.
+  * Ask the user to select one of these specific options
+- Ask for the preferred insured value, with these specific options:
+  1. Market Value: In the event of a claim, your car will be covered for the average amount your car would sell for today
+  2. Retail value: We will pay you the price you would expect to pay for your car if you bought it from a motor dealer. This attracts a higher premium, but also means you will get a higher payout when you claim.
+  3. Trade value: we will pay you the estimated amount the dealership would offer you for your car after inspecting it. This will provide you with the lowest possible premium, but also the lowest payout when you claim.
+  4. BetterCar: We will pay out for, or replace, your car with the same model that is one year newer than your insured car, in the event of write off (this exludes thef related claims_. If there's no newer model of the car, we will pay out 15% more than your car's retail value.
+  * Ask the user to select one of these specific options
+- Ask in which area or suburb the car is normally parked at night
+- Ask where the car is normally parked at night, with these specific options:
+  1. Basement
+  2. Carport
+  3. Driveway/yard
+  4. Garage
+  5. Open Parking lot
+  6. Pevement/street
+  * Ask the user to select one of these specific options
+- Ask what type of security is available where the car is parked at night, with these specific options:
+  1. Security guarded access control
+  2. Electronic access control
+  3. Locked gate
+  4. None
+  * Inform the user they can select multiple options
 - Before using the get_quote tool, provide a clear summary of all collected information and confirm with the user
 - Once you have all required information and the user confirms, use the get_quote tool
 
@@ -275,9 +341,61 @@ INSURANCE_TOOLS = [
                             "is_financed": {
                                 "type": "boolean",
                                 "description": "Whether the vehicle is financed"
+                            },
+                            "cover_type": {
+                                "type": "string",
+                                "description": "Type of insurance coverage",
+                                "enum": [
+                                    "Comprehensive",
+                                    "Advensure",
+                                    "Third Party, Fire and Theft",
+                                    "Auto&General Expresss 1",
+                                    "Auto&General Express 2",
+                                    "Auto&General Express 3"
+                                ]
+                            },
+                            "insured_value": {
+                                "type": "string",
+                                "description": "Preferred insured value option",
+                                "enum": [
+                                    "Market Value",
+                                    "Retail value",
+                                    "Trade value",
+                                    "BetterCar"
+                                ]
+                            },
+                            "night_parking_area": {
+                                "type": "string",
+                                "description": "Area or suburb where the car is normally parked at night"
+                            },
+                            "night_parking_location": {
+                                "type": "string",
+                                "description": "Location type where the car is normally parked at night",
+                                "enum": [
+                                    "Basement",
+                                    "Carport",
+                                    "Driveway/yard",
+                                    "Garage",
+                                    "Open Parking lot",
+                                    "Pevement/street"
+                                ]
+                            },
+                            "night_parking_security": {
+                                "type": "array",
+                                "description": "Security features where the car is parked at night",
+                                "items": {
+                                    "type": "string",
+                                    "enum": [
+                                        "Security guarded access control",
+                                        "Electronic access control",
+                                        "Locked gate",
+                                        "None"
+                                    ]
+                                }
                             }
                         },
-                        "required": ["make", "model", "year", "color", "usage", "is_registered_in_sa", "is_financed"]
+                        "required": ["make", "model", "year", "color", "usage", "is_registered_in_sa", "is_financed", 
+                                    "cover_type", "insured_value", "night_parking_area", "night_parking_location", "night_parking_security"]
                     },
                     "home_details": {
                         "type": "object",
@@ -502,7 +620,10 @@ def check_for_wrap_up_opportunity(conversation):
             return False
         
         vehicle = extraction_data["vehicle"]
-        required_fields = ["make", "model", "year", "color", "usage", "is_registered_in_sa", "is_financed"]
+        required_fields = [
+            "make", "model", "year", "color", "usage", "is_registered_in_sa", "is_financed",
+            "cover_type", "insured_value", "night_parking_area", "night_parking_location", "night_parking_security"
+        ]
         
         # Customer info also needed
         if "customer_name" not in extraction_data or "id_number" not in extraction_data:
@@ -516,7 +637,7 @@ def check_for_wrap_up_opportunity(conversation):
         # If we have all information, we should wrap up
         return True
         
-    # For home insurance
+    # For home insurance and contents insurance (unchanged)
     elif insurance_type == "home":
         # Check if we have all the required information
         if "customer_name" not in extraction_data or "id_number" not in extraction_data:
@@ -586,6 +707,16 @@ def generate_wrap_up_summary(conversation):
         is_registered_in_sa = "Yes" if vehicle.get("is_registered_in_sa") else "No"
         is_financed = "Yes" if vehicle.get("is_financed") else "No"
         
+        # New fields
+        cover_type = vehicle.get("cover_type", "Not provided")
+        insured_value = vehicle.get("insured_value", "Not provided")
+        night_parking_area = vehicle.get("night_parking_area", "Not provided")
+        night_parking_location = vehicle.get("night_parking_location", "Not provided")
+        night_parking_security = vehicle.get("night_parking_security", [])
+        
+        # Format night_parking_security as a comma-separated list
+        night_parking_security_str = ", ".join(night_parking_security) if night_parking_security else "None"
+        
         # Add to summary
         summary += f"- Insurance Type: Vehicle Insurance\n"
         summary += f"- Vehicle Make: {make}\n"
@@ -595,8 +726,14 @@ def generate_wrap_up_summary(conversation):
         summary += f"- Vehicle Usage: {usage}\n"
         summary += f"- Registered in South Africa: {is_registered_in_sa}\n"
         summary += f"- Vehicle Financed: {is_financed}\n"
+        summary += f"- Cover Type: {cover_type}\n"
+        summary += f"- Insured Value: {insured_value}\n"
+        summary += f"- Night Parking Area: {night_parking_area}\n"
+        summary += f"- Night Parking Location: {night_parking_location}\n"
+        summary += f"- Night Parking Security: {night_parking_security_str}\n"
         
     elif insurance_type == "home":
+        # Home insurance section remains unchanged
         home = extraction_data.get("home", {})
         home_type = home.get("home_type", "Not provided")
         
@@ -605,6 +742,7 @@ def generate_wrap_up_summary(conversation):
         summary += f"- Home Type: {home_type}\n"
         
     elif insurance_type == "contents":
+        # Contents insurance section remains unchanged
         contents = extraction_data.get("contents", {})
         contents_value = contents.get("contents_value", "Not provided")
         
@@ -720,6 +858,33 @@ def extract_info_from_messages(conversation):
                 if "financed" in user_message:
                     is_financed = "yes" in user_message or "yeah" in user_message
                     update_extraction_data(conversation, "vehicle_is_financed", is_financed)
+                
+                # Extract cover type
+                for cover_type in COVER_TYPES:
+                    if cover_type.lower() in user_message:
+                        update_extraction_data(conversation, "vehicle_cover_type", cover_type)
+                        break
+                
+                # Extract insured value
+                for value_option in INSURED_VALUE_OPTIONS:
+                    if value_option.lower() in user_message:
+                        update_extraction_data(conversation, "vehicle_insured_value", value_option)
+                        break
+                
+                # Extract night parking location
+                for location in NIGHT_PARKING_LOCATIONS:
+                    if location.lower() in user_message:
+                        update_extraction_data(conversation, "vehicle_night_parking_location", location)
+                        break
+                
+                # Extract night parking security (multiple selection)
+                security_types = []
+                for security_type in NIGHT_PARKING_SECURITY_TYPES:
+                    if security_type.lower() in user_message:
+                        security_types.append(security_type)
+                
+                if security_types:
+                    update_extraction_data(conversation, "vehicle_night_parking_security", security_types)
     
     return conversation
 
@@ -884,6 +1049,55 @@ def get_quote(customer_name, id_number, insurance_type, address, vehicle_details
             if 'is_registered_in_sa' in vehicle_details and not vehicle_details['is_registered_in_sa']:
                 base_premium *= 1.25  # 25% increase for non-SA registration
             
+            # Adjust for cover type
+            if 'cover_type' in vehicle_details:
+                cover_type = vehicle_details['cover_type']
+                cover_multipliers = {
+                    "Comprehensive": 1.3,
+                    "Advensure": 1.4,
+                    "Third Party, Fire and Theft": 0.7,
+                    "Auto&General Expresss 1": 0.5,
+                    "Auto&General Express 2": 0.6,
+                    "Auto&General Express 3": 0.65
+                }
+                base_premium *= cover_multipliers.get(cover_type, 1.0)
+            
+            # Adjust for insured value
+            if 'insured_value' in vehicle_details:
+                value_type = vehicle_details['insured_value']
+                value_multipliers = {
+                    "Market Value": 0.9,
+                    "Retail value": 1.1,
+                    "Trade value": 0.8,
+                    "BetterCar": 1.25
+                }
+                base_premium *= value_multipliers.get(value_type, 1.0)
+            
+            # Adjust for night parking location
+            if 'night_parking_location' in vehicle_details:
+                location = vehicle_details['night_parking_location']
+                location_multipliers = {
+                    "Garage": 0.9,
+                    "Basement": 0.9,
+                    "Carport": 1.0,
+                    "Driveway/yard": 1.05,
+                    "Open Parking lot": 1.1,
+                    "Pevement/street": 1.2
+                }
+                base_premium *= location_multipliers.get(location, 1.0)
+            
+            # Adjust for night parking security
+            if 'night_parking_security' in vehicle_details and vehicle_details['night_parking_security']:
+                security_types = vehicle_details['night_parking_security']
+                if "Security guarded access control" in security_types:
+                    base_premium *= 0.9
+                if "Electronic access control" in security_types:
+                    base_premium *= 0.95
+                if "Locked gate" in security_types:
+                    base_premium *= 0.97
+                if "None" in security_types or not security_types:
+                    base_premium *= 1.1
+            
             # Round to 2 decimal places and convert to string with R prefix
             premium = f"R{base_premium:.2f}"
         else:
@@ -917,7 +1131,7 @@ def get_quote(customer_name, id_number, insurance_type, address, vehicle_details
             }
         }
     }
-
+    
 def submit_claim(policy_number, incident_date, incident_description, claim_type):
     """Submit an insurance claim"""
     # This would be replaced with an actual API call
