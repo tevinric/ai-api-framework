@@ -158,73 +158,13 @@ def log_usage_metrics(metrics):
         logger.error(f"Error logging usage metrics: {str(e)}")
         return False
 
-def log_directly_to_api_logs(user_id, endpoint_id, method):
-    """Create an API log entry directly and return its ID"""
-    try:
-        log_id = str(uuid.uuid4())
-        
-        result = DatabaseService.log_api_call(
-            endpoint_id=endpoint_id,
-            user_id=user_id,
-            request_method=method,
-            token_id=None,
-            request_headers=None,
-            request_body=None,
-            response_status=200,
-            response_time_ms=0,
-            user_agent=None,
-            ip_address=None,
-            error_message=None,
-            response_body=None
-        )
-        
-        # If the log_api_call function returns a value, it's the log ID
-        if result:
-            return result
-            
-        # Otherwise, use our generated ID (less ideal but workable)
-        return log_id
-        
-    except Exception as e:
-        logger.error(f"Error creating API log entry: {str(e)}")
-        return None
-
 def track_usage(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        # Define variables for tracking
-        user_id = None
-        endpoint_id = None
-        
-        # First, capture basic request info before executing the function
-        # This ensures we have the data even if the function modifies g
-        user_id = getattr(g, 'user_id', None)
-        if not user_id:
-            # Try to get from API-Key
-            api_key = request.headers.get('API-Key')
-            if api_key:
-                user_info = DatabaseService.validate_api_key(api_key)
-                if user_info:
-                    user_id = user_info["id"]
-            
-            # Try to get from X-Token
-            if not user_id:
-                token = request.headers.get('X-Token')
-                if token:
-                    token_details = DatabaseService.get_token_details_by_value(token)
-                    if token_details:
-                        user_id = token_details["user_id"]
-        
-        # Get endpoint ID
-        endpoint_id = DatabaseService.get_endpoint_id_by_path(request.path)
-        
         # Execute the API function and get the response
         response = f(*args, **kwargs)
         
         try:
-            # Wait a short time to ensure any database writes are complete
-            time.sleep(0.1)
-            
             # Extract usage metrics from the response
             metrics = extract_usage_metrics(response)
             
@@ -236,25 +176,18 @@ def track_usage(f):
                     logger.warning(f"Cannot log usage metrics: missing endpoint_id for {request.path}")
                 return response
             
-            # IMPORTANT CHANGE: First check if logMiddleware has set an API log ID
+            # IMPORTANT: Only use the API log ID from logMiddleware
             api_log_id = getattr(g, 'current_api_log_id', None)
             
-            if api_log_id:
-                logger.info(f"Using API log ID from logMiddleware: {api_log_id}")
-            else:
-                # Fallback: Only create a new log if one doesn't exist
-                logger.warning(f"No API log ID found from logMiddleware. Creating fallback log entry.")
-                api_log_id = log_directly_to_api_logs(user_id or metrics["user_id"], 
-                                                     endpoint_id or metrics["endpoint_id"], 
-                                                     request.method)
+            if not api_log_id:
+                logger.warning(f"No API log ID found from logMiddleware. Usage metrics will not be linked to API logs.")
+                return response
+                
+            logger.debug(f"Using API log ID from logMiddleware: {api_log_id}")
             
             # Set the API log ID in the metrics
             metrics["api_log_id"] = api_log_id
-                
-            if not metrics["api_log_id"]:
-                logger.error(f"Could not create or find API log ID for user {metrics['user_id']} and endpoint {metrics['endpoint_id']}")
-                return response
-                
+            
             # Log usage metrics to database
             log_usage_metrics(metrics)
             
