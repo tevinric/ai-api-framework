@@ -807,7 +807,8 @@ Include ALL emotions detected in the text with appropriate confidence scores."""
 def register_sentiment_routes(app):
     """Register sentiment analysis routes with the Flask app"""
     from apis.utils.logMiddleware import api_logger
+    from apis.utils.usageMiddleware import track_usage
     
     # No longer using balanceMiddleware's check_balance since we're handling billing directly in the route
-    app.route('/nlp/sentiment', methods=['POST'])(api_logger(sentiment_analysis_route))
-    app.route('/nlp/sentiment/advanced', methods=['POST'])(api_logger(advanced_sentiment_analysis_route))
+    app.route('/nlp/sentiment', methods=['POST'])(track_usage(api_logger(sentiment_analysis_route)))
+    app.route('/nlp/sentiment/advanced', methods=['POST'])(track_usage(api_logger(advanced_sentiment_analysis_route)))

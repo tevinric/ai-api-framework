@@ -303,4 +303,4 @@ def register_llm_llama(app):
     from apis.utils.balanceMiddleware import check_balance
     from apis.utils.usageMiddleware import track_usage
     
-    app.route('/llm/llama', methods=['POST'])(api_logger(track_usage(check_balance(llama_route))))
+    app.route('/llm/llama', methods=['POST'])(track_usage(api_logger(check_balance(llama_route))))

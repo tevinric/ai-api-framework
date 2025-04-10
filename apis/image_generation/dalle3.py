@@ -367,5 +367,6 @@ def register_image_generation_routes(app):
     """Register routes with the Flask app"""
     from apis.utils.logMiddleware import api_logger
     from apis.utils.balanceMiddleware import check_balance
+    from apis.utils.usageMiddleware import track_usage
     
-    app.route('/image-generation/dalle3', methods=['POST'])(api_logger(check_balance(custom_image_generation_route)))
+    app.route('/image-generation/dalle3', methods=['POST'])(track_usage(api_logger(check_balance(custom_image_generation_route))))

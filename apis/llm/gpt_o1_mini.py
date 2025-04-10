@@ -252,4 +252,4 @@ def register_llm_o1_mini(app):
     from apis.utils.balanceMiddleware import check_balance
     from apis.utils.usageMiddleware import track_usage
         
-    app.route('/llm/o1-mini', methods=['POST'])(api_logger(track_usage(check_balance(o1_mini_route))))
+    app.route('/llm/o1-mini', methods=['POST'])(track_usage(api_logger(check_balance(o1_mini_route))))

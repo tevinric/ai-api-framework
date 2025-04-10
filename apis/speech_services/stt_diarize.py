@@ -17,6 +17,9 @@ import tiktoken
 # CONFIGURE LOGGING
 logger = logging.getLogger(__name__)
 
+if gpt4o_mini_service:
+    model_deplopyment = "gpt-4o-mini"
+
 # Speech to Text API configuration
 STT_API_KEY = os.environ.get("MS_STT_API_KEY")
 STT_ENDPOINT = os.environ.get("MS_STT_ENDPOINT")
@@ -433,7 +436,8 @@ def enhanced_speech_to_text_route():
             "completion_tokens": total_completion_tokens,
             "total_tokens": total_tokens,
             "cached_tokens": total_cached_tokens,
-            "embedded_tokens": total_embedded_tokens
+            "embedded_tokens": total_embedded_tokens,
+            "model_used":model_deplopyment
         }
         
         return create_api_response(response_data, 200)
@@ -446,5 +450,6 @@ def enhanced_speech_to_text_route():
         }, 500)
 
 def register_speech_to_text_diarize_routes(app):
+    from apis.utils.usageMiddleware import track_usage
     """Register enhanced speech to text routes with the Flask app"""
-    app.route('/speech/stt_diarize', methods=['POST'])(api_logger(check_balance(enhanced_speech_to_text_route)))
+    app.route('/speech/stt_diarize', methods=['POST'])(track_usage(api_logger(check_balance(enhanced_speech_to_text_route))))

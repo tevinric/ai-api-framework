@@ -499,4 +499,4 @@ def sa_id_ocr_route():
 def register_sa_id_ocr_routes(app):
     from apis.utils.usageMiddleware import track_usage
     """Register SA ID OCR routes with the Flask app"""
-    app.route('/ocr/sa_id_card', methods=['POST'])(api_logger(track_usage(check_balance(sa_id_ocr_route))))
+    app.route('/ocr/sa_id_card', methods=['POST'])(track_usage(api_logger(check_balance(sa_id_ocr_route))))

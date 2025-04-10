@@ -1598,9 +1598,10 @@ def create_vectorstore_from_string_route():
             logger.error(f"Error cleaning up temporary directory: {str(e)}")
 
 def register_vectorstore_routes(app):
+    from apis.utils.usageMiddleware import track_usage
     """Register vectorstore routes with the Flask app"""
-    app.route('/rag/vectorstore/document', methods=['POST'])(api_logger(check_balance(create_vectorstore_route)))
-    app.route('/rag/vectorstore/string', methods=['POST'])(api_logger(check_balance(create_vectorstore_from_string_route)))
-    app.route('/rag/vectorstore/load', methods=['POST'])(api_logger(check_balance(load_vectorstore_route)))
+    app.route('/rag/vectorstore/document', methods=['POST'])(track_usage(api_logger(check_balance(create_vectorstore_route))))
+    app.route('/rag/vectorstore/string', methods=['POST'])(track_usage(api_logger(check_balance(create_vectorstore_from_string_route))))
+    app.route('/rag/vectorstore/load', methods=['POST'])(track_usage(api_logger(check_balance(load_vectorstore_route))))
     app.route('/rag/vectorstore', methods=['DELETE'])(api_logger(check_balance(delete_vectorstore_route)))
     app.route('/rag/vectorstore/list', methods=['GET'])(api_logger(check_balance(list_vectorstores_route)))

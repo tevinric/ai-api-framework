@@ -20,6 +20,8 @@ logger = logging.getLogger(__name__)
 # Get OpenAI client
 openai_client = get_openai_client()
 
+model_deployment ="gpt-4o"
+
 # Define container for insurance conversation histories
 INSURANCE_CONVERSATION_CONTAINER = "insurance-bot-conversations"
 STORAGE_ACCOUNT = os.environ.get("AZURE_STORAGE_ACCOUNT")
@@ -1864,7 +1866,8 @@ def insurance_chat_route():
             "is_wrap_up": is_wrap_up,
             "prompt_tokens": prompt_tokens,
             "completion_tokens": completion_tokens,
-            "total_tokens": total_tokens
+            "total_tokens": total_tokens,
+            "model_used": model_deployment
         }
         
         return create_api_response(response_data, 200)
@@ -2017,6 +2020,7 @@ def delete_insurance_chat_route():
         }, 500)
 
 def register_insurance_bot_routes(app):
+    from apis.utils.usageMiddleware import track_usage
     """Register insurance bot routes with the Flask app"""
-    app.route('/insurance-bot/chat', methods=['POST'])(api_logger(insurance_chat_route))
+    app.route('/insurance-bot/chat', methods=['POST'])(track_usage(api_logger(insurance_chat_route)))
     app.route('/insurance-bot/chat', methods=['DELETE'])(api_logger(delete_insurance_chat_route))

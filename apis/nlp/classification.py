@@ -733,7 +733,8 @@ The sum of confidence scores does not need to equal 1. Assign each category a sc
 def register_nlp_routes(app):
     """Register NLP routes with the Flask app"""
     from apis.utils.logMiddleware import api_logger
+    from apis.utils.usageMiddleware import track_usage
     
     # No longer using balanceMiddleware's check_balance since we're handling billing directly in the route
-    app.route('/nlp/classify', methods=['POST'])(api_logger(simple_classification_route))
-    app.route('/nlp/classify/multi', methods=['POST'])(api_logger(multiclass_classification_route))
+    app.route('/nlp/classify', methods=['POST'])(track_usage(api_logger(simple_classification_route)))
+    app.route('/nlp/classify/multi', methods=['POST'])(track_usage(api_logger(multiclass_classification_route)))
