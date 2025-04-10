@@ -1276,7 +1276,7 @@ def format_conversation_for_openai(conversation):
         elif role == "function":
             messages.append({
                 "role": "assistant",
-                "content": None,
+                "content": "",  # Changed from None to empty string
                 "function_call": {
                     "name": msg.get("name"),
                     "arguments": msg.get("arguments", "{}")
@@ -1290,7 +1290,7 @@ def format_conversation_for_openai(conversation):
             })
     
     return messages
-
+    
 def determine_conversation_state(conversation, assistant_message, user_message):
     """Determine the current state of the conversation based on content"""
     # Get the current state
