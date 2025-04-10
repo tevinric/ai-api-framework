@@ -245,7 +245,7 @@ register_sentiment_routes(app)
 from apis.nlp.classification import register_nlp_routes
 register_nlp_routes(app)
 
-from apis.insurance_bot import register_routes as register_insurance_bot_routes
+from apis.llm_conversation.insurance_conversation import register_insurance_bot_routes
 register_insurance_bot_routes(app)
 
 if __name__ == '__main__':

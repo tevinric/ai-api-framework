@@ -277,5 +277,6 @@ def register_llm_deepseek_v3(app):
     """Register routes with the Flask app"""
     from apis.utils.logMiddleware import api_logger
     from apis.utils.balanceMiddleware import check_balance
+    from apis.utils.usageMiddleware import track_usage
     
-    app.route('/llm/deepseek-v3', methods=['POST'])(api_logger(check_balance(deepseek_v3_route)))
+    app.route('/llm/deepseek-v3', methods=['POST'])(api_logger(track_usage(check_balance(deepseek_v3_route))))

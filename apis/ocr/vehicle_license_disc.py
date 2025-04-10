@@ -527,5 +527,6 @@ def vehicle_license_disc_route():
         }, 500)
 
 def register_vehicle_license_disc_routes(app):
+    from apis.utils.usageMiddleware import track_usage
     """Register vehicle license disc OCR routes with the Flask app"""
-    app.route('/ocr/vehicle_license_disc', methods=['POST'])(api_logger(check_balance(vehicle_license_disc_route)))
+    app.route('/ocr/vehicle_license_disc', methods=['POST'])(api_logger(track_usage(check_balance(vehicle_license_disc_route))))

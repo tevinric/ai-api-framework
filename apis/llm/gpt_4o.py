@@ -263,5 +263,6 @@ def register_llm_gpt_4o(app):
     """Register routes with the Flask app"""
     from apis.utils.logMiddleware import api_logger
     from apis.utils.balanceMiddleware import check_balance
+    from apis.utils.usageMiddleware import track_usage
     
-    app.route('/llm/gpt-4o', methods=['POST'])(api_logger(check_balance(gpt4o_route)))
+    app.route('/llm/gpt-4o', methods=['POST'])(api_logger(track_usage(check_balance(gpt4o_route))))

@@ -250,5 +250,6 @@ def register_llm_o1_mini(app):
     """Register routes with the Flask app"""
     from apis.utils.logMiddleware import api_logger
     from apis.utils.balanceMiddleware import check_balance
-    
-    app.route('/llm/o1-mini', methods=['POST'])(api_logger(check_balance(o1_mini_route)))
+    from apis.utils.usageMiddleware import track_usage
+        
+    app.route('/llm/o1-mini', methods=['POST'])(api_logger(track_usage(check_balance(o1_mini_route))))

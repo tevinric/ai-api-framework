@@ -250,5 +250,6 @@ def speech_to_text_route():
         }, 500)
 
 def register_speech_to_text_routes(app):
+    from apis.utils.usageMiddleware import track_usage
     """Register speech to text routes with the Flask app"""
-    app.route('/speech/stt', methods=['POST'])(api_logger(check_balance(speech_to_text_route)))
+    app.route('/speech/stt', methods=['POST'])(api_logger(track_usage(check_balance(speech_to_text_route))))
