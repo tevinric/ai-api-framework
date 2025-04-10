@@ -176,14 +176,34 @@ def track_usage(f):
                     logger.warning(f"Cannot log usage metrics: missing endpoint_id for {request.path}")
                 return response
             
-            # IMPORTANT: Only use the API log ID from logMiddleware
-            api_log_id = getattr(g, 'current_api_log_id', None)
+            # Try multiple places to find the API log ID
+            api_log_id = None
+            
+            # 1. Try Flask's g object first (this is what logMiddleware should set)
+            if hasattr(g, 'current_api_log_id'):
+                api_log_id = g.current_api_log_id
+                logger.info(f"Found API log ID in g.current_api_log_id: {api_log_id}")
+            
+            # 2. Try request object attribute (backup method)
+            if not api_log_id and hasattr(request, '_api_log_id'):
+                api_log_id = request._api_log_id
+                logger.info(f"Found API log ID in request._api_log_id: {api_log_id}")
+            
+            # 3. If still not found, try looking up the most recent log from the database
+            if not api_log_id:
+                logger.warning("API log ID not found in g or request, trying database lookup")
+                api_log_id = DatabaseService.get_latest_api_log_id(
+                    request.path,
+                    metrics["user_id"],
+                    window_seconds=10  # Look for logs in the last 10 seconds
+                )
+                
+                if api_log_id:
+                    logger.info(f"Found API log ID via database lookup: {api_log_id}")
             
             if not api_log_id:
-                logger.warning(f"No API log ID found from logMiddleware. Usage metrics will not be linked to API logs.")
+                logger.warning(f"No API log ID found. Usage metrics will not be linked to API logs.")
                 return response
-                
-            logger.debug(f"Using API log ID from logMiddleware: {api_log_id}")
             
             # Set the API log ID in the metrics
             metrics["api_log_id"] = api_log_id
