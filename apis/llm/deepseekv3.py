@@ -279,4 +279,4 @@ def register_llm_deepseek_v3(app):
     from apis.utils.balanceMiddleware import check_balance
     from apis.utils.usageMiddleware import track_usage
     
-    app.route('/llm/deepseek-v3', methods=['POST'])(api_logger(track_usage(check_balance(deepseek_v3_route))))
+    app.route('/llm/deepseek-v3', methods=['POST'])(track_usage(api_logger(check_balance(deepseek_v3_route))))
