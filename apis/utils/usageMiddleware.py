@@ -224,12 +224,20 @@ def track_usage(f):
             # Generate a new UUID for the usage metrics
             usage_id = str(uuid.uuid4())
             
-            # Try to find the most recent API log for this user and endpoint
-            api_log_id = find_most_recent_api_log(
-                metrics["user_id"], 
-                metrics["endpoint_id"],
-                window_seconds=10
-            )
+            # First, try to get the API log ID from g object
+            api_log_id = getattr(g, 'current_api_log_id', None)
+            
+            # If not found in g, try to get it from the request object (backup)
+            if not api_log_id:
+                api_log_id = getattr(request, '_api_log_id', None)
+            
+            # If still not found, try to find the most recent API log as fallback
+            if not api_log_id:
+                api_log_id = find_most_recent_api_log(
+                    metrics["user_id"], 
+                    metrics["endpoint_id"],
+                    window_seconds=10
+                )
             
             # Log usage metrics and update the api_logs table
             log_usage_metrics_and_update_api_log(metrics, api_log_id, usage_id)
