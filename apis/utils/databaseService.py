@@ -552,7 +552,6 @@ class DatabaseService:
             conn = DatabaseService.get_connection()
             cursor = conn.cursor()
             
-            # Generate a unique ID for this log entry
             log_id = str(uuid.uuid4())
             
             query = """
@@ -588,7 +587,6 @@ class DatabaseService:
             cursor.close()
             conn.close()
             
-            logger.info(f"API call logged with ID: {log_id}")
             return log_id
             
         except Exception as e:
@@ -596,57 +594,42 @@ class DatabaseService:
             return None
 
     @staticmethod
-    def get_latest_api_log_id(endpoint_path, user_id=None, window_seconds=10):
-        """
-        Get the most recent api_log_id for a given endpoint path and user_id
+    def update_api_log_with_usage_id(api_log_id, usage_id):
+        """Update an api_logs record with the corresponding user_usage_id
         
         Args:
-            endpoint_path (str): The endpoint path
-            user_id (str, optional): The user ID
-            window_seconds (int): Time window in seconds to look for the log
+            api_log_id (str): The ID of the API log entry
+            usage_id (str): The ID of the user_usage entry
             
         Returns:
-            str: The log ID if found, None otherwise
+            bool: True if successful, False otherwise
         """
         try:
             conn = DatabaseService.get_connection()
             cursor = conn.cursor()
             
-            # Get endpoint ID from path
-            endpoint_id = DatabaseService.get_endpoint_id_by_path(endpoint_path)
-            if not endpoint_id:
-                logger.warning(f"Could not find endpoint ID for path: {endpoint_path}")
-                return None
-            
-            # Build the query with optional user_id filter
             query = """
-            SELECT TOP 1 id
-            FROM api_logs
-            WHERE endpoint_id = ?
-            AND timestamp >= DATEADD(SECOND, -?, DATEADD(HOUR, 2, GETUTCDATE()))
+            UPDATE api_logs
+            SET user_usage_id = ?
+            WHERE id = ?
             """
             
-            params = [endpoint_id, window_seconds]
+            cursor.execute(query, [usage_id, api_log_id])
             
-            if user_id:
-                query += " AND user_id = ?"
-                params.append(user_id)
+            # Check if any rows were affected
+            rows_affected = cursor.rowcount
             
-            query += " ORDER BY timestamp DESC"
-            
-            cursor.execute(query, params)
-            result = cursor.fetchone()
-            
+            conn.commit()
             cursor.close()
             conn.close()
             
-            if result:
-                logger.info(f"Found recent API log ID: {result[0]}")
-                return result[0]
+            if rows_affected > 0:
+                logger.info(f"Updated API log {api_log_id} with usage ID {usage_id}")
+                return True
             else:
-                logger.warning(f"No recent API log found for endpoint {endpoint_path} and user {user_id}")
-                return None
-        
+                logger.warning(f"No API log found with ID {api_log_id} to update")
+                return False
+                
         except Exception as e:
-            logger.error(f"Error getting latest API log ID: {str(e)}")
-            return None
+            logger.error(f"Error updating API log with usage ID: {str(e)}")
+            return False
