@@ -12,7 +12,7 @@ from apis.llm_conversation.functions import (
     ensure_complete_extraction_data, is_off_topic_query, extract_info_from_message,
     process_tool_calls, format_conversation_for_openai, normalize_extraction_data,
     get_conversation_history, save_conversation_history, delete_conversation_history,
-    create_api_response
+    create_api_response, validate_make, get_valid_models_for_make
 )
 import logging
 import pytz
@@ -82,6 +82,9 @@ def insurance_chat_route():
             is_quote_complete:
               type: boolean
               description: Whether the quote information collection is complete
+            valid_models:
+              type: array
+              description: List of valid models if a make is specified
             prompt_tokens:
               type: integer
               description: Number of prompt tokens used
@@ -176,6 +179,7 @@ def insurance_chat_route():
         # Flags for special message handling
         is_off_topic = False
         is_quote_complete = False
+        valid_models = []
         
         # Check if this is a new conversation or continuing an existing one
         if conversation_id:
@@ -209,13 +213,22 @@ def insurance_chat_route():
                         "message": f"Error saving conversation: {error}"
                     }, 500)
                 
+                # Normalize the extraction data
+                normalized_data = normalize_extraction_data(conversation.get("extraction_data", {}))
+                conversation["extraction_data"] = normalized_data
+                
+                # Get valid models if make is specified
+                if "make" in normalized_data and normalized_data["make"]:
+                    valid_models = get_valid_models_for_make(normalized_data["make"])
+                
                 # Return the off-topic response with complete extraction data
                 return create_api_response({
                     "conversation_id": conversation_id,
                     "assistant_message": OFF_TOPIC_RESPONSE,
-                    "extraction_data": ensure_complete_extraction_data(conversation.get("extraction_data", {})),
+                    "extraction_data": ensure_complete_extraction_data(normalized_data),
                     "is_off_topic": True,
                     "is_quote_complete": conversation.get("quote_complete", False),
+                    "valid_models": valid_models,
                     "prompt_tokens": 0,  # We didn't call the LLM
                     "completion_tokens": 0,
                     "total_tokens": 0
@@ -233,6 +246,13 @@ def insurance_chat_route():
                 is_off_topic = True
                 logger.info(f"Detected off-topic query for new conversation: {user_message}")
                 
+                # Extract any vehicle info from the off-topic message
+                initial_extraction = {}
+                temp_conversation = {"extraction_data": {}}
+                temp_conversation = extract_info_from_message(temp_conversation, user_message)
+                if temp_conversation["extraction_data"]:
+                    initial_extraction = normalize_extraction_data(temp_conversation["extraction_data"])
+                
                 # Initialize conversation
                 conversation = {
                     "conversation_id": conversation_id,
@@ -243,9 +263,13 @@ def insurance_chat_route():
                         {"role": "user", "content": user_message},
                         {"role": "assistant", "content": OFF_TOPIC_RESPONSE}
                     ],
-                    "extraction_data": {},
+                    "extraction_data": initial_extraction,
                     "quote_complete": False
                 }
+                
+                # Get valid models if make is specified
+                if "make" in initial_extraction and initial_extraction["make"]:
+                    valid_models = get_valid_models_for_make(initial_extraction["make"])
                 
                 # Save conversation
                 success, error = save_conversation_history(conversation_id, conversation)
@@ -255,13 +279,14 @@ def insurance_chat_route():
                         "message": f"Error saving conversation: {error}"
                     }, 500)
                 
-                # Return the off-topic response
+                # Return the off-topic response with any extraction data
                 return create_api_response({
                     "conversation_id": conversation_id,
                     "assistant_message": OFF_TOPIC_RESPONSE,
-                    "extraction_data": ensure_complete_extraction_data({}),
+                    "extraction_data": ensure_complete_extraction_data(initial_extraction),
                     "is_off_topic": True,
                     "is_quote_complete": False,
+                    "valid_models": valid_models,
                     "prompt_tokens": 0,  # We didn't call the LLM
                     "completion_tokens": 0,
                     "total_tokens": 0
@@ -372,6 +397,10 @@ def insurance_chat_route():
         # Update extraction data in the conversation
         conversation["extraction_data"] = extraction_data
         
+        # If a make is specified, get valid models for it
+        if "make" in extraction_data and extraction_data["make"]:
+            valid_models = get_valid_models_for_make(extraction_data["make"])
+        
         # Save conversation
         success, error = save_conversation_history(conversation_id, conversation)
         if not success:
@@ -387,6 +416,7 @@ def insurance_chat_route():
             "extraction_data": ensure_complete_extraction_data(extraction_data),
             "is_off_topic": is_off_topic,
             "is_quote_complete": is_quote_complete,
+            "valid_models": valid_models,
             "prompt_tokens": prompt_tokens,
             "completion_tokens": completion_tokens,
             "total_tokens": total_tokens,
