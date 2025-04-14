@@ -27,7 +27,7 @@ def perform_ocr_on_pdf(pdf_file_path):
     url = 'https://mistral-ocr-2503-deployment.eastus.models.ai.azure.com/v1/ocr'
     
     # API key
-    api_key = 'bRvujzGE0hJK84pArnEfBQGbJpC5olYh'
+    api_key = 'XX'
     
     # Headers
     headers = {
