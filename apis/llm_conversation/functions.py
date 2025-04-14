@@ -55,7 +55,7 @@ def ensure_complete_extraction_data(extraction_data):
         value = complete_data["is_financed"].lower()
         complete_data["is_financed"] = value in ["yes", "true", "y", "1"]
     
-    return complete_data 
+    return complete_data
 
 
 
@@ -412,6 +412,41 @@ def extract_info_from_message(conversation, user_message):
     # Convert message to lowercase for matching
     message_lower = user_message.lower()
     
+    # Extract customer name - look for name patterns
+    name_indicators = ["my name is", "name's", "i am", "i'm", "this is"]
+    for indicator in name_indicators:
+        if indicator in message_lower:
+            # Get the part after the indicator
+            name_part = message_lower.split(indicator, 1)[1].strip()
+            # Extract name (assume name continues until punctuation or end of sentence)
+            name_end = min((pos for pos in [
+                name_part.find("."), 
+                name_part.find(","), 
+                name_part.find("and"), 
+                len(name_part)
+            ] if pos >= 0), default=len(name_part))
+            
+            potential_name = name_part[:name_end].strip()
+            # Only use if it seems like a reasonable name (not too short or too long)
+            if 2 <= len(potential_name.split()) <= 5 and len(potential_name) > 3:
+                # Capitalize each word in the name
+                customer_name = " ".join(word.capitalize() for word in potential_name.split())
+                conversation["extraction_data"]["customer_name"] = customer_name
+                break
+    
+    # Extract ID number - look for digit sequences that could be ID numbers
+    id_indicators = ["id number", "id is", "identity number", "id no", "id no.", "id #"]
+    for indicator in id_indicators:
+        if indicator in message_lower:
+            # Get the part after the indicator
+            id_part = message_lower.split(indicator, 1)[1].strip()
+            # Look for a sequence of digits (South African ID is 13 digits)
+            import re
+            id_matches = re.findall(r'\b\d{7,13}\b', id_part)
+            if id_matches:
+                conversation["extraction_data"]["id_number"] = id_matches[0]
+                break
+    
     # Extract car make
     for make in CAR_MAKES:
         if make.lower() in message_lower:
@@ -460,14 +495,48 @@ def extract_info_from_message(conversation, user_message):
             conversation["extraction_data"]["usage"] = usage_type
             break
     
-    # Extract yes/no answers for registration and financing
-    if "registered in south africa" in message_lower or "registered in sa" in message_lower:
-        is_registered = "yes" in message_lower or "yeah" in message_lower or "correct" in message_lower
-        conversation["extraction_data"]["is_registered_in_sa"] = is_registered
+    # Enhanced extraction for registration status
+    registration_indicators = [
+        "registered in south africa", "registered in sa", 
+        "south african registration", "sa registration", 
+        "is it registered", "vehicle registration"
+    ]
     
-    if "financed" in message_lower:
-        is_financed = "yes" in message_lower or "yeah" in message_lower or "correct" in message_lower
-        conversation["extraction_data"]["is_financed"] = is_financed
+    for indicator in registration_indicators:
+        if indicator in message_lower:
+            # Find affirmative or negative responses
+            affirmative = any(word in message_lower for word in 
+                             ["yes", "yeah", "yep", "correct", "it is", "that's right", 
+                              "affirmative", "indeed", "registered"])
+            negative = any(word in message_lower for word in 
+                          ["no", "nope", "not", "isn't", "is not", "negative", "unregistered"])
+            
+            if affirmative and not negative:
+                conversation["extraction_data"]["is_registered_in_sa"] = True
+            elif negative and not affirmative:
+                conversation["extraction_data"]["is_registered_in_sa"] = False
+            break
+    
+    # Enhanced extraction for financing status
+    finance_indicators = [
+        "financed", "financing", "bank loan", "car loan", "vehicle loan", 
+        "paying off", "installment", "finance", "payment plan"
+    ]
+    
+    for indicator in finance_indicators:
+        if indicator in message_lower:
+            # Find affirmative or negative responses
+            affirmative = any(word in message_lower for word in 
+                             ["yes", "yeah", "yep", "correct", "it is", "that's right", 
+                              "affirmative", "indeed", "financed"])
+            negative = any(word in message_lower for word in 
+                          ["no", "nope", "not", "isn't", "is not", "negative", "paid off", "fully paid"])
+            
+            if affirmative and not negative:
+                conversation["extraction_data"]["is_financed"] = True
+            elif negative and not affirmative:
+                conversation["extraction_data"]["is_financed"] = False
+            break
     
     # Extract cover type
     for cover_type in COVER_TYPES:
@@ -487,6 +556,28 @@ def extract_info_from_message(conversation, user_message):
             conversation["extraction_data"]["night_parking_location"] = location
             break
     
+    # Extract night parking area
+    area_indicators = ["area", "suburb", "neighborhood", "location", "place", "district", "precinct"]
+    for indicator in area_indicators:
+        if indicator in message_lower:
+            # Get the part after the indicator
+            area_part = message_lower.split(indicator, 1)[1].strip()
+            # Extract area name (assume area continues until punctuation or end of sentence)
+            area_end = min((pos for pos in [
+                area_part.find("."), 
+                area_part.find(","), 
+                area_part.find("and"), 
+                len(area_part)
+            ] if pos >= 0), default=len(area_part))
+            
+            potential_area = area_part[:area_end].strip()
+            # Only use if it seems like a reasonable area name
+            if 1 <= len(potential_area.split()) <= 3 and len(potential_area) > 2:
+                # Capitalize each word in the area name
+                area_name = " ".join(word.capitalize() for word in potential_area.split())
+                conversation["extraction_data"]["night_parking_area"] = area_name
+                break
+    
     # Extract night parking security (multiple selection)
     security_types = []
     for security_type in NIGHT_PARKING_SECURITY_TYPES:
@@ -497,7 +588,7 @@ def extract_info_from_message(conversation, user_message):
         conversation["extraction_data"]["night_parking_security"] = security_types
     
     return conversation
-
+    
 def process_tool_calls(conversation, tool_calls):
     """
     Process tool calls from the assistant and update extraction data
