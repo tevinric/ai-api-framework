@@ -12,7 +12,7 @@ from apis.llm_conversation.functions import (
     ensure_complete_extraction_data, is_off_topic_query, extract_info_from_message,
     process_tool_calls, format_conversation_for_openai, normalize_extraction_data,
     get_conversation_history, save_conversation_history, delete_conversation_history,
-    create_api_response, validate_make, get_valid_models_for_make
+    create_api_response, validate_make, get_valid_models_for_make, get_relevant_options
 )
 import logging
 import pytz
@@ -85,6 +85,9 @@ def insurance_chat_route():
             valid_models:
               type: array
               description: List of valid models if a make is specified
+            options:
+              type: object
+              description: Relevant options for the current conversation state
             prompt_tokens:
               type: integer
               description: Number of prompt tokens used
@@ -221,6 +224,9 @@ def insurance_chat_route():
                 if "make" in normalized_data and normalized_data["make"]:
                     valid_models = get_valid_models_for_make(normalized_data["make"])
                 
+                # Get relevant options based on the current conversation state
+                options = get_relevant_options(conversation, OFF_TOPIC_RESPONSE)
+                
                 # Return the off-topic response with complete extraction data
                 return create_api_response({
                     "conversation_id": conversation_id,
@@ -229,6 +235,7 @@ def insurance_chat_route():
                     "is_off_topic": True,
                     "is_quote_complete": conversation.get("quote_complete", False),
                     "valid_models": valid_models,
+                    "options": options,
                     "prompt_tokens": 0,  # We didn't call the LLM
                     "completion_tokens": 0,
                     "total_tokens": 0
@@ -271,6 +278,9 @@ def insurance_chat_route():
                 if "make" in initial_extraction and initial_extraction["make"]:
                     valid_models = get_valid_models_for_make(initial_extraction["make"])
                 
+                # Get relevant options based on the current conversation state
+                options = get_relevant_options(conversation, OFF_TOPIC_RESPONSE)
+                
                 # Save conversation
                 success, error = save_conversation_history(conversation_id, conversation)
                 if not success:
@@ -287,6 +297,7 @@ def insurance_chat_route():
                     "is_off_topic": True,
                     "is_quote_complete": False,
                     "valid_models": valid_models,
+                    "options": options,
                     "prompt_tokens": 0,  # We didn't call the LLM
                     "completion_tokens": 0,
                     "total_tokens": 0
@@ -401,6 +412,9 @@ def insurance_chat_route():
         if "make" in extraction_data and extraction_data["make"]:
             valid_models = get_valid_models_for_make(extraction_data["make"])
         
+        # Get relevant options based on the current conversation state
+        options = get_relevant_options(conversation, assistant_message)
+        
         # Save conversation
         success, error = save_conversation_history(conversation_id, conversation)
         if not success:
@@ -409,7 +423,7 @@ def insurance_chat_route():
                 "message": f"Error saving conversation: {error}"
             }, 500)
         
-        # Create response with complete extraction data
+        # Create response with complete extraction data and options
         response_data = {
             "conversation_id": conversation_id,
             "assistant_message": assistant_message,
@@ -417,6 +431,7 @@ def insurance_chat_route():
             "is_off_topic": is_off_topic,
             "is_quote_complete": is_quote_complete,
             "valid_models": valid_models,
+            "options": options,
             "prompt_tokens": prompt_tokens,
             "completion_tokens": completion_tokens,
             "total_tokens": total_tokens,
