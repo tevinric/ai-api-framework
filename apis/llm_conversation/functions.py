@@ -185,12 +185,27 @@ def validate_model(make, model):
     if not valid_models:
         return None, []
     
-    # Check if model is already valid
-    if model in valid_models:
-        return model, []
+    # Check for exact match (case-insensitive)
+    model_lower = model.lower()
+    for valid_model in valid_models:
+        if valid_model.lower() == model_lower:
+            return valid_model, []
     
-    # Try to find best match
-    best_match = find_best_match(model, valid_models)
+    # Check for a partial match where the model is a substring of a valid model
+    partial_matches = []
+    for valid_model in valid_models:
+        if model_lower in valid_model.lower():
+            partial_matches.append(valid_model)
+    
+    if len(partial_matches) == 1:
+        # If exactly one partial match, return it
+        return partial_matches[0], []
+    elif len(partial_matches) > 1:
+        # If multiple partial matches, return None and the list of matching models
+        return None, partial_matches
+    
+    # Try to find best match using fuzzy matching
+    best_match = find_best_match(model, valid_models, threshold=0.8)  # Increased threshold for stricter matching
     if best_match:
         return best_match, []
     
@@ -460,20 +475,41 @@ def extract_info_from_message(conversation, user_message):
                 conversation["extraction_data"]["make"] = make
             break
     
-    # Extract car model if we know the make
+    # Extract car model if we know the make - with stricter validation
     if "make" in conversation["extraction_data"]:
         make = conversation["extraction_data"]["make"]
         valid_models = get_valid_models_for_make(make)
         
+        # First look for exact matches in valid models
+        model_found = False
         for model in valid_models:
             if model.lower() in message_lower:
-                # Validate the model for this make
-                valid_model, _ = validate_model(make, model)
-                if valid_model:
-                    conversation["extraction_data"]["model"] = valid_model
-                else:
-                    conversation["extraction_data"]["model"] = model
+                # Use the validated model directly from the valid_models list
+                conversation["extraction_data"]["model"] = model
+                model_found = True
                 break
+        
+        # If no exact match, try a more lenient approach with validation
+        if not model_found:
+            # Extract potential model words (words that might be part of a model name)
+            potential_model_words = []
+            for word in message_lower.split():
+                # Filter out common words that are unlikely to be part of model names
+                common_words = ["the", "a", "an", "my", "is", "in", "with", "for", "and", "or", "it", "i", "have"]
+                if len(word) > 2 and word not in common_words:
+                    potential_model_words.append(word)
+            
+            # Try to match combinations of potential model words against valid models
+            for i in range(len(potential_model_words)):
+                for j in range(i+1, min(i+4, len(potential_model_words))+1):  # Try combinations of up to 3 words
+                    potential_model = " ".join(potential_model_words[i:j])
+                    valid_model, _ = validate_model(make, potential_model)
+                    if valid_model:
+                        conversation["extraction_data"]["model"] = valid_model
+                        model_found = True
+                        break
+                if model_found:
+                    break
     
     # Extract car color
     for color in CAR_COLORS:
@@ -615,14 +651,99 @@ def process_tool_calls(conversation, tool_calls):
                     # Apply validation for specific fields
                     if key == "make":
                         valid_make, _ = validate_make(value)
-                        conversation["extraction_data"][key] = valid_make or value
+                        if valid_make:  # Only set if it's a valid make
+                            conversation["extraction_data"][key] = valid_make
                     elif key == "model" and "make" in conversation["extraction_data"]:
-                        valid_model, _ = validate_model(conversation["extraction_data"]["make"], value)
-                        conversation["extraction_data"][key] = valid_model or value
+                        # Get the list of valid models for this make
+                        valid_models_list = get_valid_models_for_make(conversation["extraction_data"]["make"])
+                        
+                        # Check if the model is in the list (case-insensitive)
+                        model_value = value.lower()
+                        model_found = False
+                        
+                        for valid_model in valid_models_list:
+                            if valid_model.lower() == model_value:
+                                conversation["extraction_data"][key] = valid_model
+                                model_found = True
+                                break
+                        
+                        # If model not found, check for partial matches
+                        if not model_found:
+                            # Try validation which includes fuzzy matching
+                            valid_model, _ = validate_model(conversation["extraction_data"]["make"], value)
+                            if valid_model:
+                                conversation["extraction_data"][key] = valid_model
                     elif key == "color":
                         valid_color, _ = validate_color(value)
-                        conversation["extraction_data"][key] = valid_color or value
+                        if valid_color:  # Only set if it's a valid color
+                            conversation["extraction_data"][key] = valid_color
+                    elif key == "usage":
+                        # Validate against VEHICLE_USAGE_TYPES
+                        usage_found = False
+                        for valid_usage in VEHICLE_USAGE_TYPES:
+                            if valid_usage.lower() == value.lower() or value.lower() in valid_usage.lower():
+                                conversation["extraction_data"][key] = valid_usage
+                                usage_found = True
+                                break
+                        if not usage_found:
+                            # Don't set if not in the predefined list
+                            pass
+                    elif key == "cover_type":
+                        # Validate against COVER_TYPES
+                        cover_found = False
+                        for valid_cover in COVER_TYPES:
+                            if valid_cover.lower() == value.lower() or value.lower() in valid_cover.lower():
+                                conversation["extraction_data"][key] = valid_cover
+                                cover_found = True
+                                break
+                        if not cover_found:
+                            # Don't set if not in the predefined list
+                            pass
+                    elif key == "insured_value":
+                        # Validate against INSURED_VALUE_OPTIONS
+                        value_found = False
+                        for valid_value in INSURED_VALUE_OPTIONS:
+                            if valid_value.lower() == value.lower() or value.lower() in valid_value.lower():
+                                conversation["extraction_data"][key] = valid_value
+                                value_found = True
+                                break
+                        if not value_found:
+                            # Don't set if not in the predefined list
+                            pass
+                    elif key == "night_parking_location":
+                        # Validate against NIGHT_PARKING_LOCATIONS
+                        location_found = False
+                        for valid_location in NIGHT_PARKING_LOCATIONS:
+                            if valid_location.lower() == value.lower() or value.lower() in valid_location.lower():
+                                conversation["extraction_data"][key] = valid_location
+                                location_found = True
+                                break
+                        if not location_found:
+                            # Don't set if not in the predefined list
+                            pass
+                    elif key == "night_parking_security":
+                        if isinstance(value, list):
+                            valid_securities = []
+                            for security in value:
+                                security_found = False
+                                for valid_security in NIGHT_PARKING_SECURITY_TYPES:
+                                    if valid_security.lower() == security.lower() or security.lower() in valid_security.lower():
+                                        valid_securities.append(valid_security)
+                                        security_found = True
+                                        break
+                            # Only update with validated securities
+                            if valid_securities:
+                                conversation["extraction_data"][key] = valid_securities
+                        else:
+                            # Handle single string value instead of list
+                            security_found = False
+                            for valid_security in NIGHT_PARKING_SECURITY_TYPES:
+                                if valid_security.lower() == value.lower() or value.lower() in valid_security.lower():
+                                    conversation["extraction_data"][key] = [valid_security]
+                                    security_found = True
+                                    break
                     else:
+                        # For other fields, set directly
                         conversation["extraction_data"][key] = value
             
             # Prepare response
@@ -632,7 +753,7 @@ def process_tool_calls(conversation, tool_calls):
             }
         
         elif function_name == "process_vehicle_quote":
-            # Update extraction data from nested objects, applying validation
+            # Update extraction data from nested objects, applying strict validation
             # Personal info
             if "customer_name" in function_args:
                 conversation["extraction_data"]["customer_name"] = function_args["customer_name"]
@@ -642,33 +763,120 @@ def process_tool_calls(conversation, tool_calls):
             # Vehicle details
             if "vehicle_details" in function_args:
                 for key, value in function_args["vehicle_details"].items():
-                    # Apply validation for specific fields
+                    # Apply strict validation for specific fields
                     if key == "make":
                         valid_make, _ = validate_make(value)
-                        conversation["extraction_data"][key] = valid_make or value
+                        if valid_make:  # Only set if it's a valid make
+                            conversation["extraction_data"][key] = valid_make
                     elif key == "model":
-                        # Get the make from either the nested object or the existing data
+                        # Get the make - either from the nested object or existing data
                         make = function_args["vehicle_details"].get("make") or conversation["extraction_data"].get("make")
                         if make:
-                            valid_model, _ = validate_model(make, value)
-                            conversation["extraction_data"][key] = valid_model or value
-                        else:
-                            conversation["extraction_data"][key] = value
+                            # Get the list of valid models for this make
+                            valid_models_list = get_valid_models_for_make(make)
+                            
+                            # Check if the model is in the list (case-insensitive)
+                            model_value = value.lower()
+                            model_found = False
+                            
+                            for valid_model in valid_models_list:
+                                if valid_model.lower() == model_value:
+                                    conversation["extraction_data"][key] = valid_model
+                                    model_found = True
+                                    break
+                            
+                            # If model not found, check for partial matches
+                            if not model_found:
+                                # Try validation which includes fuzzy matching
+                                valid_model, _ = validate_model(make, value)
+                                if valid_model:
+                                    conversation["extraction_data"][key] = valid_model
                     elif key == "color":
                         valid_color, _ = validate_color(value)
-                        conversation["extraction_data"][key] = valid_color or value
+                        if valid_color:  # Only set if it's a valid color
+                            conversation["extraction_data"][key] = valid_color
+                    elif key == "usage":
+                        # Validate against VEHICLE_USAGE_TYPES
+                        usage_found = False
+                        for valid_usage in VEHICLE_USAGE_TYPES:
+                            if valid_usage.lower() == value.lower() or value.lower() in valid_usage.lower():
+                                conversation["extraction_data"][key] = valid_usage
+                                usage_found = True
+                                break
+                        if not usage_found:
+                            # Don't set if not in the predefined list
+                            pass
                     else:
+                        # For other fields, set directly
                         conversation["extraction_data"][key] = value
             
             # Coverage details
             if "coverage_details" in function_args:
                 for key, value in function_args["coverage_details"].items():
-                    conversation["extraction_data"][key] = value
+                    if key == "cover_type":
+                        # Validate against COVER_TYPES
+                        cover_found = False
+                        for valid_cover in COVER_TYPES:
+                            if valid_cover.lower() == value.lower() or value.lower() in valid_cover.lower():
+                                conversation["extraction_data"][key] = valid_cover
+                                cover_found = True
+                                break
+                        if not cover_found:
+                            # Don't set if not in the predefined list
+                            pass
+                    elif key == "insured_value":
+                        # Validate against INSURED_VALUE_OPTIONS
+                        value_found = False
+                        for valid_value in INSURED_VALUE_OPTIONS:
+                            if valid_value.lower() == value.lower() or value.lower() in valid_value.lower():
+                                conversation["extraction_data"][key] = valid_value
+                                value_found = True
+                                break
+                        if not value_found:
+                            # Don't set if not in the predefined list
+                            pass
+                    else:
+                        # For other fields, set directly
+                        conversation["extraction_data"][key] = value
             
             # Risk details
             if "risk_details" in function_args:
                 for key, value in function_args["risk_details"].items():
-                    conversation["extraction_data"][key] = value
+                    if key == "night_parking_location":
+                        # Validate against NIGHT_PARKING_LOCATIONS
+                        location_found = False
+                        for valid_location in NIGHT_PARKING_LOCATIONS:
+                            if valid_location.lower() == value.lower() or value.lower() in valid_location.lower():
+                                conversation["extraction_data"][key] = valid_location
+                                location_found = True
+                                break
+                        if not location_found:
+                            # Don't set if not in the predefined list
+                            pass
+                    elif key == "night_parking_security":
+                        if isinstance(value, list):
+                            valid_securities = []
+                            for security in value:
+                                security_found = False
+                                for valid_security in NIGHT_PARKING_SECURITY_TYPES:
+                                    if valid_security.lower() == security.lower() or security.lower() in valid_security.lower():
+                                        valid_securities.append(valid_security)
+                                        security_found = True
+                                        break
+                            # Only update with validated securities
+                            if valid_securities:
+                                conversation["extraction_data"][key] = valid_securities
+                        else:
+                            # Handle single string value instead of list
+                            security_found = False
+                            for valid_security in NIGHT_PARKING_SECURITY_TYPES:
+                                if valid_security.lower() == value.lower() or value.lower() in valid_security.lower():
+                                    conversation["extraction_data"][key] = [valid_security]
+                                    security_found = True
+                                    break
+                    else:
+                        # For other fields, set directly
+                        conversation["extraction_data"][key] = value
             
             # Generate summary
             summary = generate_quote_summary(conversation["extraction_data"])
@@ -859,11 +1067,47 @@ def normalize_extraction_data(extraction_data):
         if valid_make:
             normalized_data["make"] = valid_make
     
-    # Validate model based on make
+    # Validate model based on make - with strict validation
     if "make" in normalized_data and normalized_data["make"] and "model" in normalized_data and normalized_data["model"]:
-        valid_model, _ = validate_model(normalized_data["make"], normalized_data["model"])
-        if valid_model:
-            normalized_data["model"] = valid_model
+        # Get list of valid models for this make
+        valid_models_list = get_valid_models_for_make(normalized_data["make"])
+        
+        # First check for exact match in valid models (case-insensitive)
+        model_lower = normalized_data["model"].lower()
+        exact_match = False
+        
+        for valid_model in valid_models_list:
+            if valid_model.lower() == model_lower:
+                normalized_data["model"] = valid_model  # Use the exact capitalization from the valid list
+                exact_match = True
+                break
+        
+        # If no exact match, check if model is a substring of any valid model
+        if not exact_match:
+            matches = []
+            for valid_model in valid_models_list:
+                if model_lower in valid_model.lower():
+                    matches.append(valid_model)
+            
+            if len(matches) == 1:
+                # If there's exactly one match, use it
+                normalized_data["model"] = matches[0]
+            elif len(matches) > 1:
+                # If there are multiple matches, use fuzzy matching for the best match
+                best_match = find_best_match(normalized_data["model"], matches, threshold=0.8)
+                if best_match:
+                    normalized_data["model"] = best_match
+                else:
+                    # If no clear best match, remove the model since it's ambiguous
+                    normalized_data["model"] = None
+            else:
+                # Try regular validation with higher threshold
+                valid_model, _ = validate_model(normalized_data["make"], normalized_data["model"])
+                if valid_model:
+                    normalized_data["model"] = valid_model
+                else:
+                    # If no valid match, remove the model
+                    normalized_data["model"] = None
     
     # Validate color
     if "color" in normalized_data and normalized_data["color"]:
@@ -886,10 +1130,15 @@ def normalize_extraction_data(extraction_data):
     # Normalize usage type
     if "usage" in normalized_data and normalized_data["usage"]:
         usage = normalized_data["usage"]
+        matched = False
         for valid_usage in VEHICLE_USAGE_TYPES:
             if valid_usage.lower() == usage.lower() or usage.lower() in valid_usage.lower():
                 normalized_data["usage"] = valid_usage
+                matched = True
                 break
+        if not matched:
+            # If no match in predefined list, set to None
+            normalized_data["usage"] = None
     
     # Convert yes/no string responses to booleans
     for field in ["is_registered_in_sa", "is_financed"]:
@@ -900,26 +1149,41 @@ def normalize_extraction_data(extraction_data):
     # Normalize cover type
     if "cover_type" in normalized_data and normalized_data["cover_type"]:
         cover_type = normalized_data["cover_type"]
+        matched = False
         for valid_cover in COVER_TYPES:
             if valid_cover.lower() == cover_type.lower() or cover_type.lower() in valid_cover.lower():
                 normalized_data["cover_type"] = valid_cover
+                matched = True
                 break
+        if not matched:
+            # If no match in predefined list, set to None
+            normalized_data["cover_type"] = None
     
     # Normalize insured value
     if "insured_value" in normalized_data and normalized_data["insured_value"]:
         insured_value = normalized_data["insured_value"]
+        matched = False
         for valid_value in INSURED_VALUE_OPTIONS:
             if valid_value.lower() == insured_value.lower() or insured_value.lower() in valid_value.lower():
                 normalized_data["insured_value"] = valid_value
+                matched = True
                 break
+        if not matched:
+            # If no match in predefined list, set to None
+            normalized_data["insured_value"] = None
     
     # Normalize night parking location
     if "night_parking_location" in normalized_data and normalized_data["night_parking_location"]:
         location = normalized_data["night_parking_location"]
+        matched = False
         for valid_location in NIGHT_PARKING_LOCATIONS:
             if valid_location.lower() == location.lower() or location.lower() in valid_location.lower():
                 normalized_data["night_parking_location"] = valid_location
+                matched = True
                 break
+        if not matched:
+            # If no match in predefined list, set to None
+            normalized_data["night_parking_location"] = None
     
     # Normalize night parking security
     if "night_parking_security" in normalized_data and normalized_data["night_parking_security"]:
@@ -928,14 +1192,18 @@ def normalize_extraction_data(extraction_data):
         
         for security in security_types:
             if security:  # Add null check here
+                security_matched = False
                 for valid_security in NIGHT_PARKING_SECURITY_TYPES:
                     if valid_security.lower() == security.lower() or (security and security.lower() in valid_security.lower()):
                         normalized_security.append(valid_security)
+                        security_matched = True
                         break
+                # Only include security options that match predefined list
+                if not security_matched:
+                    continue
         
-        # Only replace if we found valid matches
-        if normalized_security:
-            normalized_data["night_parking_security"] = normalized_security
+        # Replace with normalized list
+        normalized_data["night_parking_security"] = normalized_security
     
     return normalized_data
 
