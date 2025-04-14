@@ -9,13 +9,13 @@ import sys
 from datetime import datetime
 
 # Configuration - replace with your values
-AZURE_OPENAI_ENDPOINT = "your_azure_endpoint"  # e.g. "https://your-resource.openai.azure.com/"
-AZURE_OPENAI_API_KEY = "your_api_key"
+AZURE_OPENAI_ENDPOINT = os.environ.get("OPENAI_API_ENDPOINT")  # e.g. "https://your-resource.openai.azure.com/"
+AZURE_OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 AZURE_OPENAI_API_VERSION = "2024-02-01"
 DEPLOYMENT = "gpt-4o"
 
 # Path to reference image
-REFERENCE_IMAGE_PATH = "static/resources/romeo/vehicle-reference-views.jpg"
+REFERENCE_IMAGE_PATH = "static/resources/romeo/vehicle_all_views.jpg"
 
 def encode_image(image_path):
     """Encode an image file as base64."""
@@ -67,16 +67,16 @@ def analyze_vehicle_image(vehicle_image_path):
         system_prompt = """
         You are an expert vehicle damage assessor. Your task is to analyze the uploaded vehicle image and compare it to the reference image containing standard vehicle views.
         
-        The reference image shows different views of a vehicle: front, left-side, right-side, rear, and top-view.
+        The reference image shows different views of a vehicle: top-view, left-view, right-view, front-view, rear-view, front-left, front-right, rear-right, rear-left. Your job is to identify which view the uploaded vehicle image most closely resembles.
         
         Based on the uploaded image, determine which of these standard views the uploaded image most closely matches, ignoring any damage present.
         
-        Your output must include ONLY ONE of these exact view names: "front", "left-side", "right-side", "rear", or "top-view".
+        Your output must include ONLY ONE of these exact view names: top-view", "left-view", "right-view", "front-view", "rear-view", "front-left", "front-right", "rear-left", "rear-right".
         
         Additionally, provide a brief assessment of any damage visible in the uploaded image.
         
         Format your response as a JSON object with two fields:
-        1. "vehicle_view" - MUST be exactly one of: "front", "left-side", "right-side", "rear", or "top-view"
+        1. "vehicle_view" - MUST be exactly one of: "top-view", "left-view", "right-view", "front-view", "rear-view", "front-left", "front-right", "rear-left", "rear-right"
         2. "damage_assessment" - A brief description of visible damage, if any
         """
         
@@ -115,8 +115,7 @@ def analyze_vehicle_image(vehicle_image_path):
             model=DEPLOYMENT,
             messages=messages,
             response_format={"type": "json_object"},
-            temperature=0.3,
-            max_tokens=1000
+            temperature=0.1,
         )
         
         end_time = datetime.now()
@@ -148,11 +147,8 @@ def analyze_vehicle_image(vehicle_image_path):
         return None
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Analyze vehicle images using GPT-4o")
-    parser.add_argument("image_path", help="Path to the vehicle image to analyze")
-    args = parser.parse_args()
     
-    result = analyze_vehicle_image(args.image_path)
+    result = analyze_vehicle_image(r"C:\Users\E100545\Git\submissions\Vehicle_Damage_Detector\images\vehicle_4.jpeg")
     
     if result:
         # Output JSON format for easier integration with other tools
