@@ -732,6 +732,8 @@ def delete_conversation_history(conversation_id):
         logger.error(f"Error deleting conversation history: {str(e)}")
         return False, str(e)
 
+# This is just the normalize_extraction_data function that needs fixing
+
 def normalize_extraction_data(extraction_data):
     """
     Normalize extraction data by matching values to predefined lists
@@ -743,61 +745,61 @@ def normalize_extraction_data(extraction_data):
         dict: Normalized extraction data
     """
     # Make a copy to avoid modifying the original
-    normalized_data = extraction_data.copy()
+    normalized_data = extraction_data.copy() if extraction_data else {}
     
     # Validate make
-    if "make" in normalized_data:
+    if "make" in normalized_data and normalized_data["make"]:
         valid_make, _ = validate_make(normalized_data["make"])
         if valid_make:
             normalized_data["make"] = valid_make
     
     # Validate model based on make
-    if "make" in normalized_data and "model" in normalized_data:
+    if "make" in normalized_data and normalized_data["make"] and "model" in normalized_data and normalized_data["model"]:
         valid_model, _ = validate_model(normalized_data["make"], normalized_data["model"])
         if valid_model:
             normalized_data["model"] = valid_model
     
     # Validate color
-    if "color" in normalized_data:
+    if "color" in normalized_data and normalized_data["color"]:
         valid_color, _ = validate_color(normalized_data["color"])
         if valid_color:
             normalized_data["color"] = valid_color
     
     # Normalize usage type
-    if "usage" in normalized_data:
+    if "usage" in normalized_data and normalized_data["usage"]:
         usage = normalized_data["usage"]
         for valid_usage in VEHICLE_USAGE_TYPES:
-            if valid_usage.lower() == usage.lower() or valid_usage.lower() in usage.lower():
+            if valid_usage.lower() == usage.lower() or usage.lower() in valid_usage.lower():
                 normalized_data["usage"] = valid_usage
                 break
     
     # Convert yes/no string responses to booleans
     for field in ["is_registered_in_sa", "is_financed"]:
-        if field in normalized_data and isinstance(normalized_data[field], str):
+        if field in normalized_data and isinstance(normalized_data[field], str) and normalized_data[field]:
             value = normalized_data[field].lower()
             normalized_data[field] = value in ["yes", "true", "y", "1"]
     
     # Normalize cover type
-    if "cover_type" in normalized_data:
+    if "cover_type" in normalized_data and normalized_data["cover_type"]:
         cover_type = normalized_data["cover_type"]
         for valid_cover in COVER_TYPES:
-            if valid_cover.lower() == cover_type.lower() or valid_cover.lower() in cover_type.lower():
+            if valid_cover.lower() == cover_type.lower() or cover_type.lower() in valid_cover.lower():
                 normalized_data["cover_type"] = valid_cover
                 break
     
     # Normalize insured value
-    if "insured_value" in normalized_data:
+    if "insured_value" in normalized_data and normalized_data["insured_value"]:
         insured_value = normalized_data["insured_value"]
         for valid_value in INSURED_VALUE_OPTIONS:
-            if valid_value.lower() == insured_value.lower() or valid_value.lower() in insured_value.lower():
+            if valid_value.lower() == insured_value.lower() or insured_value.lower() in valid_value.lower():
                 normalized_data["insured_value"] = valid_value
                 break
     
     # Normalize night parking location
-    if "night_parking_location" in normalized_data:
+    if "night_parking_location" in normalized_data and normalized_data["night_parking_location"]:
         location = normalized_data["night_parking_location"]
         for valid_location in NIGHT_PARKING_LOCATIONS:
-            if valid_location.lower() == location.lower() or valid_location.lower() in location.lower():
+            if valid_location.lower() == location.lower() or location.lower() in valid_location.lower():
                 normalized_data["night_parking_location"] = valid_location
                 break
     
@@ -807,10 +809,11 @@ def normalize_extraction_data(extraction_data):
         normalized_security = []
         
         for security in security_types:
-            for valid_security in NIGHT_PARKING_SECURITY_TYPES:
-                if valid_security.lower() == security.lower() or valid_security.lower() in security.lower():
-                    normalized_security.append(valid_security)
-                    break
+            if security:  # Add null check here
+                for valid_security in NIGHT_PARKING_SECURITY_TYPES:
+                    if valid_security.lower() == security.lower() or (security and security.lower() in valid_security.lower()):
+                        normalized_security.append(valid_security)
+                        break
         
         # Only replace if we found valid matches
         if normalized_security:
