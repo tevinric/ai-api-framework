@@ -55,6 +55,9 @@ def ensure_complete_extraction_data(extraction_data):
         value = complete_data["is_financed"].lower()
         complete_data["is_financed"] = value in ["yes", "true", "y", "1"]
     
+    return complete_data 
+
+
 
 def find_best_match(input_text, predefined_list, threshold=0.6):
     """
