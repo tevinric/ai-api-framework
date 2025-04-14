@@ -99,31 +99,17 @@ def analyze_vehicle_image(vehicle_image_path):
         
         # Create the message structure
         messages = [
-            {"role": "system", "content": system_prompt},
+            {"role": "system", "content": "You are a vehicle assessment expert. You will be shown two images: a vehicle to classify and a reference image. Your task is to determine which standard view the vehicle image represents."},
             {"role": "user", "content": [
-                {
-                    "type": "text",
-                    "text": "I need to identify which standard vehicle view this image represents, using the reference image provided."
-                },
-                {
-                    "type": "image_url",
-                    "image_url": {
-                        "url": f"data:{vehicle_mime_type};base64,{vehicle_image_base64}"
-                    }
-                },
-                {
-                    "type": "text",
-                    "text": "Here is the reference image showing the standard vehicle views:"
-                },
-                {
-                    "type": "image_url",
-                    "image_url": {
-                        "url": f"data:{reference_mime_type};base64,{reference_image_base64}"
-                    }
-                }
+                {"type": "text", "text": "First, look at ONLY this vehicle image. Which view does it show? Please analyze the directional orientation (front/rear/left/right):"},
+                {"type": "image_url", "image_url": {"url": f"data:{vehicle_mime_type};base64,{vehicle_image_base64}"}}
             ]},
-            # Additional instruction for clarity
-            {"role": "user", "content": "When determining if a view is front-right or front-left, remember: front-right shows the front plus the PASSENGER side (right side), while front-left shows the front plus the DRIVER side (left side). Be very careful with this distinction."}
+            {"role": "assistant", "content": "I'll analyze this vehicle image on its own first. [Analysis of vehicle orientation]"},
+            {"role": "user", "content": [
+                {"type": "text", "text": "Now refer to this standard reference image showing different vehicle views:"},
+                {"type": "image_url", "image_url": {"url": f"data:{reference_mime_type};base64,{reference_image_base64}"}},
+                {"type": "text", "text": "Match the vehicle image to ONE of these views: top-view, left-view, right-view, front-view, rear-view, front-left, front-right, rear-left, rear-right. IMPORTANT NOTE: 'front-right' means front + passenger side, 'front-left' means front + driver side."},
+            ]}
         ]
         
         print(f"Analyzing vehicle image: {vehicle_image_path}")
