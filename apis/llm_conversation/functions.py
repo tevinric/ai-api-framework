@@ -10,6 +10,7 @@ import logging
 import json
 import re
 from difflib import get_close_matches
+from datetime import datetime
 
 # CONFIGURE LOGGING
 logger = logging.getLogger(__name__)
@@ -56,7 +57,6 @@ def ensure_complete_extraction_data(extraction_data):
         complete_data["is_financed"] = value in ["yes", "true", "y", "1"]
     
     return complete_data
-
 
 
 def find_best_match(input_text, predefined_list, threshold=0.6):
@@ -243,8 +243,8 @@ def is_off_topic_query(query):
         'damage', 'quote', 'vehicle', 'car', 'auto', 'liability', 
         'excess', 'deductible', 'insure', 'underwriting', 'risk', 
         'cover', 'third-party', 'third party', 'comprehensive', 
-        'registration', 'financed', 'toyota', 'bmw', 'vehicle', 
-        'ford', 'honda', 'color', 'model', 'make', 'year', 'parking',
+        'registration', 'financed', 'toyota', 'bmw', 'ford', 'vehicle', 
+        'honda', 'color', 'model', 'make', 'year', 'parking',
         'security', 'theft', 'value', 'id number', 'name', 'mazda', 
         'volkswagen', 'audi', 'hyundai', 'kia', 'volvo', 'jeep'
     ]
@@ -590,7 +590,7 @@ def extract_info_from_message(conversation, user_message):
         conversation["extraction_data"]["night_parking_security"] = security_types
     
     return conversation
-    
+
 def process_tool_calls(conversation, tool_calls):
     """
     Process tool calls from the assistant and update extraction data
@@ -840,8 +840,6 @@ def delete_conversation_history(conversation_id):
         logger.error(f"Error deleting conversation history: {str(e)}")
         return False, str(e)
 
-# This is just the normalize_extraction_data function that needs fixing
-
 def normalize_extraction_data(extraction_data):
     """
     Normalize extraction data by matching values to predefined lists
@@ -872,6 +870,18 @@ def normalize_extraction_data(extraction_data):
         valid_color, _ = validate_color(normalized_data["color"])
         if valid_color:
             normalized_data["color"] = valid_color
+    
+    # Normalize year
+    if "year" in normalized_data and normalized_data["year"]:
+        # Ensure year is a string and is a valid year between 1970 and current year + 1
+        try:
+            year_int = int(normalized_data["year"])
+            current_year = datetime.now().year
+            if 1970 <= year_int <= current_year + 1:
+                normalized_data["year"] = str(year_int)
+        except (ValueError, TypeError):
+            # If conversion fails, keep the original value
+            pass
     
     # Normalize usage type
     if "usage" in normalized_data and normalized_data["usage"]:
@@ -928,3 +938,106 @@ def normalize_extraction_data(extraction_data):
             normalized_data["night_parking_security"] = normalized_security
     
     return normalized_data
+
+def get_relevant_options(conversation, assistant_message):
+    """
+    Determine relevant options for the current state of the conversation
+    
+    Args:
+        conversation (dict): The conversation object
+        assistant_message (str): The last assistant message
+        
+    Returns:
+        dict: A dictionary of option categories and their possible values
+    """
+    from datetime import datetime  # Import datetime module
+    
+    # Convert message to lowercase for easier matching
+    message_lower = assistant_message.lower()
+    
+    # Initialize options dictionary
+    options = {}
+    
+    # Extract current extraction data to know what's already been collected
+    extraction_data = conversation.get("extraction_data", {})
+    
+    # Check for make-related questions
+    if any(phrase in message_lower for phrase in ["make of", "car make", "vehicle make", "what make", "brand of"]):
+        options["make"] = CAR_MAKES
+    
+    # Check for model-related questions
+    if any(phrase in message_lower for phrase in ["model of", "car model", "vehicle model", "what model"]):
+        if "make" in extraction_data and extraction_data["make"]:
+            # Only provide models for the selected make
+            options["model"] = get_valid_models_for_make(extraction_data["make"])
+        else:
+            # If make isn't selected yet, provide a note
+            options["model"] = ["Please select a make first"]
+    
+    # Check for color-related questions
+    if any(phrase in message_lower for phrase in ["color", "colour"]):
+        options["color"] = CAR_COLORS
+    
+    # Check for usage-related questions
+    if any(phrase in message_lower for phrase in ["how do you use", "vehicle usage", "car usage", "use your vehicle", "use your car"]):
+        options["usage"] = VEHICLE_USAGE_TYPES
+    
+    # Check for registration-related questions
+    if any(phrase in message_lower for phrase in ["registered in south africa", "registered in sa", "vehicle registered"]):
+        options["is_registered_in_sa"] = ["Yes", "No"]
+    
+    # Check for financing-related questions
+    if any(phrase in message_lower for phrase in ["financed", "finance", "loan", "payment plan"]):
+        options["is_financed"] = ["Yes", "No"]
+    
+    # Check for cover type-related questions
+    if any(phrase in message_lower for phrase in ["cover type", "coverage", "insurance type", "type of insurance", "type of cover"]):
+        options["cover_type"] = COVER_TYPES
+    
+    # Check for insured value-related questions
+    if any(phrase in message_lower for phrase in ["insured value", "value option", "insurance value"]):
+        options["insured_value"] = INSURED_VALUE_OPTIONS
+    
+    # Check for night parking location-related questions
+    if any(phrase in message_lower for phrase in ["parking location", "park your car", "park your vehicle", "parked at night"]):
+        options["night_parking_location"] = NIGHT_PARKING_LOCATIONS
+    
+    # Check for night parking security-related questions
+    if any(phrase in message_lower for phrase in ["security", "secure", "protection", "parking security"]):
+        options["night_parking_security"] = NIGHT_PARKING_SECURITY_TYPES
+    
+    # If no specific options detected but the quote isn't complete, 
+    # provide options for the next empty field
+    if not options and not conversation.get("quote_complete", False):
+        if "customer_name" not in extraction_data or not extraction_data["customer_name"]:
+            # No specific options for name
+            pass
+        elif "id_number" not in extraction_data or not extraction_data["id_number"]:
+            # No specific options for ID number
+            pass
+        elif "make" not in extraction_data or not extraction_data["make"]:
+            options["make"] = CAR_MAKES
+        elif "model" not in extraction_data or not extraction_data["model"]:
+            options["model"] = get_valid_models_for_make(extraction_data["make"]) if extraction_data.get("make") else []
+        elif "year" not in extraction_data or not extraction_data["year"]:
+            # Provide reasonable year range
+            current_year = datetime.now().year
+            options["year"] = [str(year) for year in range(current_year - 20, current_year + 1)]
+        elif "color" not in extraction_data or not extraction_data["color"]:
+            options["color"] = CAR_COLORS
+        elif "usage" not in extraction_data or not extraction_data["usage"]:
+            options["usage"] = VEHICLE_USAGE_TYPES
+        elif "is_registered_in_sa" not in extraction_data or extraction_data["is_registered_in_sa"] is None:
+            options["is_registered_in_sa"] = ["Yes", "No"]
+        elif "is_financed" not in extraction_data or extraction_data["is_financed"] is None:
+            options["is_financed"] = ["Yes", "No"]
+        elif "cover_type" not in extraction_data or not extraction_data["cover_type"]:
+            options["cover_type"] = COVER_TYPES
+        elif "insured_value" not in extraction_data or not extraction_data["insured_value"]:
+            options["insured_value"] = INSURED_VALUE_OPTIONS
+        elif "night_parking_location" not in extraction_data or not extraction_data["night_parking_location"]:
+            options["night_parking_location"] = NIGHT_PARKING_LOCATIONS
+        elif "night_parking_security" not in extraction_data or not extraction_data["night_parking_security"]:
+            options["night_parking_security"] = NIGHT_PARKING_SECURITY_TYPES
+    
+    return options
