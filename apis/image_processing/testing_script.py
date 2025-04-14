@@ -63,21 +63,38 @@ def analyze_vehicle_image(vehicle_image_path):
         vehicle_mime_type = get_mime_type(vehicle_image_path)
         reference_mime_type = get_mime_type(REFERENCE_IMAGE_PATH)
         
-        # Create system prompt
+        # Enhanced system prompt
         system_prompt = """
-        You are an expert vehicle damage assessor. Your task is to analyze the uploaded vehicle image and compare it to the reference image containing standard vehicle views.
-        
-        The reference image shows different views of a vehicle: top-view, left-view, right-view, front-view, rear-view, front-left, front-right, rear-right, rear-left. Your job is to identify which view the uploaded vehicle image most closely resembles.
-        
-        Based on the uploaded image, determine which of these standard views the uploaded image most closely matches, ignoring any damage present.
-        
-        Your output must include ONLY ONE of these exact view names: top-view", "left-view", "right-view", "front-view", "rear-view", "front-left", "front-right", "rear-left", "rear-right".
-        
-        Additionally, provide a brief assessment of any damage visible in the uploaded image.
-        
-        Format your response as a JSON object with two fields:
-        1. "vehicle_view" - MUST be exactly one of: "top-view", "left-view", "right-view", "front-view", "rear-view", "front-left", "front-right", "rear-left", "rear-right"
-        2. "damage_assessment" - A brief description of visible damage, if any
+        You are an expert vehicle damage assessor analyzing vehicle images. Follow these precise classification guidelines:
+
+        IMPORTANT VEHICLE VIEW DEFINITIONS:
+        - "front-view": Direct front view showing hood, grille, and both headlights equally
+        - "rear-view": Direct rear view showing trunk/hatch and both taillights equally
+        - "left-view": Complete driver's side view (left side when sitting in driver's seat)
+        - "right-view": Complete passenger's side view (right side when sitting in driver's seat)
+        - "top-view": Bird's eye view showing roof and hood from above
+        - "front-left": Angled view showing front and driver's side (left side)
+        - "front-right": Angled view showing front and passenger's side (right side)
+        - "rear-left": Angled view showing rear and driver's side (left side)
+        - "rear-right": Angled view showing rear and passenger's side (right side)
+
+        CRITICAL LEFT VS RIGHT INDICATORS:
+        - Driver position: In most vehicles, driver is on left side
+        - For front-right view: You see front plus passenger's side
+        - For front-left view: You see front plus driver's side
+        - Side mirrors: Note their position and shape
+        - Wheels: Observe which way they're turning
+        - License plate visibility and angle
+
+        Carefully examine the uploaded vehicle image against the reference image and select the SINGLE most appropriate view.
+
+        Your output must include ONLY ONE of these exact view names: "top-view", "left-view", "right-view", "front-view", "rear-view", "front-left", "front-right", "rear-left", "rear-right".
+
+        Also provide a brief assessment of any visible damage.
+
+        Return a JSON object with:
+        1. "vehicle_view" - EXACTLY ONE of the defined view names
+        2. "damage_assessment" - Brief description of visible damage
         """
         
         # Create the message structure
@@ -104,7 +121,9 @@ def analyze_vehicle_image(vehicle_image_path):
                         "url": f"data:{reference_mime_type};base64,{reference_image_base64}"
                     }
                 }
-            ]}
+            ]},
+            # Additional instruction for clarity
+            {"role": "user", "content": "When determining if a view is front-right or front-left, remember: front-right shows the front plus the PASSENGER side (right side), while front-left shows the front plus the DRIVER side (left side). Be very careful with this distinction."}
         ]
         
         print(f"Analyzing vehicle image: {vehicle_image_path}")
