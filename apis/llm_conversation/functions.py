@@ -405,6 +405,9 @@ def extract_info_from_message(conversation, user_message):
     Returns:
         dict: Updated conversation
     """
+    # Import regular expression module
+    import re
+    
     # Initialize extraction_data if not present
     if "extraction_data" not in conversation:
         conversation["extraction_data"] = {}
@@ -441,7 +444,6 @@ def extract_info_from_message(conversation, user_message):
             # Get the part after the indicator
             id_part = message_lower.split(indicator, 1)[1].strip()
             # Look for a sequence of digits (South African ID is 13 digits)
-            import re
             id_matches = re.findall(r'\b\d{7,13}\b', id_part)
             if id_matches:
                 conversation["extraction_data"]["id_number"] = id_matches[0]
