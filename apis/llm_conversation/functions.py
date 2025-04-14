@@ -9,6 +9,7 @@ from apis.llm_conversation.references import (
 import logging
 import json
 import re
+from difflib import get_close_matches
 
 # CONFIGURE LOGGING
 logger = logging.getLogger(__name__)
@@ -43,13 +44,14 @@ def ensure_complete_extraction_data(extraction_data):
     
     return complete_data
 
-def find_best_match(input_text, predefined_list):
+def find_best_match(input_text, predefined_list, threshold=0.6):
     """
     Find the best match from a predefined list based on input text
     
     Args:
         input_text (str): The text to match
         predefined_list (list): List of predefined values to match against
+        threshold (float): Minimum score required for a match
         
     Returns:
         str or None: The best matching item or None if no match found
@@ -65,20 +67,147 @@ def find_best_match(input_text, predefined_list):
         if item.lower() == input_lower:
             return item
     
-    # If no exact match, try to find a partial match
+    # Try using difflib for better fuzzy matching
+    predefined_list_lower = [item.lower() for item in predefined_list]
+    close_matches = get_close_matches(input_lower, predefined_list_lower, n=1, cutoff=threshold)
+    
+    if close_matches:
+        # Find the original case version of the match
+        index = predefined_list_lower.index(close_matches[0])
+        return predefined_list[index]
+    
+    # If difflib doesn't find a match, fall back to a more flexible approach
     best_match = None
     best_match_score = 0
     
     for item in predefined_list:
+        item_lower = item.lower()
         # Check if item is contained in input or input is contained in item
-        if item.lower() in input_lower or input_lower in item.lower():
+        if item_lower in input_lower or input_lower in item_lower:
             # Calculate a simple match score based on length of overlap
-            overlap = len(set(input_lower.split()) & set(item.lower().split()))
+            overlap = len(set(input_lower.split()) & set(item_lower.split()))
             if overlap > best_match_score:
                 best_match = item
                 best_match_score = overlap
     
-    return best_match
+    # Only return if we have a reasonable match
+    if best_match_score > 0:
+        return best_match
+    
+    return None
+
+def get_valid_models_for_make(make):
+    """
+    Get the valid models for a specific car make
+    
+    Args:
+        make (str): The car make
+        
+    Returns:
+        list: List of valid models for the make, or empty list if make not found
+    """
+    # First try to find an exact match
+    if make in CAR_MODELS_BY_MAKE:
+        return CAR_MODELS_BY_MAKE[make]
+    
+    # Try case-insensitive matching
+    for valid_make in CAR_MODELS_BY_MAKE:
+        if valid_make.lower() == make.lower():
+            return CAR_MODELS_BY_MAKE[valid_make]
+    
+    # Try to find the closest match using find_best_match
+    best_match = find_best_match(make, CAR_MAKES)
+    if best_match:
+        return CAR_MODELS_BY_MAKE[best_match]
+    
+    return []
+
+def validate_make(make):
+    """
+    Validate and correct a car make against the reference list
+    
+    Args:
+        make (str): The car make to validate
+        
+    Returns:
+        tuple: (valid_make, suggestion_list)
+            - valid_make: The corrected make or None if no match
+            - suggestion_list: List of suggested makes if no exact match
+    """
+    if not make:
+        return None, CAR_MAKES[:5]  # Return first 5 makes as suggestions
+    
+    # Check if make is already valid
+    if make in CAR_MAKES:
+        return make, []
+    
+    # Try to find best match
+    best_match = find_best_match(make, CAR_MAKES)
+    if best_match:
+        return best_match, []
+    
+    # If no good match, return top 5 suggestions
+    return None, CAR_MAKES[:5]
+
+def validate_model(make, model):
+    """
+    Validate a car model against the reference list for the specified make
+    
+    Args:
+        make (str): The car make
+        model (str): The car model to validate
+        
+    Returns:
+        tuple: (valid_model, suggestion_list)
+            - valid_model: The corrected model or None if no match
+            - suggestion_list: List of suggested models if no exact match
+    """
+    if not make or not model:
+        return None, []
+    
+    # Get valid models for the make
+    valid_models = get_valid_models_for_make(make)
+    if not valid_models:
+        return None, []
+    
+    # Check if model is already valid
+    if model in valid_models:
+        return model, []
+    
+    # Try to find best match
+    best_match = find_best_match(model, valid_models)
+    if best_match:
+        return best_match, []
+    
+    # If no good match, return all valid models as suggestions
+    return None, valid_models
+
+def validate_color(color):
+    """
+    Validate a car color against the reference list
+    
+    Args:
+        color (str): The car color to validate
+        
+    Returns:
+        tuple: (valid_color, suggestion_list)
+            - valid_color: The corrected color or None if no match
+            - suggestion_list: List of suggested colors if no exact match
+    """
+    if not color:
+        return None, []
+    
+    # Check if color is already valid
+    if color in CAR_COLORS:
+        return color, []
+    
+    # Try to find best match
+    best_match = find_best_match(color, CAR_COLORS)
+    if best_match:
+        return best_match, []
+    
+    # If no good match, return all colors as suggestions
+    return None, CAR_COLORS
 
 def is_off_topic_query(query):
     """
@@ -101,7 +230,8 @@ def is_off_topic_query(query):
         'cover', 'third-party', 'third party', 'comprehensive', 
         'registration', 'financed', 'toyota', 'bmw', 'vehicle', 
         'ford', 'honda', 'color', 'model', 'make', 'year', 'parking',
-        'security', 'theft', 'value'
+        'security', 'theft', 'value', 'id number', 'name', 'mazda', 
+        'volkswagen', 'audi', 'hyundai', 'kia', 'volvo', 'jeep'
     ]
     
     # Check if the query contains any vehicle insurance-related keywords
@@ -270,22 +400,38 @@ def extract_info_from_message(conversation, user_message):
     # Extract car make
     for make in CAR_MAKES:
         if make.lower() in message_lower:
-            conversation["extraction_data"]["make"] = make
+            # Validate the make
+            valid_make, _ = validate_make(make)
+            if valid_make:
+                conversation["extraction_data"]["make"] = valid_make
+            else:
+                conversation["extraction_data"]["make"] = make
             break
     
     # Extract car model if we know the make
     if "make" in conversation["extraction_data"]:
         make = conversation["extraction_data"]["make"]
-        if make in CAR_MODELS_BY_MAKE:
-            for model in CAR_MODELS_BY_MAKE[make]:
-                if model.lower() in message_lower:
+        valid_models = get_valid_models_for_make(make)
+        
+        for model in valid_models:
+            if model.lower() in message_lower:
+                # Validate the model for this make
+                valid_model, _ = validate_model(make, model)
+                if valid_model:
+                    conversation["extraction_data"]["model"] = valid_model
+                else:
                     conversation["extraction_data"]["model"] = model
-                    break
+                break
     
     # Extract car color
     for color in CAR_COLORS:
         if color.lower() in message_lower:
-            conversation["extraction_data"]["color"] = color
+            # Validate the color
+            valid_color, _ = validate_color(color)
+            if valid_color:
+                conversation["extraction_data"]["color"] = valid_color
+            else:
+                conversation["extraction_data"]["color"] = color
             break
     
     # Extract car year - look for 4-digit numbers
@@ -355,10 +501,21 @@ def process_tool_calls(conversation, tool_calls):
         function_args = json.loads(tool_call.function.arguments)
         
         if function_name == "collect_vehicle_info":
-            # Update extraction data with collected information
+            # Update extraction data with collected information, applying validation
             for key, value in function_args.items():
                 if value:  # Only update if value is not None or empty
-                    conversation["extraction_data"][key] = value
+                    # Apply validation for specific fields
+                    if key == "make":
+                        valid_make, _ = validate_make(value)
+                        conversation["extraction_data"][key] = valid_make or value
+                    elif key == "model" and "make" in conversation["extraction_data"]:
+                        valid_model, _ = validate_model(conversation["extraction_data"]["make"], value)
+                        conversation["extraction_data"][key] = valid_model or value
+                    elif key == "color":
+                        valid_color, _ = validate_color(value)
+                        conversation["extraction_data"][key] = valid_color or value
+                    else:
+                        conversation["extraction_data"][key] = value
             
             # Prepare response
             result = {
@@ -367,7 +524,7 @@ def process_tool_calls(conversation, tool_calls):
             }
         
         elif function_name == "process_vehicle_quote":
-            # Update extraction data from nested objects
+            # Update extraction data from nested objects, applying validation
             # Personal info
             if "customer_name" in function_args:
                 conversation["extraction_data"]["customer_name"] = function_args["customer_name"]
@@ -377,7 +534,23 @@ def process_tool_calls(conversation, tool_calls):
             # Vehicle details
             if "vehicle_details" in function_args:
                 for key, value in function_args["vehicle_details"].items():
-                    conversation["extraction_data"][key] = value
+                    # Apply validation for specific fields
+                    if key == "make":
+                        valid_make, _ = validate_make(value)
+                        conversation["extraction_data"][key] = valid_make or value
+                    elif key == "model":
+                        # Get the make from either the nested object or the existing data
+                        make = function_args["vehicle_details"].get("make") or conversation["extraction_data"].get("make")
+                        if make:
+                            valid_model, _ = validate_model(make, value)
+                            conversation["extraction_data"][key] = valid_model or value
+                        else:
+                            conversation["extraction_data"][key] = value
+                    elif key == "color":
+                        valid_color, _ = validate_color(value)
+                        conversation["extraction_data"][key] = valid_color or value
+                    else:
+                        conversation["extraction_data"][key] = value
             
             # Coverage details
             if "coverage_details" in function_args:
@@ -429,8 +602,9 @@ def format_conversation_for_openai(conversation):
     # Add conversation history
     for msg in conversation.get("messages", []):
         role = msg.get("role")
-        # Skip the initial assistant greeting if it exists
-        if role == "assistant" and msg.get("content") == "Hi there, how can I help you today?":
+        # Skip any initial assistant greeting if it exists
+        if role == "assistant" and any(greeting in msg.get("content", "").lower() 
+                                      for greeting in ["hi there", "hello", "how can i help"]):
             continue
             
         # Convert to OpenAI message format
@@ -568,36 +742,78 @@ def normalize_extraction_data(extraction_data):
     Returns:
         dict: Normalized extraction data
     """
-    # Match car make against predefined list
-    if "make" in extraction_data:
-        best_make_match = find_best_match(extraction_data["make"], CAR_MAKES)
-        if best_make_match:
-            extraction_data["make"] = best_make_match
+    # Make a copy to avoid modifying the original
+    normalized_data = extraction_data.copy()
     
-    # Match car model against models for the selected make
-    if "make" in extraction_data and "model" in extraction_data:
-        make = extraction_data["make"]
-        if make in CAR_MODELS_BY_MAKE:
-            best_model_match = find_best_match(extraction_data["model"], CAR_MODELS_BY_MAKE[make])
-            if best_model_match:
-                extraction_data["model"] = best_model_match
+    # Validate make
+    if "make" in normalized_data:
+        valid_make, _ = validate_make(normalized_data["make"])
+        if valid_make:
+            normalized_data["make"] = valid_make
     
-    # Match color against predefined list
-    if "color" in extraction_data:
-        best_color_match = find_best_match(extraction_data["color"], CAR_COLORS)
-        if best_color_match:
-            extraction_data["color"] = best_color_match
+    # Validate model based on make
+    if "make" in normalized_data and "model" in normalized_data:
+        valid_model, _ = validate_model(normalized_data["make"], normalized_data["model"])
+        if valid_model:
+            normalized_data["model"] = valid_model
     
-    # Match usage type against predefined list
-    if "usage" in extraction_data:
-        best_usage_match = find_best_match(extraction_data["usage"], VEHICLE_USAGE_TYPES)
-        if best_usage_match:
-            extraction_data["usage"] = best_usage_match
+    # Validate color
+    if "color" in normalized_data:
+        valid_color, _ = validate_color(normalized_data["color"])
+        if valid_color:
+            normalized_data["color"] = valid_color
+    
+    # Normalize usage type
+    if "usage" in normalized_data:
+        usage = normalized_data["usage"]
+        for valid_usage in VEHICLE_USAGE_TYPES:
+            if valid_usage.lower() == usage.lower() or valid_usage.lower() in usage.lower():
+                normalized_data["usage"] = valid_usage
+                break
     
     # Convert yes/no string responses to booleans
     for field in ["is_registered_in_sa", "is_financed"]:
-        if field in extraction_data and isinstance(extraction_data[field], str):
-            value = extraction_data[field].lower()
-            extraction_data[field] = value in ["yes", "true", "y", "1"]
+        if field in normalized_data and isinstance(normalized_data[field], str):
+            value = normalized_data[field].lower()
+            normalized_data[field] = value in ["yes", "true", "y", "1"]
     
-    return extraction_data
+    # Normalize cover type
+    if "cover_type" in normalized_data:
+        cover_type = normalized_data["cover_type"]
+        for valid_cover in COVER_TYPES:
+            if valid_cover.lower() == cover_type.lower() or valid_cover.lower() in cover_type.lower():
+                normalized_data["cover_type"] = valid_cover
+                break
+    
+    # Normalize insured value
+    if "insured_value" in normalized_data:
+        insured_value = normalized_data["insured_value"]
+        for valid_value in INSURED_VALUE_OPTIONS:
+            if valid_value.lower() == insured_value.lower() or valid_value.lower() in insured_value.lower():
+                normalized_data["insured_value"] = valid_value
+                break
+    
+    # Normalize night parking location
+    if "night_parking_location" in normalized_data:
+        location = normalized_data["night_parking_location"]
+        for valid_location in NIGHT_PARKING_LOCATIONS:
+            if valid_location.lower() == location.lower() or valid_location.lower() in location.lower():
+                normalized_data["night_parking_location"] = valid_location
+                break
+    
+    # Normalize night parking security
+    if "night_parking_security" in normalized_data and normalized_data["night_parking_security"]:
+        security_types = normalized_data["night_parking_security"]
+        normalized_security = []
+        
+        for security in security_types:
+            for valid_security in NIGHT_PARKING_SECURITY_TYPES:
+                if valid_security.lower() == security.lower() or valid_security.lower() in security.lower():
+                    normalized_security.append(valid_security)
+                    break
+        
+        # Only replace if we found valid matches
+        if normalized_security:
+            normalized_data["night_parking_security"] = normalized_security
+    
+    return normalized_data
