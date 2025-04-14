@@ -42,7 +42,19 @@ def ensure_complete_extraction_data(extraction_data):
         "night_parking_security": extraction_data.get("night_parking_security", [])
     }
     
-    return complete_data
+    # Ensure night_parking_security is always a list
+    if complete_data["night_parking_security"] is None:
+        complete_data["night_parking_security"] = []
+    
+    # Ensure boolean fields are properly formatted
+    if isinstance(complete_data["is_registered_in_sa"], str):
+        value = complete_data["is_registered_in_sa"].lower()
+        complete_data["is_registered_in_sa"] = value in ["yes", "true", "y", "1"]
+    
+    if isinstance(complete_data["is_financed"], str):
+        value = complete_data["is_financed"].lower()
+        complete_data["is_financed"] = value in ["yes", "true", "y", "1"]
+    
 
 def find_best_match(input_text, predefined_list, threshold=0.6):
     """
