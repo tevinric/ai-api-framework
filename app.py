@@ -42,7 +42,15 @@ swagger_template = {
         "title": "API Documentation",
         "description": "API endpoints with authentication",
         "version": "1.0.0"
-    }     
+    },
+    "securityDefinitions": {
+        "ApiKeyAuth": {
+            "type": "apiKey",
+            "name": "X-Token",
+            "in": "header",
+            "description": "API Key for authentication. Add your token with the X-Token header."
+        }
+    }
 }
 
 
@@ -250,6 +258,3 @@ register_insurance_bot_routes(app)
 
 if __name__ == '__main__':
     app.run(debug=True)
-    
-
-
