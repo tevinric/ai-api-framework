@@ -22,6 +22,8 @@ Update existing user details (Admin only endpoint)
 ---
 tags:
   - Admin Functions
+produces:
+  - application/json
 parameters:
   - name: API-Key
     in: header
@@ -72,91 +74,89 @@ parameters:
           type: number
           format: decimal
           description: Custom monthly balance for the user (optional)
-    produces:
-      - application/json
-    responses:
-      200:
-        description: User updated successfully
-        schema:
-          type: object
-          properties:
-            message:
-              type: string
-              example: User updated successfully
-            user_id:
-              type: string
-              description: ID of the updated user
-            updated_fields:
-              type: array
-              items:
-                type: string
-              description: List of fields that were updated
-      400:
-        description: Bad request
-        schema:
-          type: object
-          properties:
-            error:
-              type: string
-              example: Bad Request
-            message:
-              type: string
-              example: Missing required fields or invalid data
-      401:
-        description: Authentication error
-        schema:
-          type: object
-          properties:
-            error:
-              type: string
-              example: Authentication Error
-            message:
-              type: string
-              example: Missing API Key header or Invalid API Key
-      403:
-        description: Forbidden
-        schema:
-          type: object
-          properties:
-            error:
-              type: string
-              example: Forbidden
-            message:
-              type: string
-              example: Admin privileges required
-      404:
-        description: Not Found
-        schema:
-          type: object
-          properties:
-            error:
-              type: string
-              example: Not Found
-            message:
-              type: string
-              example: User not found
-      409:
-        description: Conflict
-        schema:
-          type: object
-          properties:
-            error:
-              type: string
-              example: Conflict
-            message:
-              type: string
-              example: Email address already in use by another user
-      500:
-        description: Server error
-        schema:
-          type: object
-          properties:
-            error:
-              type: string
-              example: Server Error
-            message:
-              type: string
-              example: Error updating user
+responses:
+  200:
+    description: User updated successfully
+    schema:
+      type: object
+      properties:
+        message:
+          type: string
+          example: User updated successfully
+        user_id:
+          type: string
+          description: ID of the updated user
+        updated_fields:
+          type: array
+          items:
+            type: string
+          description: List of fields that were updated
+  400:
+    description: Bad request
+    schema:
+      type: object
+      properties:
+        error:
+          type: string
+          example: Bad Request
+        message:
+          type: string
+          example: Missing required fields or invalid data
+  401:
+    description: Authentication error
+    schema:
+      type: object
+      properties:
+        error:
+          type: string
+          example: Authentication Error
+        message:
+          type: string
+          example: Missing API Key header or Invalid API Key
+  403:
+    description: Forbidden
+    schema:
+      type: object
+      properties:
+        error:
+          type: string
+          example: Forbidden
+        message:
+          type: string
+          example: Admin privileges required
+  404:
+    description: Not Found
+    schema:
+      type: object
+      properties:
+        error:
+          type: string
+          example: Not Found
+        message:
+          type: string
+          example: User not found
+  409:
+    description: Conflict
+    schema:
+      type: object
+      properties:
+        error:
+          type: string
+          example: Conflict
+        message:
+          type: string
+          example: Email address already in use by another user
+  500:
+    description: Server error
+    schema:
+      type: object
+      properties:
+        error:
+          type: string
+          example: Server Error
+        message:
+          type: string
+          example: Error updating user
     """
     # Get API key from request header
     api_key = request.headers.get('API-Key')
