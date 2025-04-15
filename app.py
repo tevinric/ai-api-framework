@@ -21,42 +21,32 @@ app.config['SWAGGER'] = {
     'title': 'Swagger'
 }
 
-app = Flask(__name__)
-
-# Configure Swagger
 swagger_config = {
     "headers": [],
     "specs": [
         {
-            "endpoint": "apispec",
-            "route": "/apispec.json",
+            "endpoint": 'apispec',
+            "route": '/apispec_1.json',
             "rule_filter": lambda rule: True,
             "model_filter": lambda tag: True,
         }
     ],
     "static_url_path": "/flasgger_static",
     "swagger_ui": True,
-    "specs_route": "/swagger/",
+    "specs_route": "/apidocs/"
 }
 
 swagger_template = {
     "swagger": "2.0",
     "info": {
-        "title": "Image Generation API",
-        "description": "API for generating images using DALLE-3",
-        "version": "1.0.0",
-    },
-    "securityDefinitions": {
-        "ApiKeyAuth": {
-            "type": "apiKey",
-            "name": "X-Token",
-            "in": "header"
-        }
-    },
+        "title": "API Documentation",
+        "description": "API endpoints with authentication",
+        "version": "1.0.0"
+    }     
 }
 
-swagger = Swagger(app, config=swagger_config, template=swagger_template)
 
+swagger = Swagger(app, config=swagger_config, template=swagger_template)
 
 
 # INITIALIZE THE TOKEN SERVICE
