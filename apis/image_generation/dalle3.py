@@ -82,7 +82,7 @@ def custom_image_generation_route():
     consumes:
       - application/json
     security:
-      - ApiKeyHeader: []
+      - ApiKeyAuth: []
     x-code-samples:
       - lang: curl
         source: |-
@@ -133,7 +133,7 @@ def custom_image_generation_route():
               description: The model deployment used
               enum: [dall-e-3, dalle3-hd]
       400:
-        description: Bad request
+        description: Bad request - Missing required fields or invalid parameter values
         schema:
           type: object
           properties:
@@ -143,15 +143,9 @@ def custom_image_generation_route():
             message:
               type: string
               description: Error message
-              examples:
-                - "Request body is required"
-                - "Missing required field: prompt"
-                - "Invalid deployment. Must be one of: dall-e-3, dalle3-hd"
-                - "Invalid size. Must be one of: 1024x1024, 1792x1024, 1024x1792"
-                - "Invalid quality. Must be one of: standard, hd"
-                - "Invalid style. Must be one of: vivid, natural"
+              example: "Missing required field: prompt"
       401:
-        description: Authentication error
+        description: Authentication error - Invalid or expired token
         schema:
           type: object
           properties:
@@ -161,14 +155,9 @@ def custom_image_generation_route():
             message:
               type: string
               description: Authentication error details
-              examples:
-                - "Missing X-Token header"
-                - "Invalid token - not found in database"
-                - "Token has expired"
-                - "Token is no longer valid with provider"
-                - "User associated with token not found"
+              example: "Missing X-Token header"
       500:
-        description: Server error
+        description: Server error or API service unavailable
         schema:
           type: object
           properties:
@@ -178,6 +167,7 @@ def custom_image_generation_route():
             message:
               type: string
               description: Error message from the server, OpenAI API, or Azure Blob Storage
+              example: "Failed to generate image"
     """
     # Get token from X-Token header
     token = request.headers.get('X-Token')
@@ -368,5 +358,17 @@ def register_image_generation_routes(app):
     from apis.utils.logMiddleware import api_logger
     from apis.utils.balanceMiddleware import check_balance
     from apis.utils.usageMiddleware import track_usage
+    
+    # Add Swagger security definitions
+    if not hasattr(app, 'swag'):
+        app.swag = {}
+    if 'securityDefinitions' not in app.swag:
+        app.swag['securityDefinitions'] = {
+            'ApiKeyAuth': {
+                'type': 'apiKey',
+                'name': 'X-Token',
+                'in': 'header'
+            }
+        }
     
     app.route('/image-generation/dalle3', methods=['POST'])(track_usage(api_logger(check_balance(custom_image_generation_route))))
