@@ -255,5 +255,8 @@ register_nlp_routes(app)
 from apis.llm_conversation.insurance_conversation import register_insurance_bot_routes
 register_insurance_bot_routes(app)
 
+from apis.admin.admin_endpoint_access import register_admin_endpoint_access_routes
+register_admin_endpoint_access_routes(app)
+
 if __name__ == '__main__':
     app.run(debug=True)
