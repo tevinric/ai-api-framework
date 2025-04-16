@@ -1,3 +1,3 @@
-Semantic error at paths./image-generation/stable-diffusion-ultra.post.security.0
-Security requirements must match a security definition
-Jump to line 1644
+Semantic error at paths./insurance-bot/chat.post.responses.200.schema.properties.valid_models
+Schemas with 'type: array', require a sibling 'items: ' field
+Jump to line 1740
