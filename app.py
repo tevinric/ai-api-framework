@@ -40,6 +40,7 @@ swagger_template = {
     "swagger": "2.0",
     "info": {
         "title": "API Documentation",
+        "version": "0.0.1"
     },
     "securityDefinitions": {
         "ApiKeyAuth": {

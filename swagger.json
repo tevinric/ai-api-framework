@@ -1,9 +1,8 @@
 {
   "definitions": {},
   "info": {
-    "description": "API endpoints with authentication",
     "title": "API Documentation",
-    "version": "1.0.0"
+    "version": "0.0.1"
   },
   "paths": {
     "/admin/balance": {
@@ -5314,20 +5313,16 @@
                   "example": 84,
                   "type": "integer"
                 },
-                "input_tokens": {
-                  "example": 125,
-                  "type": "integer"
-                },
                 "message": {
                   "example": "Query processed successfully",
                   "type": "string"
                 },
-                "model": {
+                "model_used": {
                   "example": "gpt-4o-mini",
                   "type": "string"
                 },
-                "output_tokens": {
-                  "example": 209,
+                "prompt_tokens": {
+                  "example": 125,
                   "type": "integer"
                 },
                 "sources": {
@@ -5340,6 +5335,10 @@
                     "type": "string"
                   },
                   "type": "array"
+                },
+                "total_tokens": {
+                  "example": 209,
+                  "type": "integer"
                 },
                 "vectorstore_id": {
                   "example": "12345678-1234-1234-1234-123456789012",
@@ -5489,20 +5488,16 @@
                   "example": 84,
                   "type": "integer"
                 },
-                "input_tokens": {
-                  "example": 125,
-                  "type": "integer"
-                },
                 "message": {
                   "example": "Query processed successfully",
                   "type": "string"
                 },
-                "model": {
+                "model_used": {
                   "example": "gpt-4o",
                   "type": "string"
                 },
-                "output_tokens": {
-                  "example": 209,
+                "prompt_tokens": {
+                  "example": 125,
                   "type": "integer"
                 },
                 "sources": {
@@ -5515,6 +5510,10 @@
                     "type": "string"
                   },
                   "type": "array"
+                },
+                "total_tokens": {
+                  "example": 209,
+                  "type": "integer"
                 },
                 "vectorstore_id": {
                   "example": "abc123456789",
