@@ -39,8 +39,7 @@ def usage_by_user_route():
         in: query
         type: string
         required: true
-        description: Time period for statistics, either "all" or in format "YYYY-MM"
-        example: "2024-03"
+        description: Time period for statistics, either "all" or in format "YYYY-MM" (e.g. "2024-03")
     produces:
       - application/json
     responses:
@@ -266,8 +265,7 @@ def usage_by_department_route():
         in: query
         type: string
         required: true
-        description: Time period for statistics, either "all" or in format "YYYY-MM"
-        example: "2024-03"
+        description: Time period for statistics, either "all" or in format "YYYY-MM" (e.g. "2024-03")
     produces:
       - application/json
     responses:
@@ -721,8 +719,7 @@ def user_activity_summary_route():
         in: query
         type: string
         required: true
-        description: Time period for activity summary in format "YYYY-MM"
-        example: "2025-04"
+        description: Time period for activity summary in format "YYYY-MM" (e.g. "2025-04")
     produces:
       - application/json
     responses:
@@ -904,8 +901,7 @@ def user_model_usage_summary_route():
         in: query
         type: string
         required: true
-        description: Time period for model usage summary in format "YYYY-MM"
-        example: "2025-04"
+        description: Time period for model usage summary in format "YYYY-MM" (e.g. "2025-04")
     produces:
       - application/json
     responses:
