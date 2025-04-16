@@ -277,5 +277,6 @@ def register_llm_o3_mini(app):
     from apis.utils.logMiddleware import api_logger
     from apis.utils.balanceMiddleware import check_balance
     from apis.utils.usageMiddleware import track_usage
-    
-    app.route('/llm/o3-mini', methods=['POST'])(track_usage(api_logger(check_balance(o3_mini_route))))
+    from apis.utils.rbacMiddleware import check_endpoint_access    
+
+    app.route('/llm/o3-mini', methods=['POST'])(track_usage(api_logger(check_endpoint_access(check_balance(o3_mini_route)))))

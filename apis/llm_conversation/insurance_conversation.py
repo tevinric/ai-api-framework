@@ -547,6 +547,8 @@ def delete_insurance_chat_route():
 
 def register_insurance_bot_routes(app):
     from apis.utils.usageMiddleware import track_usage
+    from apis.utils.rbacMiddleware import check_endpoint_access
+    
     """Register insurance bot routes with the Flask app"""
-    app.route('/insurance-bot/chat', methods=['POST'])(track_usage(api_logger(insurance_chat_route)))
-    app.route('/insurance-bot/chat', methods=['DELETE'])(api_logger(delete_insurance_chat_route))
+    app.route('/insurance-bot/chat', methods=['POST'])(track_usage(api_logger(check_endpoint_access(insurance_chat_route))))
+    app.route('/insurance-bot/chat', methods=['DELETE'])(api_logger(check_endpoint_access(delete_insurance_chat_route)))

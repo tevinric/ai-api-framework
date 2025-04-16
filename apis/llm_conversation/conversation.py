@@ -864,9 +864,10 @@ def delete_conversation_route():
 
 def register_llm_conversation_routes(app):
     from apis.utils.usageMiddleware import track_usage
+    from apis.utils.rbacMiddleware import check_endpoint_access
     """Register LLM conversation routes with the Flask app"""
     
     # We handle balance checking inside the route functions now, but keep the api_logger
-    app.route('/llm/conversation/chat', methods=['POST'])(track_usage(api_logger(create_chat_route)))
-    app.route('/llm/conversation/continue', methods=['POST'])(track_usage(api_logger(continue_conversation_route)))
-    app.route('/llm/conversation', methods=['DELETE'])(api_logger(delete_conversation_route))
+    app.route('/llm/conversation/chat', methods=['POST'])(track_usage(api_logger(check_endpoint_access(create_chat_route))))
+    app.route('/llm/conversation/continue', methods=['POST'])(track_usage(api_logger(check_endpoint_access(continue_conversation_route))))
+    app.route('/llm/conversation', methods=['DELETE'])(api_logger(check_endpoint_access(delete_conversation_route)))

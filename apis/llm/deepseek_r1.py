@@ -266,5 +266,6 @@ def register_llm_deepseek_r1(app):
     from apis.utils.logMiddleware import api_logger
     from apis.utils.balanceMiddleware import check_balance
     from apis.utils.usageMiddleware import track_usage
+    from apis.utils.rbacMiddleware import check_endpoint_access
     
-    app.route('/llm/deepseek-r1', methods=['POST'])(track_usage(api_logger(check_balance(deepseek_r1_route))))
+    app.route('/llm/deepseek-r1', methods=['POST'])(track_usage(api_logger(check_endpoint_access(check_balance(deepseek_r1_route)))))
