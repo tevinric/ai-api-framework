@@ -84,6 +84,8 @@ def insurance_chat_route():
               description: Whether the quote information collection is complete
             valid_models:
               type: array
+              items:
+                type: string
               description: List of valid models if a make is specified
             options:
               type: object
