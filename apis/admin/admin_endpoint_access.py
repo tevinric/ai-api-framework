@@ -21,14 +21,14 @@ def admin_grant_endpoint_access_single_route():
     Grant a user access to a specific endpoint
     ---
     tags:
-      - Admin Endpoint Access
+      - Admin Functions
     parameters:
       - name: API-Key
         in: header
         type: string
         required: true
         description: Admin API Key for authentication
-      - name: token
+      - name: X-Token
         in: query
         type: string
         required: true
@@ -254,14 +254,14 @@ def admin_grant_endpoint_access_all_route():
     Grant a user access to all active endpoints
     ---
     tags:
-      - Admin Endpoint Access
+      - Admin Functions
     parameters:
       - name: API-Key
         in: header
         type: string
         required: true
         description: Admin API Key for authentication
-      - name: token
+      - name: X-Token
         in: query
         type: string
         required: true
@@ -461,14 +461,14 @@ def admin_delete_endpoint_access_single_route():
     Delete endpoint access for a specific user and endpoint
     ---
     tags:
-      - Admin Endpoint Access
+      - Admin Functions
     parameters:
       - name: API-Key
         in: header
         type: string
         required: true
         description: Admin API Key for authentication
-      - name: token
+      - name: X-Token
         in: query
         type: string
         required: true
@@ -669,14 +669,14 @@ def admin_delete_endpoint_access_all_route():
     Delete all endpoint access for a specific user
     ---
     tags:
-      - Admin Endpoint Access
+      - Admin Functions
     parameters:
       - name: API-Key
         in: header
         type: string
         required: true
         description: Admin API Key for authentication
-      - name: token
+      - name: X-Token
         in: query
         type: string
         required: true
