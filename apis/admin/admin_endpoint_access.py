@@ -16,9 +16,9 @@ def create_api_response(data, status_code=200):
     response.status_code = status_code
     return response
 
-def admin_get_endpoint_access_single_route():
+def admin_grant_endpoint_access_single_route():
     """
-    Get endpoint access for a specific user and endpoint
+    Grant a user access to a specific endpoint
     ---
     tags:
       - Admin Endpoint Access
@@ -44,30 +44,30 @@ def admin_get_endpoint_access_single_route():
           properties:
             user_id:
               type: string
-              description: UUID of the user to check endpoint access for
+              description: UUID of the user to grant endpoint access to
             endpoint_id:
               type: string
-              description: UUID of the endpoint to check access for
+              description: UUID of the endpoint to grant access for
     produces:
       - application/json
     responses:
-      200:
-        description: Endpoint access information
+      201:
+        description: Endpoint access successfully granted
         schema:
           type: object
           properties:
-            access_granted:
-              type: boolean
-              description: Whether the user has access to the endpoint
-            endpoint_id:
+            message:
               type: string
-              description: ID of the endpoint
+              example: Endpoint access successfully granted
             user_id:
               type: string
               description: ID of the user
-            endpoint_details:
-              type: object
-              description: Details about the endpoint
+            endpoint_id:
+              type: string
+              description: ID of the endpoint
+            access_id:
+              type: string
+              description: ID of the new access record
       400:
         description: Bad request
         schema:
@@ -122,7 +122,7 @@ def admin_get_endpoint_access_single_route():
               example: Server Error
             message:
               type: string
-              example: Error retrieving endpoint access
+              example: Error granting endpoint access
     """
     # Get API key from request header
     api_key = request.headers.get('API-Key')
@@ -146,7 +146,7 @@ def admin_get_endpoint_access_single_route():
     if admin_info["scope"] != 0:
         return create_api_response({
             "error": "Forbidden",
-            "message": "Admin privileges required to view endpoint access"
+            "message": "Admin privileges required to grant endpoint access"
         }, 403)
     
     # Get token from query parameter
@@ -217,26 +217,41 @@ def admin_get_endpoint_access_single_route():
         }, 404)
     
     try:
-        # Get endpoint access info using the existing method
-        access_info = DatabaseService.get_user_endpoint_access(user_id, endpoint_id)
+        # Grant endpoint access to the user
+        success, result = DatabaseService.add_user_endpoint_access(user_id, endpoint_id, admin_info["id"])
         
+        if not success:
+            return create_api_response({
+                "error": "Server Error",
+                "message": f"Failed to grant endpoint access: {result}"
+            }, 500)
+        
+        # If user already has access, return success with appropriate message
+        if isinstance(result, str) and "already has access" in result:
+            return create_api_response({
+                "message": result,
+                "user_id": user_id,
+                "endpoint_id": endpoint_id
+            }, 200)
+        
+        # Otherwise, return success with the new access ID
         return create_api_response({
-            "access_granted": access_info.get("access_granted", False) if access_info else False,
-            "endpoint_id": endpoint_id,
+            "message": "Endpoint access successfully granted",
             "user_id": user_id,
-            "endpoint_details": endpoint
-        }, 200)
+            "endpoint_id": endpoint_id,
+            "access_id": result
+        }, 201)
         
     except Exception as e:
-        logger.error(f"Error retrieving endpoint access: {str(e)}")
+        logger.error(f"Error granting endpoint access: {str(e)}")
         return create_api_response({
             "error": "Server Error",
-            "message": f"Error retrieving endpoint access: {str(e)}"
+            "message": f"Error granting endpoint access: {str(e)}"
         }, 500)
 
-def admin_get_endpoint_access_all_route():
+def admin_grant_endpoint_access_all_route():
     """
-    Get all endpoint access for a specific user
+    Grant a user access to all active endpoints
     ---
     tags:
       - Admin Endpoint Access
@@ -261,31 +276,24 @@ def admin_get_endpoint_access_all_route():
           properties:
             user_id:
               type: string
-              description: UUID of the user to check endpoint access for
+              description: UUID of the user to grant access for all endpoints
     produces:
       - application/json
     responses:
-      200:
-        description: List of endpoint access information
+      201:
+        description: Access to all endpoints successfully granted
         schema:
           type: object
           properties:
+            message:
+              type: string
+              example: Access to all endpoints successfully granted
             user_id:
               type: string
               description: ID of the user
-            endpoint_access:
-              type: array
-              items:
-                type: object
-                properties:
-                  endpoint_id:
-                    type: string
-                  endpoint_path:
-                    type: string
-                  endpoint_name:
-                    type: string
-                  access_granted:
-                    type: boolean
+            endpoints_added:
+              type: integer
+              description: Number of endpoint access entries added
       400:
         description: Bad request
         schema:
@@ -340,7 +348,7 @@ def admin_get_endpoint_access_all_route():
               example: Server Error
             message:
               type: string
-              example: Error retrieving endpoint access
+              example: Error granting access to all endpoints
     """
     # Get API key from request header
     api_key = request.headers.get('API-Key')
@@ -364,7 +372,7 @@ def admin_get_endpoint_access_all_route():
     if admin_info["scope"] != 0:
         return create_api_response({
             "error": "Forbidden",
-            "message": "Admin privileges required to view endpoint access"
+            "message": "Admin privileges required to grant endpoint access"
         }, 403)
     
     # Get token from query parameter
@@ -426,19 +434,26 @@ def admin_get_endpoint_access_all_route():
         }, 404)
     
     try:
-        # Get all endpoint access for the user using the existing method
-        access_list = DatabaseService.get_all_user_endpoint_access(user_id)
+        # Grant access to all endpoints for the user
+        success, result = DatabaseService.add_all_endpoints_access(user_id, admin_info["id"])
+        
+        if not success:
+            return create_api_response({
+                "error": "Server Error",
+                "message": f"Failed to grant access to all endpoints: {result}"
+            }, 500)
         
         return create_api_response({
+            "message": "Access to all endpoints successfully granted",
             "user_id": user_id,
-            "endpoint_access": access_list
-        }, 200)
+            "endpoints_added": result
+        }, 201)
         
     except Exception as e:
-        logger.error(f"Error retrieving all endpoint access: {str(e)}")
+        logger.error(f"Error granting access to all endpoints: {str(e)}")
         return create_api_response({
             "error": "Server Error",
-            "message": f"Error retrieving all endpoint access: {str(e)}"
+            "message": f"Error granting access to all endpoints: {str(e)}"
         }, 500)
 
 def admin_delete_endpoint_access_single_route():
@@ -821,7 +836,7 @@ def admin_delete_endpoint_access_all_route():
         }, 404)
     
     try:
-        # Use the existing method to remove all endpoint access for the user
+        # Remove all endpoint access for the user
         count_removed = DatabaseService.remove_all_user_endpoint_access(user_id)
         
         return create_api_response({
@@ -839,9 +854,8 @@ def admin_delete_endpoint_access_all_route():
 
 def register_admin_endpoint_access_routes(app):
     """Register routes with the Flask app"""
-    # Changed from GET to POST for the first two endpoints
-    app.route('/admin/endpoint/access/single', methods=['POST'])(api_logger(admin_get_endpoint_access_single_route))
-    app.route('/admin/endpoint/access/all', methods=['POST'])(api_logger(admin_get_endpoint_access_all_route))
-    # Keep DELETE methods as they are
+    # Updated function names and routes
+    app.route('/admin/endpoint/access/single', methods=['POST'])(api_logger(admin_grant_endpoint_access_single_route))
+    app.route('/admin/endpoint/access/all', methods=['POST'])(api_logger(admin_grant_endpoint_access_all_route))
     app.route('/admin/endpoint/access/single', methods=['DELETE'])(api_logger(admin_delete_endpoint_access_single_route))
     app.route('/admin/endpoint/access/all', methods=['DELETE'])(api_logger(admin_delete_endpoint_access_all_route))
