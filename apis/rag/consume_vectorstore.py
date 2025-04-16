@@ -125,19 +125,19 @@ def consume_git_policies_route():
             answer:
               type: string
               example: "Based on the context, the answer to your question is..."
-            model:
+            model_used:
               type: string
               example: "gpt-4o"
             vectorstore_id:
               type: string
               example: "abc123456789"
-            input_tokens:
+            prompt_tokens:
               type: integer
               example: 125
             completion_tokens:
               type: integer
               example: 84
-            output_tokens:
+            total_tokens:
               type: integer
               example: 209
             sources:
@@ -386,9 +386,10 @@ def consume_git_policies_route():
                 answer = service_response["result"]
                 
                 # Extract token usage
-                input_tokens = service_response.get("prompt_tokens", 0)
+                prompt_tokens = service_response.get("prompt_tokens", 0)
                 completion_tokens = service_response.get("completion_tokens", 0)
-                output_tokens = service_response.get("total_tokens", 0)
+                total_tokens = service_response.get("total_tokens", 0)
+                cached_tokens = service_response.get("cached_tokens", 0)
                 
                 # Update the last_accessed timestamp
                 update_vectorstore_access_timestamp(vectorstore_id)
@@ -397,12 +398,13 @@ def consume_git_policies_route():
                 response_data = {
                     "message": "Query processed successfully",
                     "answer": answer,
-                    "model": model,
+                    "model_used": model,
                     "vectorstore_id": vectorstore_id,
                     "vectorstore_name": vectorstore_name,
-                    "input_tokens": input_tokens,
+                    "prompt_tokens": prompt_tokens,
                     "completion_tokens": completion_tokens,
-                    "output_tokens": output_tokens
+                    "total_tokens": total_tokens,
+                    "cached_tokens": cached_tokens
                 }
                 
                 # Add source documents if requested
@@ -502,19 +504,19 @@ def consume_vectorstore_route():
             answer:
               type: string
               example: "Based on the context, the answer to your question is..."
-            model:
+            model_used:
               type: string
               example: "gpt-4o-mini"
             vectorstore_id:
               type: string
               example: "12345678-1234-1234-1234-123456789012"
-            input_tokens:
+            prompt_tokens:
               type: integer
               example: 125
             completion_tokens:
               type: integer
               example: 84
-            output_tokens:
+            total_tokens:
               type: integer
               example: 209
             sources:
@@ -805,9 +807,10 @@ def consume_vectorstore_route():
                 answer = service_response["result"]
                 
                 # Extract token usage
-                input_tokens = service_response.get("prompt_tokens", 0)
+                prompt_tokens = service_response.get("prompt_tokens", 0)
                 completion_tokens = service_response.get("completion_tokens", 0)
-                output_tokens = service_response.get("total_tokens", 0)
+                total_tokens = service_response.get("total_tokens", 0)
+                cached_tokens = service_response.get("cached_tokens", 0)
                 
                 # Update the last_accessed timestamp
                 update_vectorstore_access_timestamp(vectorstore_id)
@@ -816,12 +819,13 @@ def consume_vectorstore_route():
                 response_data = {
                     "message": "Query processed successfully",
                     "answer": answer,
-                    "model": model,
+                    "model_used": model,
                     "vectorstore_id": vectorstore_id,
                     "vectorstore_name": vectorstore_name,
-                    "input_tokens": input_tokens,
+                    "prompt_tokens": prompt_tokens,
                     "completion_tokens": completion_tokens,
-                    "output_tokens": output_tokens
+                    "total_tokens": total_tokens,
+                    "cached_tokens": cached_tokens
                 }
                 
                 # Add source documents if requested
