@@ -953,3 +953,44 @@ class DatabaseService:
             if conn:
                 conn.rollback()
             return 0
+
+    @staticmethod
+    def check_user_endpoint_access(user_id, endpoint_id):
+        """Check if a user has access to a specific endpoint
+        
+        Args:
+            user_id (str): UUID of the user to check
+            endpoint_id (str): UUID of the endpoint to check
+            
+        Returns:
+            bool: True if the user has access, False otherwise
+        """
+        try:
+            conn = DatabaseService.get_connection()
+            cursor = conn.cursor()
+            
+            # First check user's scope - admins can access everything
+            query = "SELECT scope FROM users WHERE id = ?"
+            cursor.execute(query, [user_id])
+            scope_result = cursor.fetchone()
+            
+            if scope_result and scope_result[0] == 0:
+                cursor.close()
+                conn.close()
+                return True
+            
+            # Check specific endpoint access
+            query = """
+            SELECT 1 FROM user_endpoint_access 
+            WHERE user_id = ? AND endpoint_id = ?
+            """
+            cursor.execute(query, [user_id, endpoint_id])
+            access_result = cursor.fetchone()
+            cursor.close()
+            conn.close()
+            
+            return access_result is not None
+            
+        except Exception as e:
+            logger.error(f"Error checking endpoint access: {str(e)}")
+            return False
