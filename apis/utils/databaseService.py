@@ -692,7 +692,7 @@ class DatabaseService:
             cursor = conn.cursor()
             
             query = """
-            SELECT id, user_id, endpoint_id, access_granted, granted_by, granted_at
+            SELECT id, user_id, endpoint_id, created_at, created_by
             FROM user_endpoint_access
             WHERE user_id = ? AND endpoint_id = ?
             """
@@ -707,9 +707,8 @@ class DatabaseService:
                     "id": str(access[0]),
                     "user_id": str(access[1]),
                     "endpoint_id": str(access[2]),
-                    "access_granted": bool(access[3]),
-                    "granted_by": str(access[4]) if access[4] else None,
-                    "granted_at": access[5].isoformat() if access[5] else None
+                    "created_at": access[3].isoformat() if access[3] else None,
+                    "created_by": str(access[4]) if access[4] else None
                 }
             return None
             
@@ -732,7 +731,7 @@ class DatabaseService:
             cursor = conn.cursor()
             
             query = """
-            SELECT uea.id, uea.user_id, uea.endpoint_id, uea.access_granted, 
+            SELECT uea.id, uea.user_id, uea.endpoint_id, uea.created_at, uea.created_by,
                    e.endpoint_path, e.endpoint_name
             FROM user_endpoint_access uea
             JOIN endpoints e ON uea.endpoint_id = e.id
@@ -747,9 +746,10 @@ class DatabaseService:
                     "id": str(row[0]),
                     "user_id": str(row[1]),
                     "endpoint_id": str(row[2]),
-                    "access_granted": bool(row[3]),
-                    "endpoint_path": row[4],
-                    "endpoint_name": row[5]
+                    "created_at": row[3].isoformat() if row[3] else None,
+                    "created_by": str(row[4]) if row[4] else None,
+                    "endpoint_path": row[5],
+                    "endpoint_name": row[6]
                 })
             
             cursor.close()
@@ -795,13 +795,13 @@ class DatabaseService:
             # Add access
             access_id = str(uuid.uuid4())
             
-            # Insert the access record with current timestamp
+            # Insert the access record - using the correct column names from schema
             query = """
             INSERT INTO user_endpoint_access (
-                id, user_id, endpoint_id, access_granted, granted_by, granted_at
+                id, user_id, endpoint_id, created_by
             )
             VALUES (
-                ?, ?, ?, 1, ?, DATEADD(HOUR, 2, GETUTCDATE())
+                ?, ?, ?, ?
             )
             """
             
@@ -858,13 +858,13 @@ class DatabaseService:
                     # Add access
                     access_id = str(uuid.uuid4())
                     
-                    # Insert the access record with current timestamp
+                    # Insert the access record using the correct column names
                     add_query = """
                     INSERT INTO user_endpoint_access (
-                        id, user_id, endpoint_id, access_granted, granted_by, granted_at
+                        id, user_id, endpoint_id, created_by
                     )
                     VALUES (
-                        ?, ?, ?, 1, ?, DATEADD(HOUR, 2, GETUTCDATE())
+                        ?, ?, ?, ?
                     )
                     """
                     
