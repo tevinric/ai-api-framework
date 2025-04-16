@@ -33,16 +33,21 @@ def admin_get_endpoint_access_single_route():
         type: string
         required: true
         description: A valid token for verification
-      - name: user_id
-        in: query
-        type: string
+      - name: body
+        in: body
         required: true
-        description: UUID of the user to check endpoint access for
-      - name: endpoint_id
-        in: query
-        type: string
-        required: true
-        description: UUID of the endpoint to check access for
+        schema:
+          type: object
+          required:
+            - user_id
+            - endpoint_id
+          properties:
+            user_id:
+              type: string
+              description: UUID of the user to check endpoint access for
+            endpoint_id:
+              type: string
+              description: UUID of the endpoint to check access for
     produces:
       - application/json
     responses:
@@ -177,16 +182,23 @@ def admin_get_endpoint_access_single_route():
             "message": "Token has expired"
         }, 401)
     
-    # Get required parameters
-    user_id = request.args.get('user_id')
-    endpoint_id = request.args.get('endpoint_id')
+    # Get request data from JSON body
+    data = request.get_json()
+    if not data:
+        return create_api_response({
+            "error": "Bad Request",
+            "message": "Request body is required"
+        }, 400)
     
     # Validate required parameters
-    if not user_id or not endpoint_id:
+    if 'user_id' not in data or 'endpoint_id' not in data:
         return create_api_response({
             "error": "Bad Request",
             "message": "Missing required parameters: user_id and endpoint_id are required"
         }, 400)
+    
+    user_id = data['user_id']
+    endpoint_id = data['endpoint_id']
     
     # Check if user exists
     user_exists = DatabaseService.get_user_by_id(user_id)
@@ -196,7 +208,7 @@ def admin_get_endpoint_access_single_route():
             "message": f"User with ID {user_id} not found"
         }, 404)
     
-    # Fixed: Changed from get_endpoint_by_ud to get_endpoint_by_id
+    # Get endpoint details
     endpoint = DatabaseService.get_endpoint_by_id(endpoint_id)
     if not endpoint:
         return create_api_response({
@@ -205,7 +217,7 @@ def admin_get_endpoint_access_single_route():
         }, 404)
     
     try:
-        # Get endpoint access info
+        # Get endpoint access info using the existing method
         access_info = DatabaseService.get_user_endpoint_access(user_id, endpoint_id)
         
         return create_api_response({
@@ -239,11 +251,17 @@ def admin_get_endpoint_access_all_route():
         type: string
         required: true
         description: A valid token for verification
-      - name: user_id
-        in: query
-        type: string
+      - name: body
+        in: body
         required: true
-        description: UUID of the user to check endpoint access for
+        schema:
+          type: object
+          required:
+            - user_id
+          properties:
+            user_id:
+              type: string
+              description: UUID of the user to check endpoint access for
     produces:
       - application/json
     responses:
@@ -382,15 +400,22 @@ def admin_get_endpoint_access_all_route():
             "message": "Token has expired"
         }, 401)
     
-    # Get required parameters
-    user_id = request.args.get('user_id')
+    # Get request data from JSON body
+    data = request.get_json()
+    if not data:
+        return create_api_response({
+            "error": "Bad Request",
+            "message": "Request body is required"
+        }, 400)
     
     # Validate required parameters
-    if not user_id:
+    if 'user_id' not in data:
         return create_api_response({
             "error": "Bad Request",
             "message": "Missing required parameter: user_id is required"
         }, 400)
+    
+    user_id = data['user_id']
     
     # Check if user exists
     user_exists = DatabaseService.get_user_by_id(user_id)
@@ -401,7 +426,7 @@ def admin_get_endpoint_access_all_route():
         }, 404)
     
     try:
-        # Get all endpoint access for the user
+        # Get all endpoint access for the user using the existing method
         access_list = DatabaseService.get_all_user_endpoint_access(user_id)
         
         return create_api_response({
@@ -796,7 +821,7 @@ def admin_delete_endpoint_access_all_route():
         }, 404)
     
     try:
-        # Remove all endpoint access for the user
+        # Use the existing method to remove all endpoint access for the user
         count_removed = DatabaseService.remove_all_user_endpoint_access(user_id)
         
         return create_api_response({
@@ -814,7 +839,9 @@ def admin_delete_endpoint_access_all_route():
 
 def register_admin_endpoint_access_routes(app):
     """Register routes with the Flask app"""
-    app.route('/admin/endpoint/access/single', methods=['GET'])(api_logger(admin_get_endpoint_access_single_route))
-    app.route('/admin/endpoint/access/all', methods=['GET'])(api_logger(admin_get_endpoint_access_all_route))
+    # Changed from GET to POST for the first two endpoints
+    app.route('/admin/endpoint/access/single', methods=['POST'])(api_logger(admin_get_endpoint_access_single_route))
+    app.route('/admin/endpoint/access/all', methods=['POST'])(api_logger(admin_get_endpoint_access_all_route))
+    # Keep DELETE methods as they are
     app.route('/admin/endpoint/access/single', methods=['DELETE'])(api_logger(admin_delete_endpoint_access_single_route))
     app.route('/admin/endpoint/access/all', methods=['DELETE'])(api_logger(admin_delete_endpoint_access_all_route))
