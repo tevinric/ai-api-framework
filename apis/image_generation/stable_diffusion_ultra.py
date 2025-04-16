@@ -76,7 +76,7 @@ def stable_diffusion_ultra_route():
     consumes:
       - application/json
     security:
-      - ApiKeyHeader: []
+      - ApiKeyAuth: []
     responses:
       200:
         description: Successful image generation
