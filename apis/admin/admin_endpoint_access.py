@@ -802,9 +802,9 @@ def user_get_accessible_endpoints_route():
 
 def register_admin_endpoint_access_routes(app):
     """Register admin endpoint access routes with the Flask app"""
-    app.route('/admin/endpoint-access/assign', methods=['POST'])(api_logger(admin_assign_endpoint_to_user_route))
-    app.route('/admin/endpoint-access/remove', methods=['POST'])(api_logger(admin_remove_endpoint_from_user_route))
-    app.route('/admin/endpoint-access/assign-all', methods=['POST'])(api_logger(admin_assign_all_endpoints_to_user_route))
-    app.route('/admin/endpoint-access/remove-all', methods=['POST'])(api_logger(admin_remove_all_endpoints_from_user_route))
-    app.route('/admin/endpoint-access/user-endpoints', methods=['GET'])(api_logger(admin_get_user_accessible_endpoints_route))
-    app.route('/user/accessible-endpoints', methods=['GET'])(api_logger(user_get_accessible_endpoints_route))
+    app.route('/admin/endpoint/access/single', methods=['POST'])(api_logger(admin_assign_endpoint_to_user_route))
+    app.route('/admin/endpoint/access/remove_single', methods=['POST'])(api_logger(admin_remove_endpoint_from_user_route))
+    app.route('/admin/endpoint/access/all', methods=['POST'])(api_logger(admin_assign_all_endpoints_to_user_route))
+    app.route('/admin/endpoint/access/remove_ll', methods=['POST'])(api_logger(admin_remove_all_endpoints_from_user_route))
+    app.route('/admin/endpoint/access/', methods=['GET'])(api_logger(admin_get_user_accessible_endpoints_route))
+    app.route('/user/allowed_endpoints', methods=['GET'])(api_logger(user_get_accessible_endpoints_route))
