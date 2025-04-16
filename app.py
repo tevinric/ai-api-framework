@@ -26,7 +26,7 @@ swagger_config = {
     "specs": [
         {
             "endpoint": 'apispec',
-            "route": '/apispec_1.json',
+            "route": '/apispec.json',
             "rule_filter": lambda rule: True,
             "model_filter": lambda tag: True,
         }
@@ -40,8 +40,6 @@ swagger_template = {
     "swagger": "2.0",
     "info": {
         "title": "API Documentation",
-        "description": "API endpoints with authentication",
-        "version": "1.0.0"
     },
     "securityDefinitions": {
         "ApiKeyAuth": {
