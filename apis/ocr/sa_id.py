@@ -330,11 +330,7 @@ def sa_id_ocr_route():
               example: Bad Request
             message:
               type: string
-              examples:
-                - "Missing file_id parameter"
-                - "Unsupported file type. Supported types: png, jpg, jpeg, pdf, tiff, tif"
-                - "File ID not found"
-                - "File too large for processing"
+              example: Missing file_id parameter
       401:
         description: Authentication error
         schema:
@@ -345,10 +341,7 @@ def sa_id_ocr_route():
               example: Authentication Error
             message:
               type: string
-              examples:
-                - "Missing X-Token header"
-                - "Invalid token"
-                - "Token has expired"
+              example: Missing X-Token header
       500:
         description: Server error
         schema:
@@ -359,11 +352,7 @@ def sa_id_ocr_route():
               example: Server Error
             message:
               type: string
-              examples:
-                - "Error processing file"
-                - "Error downloading file"
-                - "Document intelligence service unavailable"
-                - "Error extracting document content"
+              example: Error processing file
     """
     # Get token from X-Token header
     token = request.headers.get('X-Token')
