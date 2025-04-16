@@ -318,11 +318,6 @@ class DatabaseService:
             cursor.close()
             conn.close()
             
-            # If admin (scope=0) or dev (scope=1), they automatically have access to all endpoints
-            # No need to store explicit permissions
-            if scope == 0 or scope == 1:
-                logger.info(f"Admin/Dev user created - has automatic access to all endpoints: {user_id}")
-            
             return (user_id, api_key)
             
         except pyodbc.IntegrityError as ie:
@@ -480,17 +475,6 @@ class DatabaseService:
                 conn.close()
                 raise Exception("User has active tokens. Please revoke all tokens before deleting user.")
             
-            # Delete all endpoint access entries for this user
-            try:
-                access_delete_query = """
-                DELETE FROM user_endpoint_access
-                WHERE user_id = ?
-                """
-                cursor.execute(access_delete_query, [user_id])
-            except Exception as e:
-                logger.warning(f"Error removing endpoint access for user {user_id}: {str(e)}")
-                # Continue with user deletion even if this fails
-            
             # Delete the user
             delete_query = """
             DELETE FROM users
@@ -533,43 +517,6 @@ class DatabaseService:
             
         except Exception as e:
             logger.error(f"Error getting endpoint ID: {str(e)}")
-            return None
-    
-    @staticmethod
-    def get_endpoint_by_id(endpoint_id):
-        """Get endpoint details by ID"""
-        try:
-            conn = DatabaseService.get_connection()
-            cursor = conn.cursor()
-            
-            query = """
-            SELECT id, endpoint_name, endpoint_path, description, active, cost,
-                   created_at, modified_at
-            FROM endpoints
-            WHERE id = ?
-            """
-            
-            cursor.execute(query, [endpoint_id])
-            result = cursor.fetchone()
-            cursor.close()
-            conn.close()
-            
-            if not result:
-                return None
-                
-            return {
-                "id": str(result[0]),
-                "endpoint_name": result[1],
-                "endpoint_path": result[2],
-                "description": result[3],
-                "active": bool(result[4]),
-                "cost": result[5],
-                "created_at": result[6].isoformat() if result[6] else None,
-                "modified_at": result[7].isoformat() if result[7] else None
-            }
-            
-        except Exception as e:
-            logger.error(f"Error getting endpoint by ID: {str(e)}")
             return None
     
     @staticmethod
@@ -687,12 +634,8 @@ class DatabaseService:
             logger.error(f"Error updating API log with usage ID: {str(e)}")
             return False
 
-    # === RBAC RELATED METHODS ===
 
-<<<<<<< HEAD
 
-=======
->>>>>>> 5c7d3e931dfb154105e5e73acdfcbd4c6a43728a
     @staticmethod
     def get_user_scope(user_id):
         """Get user's scope level"""
@@ -718,21 +661,12 @@ class DatabaseService:
             conn = DatabaseService.get_connection()
             cursor = conn.cursor()
             
-<<<<<<< HEAD
             # First check user's scope - admins can access everything
-=======
-            # First check user's scope - admins and devs can access everything
->>>>>>> 5c7d3e931dfb154105e5e73acdfcbd4c6a43728a
             query = "SELECT scope FROM users WHERE id = ?"
             cursor.execute(query, [user_id])
             scope_result = cursor.fetchone()
             
-<<<<<<< HEAD
             if scope_result and scope_result[0] == 0:
-=======
-            if scope_result and (scope_result[0] == 0 or scope_result[0] == 1):
-                # Admin users (scope=0) and dev users (scope=1) have access to everything
->>>>>>> 5c7d3e931dfb154105e5e73acdfcbd4c6a43728a
                 cursor.close()
                 conn.close()
                 return True
@@ -758,19 +692,6 @@ class DatabaseService:
         try:
             conn = DatabaseService.get_connection()
             cursor = conn.cursor()
-<<<<<<< HEAD
-=======
-            
-            # First check user's scope - admins and devs automatically have access to all endpoints
-            query = "SELECT scope FROM users WHERE id = ?"
-            cursor.execute(query, [user_id])
-            scope_result = cursor.fetchone()
-            
-            if scope_result and (scope_result[0] == 0 or scope_result[0] == 1):
-                cursor.close()
-                conn.close()
-                return True, "Admin/Dev users automatically have access to all endpoints"
->>>>>>> 5c7d3e931dfb154105e5e73acdfcbd4c6a43728a
             
             # Check if user already has access
             check_query = """
@@ -802,29 +723,12 @@ class DatabaseService:
             return False, str(e)
 
     @staticmethod
-<<<<<<< HEAD
     def remove_user_endpoint_access(user_id, endpoint_id):
         """Remove a user's access to a specific endpoint"""
-=======
-    def add_user_endpoints_access(user_id, endpoint_ids, admin_id):
-        """Grant a user access to multiple endpoints
-        
-        Args:
-            user_id (str): UUID of the user to grant access
-            endpoint_ids (list): List of endpoint UUIDs to grant access to
-            admin_id (str): UUID of the admin performing the action
-            
-        Returns:
-            tuple: (success, result)
-                success (bool): Whether the operation was successful
-                result (dict): Details of the operation
-        """
->>>>>>> 5c7d3e931dfb154105e5e73acdfcbd4c6a43728a
         try:
             conn = DatabaseService.get_connection()
             cursor = conn.cursor()
             
-<<<<<<< HEAD
             query = """
             DELETE FROM user_endpoint_access 
             WHERE user_id = ? AND endpoint_id = ?
@@ -892,146 +796,6 @@ class DatabaseService:
             
             query = "DELETE FROM user_endpoint_access WHERE user_id = ?"
             cursor.execute(query, [user_id])
-=======
-            # First check user's scope - admins and devs automatically have access to all endpoints
-            query = "SELECT scope FROM users WHERE id = ?"
-            cursor.execute(query, [user_id])
-            scope_result = cursor.fetchone()
-            
-            if scope_result and (scope_result[0] == 0 or scope_result[0] == 1):
-                cursor.close()
-                conn.close()
-                return True, {"message": "Admin/Dev users automatically have access to all endpoints", "added": 0}
-            
-            added_count = 0
-            already_exists = 0
-            failed = 0
-            
-            for endpoint_id in endpoint_ids:
-                try:
-                    # Check if user already has access
-                    check_query = """
-                    SELECT id FROM user_endpoint_access 
-                    WHERE user_id = ? AND endpoint_id = ?
-                    """
-                    cursor.execute(check_query, [user_id, endpoint_id])
-                    existing = cursor.fetchone()
-                    
-                    if existing:
-                        already_exists += 1
-                        continue
-                    
-                    # Add access
-                    access_id = str(uuid.uuid4())
-                    add_query = """
-                    INSERT INTO user_endpoint_access (id, user_id, endpoint_id, created_by)
-                    VALUES (?, ?, ?, ?)
-                    """
-                    cursor.execute(add_query, [access_id, user_id, endpoint_id, admin_id])
-                    added_count += 1
-                except Exception as e:
-                    logger.error(f"Error adding access for endpoint {endpoint_id}: {str(e)}")
-                    failed += 1
-            
-            conn.commit()
-            cursor.close()
-            conn.close()
-            
-            return True, {
-                "message": "Endpoint access processed",
-                "added": added_count,
-                "already_exists": already_exists,
-                "failed": failed
-            }
-        except Exception as e:
-            logger.error(f"Error adding multiple endpoints access: {str(e)}")
-            return False, str(e)
-
-    @staticmethod
-    def remove_user_endpoint_access(user_id, endpoint_id):
-        """Remove a user's access to a specific endpoint"""
-        try:
-            conn = DatabaseService.get_connection()
-            cursor = conn.cursor()
-            
-            query = """
-            DELETE FROM user_endpoint_access 
-            WHERE user_id = ? AND endpoint_id = ?
-            """
-            cursor.execute(query, [user_id, endpoint_id])
-            rows_affected = cursor.rowcount
-            conn.commit()
-            cursor.close()
-            conn.close()
-            
-            return rows_affected > 0
-        except Exception as e:
-            logger.error(f"Error removing endpoint access: {str(e)}")
-            return False
-
-    @staticmethod
-    def add_all_endpoints_access(user_id, admin_id):
-        """Grant a user access to all active endpoints"""
-        try:
-            conn = DatabaseService.get_connection()
-            cursor = conn.cursor()
-            
-            # First check user's scope - admins and devs automatically have access to all endpoints
-            query = "SELECT scope FROM users WHERE id = ?"
-            cursor.execute(query, [user_id])
-            scope_result = cursor.fetchone()
-            
-            if scope_result and (scope_result[0] == 0 or scope_result[0] == 1):
-                cursor.close()
-                conn.close()
-                return True, 0  # No need to grant explicit access
-            
-            # Get all active endpoints
-            endpoint_query = "SELECT id FROM endpoints WHERE active = 1"
-            cursor.execute(endpoint_query)
-            endpoints = cursor.fetchall()
-            
-            added_count = 0
-            for endpoint in endpoints:
-                endpoint_id = endpoint[0]
-                
-                # Check if user already has access
-                check_query = """
-                SELECT id FROM user_endpoint_access 
-                WHERE user_id = ? AND endpoint_id = ?
-                """
-                cursor.execute(check_query, [user_id, endpoint_id])
-                existing = cursor.fetchone()
-                
-                if not existing:
-                    # Add access
-                    access_id = str(uuid.uuid4())
-                    add_query = """
-                    INSERT INTO user_endpoint_access (id, user_id, endpoint_id, created_by)
-                    VALUES (?, ?, ?, ?)
-                    """
-                    cursor.execute(add_query, [access_id, user_id, endpoint_id, admin_id])
-                    added_count += 1
-            
-            conn.commit()
-            cursor.close()
-            conn.close()
-            
-            return True, added_count
-        except Exception as e:
-            logger.error(f"Error adding all endpoints access: {str(e)}")
-            return False, str(e)
-
-    @staticmethod
-    def remove_all_endpoints_access(user_id):
-        """Remove all endpoint access for a user"""
-        try:
-            conn = DatabaseService.get_connection()
-            cursor = conn.cursor()
-            
-            query = "DELETE FROM user_endpoint_access WHERE user_id = ?"
-            cursor.execute(query, [user_id])
->>>>>>> 5c7d3e931dfb154105e5e73acdfcbd4c6a43728a
             rows_affected = cursor.rowcount
             conn.commit()
             cursor.close()
@@ -1049,22 +813,13 @@ class DatabaseService:
             conn = DatabaseService.get_connection()
             cursor = conn.cursor()
             
-<<<<<<< HEAD
             # First check if user is admin
-=======
-            # First check user's scope
->>>>>>> 5c7d3e931dfb154105e5e73acdfcbd4c6a43728a
             admin_query = "SELECT scope FROM users WHERE id = ?"
             cursor.execute(admin_query, [user_id])
             scope_result = cursor.fetchone()
             
-<<<<<<< HEAD
             if scope_result and scope_result[0] == 0:
                 # Admins can access all endpoints
-=======
-            if scope_result and (scope_result[0] == 0 or scope_result[0] == 1):
-                # Admins and devs can access all endpoints
->>>>>>> 5c7d3e931dfb154105e5e73acdfcbd4c6a43728a
                 query = """
                 SELECT e.id, e.endpoint_name, e.endpoint_path, e.description, e.active, e.cost
                 FROM endpoints e
@@ -1101,21 +856,3 @@ class DatabaseService:
         except Exception as e:
             logger.error(f"Error getting user accessible endpoints: {str(e)}")
             return []
-<<<<<<< HEAD
-=======
-
-    @staticmethod
-    def auto_grant_access_for_new_user(user_id, admin_id, user_scope):
-        """Automatically grant endpoint access for a newly created user based on scope"""
-        try:
-            # If user is admin (0) or dev (1), no need to store explicit permissions
-            if user_scope == 0 or user_scope == 1:
-                return True, "Admin/Dev users automatically have access to all endpoints"
-                
-            # For other scopes, no automatic access is granted
-            return True, "No automatic endpoint access granted for this user scope"
-                
-        except Exception as e:
-            logger.error(f"Error auto-granting endpoint access: {str(e)}")
-            return False, str(e)
->>>>>>> 5c7d3e931dfb154105e5e73acdfcbd4c6a43728a
