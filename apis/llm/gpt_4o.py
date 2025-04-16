@@ -264,5 +264,6 @@ def register_llm_gpt_4o(app):
     from apis.utils.logMiddleware import api_logger
     from apis.utils.balanceMiddleware import check_balance
     from apis.utils.usageMiddleware import track_usage
+    from apis.utils.rbacMiddleware import check_endpoint_access
     
-    app.route('/llm/gpt-4o', methods=['POST'])(track_usage(api_logger(check_balance(gpt4o_route))))
+    app.route('/llm/gpt-4o', methods=['POST'])(track_usage(api_logger(check_endpoint_access(check_balance(gpt4o_route)))))
