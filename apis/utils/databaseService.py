@@ -762,46 +762,173 @@ class DatabaseService:
             return []
 
     @staticmethod
-    def remove_user_endpoint_access(user_id, endpoint_id):
-        """Remove endpoint access for a specific user and endpoint
+    def add_user_endpoint_access(user_id, endpoint_id, admin_id):
+        """Grant a user access to a specific endpoint
         
         Args:
-            user_id (str): UUID of the user
-            endpoint_id (str): UUID of the endpoint
+            user_id (str): UUID of the user to grant access
+            endpoint_id (str): UUID of the endpoint to grant access for
+            admin_id (str): UUID of the admin who is granting access
             
         Returns:
-            bool: True if successful, False otherwise
+            tuple: (success, access_id_or_message)
+                - success (bool): True if operation succeeded, False otherwise
+                - access_id_or_message: The ID of the created access record or an error message
+        """
+        try:
+            conn = DatabaseService.get_connection()
+            cursor = conn.cursor()
+            
+            # Check if user already has access
+            check_query = """
+            SELECT id FROM user_endpoint_access 
+            WHERE user_id = ? AND endpoint_id = ?
+            """
+            cursor.execute(check_query, [user_id, endpoint_id])
+            existing = cursor.fetchone()
+            
+            if existing:
+                cursor.close()
+                conn.close()
+                return True, "User already has access to this endpoint"
+            
+            # Add access
+            access_id = str(uuid.uuid4())
+            
+            # Insert the access record with current timestamp
+            query = """
+            INSERT INTO user_endpoint_access (
+                id, user_id, endpoint_id, access_granted, granted_by, granted_at
+            )
+            VALUES (
+                ?, ?, ?, 1, ?, DATEADD(HOUR, 2, GETUTCDATE())
+            )
+            """
+            
+            cursor.execute(query, [access_id, user_id, endpoint_id, admin_id])
+            
+            conn.commit()
+            cursor.close()
+            conn.close()
+            
+            logger.info(f"Endpoint access granted: User {user_id} can now access endpoint {endpoint_id}")
+            return True, access_id
+            
+        except Exception as e:
+            logger.error(f"Error adding endpoint access: {str(e)}")
+            if conn:
+                conn.rollback()
+            return False, str(e)
+
+    @staticmethod
+    def add_all_endpoints_access(user_id, admin_id):
+        """Grant a user access to all active endpoints
+        
+        Args:
+            user_id (str): UUID of the user to grant access
+            admin_id (str): UUID of the admin who is granting access
+            
+        Returns:
+            tuple: (success, count_or_message)
+                - success (bool): True if operation succeeded, False otherwise
+                - count_or_message: Number of endpoints access was granted for, or an error message
+        """
+        try:
+            conn = DatabaseService.get_connection()
+            cursor = conn.cursor()
+            
+            # Get all active endpoints
+            endpoint_query = "SELECT id FROM endpoints WHERE active = 1"
+            cursor.execute(endpoint_query)
+            endpoints = cursor.fetchall()
+            
+            added_count = 0
+            for endpoint in endpoints:
+                endpoint_id = endpoint[0]
+                
+                # Check if user already has access
+                check_query = """
+                SELECT id FROM user_endpoint_access 
+                WHERE user_id = ? AND endpoint_id = ?
+                """
+                cursor.execute(check_query, [user_id, endpoint_id])
+                existing = cursor.fetchone()
+                
+                if not existing:
+                    # Add access
+                    access_id = str(uuid.uuid4())
+                    
+                    # Insert the access record with current timestamp
+                    add_query = """
+                    INSERT INTO user_endpoint_access (
+                        id, user_id, endpoint_id, access_granted, granted_by, granted_at
+                    )
+                    VALUES (
+                        ?, ?, ?, 1, ?, DATEADD(HOUR, 2, GETUTCDATE())
+                    )
+                    """
+                    
+                    cursor.execute(add_query, [access_id, user_id, endpoint_id, admin_id])
+                    added_count += 1
+            
+            conn.commit()
+            cursor.close()
+            conn.close()
+            
+            logger.info(f"All endpoint access granted: User {user_id} can now access {added_count} endpoints")
+            return True, added_count
+            
+        except Exception as e:
+            logger.error(f"Error adding all endpoints access: {str(e)}")
+            if conn:
+                conn.rollback()
+            return False, str(e)
+
+    @staticmethod
+    def remove_user_endpoint_access(user_id, endpoint_id):
+        """Remove a user's access to a specific endpoint
+        
+        Args:
+            user_id (str): UUID of the user to remove access
+            endpoint_id (str): UUID of the endpoint to remove access for
+            
+        Returns:
+            bool: True if access was removed, False otherwise
         """
         try:
             conn = DatabaseService.get_connection()
             cursor = conn.cursor()
             
             query = """
-            DELETE FROM user_endpoint_access
+            DELETE FROM user_endpoint_access 
             WHERE user_id = ? AND endpoint_id = ?
             """
-            
             cursor.execute(query, [user_id, endpoint_id])
-            
-            # Check if any rows were affected
             rows_affected = cursor.rowcount
             
             conn.commit()
             cursor.close()
             conn.close()
             
+            if rows_affected > 0:
+                logger.info(f"Endpoint access removed: User {user_id} no longer has access to endpoint {endpoint_id}")
+            else:
+                logger.info(f"No endpoint access record found to remove for user {user_id} and endpoint {endpoint_id}")
+                
             return rows_affected > 0
             
         except Exception as e:
             logger.error(f"Error removing endpoint access: {str(e)}")
+            if conn:
+                conn.rollback()
             return False
 
     @staticmethod
     def remove_all_user_endpoint_access(user_id):
-        """Remove all endpoint access for a specific user
+        """Remove all endpoint access for a user
         
         Args:
-            user_id (str): UUID of the user
+            user_id (str): UUID of the user to remove all access for
             
         Returns:
             int: Number of endpoint access entries removed
@@ -810,22 +937,19 @@ class DatabaseService:
             conn = DatabaseService.get_connection()
             cursor = conn.cursor()
             
-            query = """
-            DELETE FROM user_endpoint_access
-            WHERE user_id = ?
-            """
-            
+            query = "DELETE FROM user_endpoint_access WHERE user_id = ?"
             cursor.execute(query, [user_id])
-            
-            # Get the number of affected rows
             rows_affected = cursor.rowcount
             
             conn.commit()
             cursor.close()
             conn.close()
             
+            logger.info(f"All endpoint access removed: User {user_id} had {rows_affected} endpoint access records removed")
             return rows_affected
             
         except Exception as e:
-            logger.error(f"Error removing all endpoint access: {str(e)}")
+            logger.error(f"Error removing all endpoints access: {str(e)}")
+            if conn:
+                conn.rollback()
             return 0
