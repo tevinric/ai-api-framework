@@ -734,7 +734,8 @@ def register_nlp_routes(app):
     """Register NLP routes with the Flask app"""
     from apis.utils.logMiddleware import api_logger
     from apis.utils.usageMiddleware import track_usage
+    from apis.utils.rbacMiddleware import check_endpoint_access
     
     # No longer using balanceMiddleware's check_balance since we're handling billing directly in the route
-    app.route('/nlp/classify', methods=['POST'])(track_usage(api_logger(simple_classification_route)))
-    app.route('/nlp/classify/multi', methods=['POST'])(track_usage(api_logger(multiclass_classification_route)))
+    app.route('/nlp/classify', methods=['POST'])(track_usage(api_logger(check_endpoint_access(simple_classification_route))))
+    app.route('/nlp/classify/multi', methods=['POST'])(track_usage(api_logger(check_endpoint_access(check_endpoint_access(multiclass_classification_route)))))

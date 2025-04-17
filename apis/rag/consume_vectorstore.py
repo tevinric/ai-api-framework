@@ -868,5 +868,7 @@ def consume_vectorstore_route():
 
 def register_consume_vectorstore_routes(app):
   from apis.utils.usageMiddleware import track_usage
-  app.route('/rag/vectorstore/consume', methods=['POST'])(track_usage(api_logger(check_balance(consume_vectorstore_route))))
-  app.route('/rag/vectorstore/consume/git_policies', methods=['POST'])(track_usage(api_logger(check_balance(consume_git_policies_route))))
+  from apis.utils.rbacMiddleware import check_endpoint_access
+  
+  app.route('/rag/vectorstore/consume', methods=['POST'])(track_usage(api_logger(check_endpoint_access(check_balance(consume_vectorstore_route)))))
+  app.route('/rag/vectorstore/consume/git_policies', methods=['POST'])(track_usage(api_logger(check_endpoint_access(check_balance(consume_git_policies_route)))))

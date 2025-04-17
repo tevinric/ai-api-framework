@@ -110,4 +110,6 @@ def get_token_route():
 
 def register_routes(app):
     """Register routes with the Flask app"""
-    app.route('/token', methods=['GET'])(api_logger(get_token_route))
+    from apis.utils.rbacMiddleware import check_endpoint_access
+    
+    app.route('/token', methods=['GET'])(api_logger(check_endpoint_access(get_token_route)))

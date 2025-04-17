@@ -729,5 +729,7 @@ def create_advanced_vectorstore_route():
             
 def register_advanced_vectorstore_routes(app):
     from apis.utils.usageMiddleware import track_usage
+    from apis.utils.rbacMiddleware import check_endpoint_access
+    
     """Register advanced vectorstore routes with the Flask app"""
-    app.route('/rag/vectorstore/document/advanced', methods=['POST'])(track_usage(api_logger(check_balance(create_advanced_vectorstore_route))))
+    app.route('/rag/vectorstore/document/advanced', methods=['POST'])(track_usage(api_logger(check_endpoint_access(check_balance(create_advanced_vectorstore_route)))))

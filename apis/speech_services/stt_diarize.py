@@ -451,5 +451,7 @@ def enhanced_speech_to_text_route():
 
 def register_speech_to_text_diarize_routes(app):
     from apis.utils.usageMiddleware import track_usage
+    from apis.utils.rbacMiddleware import check_endpoint_access
+    
     """Register enhanced speech to text routes with the Flask app"""
-    app.route('/speech/stt_diarize', methods=['POST'])(track_usage(api_logger(check_balance(enhanced_speech_to_text_route))))
+    app.route('/speech/stt_diarize', methods=['POST'])(track_usage(api_logger(check_endpoint_access(check_balance(enhanced_speech_to_text_route)))))

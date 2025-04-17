@@ -686,8 +686,11 @@ def list_user_files_route():
 
 def register_file_upload_routes(app):
     from apis.utils.usageMiddleware import track_usage
+    from apis.utils.rbacMiddleware import check_endpoint_access
+    
     """Register file upload routes with the Flask app"""
-    app.route('/file', methods=['POST'])(track_usage(api_logger(upload_file_route)))
-    app.route('/file/url', methods=['GET'])(api_logger(get_file_url_route))
-    app.route('/file', methods=['DELETE'])(api_logger(delete_file_route))
-    app.route('/file/list', methods=['GET'])(api_logger(list_user_files_route))
+    app.route('/file', methods=['POST'])(track_usage(api_logger(check_endpoint_access(upload_file_route))))
+    app.route('/file/url', methods=['GET'])(api_logger(check_endpoint_access(get_file_url_route)))
+    app.route('/file', methods=['DELETE'])(api_logger(check_endpoint_access(delete_file_route)))
+    app.route('/file/list', methods=['GET'])(api_logger(check_endpoint_access(list_user_files_route)))
+

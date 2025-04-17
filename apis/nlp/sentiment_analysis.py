@@ -808,7 +808,8 @@ def register_sentiment_routes(app):
     """Register sentiment analysis routes with the Flask app"""
     from apis.utils.logMiddleware import api_logger
     from apis.utils.usageMiddleware import track_usage
+    from apis.utils.rbacMiddleware import check_endpoint_access
     
     # No longer using balanceMiddleware's check_balance since we're handling billing directly in the route
-    app.route('/nlp/sentiment', methods=['POST'])(track_usage(api_logger(sentiment_analysis_route)))
-    app.route('/nlp/sentiment/advanced', methods=['POST'])(track_usage(api_logger(advanced_sentiment_analysis_route)))
+    app.route('/nlp/sentiment', methods=['POST'])(track_usage(api_logger(check_endpoint_access(sentiment_analysis_route))))
+    app.route('/nlp/sentiment/advanced', methods=['POST'])(track_usage(api_logger(check_endpoint_access(advanced_sentiment_analysis_route))))
