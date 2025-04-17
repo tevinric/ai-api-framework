@@ -9,6 +9,7 @@ from flasgger import Swagger
 
 from apis.utils.tokenService import TokenService
 from apis.utils.databaseService import DatabaseService
+from apis.app_init import initialize_app
 
 
 # CONFIGURE LOGGING
@@ -16,6 +17,10 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+
+# Initialize application components
+# This starts the job scheduler for async processing
+initialize_app(app)
 
 app.config['SWAGGER'] = {
     'title': 'Swagger'
@@ -213,11 +218,19 @@ register_file_upload_routes(app)
 from apis.balance_management.usage_statistics import register_usage_stats_routes
 register_usage_stats_routes(app)
 
-from apis.speech_services.stt import register_speech_to_text_routes
-register_speech_to_text_routes(app)
+# Register job management routes
+from apis.jobs.job_routes import register_job_routes
+register_job_routes(app)
 
-from apis.speech_services.stt_diarize import register_speech_to_text_diarize_routes
-register_speech_to_text_diarize_routes(app)
+# Register asynchronous speech-to-text routes
+from apis.speech_services.stt_async import register_async_speech_to_text_routes
+register_async_speech_to_text_routes(app)
+
+# Comment out original synchronous speech routes as they're replaced by async versions
+# from apis.speech_services.stt import register_speech_to_text_routes
+# register_speech_to_text_routes(app)
+# from apis.speech_services.stt_diarize import register_speech_to_text_diarize_routes
+# register_speech_to_text_diarize_routes(app)
 
 from apis.document_intelligence.summarization import register_document_intelligence_routes
 register_document_intelligence_routes(app)
