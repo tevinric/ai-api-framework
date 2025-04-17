@@ -9,6 +9,13 @@ import requests
 logger = logging.getLogger(__name__)
 
 class JobProcessor:
+    """
+    Class for processing asynchronous jobs
+    
+    This class contains methods to process different types of async jobs
+    like speech-to-text and speech-to-text with diarization.
+    """
+    
     @staticmethod
     def process_stt_job(job_id, user_id, file_id):
         """
@@ -21,6 +28,27 @@ class JobProcessor:
             
         Returns:
             bool: True if successful, False otherwise
+            
+        Response format (stored in job result):
+            {
+                "message": "Audio transcribed successfully",
+                "transcript": "This is the transcribed text from the audio file.",
+                "transcription_details": {
+                    "combinedPhrases": [
+                        {
+                            "text": "This is the transcribed text from the audio file."
+                        }
+                    ],
+                    "duration": 45600
+                },
+                "seconds_processed": 45.6
+            }
+            
+        Error handling:
+            - Updates job status to 'failed' with error message if:
+                - File URL can't be retrieved
+                - Transcription fails
+                - Any other exception occurs
         """
         try:
             # Update job status to processing
@@ -98,6 +126,27 @@ class JobProcessor:
             
         Returns:
             bool: True if successful, False otherwise
+            
+        Response format (stored in job result):
+            {
+                "message": "Audio processed successfully",
+                "raw_transcript": "This is the raw transcribed text from the audio file.",
+                "enhanced_transcript": "[00:00:00] Speaker 1: This is the enhanced transcribed text with speaker diarization.",
+                "seconds_processed": 45.6,
+                "prompt_tokens": 1000,
+                "completion_tokens": 500,
+                "total_tokens": 1500,
+                "cached_tokens": 0,
+                "embedded_tokens": 0,
+                "model_used": "gpt-4o-mini"
+            }
+            
+        Error handling:
+            - Updates job status to 'failed' with error message if:
+                - File URL can't be retrieved
+                - Transcription fails
+                - LLM processing fails
+                - Any other exception occurs
         """
         try:
             # Update job status to processing
