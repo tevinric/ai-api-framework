@@ -53,16 +53,43 @@ def submit_stt_job_route():
           properties:
             message:
               type: string
-              example: Job submitted successfully
+              example: Speech-to-text job submitted successfully
             job_id:
               type: string
               example: 12345678-1234-1234-1234-123456789012
       400:
         description: Bad request
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Bad Request
+            message:
+              type: string
+              enum: [Request body is required, file_id is required]
       401:
         description: Authentication error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Authentication Error
+            message:
+              type: string
+              enum: [Missing X-Token header, Invalid token, Token has expired]
       500:
         description: Server error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              enum: [Server Error, Job Creation Error]
+            message:
+              type: string
+              example: Error processing request
     """
     # Get token from X-Token header
     token = request.headers.get('X-Token')
@@ -181,16 +208,43 @@ def submit_stt_diarize_job_route():
           properties:
             message:
               type: string
-              example: Job submitted successfully
+              example: Speech-to-text diarization job submitted successfully
             job_id:
               type: string
               example: 12345678-1234-1234-1234-123456789012
       400:
         description: Bad request
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Bad Request
+            message:
+              type: string
+              enum: [Request body is required, file_id is required]
       401:
         description: Authentication error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Authentication Error
+            message:
+              type: string
+              enum: [Missing X-Token header, Invalid token, Token has expired]
       500:
         description: Server error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              enum: [Server Error, Job Creation Error]
+            message:
+              type: string
+              example: Error processing request
     """
     # Get token from X-Token header
     token = request.headers.get('X-Token')
