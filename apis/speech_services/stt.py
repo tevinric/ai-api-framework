@@ -126,20 +126,74 @@ def speech_to_text_route():
             transcript:
               type: string
               description: Transcript text
+              example: This is the transcribed text from the audio file.
             transcription_details:
               type: object
               description: Full details of the transcription results
+              properties:
+                combinedPhrases:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      text:
+                        type: string
+                        example: This is the transcribed text from the audio file.
+                duration:
+                  type: number
+                  description: Duration in milliseconds
+                  example: 45600
             seconds_processed:
               type: number
               description: Duration of the processed audio in seconds
+              example: 45.6
       400:
         description: Bad request
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Bad Request
+            message:
+              type: string
+              enum: [Request body is required, file_id is required]
       401:
         description: Authentication error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Authentication Error
+            message:
+              type: string
+              enum: [Missing X-Token header, Invalid token, Token has expired]
       404:
         description: File not found
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: File Error
+            message:
+              type: string
+              example: File not found
       500:
         description: Server error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              enum: [Server Error, File Error, Transcription Error]
+            message:
+              type: string
+              example: Error processing request
+            details:
+              type: object
+              description: Additional error details if available
     """
     # Get token from X-Token header
     token = request.headers.get('X-Token')
