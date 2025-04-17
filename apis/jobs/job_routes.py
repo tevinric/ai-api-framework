@@ -2,7 +2,6 @@ from flask import jsonify, request, g, make_response
 from apis.utils.tokenService import TokenService
 from apis.utils.databaseService import DatabaseService
 from apis.utils.logMiddleware import api_logger
-from apis.jobs.job_service import JobService
 import logging
 import pytz
 from datetime import datetime
@@ -44,6 +43,12 @@ def get_job_status_route():
             job_id:
               type: string
               example: 12345678-1234-1234-1234-123456789012
+            user_id:
+              type: string
+              example: 87654321-4321-4321-4321-210987654321
+            file_id:
+              type: string
+              example: 11111111-1111-1111-1111-111111111111
             status:
               type: string
               enum: [pending, processing, completed, failed]
@@ -66,16 +71,70 @@ def get_job_status_route():
             job_type:
               type: string
               example: stt
+            has_results:
+              type: boolean
+              example: true
+            parameters:
+              type: object
+              example: null
+            endpoint_id:
+              type: string
+              example: null
       400:
         description: Bad request
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Bad Request
+            message:
+              type: string
+              example: job_id is required as a query parameter
       401:
         description: Authentication error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Authentication Error
+            message:
+              type: string
+              enum: [Missing X-Token header, Invalid token, Token has expired]
       403:
         description: Forbidden
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Forbidden
+            message:
+              type: string
+              example: You don't have permission to access this job
       404:
         description: Job not found
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Not Found
+            message:
+              type: string
+              example: Job 12345678-1234-1234-1234-123456789012 not found
       500:
         description: Server error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Server Error
+            message:
+              type: string
+              example: Error processing request
     """
     # Get token from X-Token header
     token = request.headers.get('X-Token')
@@ -191,21 +250,144 @@ def get_job_result_route():
               type: string
               enum: [completed, failed]
               example: completed
+            created_at:
+              type: string
+              format: date-time
+              example: 2024-03-16T10:30:45+02:00
+            started_at:
+              type: string
+              format: date-time
+              example: 2024-03-16T10:30:46+02:00
+            completed_at:
+              type: string
+              format: date-time
+              example: 2024-03-16T10:31:15+02:00
+            job_type:
+              type: string
+              example: stt
             result:
               type: object
               description: Result data specific to the job type
+              properties:
+                # For STT job type
+                message:
+                  type: string
+                  example: Audio transcribed successfully
+                transcript:
+                  type: string
+                  example: This is the transcribed text from the audio file.
+                transcription_details:
+                  type: object
+                  description: Full details of the transcription results
+                seconds_processed:
+                  type: number
+                  example: 45.6
+                # For STT Diarize job type
+                raw_transcript:
+                  type: string
+                  example: This is the raw transcribed text from the audio file.
+                enhanced_transcript:
+                  type: string
+                  example: "[00:00:00] Speaker 1: This is the enhanced transcribed text with speaker diarization."
+                prompt_tokens:
+                  type: integer
+                  example: 1000
+                completion_tokens:
+                  type: integer
+                  example: 500
+                total_tokens:
+                  type: integer
+                  example: 1500
+                cached_tokens:
+                  type: integer
+                  example: 0
+                embedded_tokens:
+                  type: integer
+                  example: 0
+                model_used:
+                  type: string
+                  example: gpt-4o-mini
       400:
         description: Bad request
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Bad Request
+            message:
+              type: string
+              example: job_id is required as a query parameter
       401:
         description: Authentication error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Authentication Error
+            message:
+              type: string
+              enum: [Missing X-Token header, Invalid token, Token has expired]
       403:
         description: Forbidden
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Forbidden
+            message:
+              type: string
+              example: You don't have permission to access this job
       404:
         description: Job not found
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Not Found
+            message:
+              type: string
+              example: Job 12345678-1234-1234-1234-123456789012 not found
       409:
         description: Job not completed
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Job Not Completed
+            message:
+              type: string
+              example: Job is still in processing status. Please wait for completion.
+            job_id:
+              type: string
+              example: 12345678-1234-1234-1234-123456789012
+            status:
+              type: string
+              enum: [pending, processing]
+              example: processing
+            created_at:
+              type: string
+              format: date-time
+              example: 2024-03-16T10:30:45+02:00
+            started_at:
+              type: string
+              format: date-time
+              example: 2024-03-16T10:30:46+02:00
       500:
         description: Server error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Server Error
+            message:
+              type: string
+              example: Error processing request
     """
     # Get token from X-Token header
     token = request.headers.get('X-Token')
@@ -364,6 +546,12 @@ def list_jobs_route():
                   job_id:
                     type: string
                     example: 12345678-1234-1234-1234-123456789012
+                  user_id:
+                    type: string
+                    example: 87654321-4321-4321-4321-210987654321
+                  file_id:
+                    type: string
+                    example: 11111111-1111-1111-1111-111111111111
                   status:
                     type: string
                     enum: [pending, processing, completed, failed]
@@ -372,13 +560,62 @@ def list_jobs_route():
                     type: string
                     format: date-time
                     example: 2024-03-16T10:30:45+02:00
+                  started_at:
+                    type: string
+                    format: date-time
+                    example: 2024-03-16T10:30:46+02:00
+                  completed_at:
+                    type: string
+                    format: date-time
+                    example: 2024-03-16T10:31:15+02:00
+                  error_message:
+                    type: string
+                    example: null
                   job_type:
                     type: string
                     example: stt
+            count:
+              type: integer
+              example: 5
+            offset:
+              type: integer
+              example: 0
+            limit:
+              type: integer
+              example: 10
+      400:
+        description: Bad request
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Bad Request
+            message:
+              type: string
+              example: limit and offset must be integer values
       401:
         description: Authentication error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Authentication Error
+            message:
+              type: string
+              enum: [Missing X-Token header, Invalid token, Token has expired]
       500:
         description: Server error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Server Error
+            message:
+              type: string
+              example: Error processing request
     """
     # Get token from X-Token header
     token = request.headers.get('X-Token')
@@ -454,6 +691,7 @@ def list_jobs_route():
 def register_job_routes(app):
     from apis.utils.usageMiddleware import track_usage
     from apis.utils.rbacMiddleware import check_endpoint_access
+    from apis.jobs.job_service import JobService
     
     """Register job management routes with the Flask app"""
     app.route('/jobs/status', methods=['GET'])(api_logger(check_endpoint_access(get_job_status_route)))
