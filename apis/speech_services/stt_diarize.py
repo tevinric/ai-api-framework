@@ -248,20 +248,86 @@ def enhanced_speech_to_text_route():
             raw_transcript:
               type: string
               description: Original transcript text
+              example: This is the raw transcribed text from the audio file without any speaker identification or timestamps.
             enhanced_transcript:
               type: string
               description: Enhanced transcript with speaker diarization and timestamps
+              example: "[00:00:00] Speaker 1: This is the enhanced transcribed text with speaker diarization.\n[00:00:15] Speaker 2: And this is another speaker responding in the conversation."
             seconds_processed:
               type: number
               description: Duration of the processed audio in seconds
+              example: 45.6
+            prompt_tokens:
+              type: integer
+              description: Number of tokens in the prompt sent to the LLM
+              example: 1000
+            completion_tokens:
+              type: integer
+              description: Number of tokens in the response from the LLM
+              example: 500
+            total_tokens:
+              type: integer
+              description: Total number of tokens processed
+              example: 1500
+            cached_tokens:
+              type: integer
+              description: Number of tokens that were cached
+              example: 0
+            embedded_tokens:
+              type: integer
+              description: Number of tokens embedded
+              example: 0
+            model_used:
+              type: string
+              description: LLM model used for diarization
+              example: gpt-4o-mini
       400:
         description: Bad request
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Bad Request
+            message:
+              type: string
+              enum: [Request body is required, file_id is required]
       401:
         description: Authentication error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Authentication Error
+            message:
+              type: string
+              enum: [Missing X-Token header, Invalid token, Token has expired]
       404:
         description: File not found
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: File Error
+            message:
+              type: string
+              example: File not found
       500:
         description: Server error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              enum: [Server Error, File Error, Transcription Error, LLM Processing Error]
+            message:
+              type: string
+              example: Error processing request
+            details:
+              type: object
+              description: Additional error details if available
     """
     # Get token from X-Token header
     token = request.headers.get('X-Token')
@@ -437,7 +503,7 @@ def enhanced_speech_to_text_route():
             "total_tokens": total_tokens,
             "cached_tokens": total_cached_tokens,
             "embedded_tokens": total_embedded_tokens,
-            "model_used":model_deplopyment
+            "model_used": model_deplopyment
         }
         
         return create_api_response(response_data, 200)
