@@ -2,6 +2,7 @@ from flask import jsonify, request, g, make_response
 from apis.utils.tokenService import TokenService
 from apis.utils.databaseService import DatabaseService
 from apis.utils.logMiddleware import api_logger
+from apis.jobs.job_service import JobService
 import logging
 import pytz
 from datetime import datetime
@@ -691,7 +692,6 @@ def list_jobs_route():
 def register_job_routes(app):
     from apis.utils.usageMiddleware import track_usage
     from apis.utils.rbacMiddleware import check_endpoint_access
-    from apis.jobs.job_service import JobService
     
     """Register job management routes with the Flask app"""
     app.route('/jobs/status', methods=['GET'])(api_logger(check_endpoint_access(get_job_status_route)))
