@@ -730,6 +730,174 @@
             border-left: 3px solid var(--primary-color);
         }
         
+        /* Flow diagram section */
+        .flow-diagram {
+            margin: 2rem 0;
+            padding: 2rem;
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        }
+        
+        .flow-diagram-title {
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 1.5rem;
+            color: var(--dark-color);
+        }
+        
+        .flow-steps {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 1rem;
+            position: relative;
+        }
+        
+        .flow-steps::before {
+            content: "";
+            position: absolute;
+            top: 50px;
+            left: 10%;
+            right: 10%;
+            height: 2px;
+            background: var(--accent-gradient);
+            z-index: 0;
+        }
+        
+        .flow-step {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 180px;
+        }
+        
+        .flow-step-number {
+            width: 40px;
+            height: 40px;
+            background: var(--accent-gradient);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
+        }
+        
+        .flow-step-icon {
+            width: 60px;
+            height: 60px;
+            background-color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .flow-step-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            text-align: center;
+            color: var(--dark-color);
+        }
+        
+        .flow-step-desc {
+            text-align: center;
+            font-size: 0.85rem;
+            color: #666;
+        }
+        
+        /* Async job section */
+        .async-job-section {
+            padding: 3rem;
+            background-color: #f8faff;
+            margin: 2rem 0;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+        }
+        
+        .async-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .async-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+        
+        .async-header h2 {
+            font-size: 2rem;
+            color: var(--dark-color);
+            margin-bottom: 1rem;
+        }
+        
+        .async-header p {
+            color: #666;
+            font-size: 1.1rem;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        
+        .job-endpoints {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .job-endpoint-card {
+            background-color: var(--white-color);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            padding: 1.5rem;
+            border-top: 4px solid var(--primary-color);
+            transition: all 0.3s ease;
+        }
+        
+        .job-endpoint-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .job-endpoint-card h3 {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            color: var(--dark-color);
+        }
+        
+        .job-endpoint-card h3 i {
+            margin-right: 0.5rem;
+            color: var(--primary-color);
+            font-size: 1.2rem;
+        }
+        
+        .job-endpoint-code {
+            background-color: #f5f7fa;
+            padding: 0.75rem;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+            color: var(--dark-color);
+            border-left: 3px solid var(--primary-color);
+        }
+        
+        .job-endpoint-card p {
+            color: #666;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        
         /* CTA section */
         .cta-section {
             padding: 5rem 3rem;
@@ -869,6 +1037,15 @@
             .features-grid {
                 grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
             }
+            
+            .flow-steps::before {
+                display: none;
+            }
+            
+            .flow-steps {
+                flex-direction: column;
+                align-items: center;
+            }
         }
         
         @media (max-width: 768px) {
@@ -932,7 +1109,7 @@
         <section class="hero">
             <div class="hero-container">
                 <h2>Speech Services API</h2>
-                <p>Transform audio content into accurate text transcriptions with our powerful speech recognition services. From basic transcription to advanced speaker identification, unlock the potential of your audio data.</p>
+                <p>Transform audio content into accurate text transcriptions with our powerful speech recognition services. From basic transcription to advanced speaker identification, unlock the potential of your audio data using our asynchronous processing architecture for handling files of any size.</p>
                 <div class="cta-buttons">
                     <a href="/static/resources/AIAPIS.postman_collection" class="cta-btn" style="background-color: var(--accent-color); color: var(--dark-color);" download>
                         <i class="fas fa-download"></i> Download Postman Collection
@@ -954,7 +1131,7 @@
                     <h2>Overview</h2>
                 </div>
                 
-                <p class="section-intro">Our Speech Services API provides powerful speech-to-text conversion services using Microsoft's advanced speech recognition technology. These services enable you to transcribe audio content accurately and efficiently, with options for enhanced features like speaker diarization.</p>
+                <p class="section-intro">Our Speech Services API provides powerful speech-to-text conversion services using Microsoft's advanced speech recognition technology. These services now utilize an asynchronous job processing architecture, making them more efficient and capable of handling larger audio files with improved reliability.</p>
                 
                 <div class="info-box">
                     <div class="info-box-icon"><i class="fas fa-info-circle"></i></div>
@@ -982,7 +1159,13 @@
                         <p>Identify different speakers in conversations with advanced diarization capabilities for meetings and interviews.</p>
                     </div>
                     
-
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-hourglass-half"></i>
+                        </div>
+                        <h3>Asynchronous Processing</h3>
+                        <p>Submit jobs and retrieve results when ready, perfect for long audio files and high-volume processing needs.</p>
+                    </div>
                     
                     <div class="feature-card">
                         <div class="feature-icon">
@@ -993,18 +1176,55 @@
                     </div>
                 </div>
                 
-                <h3>How It Works</h3>
+                <h3>How It Works - Asynchronous Processing</h3>
                 
-                <p>Our speech services work in conjunction with our file management system to process audio files:</p>
+                <p>Our speech services use an asynchronous job-based architecture to efficiently process audio files of any size:</p>
                 
-                <ol style="line-height: 1.8; margin-left: 30px; margin-top: 20px; margin-bottom: 20px;">
-                    <li>First, upload your audio file using the <code>/file</code> endpoint</li>
-                    <li>Receive a <code>file_id</code> for your uploaded audio</li>
-                    <li>Submit this <code>file_id</code> to the appropriate speech service endpoint</li>
-                    <li>Receive the transcription results</li>
-                </ol>
+                <div class="flow-diagram">
+                    <h3 class="flow-diagram-title">Speech-to-Text Workflow</h3>
+                    <div class="flow-steps">
+                        <div class="flow-step">
+                            <div class="flow-step-icon">
+                                <i class="fas fa-file-upload"></i>
+                            </div>
+                            <div class="flow-step-title">Step 1</div>
+                            <div class="flow-step-desc">Upload your audio file using the <code>/file</code> endpoint</div>
+                        </div>
+                        
+                        <div class="flow-step">
+                            <div class="flow-step-icon">
+                                <i class="fas fa-tasks"></i>
+                            </div>
+                            <div class="flow-step-title">Step 2</div>
+                            <div class="flow-step-desc">Submit a job with the <code>file_id</code> to the speech service endpoint</div>
+                        </div>
+                        
+                        <div class="flow-step">
+                            <div class="flow-step-icon">
+                                <i class="fas fa-sync"></i>
+                            </div>
+                            <div class="flow-step-title">Step 3</div>
+                            <div class="flow-step-desc">Poll the job status endpoint using the returned <code>job_id</code></div>
+                        </div>
+                        
+                        <div class="flow-step">
+                            <div class="flow-step-icon">
+                                <i class="fas fa-file-alt"></i>
+                            </div>
+                            <div class="flow-step-title">Step 4</div>
+                            <div class="flow-step-desc">Retrieve the transcription results when job is completed</div>
+                        </div>
+                    </div>
+                </div>
                 
-                <p>The uploaded file is automatically deleted after processing to avoid storage bloat.</p>
+                <p>The key advantages of our asynchronous job processing system:</p>
+                
+                <ul style="line-height: 1.8; margin-left: 30px; margin-top: 20px; margin-bottom: 20px;">
+                    <li><strong>Improved reliability</strong>: Audio processing continues even if your client disconnects</li>
+                    <li><strong>Better scalability</strong>: Efficiently handles multiple requests and large audio files</li>
+                    <li><strong>No timeouts</strong>: Perfect for processing long audio files that would timeout with synchronous APIs</li>
+                    <li><strong>Progress tracking</strong>: Check status at any time through the job status endpoint</li>
+                </ul>
                 
                 <h3>File Format Requirements</h3>
                 
@@ -1015,6 +1235,67 @@
                     <li><strong>Recommended sampling rate:</strong> 16kHz or higher</li>
                     <li><strong>Channels:</strong> Mono or stereo (diarization works best with clear audio)</li>
                 </ul>
+            </div>
+        </section>
+        
+        <!-- Async Jobs section -->
+        <section class="async-job-section">
+            <div class="async-container">
+                <div class="async-header">
+                    <h2>Job Management API</h2>
+                    <p>Our speech services use an asynchronous job-based architecture. After submitting a job, use these endpoints to check status and retrieve results.</p>
+                </div>
+                
+                <div class="job-endpoints">
+                    <div class="job-endpoint-card">
+                        <h3><i class="fas fa-hourglass"></i> Check Job Status</h3>
+                        <div class="job-endpoint-code">GET /jobs/status?job_id={job_id}</div>
+                        <p>Check the current status of your job (pending, processing, completed, or failed). Use this to poll for completion.</p>
+                        <p>Required headers:</p>
+                        <ul style="margin-bottom: 1rem; padding-left: 20px;">
+                            <li><code>X-Token</code>: Your authentication token</li>
+                        </ul>
+                        <p>Response includes status, timestamps, and error message (if any).</p>
+                    </div>
+                    
+                    <div class="job-endpoint-card">
+                        <h3><i class="fas fa-clipboard-check"></i> Retrieve Job Results</h3>
+                        <div class="job-endpoint-code">GET /jobs/result?job_id={job_id}</div>
+                        <p>Once your job status is "completed", use this endpoint to retrieve the full transcription results.</p>
+                        <p>Required headers:</p>
+                        <ul style="margin-bottom: 1rem; padding-left: 20px;">
+                            <li><code>X-Token</code>: Your authentication token</li>
+                        </ul>
+                        <p>Returns the complete transcription data including timing information, speaker identification (if requested), and any other job-specific outputs.</p>
+                    </div>
+                    
+                    <div class="job-endpoint-card">
+                        <h3><i class="fas fa-list-ul"></i> List Jobs</h3>
+                        <div class="job-endpoint-code">GET /jobs</div>
+                        <p>View a list of your jobs with pagination and filtering options.</p>
+                        <p>Optional query parameters:</p>
+                        <ul style="margin-bottom: 1rem; padding-left: 20px;">
+                            <li><code>limit</code>: Maximum number of jobs to return (default: 10)</li>
+                            <li><code>offset</code>: Offset for pagination (default: 0)</li>
+                            <li><code>status</code>: Filter by job status</li>
+                            <li><code>job_type</code>: Filter by job type (e.g., "stt", "stt_diarize")</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="info-box">
+                    <div class="info-box-icon"><i class="fas fa-lightbulb"></i></div>
+                    <div class="info-box-content">
+                        <h4>Job Status Polling Best Practices</h4>
+                        <p>When polling for job completion, implement an exponential backoff strategy to avoid overwhelming the API:</p>
+                        <ul style="margin-top: 10px; padding-left: 20px;">
+                            <li>Start with a 2-3 second interval for short audio files</li>
+                            <li>For longer audio files (>1 minute), start with 5-10 seconds</li>
+                            <li>Double the interval after each check, up to a maximum of 60 seconds</li>
+                            <li>Include a reasonable timeout for very long processes (e.g., 30 minutes)</li>
+                        </ul>
+                    </div>
+                </div>
             </div>
         </section>
         
@@ -1043,6 +1324,7 @@
                             <li>Profanity filtering options</li>
                             <li>Fast processing for shorter audio files</li>
                             <li>Clean, readable transcripts</li>
+                            <li>Asynchronous processing for reliable results</li>
                         </ul>
                     </div>
                     
@@ -1051,28 +1333,24 @@
                         <div class="endpoint-box">
                             POST /speech/stt
                         </div>
-                        <p>Convert audio to text by sending a POST request to this endpoint with your file ID.</p>
+                        <p>Submit an asynchronous speech-to-text job by sending a POST request to this endpoint with your file ID.</p>
                         <p>Required parameters:</p>
                         <ul>
                             <li><strong>file_id</strong>: ID of the uploaded audio file</li>
                             <li><strong>X-Token</strong>: Your API authentication token (header)</li>
                         </ul>
-                        <p>Optional parameters:</p>
-                        <ul>
-                            <li><strong>language</strong>: Language code (defaults to auto-detection)</li>
-                            <li><strong>profanity_filter</strong>: Enable/disable profanity filtering</li>
-                        </ul>
+                        <p>Response includes a job_id that you'll use to check status and retrieve results.</p>
                     </div>
                 </div>
                 
                 <h3>Examples</h3>
                 <div class="examples-tabs">
-                    <div class="example-tab basic-tab active">Witness Interview</div>
-                    <div class="example-tab basic-tab">Meeting Recording</div>
-                    <div class="example-tab basic-tab">Customer Support Call</div>
+                    <div class="example-tab basic-tab active">Job Submission</div>
+                    <div class="example-tab basic-tab">Job Status Check</div>
+                    <div class="example-tab basic-tab">Results Retrieval</div>
                 </div>
                 
-                <!-- Example 1 - Short Monologue -->
+                <!-- Example 1 - Job Submission -->
                 <div class="example-content active">
                     <div class="example-grid">
                         <div class="example-settings basic-speech-settings">
@@ -1092,20 +1370,21 @@
                             </div>
                             
                             <div class="setting-group">
+                                <span class="setting-label">Request Body</span>
+                                <div class="setting-value">
+                                    {<br>
+                                    &nbsp;&nbsp;"file_id": "a1b2c3d4-5678-90ab-cdef-1234567890ab"<br>
+                                    }
+                                </div>
+                            </div>
+                            
+                            <div class="setting-group">
                                 <span class="setting-label">cURL Request</span>
                                 <div class="setting-value">
                                     curl -X POST https://api.example.com/speech/stt <br>
                                     &nbsp;&nbsp;-H "X-Token: your_token_here" <br>
                                     &nbsp;&nbsp;-H "Content-Type: application/json" <br>
                                     &nbsp;&nbsp;-d '{"file_id": "a1b2c3d4-5678-90ab-cdef-1234567890ab"}'
-                                </div>
-                            </div>
-                            
-                            <div class="setting-group">
-                                <span class="setting-label">Audio File</span>
-                                <div class="setting-value">
-                                    witness_interview.mp3 (12:30 min)<br>
-                                    Single speaker recording of a witness statement
                                 </div>
                             </div>
                         </div>
@@ -1117,15 +1396,8 @@
                             <div class="result-container">
                                 <div class="result-code">
 {
-  "message": "Audio transcribed successfully",
-  "transcript": "I was walking home from the grocery store when I witnessed the incident. It was approximately 9:30 PM and the street was poorly lit. I saw a silver sedan, possibly a Toyota or Honda, moving at high speed before it collided with the parked vehicle. The driver appeared to be talking on a phone before the collision occurred. After the impact, the car stopped briefly before continuing down the street. I was able to note part of the license plate which was AB7.",
-  "transcription_details": {
-    "combinedPhrases": [
-      {
-        "text": "I was walking home from the grocery store when I witnessed the incident. It was approximately 9:30 PM and the street was poorly lit. I saw a silver sedan, possibly a Toyota or Honda, moving at high speed before it collided with the parked vehicle. The driver appeared to be talking on a phone before the collision occurred. After the impact, the car stopped briefly before continuing down the street. I was able to note part of the license plate which was AB7."
-      }
-    ]
-  }
+  "message": "Speech-to-text job submitted successfully",
+  "job_id": "12345678-1234-1234-1234-123456789012"
 }
                                 </div>
                             </div>
@@ -1133,7 +1405,7 @@
                     </div>
                 </div>
                 
-                <!-- Example 2 - Meeting Recording -->
+                <!-- Example 2 - Job Status Check -->
                 <div class="example-content">
                     <div class="example-grid">
                         <div class="example-settings basic-speech-settings">
@@ -1141,32 +1413,28 @@
                             
                             <div class="setting-group">
                                 <span class="setting-label">Endpoint</span>
-                                <div class="setting-value">POST /speech/stt</div>
+                                <div class="setting-value">GET /jobs/status?job_id=12345678-1234-1234-1234-123456789012</div>
                             </div>
                             
                             <div class="setting-group">
                                 <span class="setting-label">Headers</span>
                                 <div class="setting-value">
-                                    X-Token: your_token_here<br>
-                                    Content-Type: application/json
+                                    X-Token: your_token_here
                                 </div>
                             </div>
                             
                             <div class="setting-group">
                                 <span class="setting-label">cURL Request</span>
                                 <div class="setting-value">
-                                    curl -X POST https://api.example.com/speech/stt <br>
-                                    &nbsp;&nbsp;-H "X-Token: your_token_here" <br>
-                                    &nbsp;&nbsp;-H "Content-Type: application/json" <br>
-                                    &nbsp;&nbsp;-d '{"file_id": "b2c3d4e5-6789-01ab-cdef-23456789abcd"}'
+                                    curl -X GET "https://api.example.com/jobs/status?job_id=12345678-1234-1234-1234-123456789012" <br>
+                                    &nbsp;&nbsp;-H "X-Token: your_token_here"
                                 </div>
                             </div>
                             
                             <div class="setting-group">
-                                <span class="setting-label">Audio File</span>
+                                <span class="setting-label">Note</span>
                                 <div class="setting-value">
-                                    team_meeting.wav (4:30 min)<br>
-                                    Recording of a brief team meeting with multiple speakers
+                                    Poll this endpoint periodically to check when your job has completed. Status will progress from "pending" to "processing" to "completed" (or "failed").
                                 </div>
                             </div>
                         </div>
@@ -1178,13 +1446,18 @@
                             <div class="result-container">
                                 <div class="result-code">
 {
-  "message": "Audio processed successfully",
-  "transcript": "Hello everyone and welcome to our weekly status meeting. Let's start with updates from the development team. Thanks Sarah. The team has completed the front-end redesign and we're now working on integrating the payment gateway. We expect to finish by Friday. Great, and how about the marketing campaign? We've finalized the social media strategy and prepared all the creative assets. The campaign is scheduled to launch next Monday as planned. Excellent. Any questions or concerns anyone would like to address before we wrap up? No? Then let's adjourn and meet again next week.",
-  "metadata": {
-    "duration_seconds": 270,
-    "language_detected": "en-US",
-    "confidence_score": 0.92
-  }
+  "job_id": "12345678-1234-1234-1234-123456789012",
+  "user_id": "87654321-4321-4321-4321-210987654321",
+  "file_id": "a1b2c3d4-5678-90ab-cdef-1234567890ab",
+  "status": "processing",
+  "created_at": "2025-04-22T10:30:45+02:00",
+  "started_at": "2025-04-22T10:30:46+02:00",
+  "completed_at": null,
+  "error_message": null,
+  "job_type": "stt",
+  "has_results": false,
+  "parameters": null,
+  "endpoint_id": "61a34d5c-8c92-4e2f-b119-e96a7b2a4c5f"
 }
                                 </div>
                             </div>
@@ -1192,7 +1465,7 @@
                     </div>
                 </div>
                 
-                <!-- Example 3 - Customer Support Call -->
+                <!-- Example 3 - Results Retrieval -->
                 <div class="example-content">
                     <div class="example-grid">
                         <div class="example-settings basic-speech-settings">
@@ -1200,32 +1473,28 @@
                             
                             <div class="setting-group">
                                 <span class="setting-label">Endpoint</span>
-                                <div class="setting-value">POST /speech/stt</div>
+                                <div class="setting-value">GET /jobs/result?job_id=12345678-1234-1234-1234-123456789012</div>
                             </div>
                             
                             <div class="setting-group">
                                 <span class="setting-label">Headers</span>
                                 <div class="setting-value">
-                                    X-Token: your_token_here<br>
-                                    Content-Type: application/json
+                                    X-Token: your_token_here
                                 </div>
                             </div>
                             
                             <div class="setting-group">
                                 <span class="setting-label">cURL Request</span>
                                 <div class="setting-value">
-                                    curl -X POST https://api.example.com/speech/stt <br>
-                                    &nbsp;&nbsp;-H "X-Token: your_token_here" <br>
-                                    &nbsp;&nbsp;-H "Content-Type: application/json" <br>
-                                    &nbsp;&nbsp;-d '{"file_id": "c3d4e5f6-7890-1abc-def2-3456789abcde"}'
+                                    curl -X GET "https://api.example.com/jobs/result?job_id=12345678-1234-1234-1234-123456789012" <br>
+                                    &nbsp;&nbsp;-H "X-Token: your_token_here"
                                 </div>
                             </div>
                             
                             <div class="setting-group">
-                                <span class="setting-label">Audio File</span>
+                                <span class="setting-label">Note</span>
                                 <div class="setting-value">
-                                    support_call.mp3 (3:15 min)<br>
-                                    Recording of a customer support call about account access
+                                    Only call this endpoint after the job status is "completed". If the job is still processing, a 409 status code will be returned.
                                 </div>
                             </div>
                         </div>
@@ -1237,12 +1506,25 @@
                             <div class="result-container">
                                 <div class="result-code">
 {
-  "message": "Audio processed successfully",
-  "transcript": "Thank you for calling customer support. How may I help you today? Hi, I'm having trouble logging into my account. I keep getting an incorrect password message but I'm sure I'm using the right password. I understand how frustrating that can be. Let me help you with that. Can you please verify your email address and the last four digits of your phone number? Sure, my email is johndoe@example.com and the last four digits are 5678. Thank you for verifying that information. I can see there were multiple failed login attempts which triggered our security protocol. I've reset your password and you'll receive an email with instructions shortly. Is there anything else I can assist you with today? No, that's all. Thank you for your help. You're welcome. Have a great day!",
-  "metadata": {
-    "duration_seconds": 195,
-    "language_detected": "en-US",
-    "confidence_score": 0.94
+  "message": "Job result retrieved successfully",
+  "job_id": "12345678-1234-1234-1234-123456789012",
+  "status": "completed",
+  "created_at": "2025-04-22T10:30:45+02:00",
+  "started_at": "2025-04-22T10:30:46+02:00",
+  "completed_at": "2025-04-22T10:31:15+02:00",
+  "job_type": "stt",
+  "result": {
+    "message": "Audio transcribed successfully",
+    "transcript": "I was walking home from the grocery store when I witnessed the incident. It was approximately 9:30 PM and the street was poorly lit. I saw a silver sedan, possibly a Toyota or Honda, moving at high speed before it collided with the parked vehicle.",
+    "transcription_details": {
+      "combinedPhrases": [
+        {
+          "text": "I was walking home from the grocery store when I witnessed the incident. It was approximately 9:30 PM and the street was poorly lit. I saw a silver sedan, possibly a Toyota or Honda, moving at high speed before it collided with the parked vehicle."
+        }
+      ],
+      "duration": 45600
+    },
+    "seconds_processed": 45.6
   }
 }
                                 </div>
@@ -1265,7 +1547,7 @@
                             Enhanced Speech-to-Text with Diarization
                             <div class="credit-badge">3 AI Credits</div>
                         </h2>
-                        <p>Advanced transcription with speaker identification and timestamps, perfect for meetings, interviews, and multi-speaker scenarios.</p>
+                        <p>Advanced transcription with speaker identification and timestamps, perfect for meetings, interviews, and multi-speaker scenarios. Processed asynchronously for reliable results with even the longest recordings.</p>
                     </div>
                 </div>
                 
@@ -1279,6 +1561,7 @@
                             <li>Handles long audio recordings with automatic chunking</li>
                             <li>Improved accuracy for conversational context</li>
                             <li>Multiple language support</li>
+                            <li>Asynchronous processing for reliability</li>
                         </ul>
                     </div>
                     
@@ -1287,30 +1570,24 @@
                         <div class="endpoint-box">
                             POST /speech/stt_diarize
                         </div>
-                        <p>Transcribe multi-speaker audio with diarization by sending a POST request to this endpoint with your file ID.</p>
+                        <p>Submit an asynchronous multi-speaker transcription job by sending a POST request to this endpoint with your file ID.</p>
                         <p>Required parameters:</p>
                         <ul>
                             <li><strong>file_id</strong>: ID of the uploaded audio file</li>
                             <li><strong>X-Token</strong>: Your API authentication token (header)</li>
                         </ul>
-                        <p>Optional parameters:</p>
-                        <ul>
-                            <li><strong>language</strong>: Language code (defaults to auto-detection)</li>
-                            <li><strong>min_speakers</strong>: Minimum number of speakers to detect</li>
-                            <li><strong>max_speakers</strong>: Maximum number of speakers to detect</li>
-                            <li><strong>profanity_filter</strong>: Enable/disable profanity filtering</li>
-                        </ul>
+                        <p>Response includes a job_id that you'll use to check status and retrieve results.</p>
                     </div>
                 </div>
                 
                 <h3>Examples</h3>
                 <div class="examples-tabs">
-                    <div class="example-tab enhanced-tab active">Witness Interview</div>
-                    <div class="example-tab enhanced-tab">Multi-Person Meeting</div>
-                    <div class="example-tab enhanced-tab">Panel Discussion</div>
+                    <div class="example-tab enhanced-tab active">Job Submission</div>
+                    <div class="example-tab enhanced-tab">Job Status Check</div>
+                    <div class="example-tab enhanced-tab">Results Retrieval</div>
                 </div>
 
-                <!-- Example 1 - Interview -->
+                <!-- Example 1 - Job Submission -->
                 <div class="example-content active">
                     <div class="example-grid">
                         <div class="example-settings enhanced-speech-settings">
@@ -1330,20 +1607,21 @@
                             </div>
                             
                             <div class="setting-group">
+                                <span class="setting-label">Request Body</span>
+                                <div class="setting-value">
+                                    {<br>
+                                    &nbsp;&nbsp;"file_id": "b2c3d4e5-6789-01ab-cdef-23456789abcd"<br>
+                                    }
+                                </div>
+                            </div>
+                            
+                            <div class="setting-group">
                                 <span class="setting-label">cURL Request</span>
                                 <div class="setting-value">
                                     curl -X POST https://api.example.com/speech/stt_diarize <br>
                                     &nbsp;&nbsp;-H "X-Token: your_token_here" <br>
                                     &nbsp;&nbsp;-H "Content-Type: application/json" <br>
-                                    &nbsp;&nbsp;-d '{"file_id": "d4e5f6g7-8901-abcd-ef23-456789abcdef"}'
-                                </div>
-                            </div>
-                            
-                            <div class="setting-group">
-                                <span class="setting-label">Audio File</span>
-                                <div class="setting-value">
-                                    witness_interview.wav (15:45 min)<br>
-                                    Recording of a witness interview with an investigator and witness
+                                    &nbsp;&nbsp;-d '{"file_id": "b2c3d4e5-6789-01ab-cdef-23456789abcd"}'
                                 </div>
                             </div>
                         </div>
@@ -1355,9 +1633,8 @@
                             <div class="result-container">
                                 <div class="result-code">
 {
-  "message": "Audio processed successfully",
-  "raw_transcript": "Thank you for coming in today to discuss what you witnessed. Could you please state your name and address for our records? My name is Sarah Johnson and I live at 742 Evergreen Terrace. Thank you Ms. Johnson. Now, can you tell me in your own words what you saw on the evening of March 15th? Yes, I was walking my dog around 8:30 PM when I noticed a suspicious individual near the convenience store on Main Street. He was wearing a dark hoodie and seemed to be looking through the store window for some time before entering.",
-  "enhanced_transcript": "[00:00:00] Speaker 1: Thank you for coming in today to discuss what you witnessed. Could you please state your name and address for our records?\n\n[00:00:11] Speaker 2: My name is Sarah Johnson and I live at 742 Evergreen Terrace.\n\n[00:00:20] Speaker 1: Thank you Ms. Johnson. Now, can you tell me in your own words what you saw on the evening of March 15th?\n\n[00:00:29] Speaker 2: Yes, I was walking my dog around 8:30 PM when I noticed a suspicious individual near the convenience store on Main Street. He was wearing a dark hoodie and seemed to be looking through the store window for some time before entering."
+  "message": "Speech-to-text diarization job submitted successfully",
+  "job_id": "23456789-2345-2345-2345-234567890123"
 }
                                 </div>
                             </div>
@@ -1365,7 +1642,7 @@
                     </div>
                 </div>
 
-                <!-- Example 2 - Multi-Person Meeting -->
+                <!-- Example 2 - Status Check -->
                 <div class="example-content">
                     <div class="example-grid">
                         <div class="example-settings enhanced-speech-settings">
@@ -1373,32 +1650,28 @@
                             
                             <div class="setting-group">
                                 <span class="setting-label">Endpoint</span>
-                                <div class="setting-value">POST /speech/stt_diarize</div>
+                                <div class="setting-value">GET /jobs/status?job_id=23456789-2345-2345-2345-234567890123</div>
                             </div>
                             
                             <div class="setting-group">
                                 <span class="setting-label">Headers</span>
                                 <div class="setting-value">
-                                    X-Token: your_token_here<br>
-                                    Content-Type: application/json
+                                    X-Token: your_token_here
                                 </div>
                             </div>
                             
                             <div class="setting-group">
                                 <span class="setting-label">cURL Request</span>
                                 <div class="setting-value">
-                                    curl -X POST https://api.example.com/speech/stt_diarize <br>
-                                    &nbsp;&nbsp;-H "X-Token: your_token_here" <br>
-                                    &nbsp;&nbsp;-H "Content-Type: application/json" <br>
-                                    &nbsp;&nbsp;-d '{"file_id": "e5f6g7h8-9012-abcd-ef34-56789abcdef0"}'
+                                    curl -X GET "https://api.example.com/jobs/status?job_id=23456789-2345-2345-2345-234567890123" <br>
+                                    &nbsp;&nbsp;-H "X-Token: your_token_here"
                                 </div>
                             </div>
                             
                             <div class="setting-group">
-                                <span class="setting-label">Audio File</span>
+                                <span class="setting-label">Note</span>
                                 <div class="setting-value">
-                                    quarterly_meeting.mp3 (15:45 min)<br>
-                                    Recording of a quarterly planning meeting with multiple team members
+                                    Diarization jobs typically take longer to process than basic transcription. Implement appropriate polling intervals.
                                 </div>
                             </div>
                         </div>
@@ -1410,15 +1683,18 @@
                             <div class="result-container">
                                 <div class="result-code">
 {
-  "message": "Audio processed successfully",
-  "raw_transcript": "Good morning everyone. Let's get started with our quarterly planning meeting. First, I'd like to review our Q1 results. Thank you, Michael. As you can see from the slides, we exceeded our revenue targets by 12% in Q1, primarily due to the successful launch of our new product line...",
-  "enhanced_transcript": "[00:00:00] Speaker 1: Good morning everyone. Let's get started with our quarterly planning meeting. First, I'd like to review our Q1 results.\n\n[00:00:11] Speaker 2: Thank you, Michael. As you can see from the slides, we exceeded our revenue targets by 12% in Q1, primarily due to the successful launch of our new product line.\n\n[00:00:25] Speaker 3: If I could add to that, our marketing campaign reached 40% more customers than projected, which significantly contributed to those results.\n\n[00:00:35] Speaker 4: And from the customer support side, we've seen a 15% decrease in support tickets related to the new products compared to previous launches...",
-  "metadata": {
-    "duration_seconds": 945,
-    "language_detected": "en-US",
-    "num_speakers": 4,
-    "confidence_score": 0.91
-  }
+  "job_id": "23456789-2345-2345-2345-234567890123",
+  "user_id": "87654321-4321-4321-4321-210987654321",
+  "file_id": "b2c3d4e5-6789-01ab-cdef-23456789abcd",
+  "status": "completed",
+  "created_at": "2025-04-22T10:45:12+02:00",
+  "started_at": "2025-04-22T10:45:13+02:00",
+  "completed_at": "2025-04-22T10:47:28+02:00",
+  "error_message": null,
+  "job_type": "stt_diarize",
+  "has_results": true,
+  "parameters": null,
+  "endpoint_id": "72b45e6d-9da3-5f3g-c220-f07b8c3b5d6e"
 }
                                 </div>
                             </div>
@@ -1426,7 +1702,7 @@
                     </div>
                 </div>
 
-                <!-- Example 3 - Panel Discussion -->
+                <!-- Example 3 - Results Retrieval -->
                 <div class="example-content">
                     <div class="example-grid">
                         <div class="example-settings enhanced-speech-settings">
@@ -1434,32 +1710,21 @@
                             
                             <div class="setting-group">
                                 <span class="setting-label">Endpoint</span>
-                                <div class="setting-value">POST /speech/stt_diarize</div>
+                                <div class="setting-value">GET /jobs/result?job_id=23456789-2345-2345-2345-234567890123</div>
                             </div>
                             
                             <div class="setting-group">
                                 <span class="setting-label">Headers</span>
                                 <div class="setting-value">
-                                    X-Token: your_token_here<br>
-                                    Content-Type: application/json
+                                    X-Token: your_token_here
                                 </div>
                             </div>
                             
                             <div class="setting-group">
                                 <span class="setting-label">cURL Request</span>
                                 <div class="setting-value">
-                                    curl -X POST https://api.example.com/speech/stt_diarize <br>
-                                    &nbsp;&nbsp;-H "X-Token: your_token_here" <br>
-                                    &nbsp;&nbsp;-H "Content-Type: application/json" <br>
-                                    &nbsp;&nbsp;-d '{"file_id": "f6g7h8i9-0123-abcd-ef45-6789abcdef01"}'
-                                </div>
-                            </div>
-                            
-                            <div class="setting-group">
-                                <span class="setting-label">Audio File</span>
-                                <div class="setting-value">
-                                    industry_panel.m4a (22:30 min)<br>
-                                    Recording of an industry panel with a moderator and 4 panelists
+                                    curl -X GET "https://api.example.com/jobs/result?job_id=23456789-2345-2345-2345-234567890123" <br>
+                                    &nbsp;&nbsp;-H "X-Token: your_token_here"
                                 </div>
                             </div>
                         </div>
@@ -1471,14 +1736,24 @@
                             <div class="result-container">
                                 <div class="result-code">
 {
-  "message": "Audio processed successfully",
-  "raw_transcript": "Welcome to our industry panel on the future of AI in healthcare. I'm your moderator, Dr. Johnson, and I'm joined by four distinguished experts in the field. Let's begin with Dr. Chen. Could you share your perspective on the most promising applications of AI in diagnostics?",
-  "enhanced_transcript": "[00:00:00] Speaker 1: Welcome to our industry panel on the future of AI in healthcare. I'm your moderator, Dr. Johnson, and I'm joined by four distinguished experts in the field. Let's begin with Dr. Chen. Could you share your perspective on the most promising applications of AI in diagnostics?\n\n[00:00:19] Speaker 2: Thank you for having me. I believe the most exciting developments are in medical imaging analysis, where deep learning models can now detect subtle patterns that even experienced radiologists might miss...\n\n[00:01:32] Speaker 1: Thank you, Dr. Chen. Dr. Patel, could you address how AI is transforming patient care beyond diagnostics?\n\n[00:01:40] Speaker 3: Absolutely. We're seeing remarkable advances in personalized treatment plans based on predictive analytics...",
-  "metadata": {
-    "duration_seconds": 1350,
-    "language_detected": "en-US",
-    "num_speakers": 5,
-    "confidence_score": 0.89
+  "message": "Job result retrieved successfully",
+  "job_id": "23456789-2345-2345-2345-234567890123",
+  "status": "completed",
+  "created_at": "2025-04-22T10:45:12+02:00",
+  "started_at": "2025-04-22T10:45:13+02:00",
+  "completed_at": "2025-04-22T10:47:28+02:00",
+  "job_type": "stt_diarize",
+  "result": {
+    "message": "Audio processed successfully",
+    "raw_transcript": "Thank you for coming in today to discuss what you witnessed. Could you please state your name and address for our records? My name is Sarah Johnson and I live at 742 Evergreen Terrace. Thank you Ms. Johnson. Now, can you tell me in your own words what you saw on the evening of March 15th?",
+    "enhanced_transcript": "[00:00:00] Speaker 1: Thank you for coming in today to discuss what you witnessed. Could you please state your name and address for our records?\n\n[00:00:11] Speaker 2: My name is Sarah Johnson and I live at 742 Evergreen Terrace.\n\n[00:00:20] Speaker 1: Thank you Ms. Johnson. Now, can you tell me in your own words what you saw on the evening of March 15th?",
+    "seconds_processed": 30.5,
+    "prompt_tokens": 628,
+    "completion_tokens": 217,
+    "total_tokens": 845,
+    "cached_tokens": 0,
+    "embedded_tokens": 0,
+    "model_used": "gpt-4o-mini"
   }
 }
                                 </div>
@@ -1506,14 +1781,29 @@
                         <ul style="line-height: 1.8; margin-top: 15px; margin-bottom: 15px; padding-left: 20px;">
                             <li>Use high-quality audio recordings with minimal background noise</li>
                             <li>Ensure speakers don't talk over each other frequently</li>
-                            <li>For longer recordings (>30 minutes), consider splitting the file into smaller segments</li>
+                            <li>Try to have distinct voice differences between speakers for better identification</li>
                             <li>When possible, use a separate microphone for each speaker</li>
-                            <li>Provide min_speakers and max_speakers parameters if you know the approximate number of participants</li>
                         </ul>
                     </div>
                 </div>
                 
-                <h3>Example Code Usage</h3>
+                <div class="info-box" style="background-color: #FFF3E0; border-left-color: #FF9800;">
+                    <div class="info-box-icon" style="color: #FF9800;"><i class="fas fa-exclamation-triangle"></i></div>
+                    <div class="info-box-content">
+                        <h4 style="color: #FF9800;">Client Timeout Considerations</h4>
+                        <p>Our asynchronous processing model eliminates client timeout issues that can occur with synchronous APIs. This is particularly important for:</p>
+                        <ul style="line-height: 1.8; margin-top: 15px; margin-bottom: 15px; padding-left: 20px;">
+                            <li>Long audio files (>15 minutes) that would timeout with synchronous processing</li>
+                            <li>Network environments with unstable connections</li>
+                            <li>Mobile applications where background processing is needed</li>
+                        </ul>
+                        <p>The job continues processing even if your client disconnects, and you can retrieve results at any time.</p>
+                    </div>
+                </div>
+                
+                <h3>Complete Integration Example</h3>
+                
+                <p>Here's a complete workflow showing how to use our asynchronous speech services from file upload to results retrieval:</p>
                 
                 <h4>Step 1: Upload Audio File</h4>
                 <div class="code-block">
@@ -1536,7 +1826,7 @@ curl -X POST https://api.example.com/file \
 }
                 </div>
                 
-                <h4>Step 2: Submit for Transcription with Diarization</h4>
+                <h4>Step 2: Submit Transcription Job</h4>
                 <div class="code-block">
 # cURL request
 curl -X POST https://api.example.com/speech/stt_diarize \
@@ -1546,9 +1836,68 @@ curl -X POST https://api.example.com/speech/stt_diarize \
 
 # Response
 {
-  "message": "Audio processed successfully",
-  "raw_transcript": "Thank you for coming in today to discuss what you witnessed. Could you please state your name for our records? My name is Robert Smith. Thank you Mr. Smith. Can you tell me in your own words what you saw on the evening of June 10th?",
-  "enhanced_transcript": "[00:00:00] Speaker 1: Thank you for coming in today to discuss what you witnessed. Could you please state your name for our records?\n\n[00:00:08] Speaker 2: My name is Robert Smith.\n\n[00:00:12] Speaker 1: Thank you Mr. Smith. Can you tell me in your own words what you saw on the evening of June 10th?"
+  "message": "Speech-to-text diarization job submitted successfully",
+  "job_id": "23456789-2345-2345-2345-234567890123"
+}
+                </div>
+                
+                <h4>Step 3: Poll for Job Completion</h4>
+                <div class="code-block">
+# Example pseudocode (JavaScript/Node.js)
+async function waitForJobCompletion(jobId, token) {
+  let backoffTime = 3000; // Start with 3 seconds
+  const maxBackoff = 60000; // Maximum 1 minute between checks
+  const timeout = 30 * 60 * 1000; // 30 minute timeout
+  const startTime = Date.now();
+  
+  while (Date.now() - startTime < timeout) {
+    // Check job status
+    const response = await fetch(`https://api.example.com/jobs/status?job_id=${jobId}`, {
+      headers: { 'X-Token': token }
+    });
+    
+    const jobStatus = await response.json();
+    
+    if (jobStatus.status === 'completed') {
+      return true; // Job is done
+    } else if (jobStatus.status === 'failed') {
+      throw new Error(`Job failed: ${jobStatus.error_message}`);
+    }
+    
+    // Wait with exponential backoff
+    await new Promise(resolve => setTimeout(resolve, backoffTime));
+    backoffTime = Math.min(backoffTime * 2, maxBackoff);
+  }
+  
+  throw new Error('Job processing timed out');
+}
+                </div>
+                
+                <h4>Step 4: Retrieve Results</h4>
+                <div class="code-block">
+# cURL request
+curl -X GET "https://api.example.com/jobs/result?job_id=23456789-2345-2345-2345-234567890123" \
+  -H "X-Token: your_token_here"
+
+# JavaScript example
+async function getJobResults(jobId, token) {
+  const response = await fetch(`https://api.example.com/jobs/result?job_id=${jobId}`, {
+    headers: { 'X-Token': token }
+  });
+  
+  if (response.status === 409) {
+    throw new Error('Job is still processing');
+  }
+  
+  const data = await response.json();
+  
+  if (data.status === 'completed') {
+    // Process the results
+    const transcript = data.result.enhanced_transcript || data.result.transcript;
+    return transcript;
+  } else {
+    throw new Error(`Job failed: ${data.error_message}`);
+  }
 }
                 </div>
             </div>
@@ -1558,7 +1907,7 @@ curl -X POST https://api.example.com/speech/stt_diarize \
         <section class="cta-section">
             <div class="cta-container">
                 <h2>Start Transcribing Your Audio Today</h2>
-                <p>Integrate our powerful Speech Services APIs into your applications and unlock valuable insights from your audio content.</p>
+                <p>Integrate our powerful asynchronous Speech Services APIs into your applications and unlock valuable insights from your audio content.</p>
                 <div class="cta-buttons" style="justify-content: center;">
                     <a href="/static/resources/AIAPIS.postman_collection" class="cta-btn" style="background-color: var(--accent-color); color: var(--dark-color);" download>
                         <i class="fas fa-download"></i> Download Postman Collection
@@ -1634,7 +1983,7 @@ curl -X POST https://api.example.com/speech/stt_diarize \
             
             // Add scroll animation for elements
             const animateOnScroll = function() {
-                const elements = document.querySelectorAll('.feature-card, .model-detail-card, .example-result, .section-header');
+                const elements = document.querySelectorAll('.feature-card, .model-detail-card, .example-result, .section-header, .job-endpoint-card, .flow-step');
                 
                 elements.forEach(element => {
                     const elementPosition = element.getBoundingClientRect().top;
