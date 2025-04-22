@@ -271,5 +271,9 @@ register_insurance_bot_routes(app)
 from apis.admin.admin_endpoint_access import register_admin_endpoint_access_routes
 register_admin_endpoint_access_routes(app)
 
+from apis.car_insurance.conversation import register_car_insurance_routes
+register_car_insurance_routes(app)
+
+
 if __name__ == '__main__':
     app.run(debug=True)
