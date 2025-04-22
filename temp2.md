@@ -185,3 +185,5 @@ api function file requirements:
 1.You must modularise this api function as much as possible where static references are in seperate files and read into the main api file. THis will make it easier to update the statif lists
 2. Please do not make any ofthe files exceedingly long whihch will cause context window limitations later on. I need you be clever with the implementation
 
+Use the conversational_llm endpoints for an idea of how to implement the chat apis
+
