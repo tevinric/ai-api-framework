@@ -13,7 +13,6 @@ import json
 import re
 from difflib import get_close_matches
 from datetime import datetime
-import email_validator
 
 # CONFIGURE LOGGING
 logger = logging.getLogger(__name__)
@@ -360,13 +359,27 @@ def validate_email(email):
     if not email:
         return None, "Email address is required"
     
-    try:
-        # Validate and normalize the email
-        valid = email_validator.validate_email(email)
-        normalized_email = valid.email
-        return normalized_email, None
-    except email_validator.EmailNotValidError as e:
-        return None, str(e)
+    # Simple regex pattern for email validation
+    import re
+    email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    
+    if not re.match(email_pattern, email):
+        return None, "Invalid email format"
+    
+    # Check for common mistakes
+    if '..' in email or email.startswith('.') or email.endswith('.'):
+        return None, "Email contains consecutive dots or starts/ends with a dot"
+    
+    # Check domain
+    domain = email.split('@')[1]
+    if len(domain) > 255:
+        return None, "Email domain is too long"
+    
+    # Simple normalization - lowercase the domain part
+    local_part, domain = email.split('@')
+    normalized_email = f"{local_part}@{domain.lower()}"
+    
+    return normalized_email, None
 
 def validate_phone_number(phone):
     """
@@ -1048,13 +1061,29 @@ def get_conversation_history(conversation_id):
     try:
         # Get blob service client
         blob_service_client = get_azure_blob_client()
-        container_client = blob_service_client.get_container_client(CAR_INSURANCE_CONVERSATION_CONTAINER)
+        
+        # Check if container exists
+        try:
+            container_client = blob_service_client.get_container_client(CAR_INSURANCE_CONVERSATION_CONTAINER)
+            container_client.get_container_properties()  # Will raise if container doesn't exist
+        except Exception as e:
+            if "ContainerNotFound" in str(e):
+                logger.warning(f"Container {CAR_INSURANCE_CONVERSATION_CONTAINER} not found - conversation cannot exist yet")
+                return None, f"Conversation container not found: {CAR_INSURANCE_CONVERSATION_CONTAINER}"
+            else:
+                raise
         
         # Get blob client
         blob_client = container_client.get_blob_client(f"{conversation_id}.json")
         
         # Download blob
-        blob_data = blob_client.download_blob().readall().decode('utf-8')
+        try:
+            blob_data = blob_client.download_blob().readall().decode('utf-8')
+        except Exception as e:
+            if "BlobNotFound" in str(e):
+                return None, f"Conversation not found with ID: {conversation_id}"
+            else:
+                raise
         
         # Parse JSON
         conversation = json.loads(blob_data)
@@ -1076,8 +1105,22 @@ def save_conversation_history(conversation_id, conversation):
         tuple: (success, error)
     """
     try:
-        # Ensure container exists
-        ensure_container_exists(CAR_INSURANCE_CONVERSATION_CONTAINER)
+        # Ensure container exists - create it if it doesn't
+        try:
+            ensure_container_exists(CAR_INSURANCE_CONVERSATION_CONTAINER)
+        except Exception as container_error:
+            logger.warning(f"Error ensuring container exists, will attempt to create directly: {str(container_error)}")
+            # Direct container creation as fallback
+            blob_service_client = get_azure_blob_client()
+            try:
+                container_client = blob_service_client.create_container(CAR_INSURANCE_CONVERSATION_CONTAINER)
+                logger.info(f"Container {CAR_INSURANCE_CONVERSATION_CONTAINER} created directly")
+            except Exception as direct_create_error:
+                if "ContainerAlreadyExists" in str(direct_create_error):
+                    logger.info(f"Container {CAR_INSURANCE_CONVERSATION_CONTAINER} already exists")
+                else:
+                    logger.error(f"Failed to create container directly: {str(direct_create_error)}")
+                    raise
         
         # Get blob service client
         blob_service_client = get_azure_blob_client()
@@ -1108,13 +1151,30 @@ def delete_conversation_history(conversation_id):
     try:
         # Get blob service client
         blob_service_client = get_azure_blob_client()
-        container_client = blob_service_client.get_container_client(CAR_INSURANCE_CONVERSATION_CONTAINER)
+        
+        # Check if container exists
+        try:
+            container_client = blob_service_client.get_container_client(CAR_INSURANCE_CONVERSATION_CONTAINER)
+            container_client.get_container_properties()  # Will raise if container doesn't exist
+        except Exception as e:
+            if "ContainerNotFound" in str(e):
+                logger.warning(f"Container {CAR_INSURANCE_CONVERSATION_CONTAINER} not found - nothing to delete")
+                return True, None  # Consider it a success since there's nothing to delete
+            else:
+                raise
         
         # Get blob client
         blob_client = container_client.get_blob_client(f"{conversation_id}.json")
         
         # Delete blob
-        blob_client.delete_blob()
+        try:
+            blob_client.delete_blob()
+        except Exception as e:
+            if "BlobNotFound" in str(e):
+                logger.warning(f"Conversation not found with ID: {conversation_id} - nothing to delete")
+                return True, None  # Consider it a success since there's nothing to delete
+            else:
+                raise
         
         return True, None
     except Exception as e:
