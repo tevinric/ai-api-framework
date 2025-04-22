@@ -201,7 +201,7 @@
         
         /* Hero */
         .hero {
-            background: url('/static/GAIA _splash3.gif') center/cover no-repeat;
+            background: url('/static/GAIA _splash3.gif') center/90% no-repeat;
             color: var(--white-color);
             padding: 5rem 3rem;
             position: relative;
@@ -311,6 +311,7 @@
             padding: 2rem 3rem;
             background-color: var(--white-color);
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            margin-bottom: 3rem; /* Added spacing between features and gaia-intro */
         }
         
         .features-container {
@@ -943,10 +944,11 @@
         
         /* GAIA Introduction Section Styles */
         .gaia-intro {
-            background: linear-gradient(135deg, #03001A 0%, #230021 100%);
+            background: linear-gradient(135deg, rgba(3, 0, 26, 0.9) 0%, rgba(35, 0, 33, 0.9) 100%), url('/static/GAIA_eye.png') center/contain no-repeat;
             padding: 4rem 3rem;
             position: relative;
             overflow: hidden;
+            margin-top: 2rem;
         }
         
         .gaia-intro::before {
@@ -1154,7 +1156,7 @@
             </div>
         </section>
         
-        <section class="gaia-intro" style="background: url('/static/GAIA_eye.png') center/contain no-repeat;">
+        <section class="gaia-intro">
             <div class="gaia-container">
             <div class="gaia-content">
             <h2 style="font-size: 3rem; margin-bottom: 1.5rem; line-height: 1.2; max-width: 840px; background: linear-gradient(to left, var(--white-color), var(--accent-color)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: fadeInUp 0.8s ease-out;">Meet GAIA</h2>
