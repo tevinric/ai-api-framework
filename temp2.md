@@ -179,3 +179,9 @@ API outputs:
 1. You must retrun the total token consumption
 2. If the question has options, you must return a list of options for for each question the api is asking so that a front end developer can present this list to the user for selection
 3. You must keep a dictionary of the data as the conversation flows. As the conversation prgresses you must populate this list with the extrated information from the conversation. This will be later used for mapping
+
+
+api function file requirements:
+1.You must modularise this api function as much as possible where static references are in seperate files and read into the main api file. THis will make it easier to update the statif lists
+2. Please do not make any ofthe files exceedingly long whihch will cause context window limitations later on. I need you be clever with the implementation
+
