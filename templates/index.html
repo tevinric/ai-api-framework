@@ -201,7 +201,7 @@
         
         /* Hero */
         .hero {
-            background: url('/static/GAIA _splash3.gif') center/90% no-repeat;
+            background: url('/static/GAIA _splash3.gif') center/cover no-repeat;
             color: var(--white-color);
             padding: 5rem 3rem;
             position: relative;
@@ -311,7 +311,6 @@
             padding: 2rem 3rem;
             background-color: var(--white-color);
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-            margin-bottom: 3rem; /* Added spacing between features and gaia-intro */
         }
         
         .features-container {
@@ -944,11 +943,10 @@
         
         /* GAIA Introduction Section Styles */
         .gaia-intro {
-            background: linear-gradient(135deg, rgba(3, 0, 26, 0.9) 0%, rgba(35, 0, 33, 0.9) 100%), url('/static/GAIA_eye.png') center/contain no-repeat;
+            background: linear-gradient(135deg, #03001A 0%, #230021 100%);
             padding: 4rem 3rem;
             position: relative;
             overflow: hidden;
-            margin-top: 2rem;
         }
         
         .gaia-intro::before {
@@ -1109,78 +1107,76 @@
     <main class="main-content">
         <section class="hero">
             <div class="hero-container">
-
-            <h2>Supercharge Your Applications with GAIA today!</h2>
-            <p>The TIH GAIA Platform provides a comprehensive suite of AI services designed to add intelligence into your applications. From advanced language models to image generation, speech processing, document intelligence, and more, GAIA's APIs AI functionality is accessible through simple, powerful APIs designed for developers at all levels.</p>
-
-            <div class="cta-buttons">
-                <a href="{{ url_for('getting_started') }}" class="cta-btn">
-                <i class="fas fa-rocket"></i> Get Started
-                </a>
-                <a href="/apidocs/" class="cta-btn cta-btn-secondary">
-                <i class="fas fa-book"></i> Swagger API Docs
-                </a>
-            </div>
+                <h2 style="font-size: 220%;">Supercharge Your Applications with GAIA today!</h2>
+                <p>The GAIA Platform provides a comprehensive suite of AI services designed to add intelligence to your applications. From advanced language models to image generation, speech processing, document intelligence, and more, GAIA's AI services are all accessible through simple, powerful APIs designed for developers at all levels.</p>
+                <div class="cta-buttons">
+                    <a href="{{ url_for('getting_started') }}" class="cta-btn">
+                        <i class="fas fa-rocket"></i> Get Started
+                    </a>
+                    <a href="/apidocs/" class="cta-btn cta-btn-secondary">
+                        <i class="fas fa-book"></i> Swagger API Docs
+                    </a>
+                </div>
             </div>
         </section>
         
-        <section class="features-highlight" style="padding-top: 2rem; padding-bottom: 2rem;">
+        <section class="features-highlight">
             <div class="features-container">
-            <div class="highlight-item">
-            <div class="highlight-icon">
-            <i class="fas fa-bolt"></i>
-            </div>
-            <div class="highlight-text">
-            <h3>Fast Integration</h3>
-            <p>Simple API calls with consistent response formats</p>
-            </div>
-            </div>
-            <div class="highlight-item">
-            <div class="highlight-icon">
-            <i class="fas fa-shield-alt"></i>
-            </div>
-            <div class="highlight-text">
-            <h3>Secure Access</h3>
-            <p>Token-based authentication with robust security</p>
-            </div>
-            </div>
-            <div class="highlight-item">
-            <div class="highlight-icon">
-            <i class="fas fa-chart-line"></i>
-            </div>
-            <div class="highlight-text">
-            <h3>Usage Monitoring</h3>
-            <p>Track API consumption and balance management</p>
-            </div>
-            </div>
+                <div class="highlight-item">
+                    <div class="highlight-icon">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <div class="highlight-text">
+                        <h3>Fast Integration</h3>
+                        <p>Simple API calls with consistent response formats</p>
+                    </div>
+                </div>
+                <div class="highlight-item">
+                    <div class="highlight-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <div class="highlight-text">
+                        <h3>Secure Access</h3>
+                        <p>Token-based authentication with robust security</p>
+                    </div>
+                </div>
+                <div class="highlight-item">
+                    <div class="highlight-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="highlight-text">
+                        <h3>Usage Monitoring</h3>
+                        <p>Track API consumption and balance management</p>
+                    </div>
+                </div>
             </div>
         </section>
         
         <section class="gaia-intro">
             <div class="gaia-container">
-            <div class="gaia-content">
-            <h2 style="font-size: 3rem; margin-bottom: 1.5rem; line-height: 1.2; max-width: 840px; background: linear-gradient(to left, var(--white-color), var(--accent-color)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: fadeInUp 0.8s ease-out;">Meet GAIA</h2>
-                <div class="gaia-divider"></div>
-                <p class="gaia-description">Just as GAIA, the primordial Greek Earth Goddess, gave life to all creation, our <strong>Global Artificial Intelligence Access</strong> (GAIA) platform breathes intelligence into your applications.</p>
-                
-                <div class="gaia-features">
-                <div class="gaia-feature">
-                    <i class="fas fa-seedling"></i>
-                    <p>GAIA provides the <strong>roots</strong> to ground your applications with AI capabilities</p>
+                <div class="gaia-content">
+                    <h2>Meet GAIA</h2>
+                    <div class="gaia-divider"></div>
+                    <p class="gaia-description">Just as Gaia, the primordial Greek Earth Goddess, gave life to all creation, our <strong>Global Artificial Intelligence Access</strong> (GAIA) platform breathes intelligence into your applications.</p>
+                    
+                    <div class="gaia-features">
+                        <div class="gaia-feature">
+                            <i class="fas fa-seedling"></i>
+                            <p>GAIA provides the <strong>roots</strong> to ground your applications with AI capabilities</p>
+                        </div>
+                        <div class="gaia-feature">
+                            <i class="fas fa-magic"></i>
+                            <p>A unified gateway to access all AI models and services through one consistent interface</p>
+                        </div>
+                        <div class="gaia-feature">
+                            <i class="fas fa-plug"></i>
+                            <p>Simple integration that brings complex AI capabilities into any application</p>
+                        </div>
+                    </div>
                 </div>
-                <div class="gaia-feature">
-                    <i class="fas fa-magic"></i>
-                    <p>A unified gateway to access all AI models and services through one consistent interface</p>
+                <div class="gaia-quote">
+                    <blockquote>"From TIH springs innovation; from GAIA springs intelligence."</blockquote>
                 </div>
-                <div class="gaia-feature">
-                    <i class="fas fa-plug"></i>
-                    <p>Simple integration that brings complex AI capabilities into any application</p>
-                </div>
-                </div>
-            </div>
-            <div class="gaia-quote">
-                <blockquote>"From TIH springs innovation; from GAIA springs intelligence."</blockquote>
-            </div>
             </div>
         </section>
         
