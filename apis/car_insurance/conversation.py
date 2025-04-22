@@ -541,5 +541,5 @@ def register_car_insurance_routes(app):
     from apis.utils.rbacMiddleware import check_endpoint_access
     
     """Register car insurance bot routes with the Flask app"""
-    app.route('/car-insurance/chat', methods=['POST'])(track_usage(api_logger(check_endpoint_access(car_insurance_chat_route))))
-    app.route('/car-insurance/chat', methods=['DELETE'])(api_logger(check_endpoint_access(delete_car_insurance_chat_route)))
+    app.route('/carinsurance/chat', methods=['POST'])(track_usage(api_logger(check_endpoint_access(car_insurance_chat_route))))
+    app.route('/carinsurance/chat', methods=['DELETE'])(api_logger(check_endpoint_access(delete_car_insurance_chat_route)))

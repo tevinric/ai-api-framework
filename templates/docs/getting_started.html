@@ -201,7 +201,7 @@
         
         /* Hero */
         .hero {
-            background: linear-gradient(135deg, rgba(1, 0, 15, 1) 0%, rgba(35, 0, 33, 1) 100%);
+            background: url('/static/GAIA _splash3.gif') center/cover no-repeat;
             color: var(--white-color);
             padding: 5rem 3rem;
             position: relative;
@@ -928,11 +928,11 @@
     <main class="main-content">
         <section class="hero">
             <div class="hero-container">
-                <h2>Getting Started with the AI API Platform</h2>
-                <p>Follow this guide to start integrating powerful AI capabilities into your applications. From obtaining your API key to making your first API calls, we'll walk you through everything you need to know to get started with our platform.</p>
+                <h2>Getting Started with GAIA</h2>
+                <p>Follow this guide to use GAIA for breathing intelligence into your new or existing applications. From obtaining your API key to making your first API calls, this guide will walk you through everything you need to know to get started with GAIA.</p>
                 <div class="cta-buttons">
-                    <a href="/static/resources/AIAPIS.postman_collection" class="cta-btn" style="background-color: var(--accent-color); color: var(--dark-color);" download>
-                        <i class="fas fa-download"></i> Download Postman Collection
+                    <a href="/static/resources/GAIA.postman_collection" class="cta-btn" style="background-color: var(--accent-color); color: var(--dark-color);" download>
+                        <i class="fas fa-download"></i> Download GAIA Collection
                     </a>
                     <a href="/apidocs/" class="cta-btn cta-btn-secondary">
                         <i class="fas fa-book"></i> API Documentation
@@ -977,7 +977,7 @@
             <div class="section-container">
                 <div class="section-header">
                     <h2>Getting Started Process</h2>
-                    <p>Follow these steps to start using our AI API Platform</p>
+                    <p>Follow these steps to start using GAIA's AI Services</p>
                 </div>
                 
                 <div class="steps-grid">
@@ -995,8 +995,8 @@
                     <!-- New Step Card for Download Postman Collection -->
                     <div class="step-card">
                         <div class="step-number">2</div>
-                        <h3>Download Postman Collection</h3>
-                        <p>The easiest way to get started with our API is to use our Postman collection, which includes all endpoints. You can call our API endpoints using any programming language through the collection.</p>
+                        <h3>Download GAIA'S Postman Collection</h3>
+                        <p>The easiest way to get started with GAIA is to use our Postman collection, which includes all endpoints. You can call GAIA's API endpoints using any programming language through the collection.</p>
                         <p style="margin-top: 1rem; font-size: 0.9rem;">You can also view and test our endpoints directly on the <a href="/apidocs/">API Swagger documentation</a>.</p>
                         <div class="btn-container">
                             <a href="/static/resources/AIAPIS.postman_collection" class="cta-btn" style="background-color: var(--accent-color); color: var(--dark-color);" download>
@@ -1029,7 +1029,7 @@
                     <div class="step-card">
                         <div class="step-number">4</div>
                         <h3>Explore Available Endpoints</h3>
-                        <p>Browse our comprehensive documentation to discover all available AI services. From language models to image generation, speech services, and document intelligence – choose the endpoints that meet your application's needs.</p>
+                        <p>Browse GAIA's comprehensive documentation to discover all available AI services. From language models to image generation, speech services, and document intelligence – choose the endpoints that meet your application's needs.</p>
                         <div class="btn-container">
                             <a href="/apidocs/" class="cta-btn" style="background: var(--magenta-gradient); color: white;">
                                 <i class="fas fa-book"></i> Swagger API Docs
@@ -1059,7 +1059,7 @@
                     <div class="step-card">
                         <div class="step-number">6</div>
                         <h3>Monitor Your Usage</h3>
-                        <p>Keep track of your API consumption using our Balance Management endpoints. Monitor your credit usage across different endpoints and time periods to optimize your AI utilization.</p>
+                        <p>Keep track of your API consumption using GAIA's Balance Management endpoints. Monitor your credit usage across different endpoints and time periods to optimize your AI utilization.</p>
                         <div class="code-block">
                             <span class="code-label">Check Balance</span>
                             <span class="code-keyword">GET</span> /usage/balance<br>
@@ -1080,8 +1080,8 @@
                 </div>
                 
                 <div class="registration-form">
-                    <h3>API Key Request Form</h3>
-                    <p class="form-description">To access our AI API Platform, you'll need to request an API key with appropriate permissions. Fill out our registration form to get started:</p>
+                    <h3>GAIA API Key Request</h3>
+                    <p class="form-description">To access the TIH GAIA Platform, you'll need to request an API key with appropriate permissions. You must submit a SysAid request to the TIH AI Center of Excellence to get started:</p>
                     
                     <a href="https://forms.office.com/Pages/ResponsePage.aspx?id=uM6zjUZ0vEiLtJeAPFJ6N2xrQvNFNxxGn2IZUHwM9CxUQUkzUTlURE9JR0c0UVJGN0Q2RTRCU0pYVC4u" class="form-link" target="_blank">
                         <i class="fas fa-external-link-alt"></i> Access Registration Form
@@ -1090,7 +1090,7 @@
                     <h4>What happens after you register?</h4>
                     <ul>
                         <li>The AI COE team receives your request</li>
-                        <li>A user profile will be created for you using the details you provide on the form</li>
+                        <li>A user profile will be created for you using the details you provide on the SysAid request</li>
                         <li>Your unique user ID and API key will be communicated to you by the AI COE within 48 hours</li>
                         <li>You must <strong>NEVER</strong> share your unique user ID or API key with anyone or store them in any code repository</li>
                     </ul>
@@ -1151,7 +1151,9 @@
             <div class="section-container">
             <div class="section-header" style="margin-bottom: 2rem;">
                 <h2>Using the Platform</h2>
-                <p>Essential information to help you start developing with our AI APIs</p>
+                <br><br>
+                <p>Essential information to help you start developing with GAIA.</p>
+                <br>
             </div>
             
             <h3 style="margin-bottom: 1.5rem;">Token Generation and Authentication</h3>
@@ -1183,7 +1185,7 @@
             <p style="margin-bottom: 2rem;">See our <a href="{{ url_for('token_services') }}">Token Services</a> documentation for more details.</p>
             
             <h3 style="margin-bottom: 1.5rem;">Explore Available Endpoints</h3>
-            <p style="margin-bottom: 1rem;">Our platform offers a wide range of AI capabilities through different endpoints:</p>
+            <p style="margin-bottom: 1rem;">GAIA offers a wide range of AI capabilities through different endpoints:</p>
             <ul style="margin-left: 1.5rem; margin-bottom: 2rem; line-height: 2.34;"> <!-- Increased line-height by 30% -->
                 <li>
                 <i class="fas fa-language" style="color: var(--primary-color);"></i>
@@ -1225,7 +1227,7 @@
             
             <h3>Monitor Your Usage</h3>
             <br>
-            <p>Keep track of your API consumption using our <a href="{{ url_for('balance_management') }}">Balance Management</a> endpoints:</p>
+            <p>Keep track of your API consumption using GAIA's <a href="{{ url_for('balance_management') }}">Balance Management</a> endpoints:</p>
             <ul style="margin-left: 1.5rem; line-height: 2.34;">
                 <li>Check your current AI credit balance</li>
                 <li>View detailed usage statistics by endpoint</li>
@@ -1246,18 +1248,18 @@
             </div>
         </section>
         
-        <section class="cta-section">
+        <section class="cta-section" style="background: url('/static/GAIA_eye.png') center/cover no-repeat;">
             <div class="cta-container">
-                <h2>Ready to Build with AI?</h2>
-                <p>Download our Postman Collection to quickly start integrating powerful AI capabilities into your applications.</p>
-                <div style="display: flex; justify-content: center; margin: 2rem 0; gap: 2rem; flex-wrap: wrap;">
-                    <a href="/static/resources/AIAPIS.postman_collection" class="cta-btn" style="background-color: var(--accent-color); color: var(--dark-color);" download>
-                        <i class="fas fa-download"></i> Download Postman Collection
-                    </a>
-                    <a href="/apidocs/" class="cta-btn cta-btn-secondary">
-                        <i class="fas fa-book"></i> Explore API Docs
-                    </a>
-                </div>
+            <h2>Ready to Build with GAIA?</h2>
+            <p>Download GAIA's Postman Collection to quickly start integrating powerful AI capabilities into your applications.</p>
+            <div style="display: flex; justify-content: center; margin: 2rem 0; gap: 2rem; flex-wrap: wrap;">
+                <a href="/static/resources/AIAPIS.postman_collection" class="cta-btn" style="background-color: var(--accent-color); color: var(--dark-color);" download>
+                <i class="fas fa-download"></i> Download Postman Collection
+                </a>
+                <a href="/apidocs/" class="cta-btn cta-btn-secondary">
+                <i class="fas fa-book"></i> Explore API Docs
+                </a>
+            </div>
             </div>
         </section>
     </main>
