@@ -21,3 +21,4 @@ apis/token_services/__pycache__/
 apis/utils/__pycache__/
 apis/nlp/__pycache__/
 apis/jobs/
+apis/jobs/__pycache__/
