@@ -8,9 +8,9 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
-            --primary-color: #4a6fe3;
-            --secondary-color: #6c63ff;
-            --dark-color: #2a2c3b;
+            --primary-color: rgb(1, 96, 136);
+            --secondary-color: rgb(0, 10, 120);
+            --dark-color: rgb(0, 8, 66);
             --light-color: #f5f6fa;
             --text-color: #333;
             --white-color: #ffffff;
@@ -24,6 +24,7 @@
             --openai-gradient: linear-gradient(90deg, #10a37f 0%, #0f9675 100%);
             --stable-diffusion-color: #6741d9;
             --stable-diffusion-gradient: linear-gradient(90deg, #6741d9 0%, #5231af 100%);
+            --gold-gradient: linear-gradient(to right, rgb(224, 146, 0), rgb(215, 162, 3));
         }
         
         * {
@@ -246,10 +247,11 @@
             margin-bottom: 1.5rem;
             line-height: 1.2;
             max-width: 840px;
-            background: linear-gradient(to left, var(--white-color), var(--accent-color));
+            background: var(--gold-gradient);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             animation: fadeInUp 0.8s ease-out;
+            font-size: 220%;
         }
         
         .hero p {
@@ -345,6 +347,10 @@
             font-size: 2rem;
             color: var(--dark-color);
             margin: 0;
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 220%;
         }
         
         .features-grid {
@@ -452,6 +458,10 @@
             font-size: 2rem;
             color: var(--dark-color);
             margin-bottom: 0.5rem;
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 220%;
         }
         
         .model-info p {
@@ -743,6 +753,10 @@
         .cta-section h2 {
             font-size: 2.5rem;
             margin-bottom: 1.5rem;
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 220%;
         }
         
         .cta-section p {
