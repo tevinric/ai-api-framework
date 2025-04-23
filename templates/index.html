@@ -8,9 +8,9 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
-            --primary-color: #4a6fe3;
-            --secondary-color: #6c63ff;
-            --dark-color: #2a2c3b;
+            --primary-color:rgb(1, 96, 136);
+            --secondary-color:rgb(0, 10, 120);
+            --dark-color:rgb(0, 8, 66);
             --light-color: #f5f6fa;
             --text-color: #333;
             --white-color: #ffffff;
@@ -1107,7 +1107,7 @@
     <main class="main-content">
         <section class="hero">
             <div class="hero-container">
-                <h2 style="font-size: 220%;">Supercharge Your Applications with GAIA today!</h2>
+                <h2 style="font-size: 220%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Supercharge Your Applications with GAIA today!</h2>
                 <p>The GAIA Platform provides a comprehensive suite of AI services designed to add intelligence to your applications. From advanced language models to image generation, speech processing, document intelligence, and more, GAIA's AI services are all accessible through simple, powerful APIs designed for developers at all levels.</p>
                 <div class="cta-buttons">
                     <a href="{{ url_for('getting_started') }}" class="cta-btn">
@@ -1155,7 +1155,12 @@
         <section class="gaia-intro" style="background: url('/static/GAIA_eye.png') center/cover no-repeat;">
             <div class="gaia-container">
             <div class="gaia-content">
-                <h2>Meet GAIA</h2>
+                
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <h2 style="font-size: 220%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Meet</h2>
+                    <img src="/static/GAIA6.png" alt="GAIA Logo" style="height: 80px; position: relative; top: -5px;">
+                </div>
+
                 <div class="gaia-divider"></div>
                 <p class="gaia-description">Just as GAIA, the primordial Greek Earth Goddess, gave life to all creation, the TIH <strong>Global Artificial Intelligence Access</strong> (GAIA) platform breathes intelligence into your applications.</p>
                 
@@ -1175,7 +1180,7 @@
                 </div>
             </div>
             <div class="gaia-quote">
-                <blockquote>"From TIH springs innovation; from GAIA springs intelligence."</blockquote>
+                <blockquote style="font-size: 180%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"><strong>"From TIH springs innovation; from GAIA springs intelligence."</strong></blockquote>
             </div>
             </div>
         </section>
@@ -1183,90 +1188,90 @@
         <section class="services-section">
             <div class="services-container">
                 <div class="section-header">
-                    <h2>GAIA AI Services</h2>
+                    <h2 style="font-size: 220%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">GAIA AI Services</h2>
                     <br><br>
                     <p>Explore GAIA's comprehensive suite of AI APIs designed to power the next generation of intelligent applications</p>
                 </div>
                 
                 <div class="features">
                     <div class="feature-card">
-                        <div class="feature-icon">
+                        <div class="feature-icon" style="display: flex; justify-content: center; align-items: center;">
                             <i class="fas fa-robot"></i>
                         </div>
-                        <h3>Language Models</h3>
-                        <p>Access cutting-edge language models including GPT-4o, GPT-4o-mini, Deepseek-R1, Llama, and O1-mini for text generation, content creation, summarization, and complex reasoning tasks.</p>
+                        <h3 style="display: flex; justify-content: center; align-items: center;">Language Models</h3>
+                        <p style="text-align: justify;">Access cutting-edge language models including GPT-4o, GPT-4o-mini, Deepseek-R1, Llama, and O1-mini for text generation, content creation, summarization, and complex reasoning tasks.</p>
                         <a href="{{ url_for('llm') }}" class="feature-link">Learn more <i class="fas fa-arrow-right"></i></a>
                     </div>
                     
                     <div class="feature-card">
-                        <div class="feature-icon">
+                        <div class="feature-icon" style="display: flex; justify-content: center; align-items: center;">
                             <i class="fas fa-comments"></i>
                         </div>
-                        <h3>Conversational AI</h3>
-                        <p>Build sophisticated AI chat applications with multi-turn conversations that maintain context. Choose from different assistant types optimized for coding, creative tasks, research, and business use cases.</p>
+                        <h3 style="display: flex; justify-content: center; align-items: center;">Conversational AI</h3>
+                        <p style="text-align: justify;">Build sophisticated AI chat applications with multi-turn conversations that maintain context. Choose from different assistant types optimized for coding, creative tasks, research, and business use cases.</p>
                         <a href="{{ url_for('llm_conversation') }}" class="feature-link">Learn more <i class="fas fa-arrow-right"></i></a>
                     </div>
                     
                     <div class="feature-card">
-                        <div class="feature-icon">
+                        <div class="feature-icon" style="display: flex; justify-content: center; align-items: center;">
                             <i class="fas fa-image"></i>
                         </div>
-                        <h3>Image Generation</h3>
-                        <p>Create stunning AI-generated images with DALL-E 3 and Stable Diffusion Ultra. Convert text descriptions into high-quality visuals for creative content, design projects, and marketing materials.</p>
+                        <h3 style="display: flex; justify-content: center; align-items: center;">Image Generation</h3>
+                        <p style="text-align: justify;">Create stunning AI-generated images with DALL-E 3 and Stable Diffusion Ultra. Convert text descriptions into high-quality visuals for creative content, design projects, and marketing materials.</p>
                         <a href="{{ url_for('image_generation') }}" class="feature-link">Learn more <i class="fas fa-arrow-right"></i></a>
                     </div>
                     
                     <div class="feature-card">
-                        <div class="feature-icon">
+                        <div class="feature-icon" style="display: flex; justify-content: center; align-items: center;">
                             <i class="fas fa-microphone"></i>
                         </div>
-                        <h3>Speech Services</h3>
-                        <p>Convert speech to text with advanced features like speaker diarization for multi-speaker recordings. Perfect for transcription, meeting notes, and voice-enabled applications.</p>
+                        <h3 style="display: flex; justify-content: center; align-items: center;">Speech Services</h3>
+                        <p style="text-align: justify;">Convert speech to text with advanced features like speaker diarization for multi-speaker recordings. Perfect for transcription, meeting notes, and voice-enabled applications.</p>
                         <a href="{{ url_for('speech_services') }}" class="feature-link">Learn more <i class="fas fa-arrow-right"></i></a>
                     </div>
                     
                     <div class="feature-card">
-                        <div class="feature-icon">
+                        <div class="feature-icon" style="display: flex; justify-content: center; align-items: center;">
                             <i class="fas fa-book"></i>
                         </div>
-                        <h3>Document Intelligence</h3>
-                        <p>Extract insights from documents with layout analysis, intelligent reading, and summarization capabilities. Process PDFs, Word documents, and more with high-precision content extraction.</p>
+                        <h3 style="display: flex; justify-content: center; align-items: center;">Document Intelligence</h3>
+                        <p style="text-align: justify;">Extract insights from documents with layout analysis, intelligent reading, and summarization capabilities. Process PDFs, Word documents, and more with high-precision content extraction.</p>
                         <a href="{{ url_for('document_intelligence') }}" class="feature-link">Learn more <i class="fas fa-arrow-right"></i></a>
                     </div>
                     
                     <div class="feature-card">
-                        <div class="feature-icon">
+                        <div class="feature-icon" style="display: flex; justify-content: center; align-items: center;">
                             <i class="fas fa-eye"></i>
                         </div>
-                        <h3>OCR Services</h3>
-                        <p>Specialized document extraction for South African ID documents and vehicle license discs. Extract structured data from document images with high accuracy and reliability.</p>
+                        <h3 style="display: flex; justify-content: center; align-items: center;">OCR Services</h3>
+                        <p style="text-align: justify;">Specialized document extraction for South African ID documents and vehicle license discs. Extract structured data from document images with high accuracy and reliability.</p>
                         <a href="{{ url_for('ocr_services') }}" class="feature-link">Learn more <i class="fas fa-arrow-right"></i></a>
                     </div>
                     
                     <div class="feature-card">
-                        <div class="feature-icon">
+                        <div class="feature-icon" style="display: flex; justify-content: center; align-items: center;">
                             <i class="fas fa-language"></i>
                         </div>
-                        <h3>NLP Services</h3>
-                        <p>Powerful text analysis including classification and sentiment analysis. Categorize content, detect emotions, and extract meaningful insights from text data with confidence scores.</p>
+                        <h3 style="display: flex; justify-content: center; align-items: center;">NLP Services</h3>
+                        <p style="text-align: justify;">Powerful text analysis including classification and sentiment analysis. Categorize content, detect emotions, and extract meaningful insights from text data with confidence scores.</p>
                         <a href="{{ url_for('nlp') }}" class="feature-link">Learn more <i class="fas fa-arrow-right"></i></a>
                     </div>
                     
                     <div class="feature-card">
-                        <div class="feature-icon">
+                        <div class="feature-icon" style="display: flex; justify-content: center; align-items: center;">
                             <i class="fas fa-search"></i>
                         </div>
-                        <h3>RAG Query</h3>
-                        <p>Build AI applications that can answer questions based on your specific documents and content. Combine vector search with language models for accurate, context-aware responses grounded in your data.</p>
+                        <h3 style="display: flex; justify-content: center; align-items: center;">RAG Query</h3>
+                        <p style="text-align: justify;">Build AI applications that can answer questions based on your specific documents and content. Combine vector search with language models for accurate, context-aware responses grounded in your data.</p>
                         <a href="{{ url_for('rag') }}" class="feature-link">Learn more <i class="fas fa-arrow-right"></i></a>
                     </div>
                     
                     <div class="feature-card">
-                        <div class="feature-icon">
+                        <div class="feature-icon" style="display: flex; justify-content: center; align-items: center;">
                             <i class="fas fa-file-alt"></i>
                         </div>
-                        <h3>File Management</h3>
-                        <p>Upload, access, and manage files for use with AI services. Securely handle documents, images, audio files, and other content for processing by our AI endpoints.</p>
+                        <h3 style="display: flex; justify-content: center; align-items: center;">File Management</h3>
+                        <p style="text-align: justify;">Upload, access, and manage files for use with AI services. Securely handle documents, images, audio files, and other content for processing by our AI endpoints.</p>
                         <a href="{{ url_for('file_management') }}" class="feature-link">Learn more <i class="fas fa-arrow-right"></i></a>
                     </div>
                 </div>
@@ -1293,7 +1298,7 @@
         <section class="getting-started-section">
             <div class="steps-container">
                 <div class="section-header">
-                    <h2>Getting Started</h2>
+                    <h2 style="font-size: 220%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Getting Started</h2>
                     <br><br>
                     <p>Follow these simple steps to start building with our AI API Platform</p>
                     <br>
@@ -1351,7 +1356,8 @@
         
         <section class="cta-section">
             <div class="cta-container">
-                <h2 style="color: white;">Ready for GAIA to transform your applications?</h2>
+                <img src="/static/GAIA6.png" alt="GAIA Logo" style="height: 100px; margin-right: 0.5rem;">
+                <h2 style="font-size: 220%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Ready for GAIA to transform your applications?</h2>
                 <p style="color: white;">Download GAIA's Postman Collection for quick integration or explore our Swagger API documentation.</p>
                 <div style="display: flex; justify-content: center; flex-wrap: wrap; margin: 2rem 0; gap: 1.5rem;">
                     <a href="/static/resources/AIAPIS.postman_collection" class="cta-btn" style="background-color: var(--accent-color); color: var(--dark-color);" download>
