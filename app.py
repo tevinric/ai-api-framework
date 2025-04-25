@@ -265,14 +265,14 @@ register_sentiment_routes(app)
 from apis.nlp.classification import register_nlp_routes
 register_nlp_routes(app)
 
-from apis.llm_conversation.insurance_conversation import register_insurance_bot_routes
-register_insurance_bot_routes(app)
+# from apis.llm_conversation.insurance_conversation import register_insurance_bot_routes
+# register_insurance_bot_routes(app)
 
 from apis.admin.admin_endpoint_access import register_admin_endpoint_access_routes
 register_admin_endpoint_access_routes(app)
 
-from apis.car_insurance.conversation import register_car_insurance_routes
-register_car_insurance_routes(app)
+# from apis.car_insurance.conversation import register_car_insurance_routes
+# register_car_insurance_routes(app)
 
 
 if __name__ == '__main__':
