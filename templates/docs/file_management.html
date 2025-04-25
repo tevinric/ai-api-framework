@@ -198,7 +198,7 @@
         
         /* Hero */
         .hero {
-            background: linear-gradient(135deg, rgba(1, 0, 15, 1) 0%, rgba(35, 0, 33, 1) 100%);
+            background: url('/static/GAIA _splash3.gif') center/cover no-repeat;
             color: var(--white-color);
             padding: 5rem 3rem;
             position: relative;
@@ -213,13 +213,11 @@
             right: 0;
             bottom: 0;
             left: 0;
-            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23FFFFFF' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
-            opacity: 0.12;
+            background: linear-gradient(to right, rgba(1, 0, 15, 0.85) 0%, rgba(1, 0, 15, 0.5) 40%, transparent 80%);
             pointer-events: none;
-            animation: zoomDots 20s linear infinite;
-            transform-origin: center;
             z-index: 0;
         }
+        
         
         @keyframes zoomDots {
             0% {
@@ -658,24 +656,10 @@
         .cta-section {
             padding: 5rem 3rem;
             text-align: center;
-            background: linear-gradient(135deg, rgba(1, 0, 15, 0.95) 0%, rgba(35, 0, 33, 0.95) 100%);
-            color: white;
-            position: relative;
-            overflow: hidden;
+            background: linear-gradient(135deg, rgba(1, 0, 15, 1) 0%, rgba(35, 0, 33, 1) 100%);
+            color: var(--white-color);
         }
         
-        .cta-section::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            right: 0;
-            bottom: 0;
-            left: 0;
-            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23FFFFFF' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
-            opacity: 0.15;
-            pointer-events: none;
-            z-index: 0;
-        }
         
         .cta-container {
             max-width: 800px;
@@ -814,10 +798,11 @@
     </aside>
     
     <main class="main-content">
-        <section class="hero">
+        <section class="hero" style="height: 550px;">
+            <br><br>
             <div class="hero-container">
-                <h2>File Management API</h2>
-                <p>Upload, access, and delete files used with our various AI services. Our file management system provides secure and reliable handling of your data with Azure Blob Storage.</p>
+                <h2 style="font-size: 220%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">File Management Services</h2>
+                <p>Upload, access, and delete files used with GAIA's various AI services. GAIA's file management system provides secure and reliable handling of your data files with Azure Blob Storage.</p>
                 <div class="cta-buttons">
                     <a href="/static/resources/AIAPIS.postman_collection" class="cta-btn" style="background-color: var(--accent-color); color: var(--dark-color);" download>
                         <i class="fas fa-download"></i> Download Postman Collection
@@ -836,11 +821,11 @@
                     <div class="section-icon">
                         <i class="fas fa-file-alt"></i>
                     </div>
-                    <h2>Overview</h2>
+                    <h2 style="font-size: 220%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Overview</h2>
                 </div>
                 
-                <p class="section-intro">The File Management endpoints allow you to upload, access, and delete files used with our various AI services. These utilities are essential for processing audio files for transcription, documents for intelligence analysis, and other data that requires AI processing.</p>
-                
+                <p class="section-intro">GAIA's File Management endpoints allow you to upload, access, and delete files used with the variety of available AI services. These utilities are essential for processing audio files for transcription, documents for intelligence analysis, and other data that requires AI processing.</p>
+                <br>
                 <div class="info-box">
                     <div class="info-box-icon"><i class="fas fa-info-circle"></i></div>
                     <div class="info-box-content">
@@ -925,8 +910,8 @@
                         <i class="fas fa-cloud-upload-alt"></i>
                     </div>
                     <div class="model-info">
-                        <h2>Uploading Files</h2>
-                        <p>To upload files to our platform, use the <code>/file</code> endpoint with a multipart form data request containing the file(s) you want to upload.</p>
+                        <h2 style="font-size: 220%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Uploading Files</h2>
+                        <p>To upload files to GAIA, use the <b><code>/file</code></b> endpoint with a multipart form data request containing the file(s) you want to upload.</p>
                     </div>
                 </div>
                 
@@ -1055,8 +1040,8 @@ const uploadFiles = async () => {
                         <i class="fas fa-file-download"></i>
                     </div>
                     <div class="model-info">
-                        <h2>Accessing Files</h2>
-                        <p>To get the URL for a previously uploaded file, use the <code>/file/url</code> endpoint with the file ID you received when uploading.</p>
+                        <h2 style="font-size: 220%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Accessing Files</h2>
+                        <p>To get the URL for a previously uploaded file, use the <b><code>/file/url</code></b> endpoint with the file ID you received when uploading.</p>
                     </div>
                 </div>
                 
@@ -1157,7 +1142,7 @@ const getFileUrl = async (fileId) => {
                         <i class="fas fa-trash"></i>
                     </div>
                     <div class="model-info">
-                        <h2>Deleting Files</h2>
+                        <h2 style="font-size: 220%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Deleting Files</h2>
                         <p>To delete a file when it's no longer needed, use the <code>/file</code> endpoint with the DELETE method and the file ID.</p>
                     </div>
                 </div>
@@ -1250,8 +1235,8 @@ const deleteFile = async (fileId) => {
                         <i class="fas fa-list-alt"></i>
                     </div>
                     <div class="model-info">
-                        <h2>Listing Files</h2>
-                        <p>To retrieve a list of all files you've uploaded, use the <code>/file/list</code> endpoint. Admin users can see all files across the system.</p>
+                        <h2 style="font-size: 220%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Listing Files</h2>
+                        <p>To retrieve a list of all files you've uploaded, use the <b><code>/file/list</code></b> endpoint. Admin users can see all files across the system.</p>
                     </div>
                 </div>
                 
@@ -1301,8 +1286,8 @@ curl -X GET "https://api.example.com/file/list" \
                     <h2>Supported File Types</h2>
                 </div>
                 
-                <p>Our platform supports a wide range of file types, including but not limited to:</p>
-                
+                <p>GAIA supports a wide range of file types, including but not limited to:</p>
+                <br>
                 <div class="features-grid">
                     <div class="feature-card">
                         <div class="feature-icon">
@@ -1406,7 +1391,8 @@ curl -X GET "https://api.example.com/file/list" \
         <!-- CTA Section -->
         <section class="cta-section">
             <div class="cta-container">
-                <h2>Start Managing Your Files Today</h2>
+                <img src="/static/GAIA6.png" alt="GAIA Logo" style="height: 100px; margin-right: 0.5rem;">
+                <h2 style="font-size: 220%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Start adding context to your AI services today!</h2>
                 <p>Our File Management API makes it simple to upload, access, and delete files used with our AI services.</p>
                 <div class="cta-buttons" style="justify-content: center;">
                     <a href="/static/resources/AIAPIS.postman_collection" class="cta-btn" style="background-color: var(--accent-color); color: var(--dark-color);" download>

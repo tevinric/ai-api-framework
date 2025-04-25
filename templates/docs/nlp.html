@@ -196,7 +196,7 @@
         
         /* Hero */
         .hero {
-            background: linear-gradient(135deg, rgba(1, 0, 15, 1) 0%, rgba(35, 0, 33, 1) 100%);
+            background: url('/static/GAIA _splash3.gif') center/cover no-repeat;
             color: var(--white-color);
             padding: 5rem 3rem;
             position: relative;
@@ -211,11 +211,8 @@
             right: 0;
             bottom: 0;
             left: 0;
-            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23FFFFFF' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
-            opacity: 0.12;
+            background: linear-gradient(to right, rgba(1, 0, 15, 0.85) 0%, rgba(1, 0, 15, 0.5) 40%, transparent 80%);
             pointer-events: none;
-            animation: zoomDots 20s linear infinite;
-            transform-origin: center;
             z-index: 0;
         }
         
@@ -726,24 +723,10 @@
         .cta-section {
             padding: 5rem 3rem;
             text-align: center;
-            background: linear-gradient(135deg, rgba(1, 0, 15, 0.95) 0%, rgba(35, 0, 33, 0.95) 100%);
-            color: white;
-            position: relative;
-            overflow: hidden;
+            background: linear-gradient(135deg, rgba(1, 0, 15, 1) 0%, rgba(35, 0, 33, 1) 100%);
+            color: var(--white-color);
         }
         
-        .cta-section::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            right: 0;
-            bottom: 0;
-            left: 0;
-            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23FFFFFF' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
-            opacity: 0.15;
-            pointer-events: none;
-            z-index: 0;
-        }
         
         .cta-container {
             max-width: 800px;
@@ -891,9 +874,10 @@
     </aside>
     
     <main class="main-content">
-        <section class="hero">
+        <section class="hero" style="height: 550px;">
+            <br><br>
             <div class="hero-container">
-                <h2>Natural Language Processing Services</h2>
+                <h2 style="font-size: 220%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Natural Language Processing Services</h2>
                 <p>Extract meaningful insights from text data with our powerful NLP services. From text classification to sentiment analysis, unlock the value hidden in your unstructured text content.</p>
                 <div class="cta-buttons">
                     <a href="/static/resources/AIAPIS.postman_collection" class="cta-btn" style="background-color: var(--accent-color); color: var(--dark-color);" download>
@@ -913,10 +897,10 @@
                     <div class="section-icon">
                         <i class="fas fa-brain"></i>
                     </div>
-                    <h2>Overview</h2>
+                    <h2 style="font-size: 220%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Overview</h2>
                 </div>
                 
-                <p class="section-intro">Our NLP services provide powerful text analysis capabilities, allowing you to extract meaningful insights from text data. These services include text classification and sentiment analysis, with options for both basic and advanced analysis.</p>
+                <p class="section-intro">GAIA's NLP services provide powerful text analysis capabilities, allowing you to extract meaningful insights from text data. These services include text classification and sentiment analysis, with options for both basic and advanced analysis.</p>
                 <br><br>
                 
                 <div class="features-grid">
@@ -968,15 +952,11 @@
         <section class="model-section">
             <div class="model-container">
                 <div class="model-header">
-                    <div class="model-icon classification-icon">
-                        <i class="fas fa-tags"></i>
-                    </div>
                     <div class="model-info">
-                        <h2 style="display: flex; justify-content: space-between; align-items: center;">
+                        <h2 style="font-size: 220%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
                             Text Classification
-                            <div class="credit-badge">0.5-2 AI Credits</div>
                         </h2>
-                        <p>Our text classification services allow you to categorize text into predefined categories. This is useful for content categorization, topic identification, intent recognition, and more.</p>
+                        <p>GAIA's text classification services allow you to categorize text into predefined categories. This is useful for content categorization, topic identification, intent recognition, and more.</p>
                     </div>
                 </div>
                 
@@ -1004,23 +984,25 @@
                             POST /nlp/classify/multi
                         </div>
                         <p>Multi-class classification with confidence scores for each category.</p>
-                        
+                        <br>
                         <p><strong>Required parameters:</strong></p>
-                        <ul>
+                        <br>
+                        <ul style="margin-left: 20px;">
                             <li><strong>categories</strong>: Array of categories to classify into</li>
                             <li><strong>user_input</strong>: Text to classify</li>
                             <li><strong>X-Token</strong>: Your API authentication token (header)</li>
                         </ul>
-                        
+                        <br>
                         <p><strong>Optional parameters:</strong></p>
-                        <ul>
+                        <br>
+                        <ul style="margin-left: 20px;">
                             <li><strong>model</strong>: LLM model to use (gpt-4o-mini or gpt-4o, default: gpt-4o-mini)</li>
                         </ul>
                     </div>
                 </div>
                 
                 <div class="endpoint-section">
-                    <h4>Simple Classification</h4>
+                    <h4 style="font-size: 150%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Simple Classification</h4>
                     <p>The Simple Classification endpoint categorizes text into a single class from a provided list of categories.</p>
                     
                     <div class="example-grid">
@@ -1056,7 +1038,7 @@ Headers:
                 </div>
                 
                 <div class="endpoint-section">
-                    <h4>Multi-Class Classification</h4>
+                    <h4 style="font-size: 150%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Multi-Class Classification</h4>
                     <p>The Multi-Class Classification endpoint provides confidence scores for all provided categories, allowing for more nuanced classification.</p>
                     
                     <div class="example-grid">
@@ -1102,7 +1084,8 @@ Headers:
                         <div class="info-box-content">
                             <h4>Pro Tip: Text Classification</h4>
                             <p>For optimal classification results:</p>
-                            <ul>
+                            <br>
+                            <ul style="margin-left: 10px;">
                                 <li>Use distinct, non-overlapping categories when possible</li>
                                 <li>Provide sufficient context in your input text</li>
                                 <li>For complex classification tasks, use the gpt-4o model</li>
@@ -1119,15 +1102,11 @@ Headers:
         <section class="model-section alternate">
             <div class="model-container">
                 <div class="model-header">
-                    <div class="model-icon sentiment-icon">
-                        <i class="fas fa-smile"></i>
-                    </div>
                     <div class="model-info">
-                        <h2 style="display: flex; justify-content: space-between; align-items: center;">
+                        <h2 style="font-size: 220%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
                             Sentiment Analysis
-                            <div class="credit-badge">0.5-2 AI Credits</div>
                         </h2>
-                        <p>Our sentiment analysis services analyze text to determine the emotional tone and attitude expressed. This is useful for brand monitoring, customer feedback analysis, social media monitoring, and more.</p>
+                        <p>GAIA's sentiment analysis services analyze text to determine the emotional tone and attitude expressed. This is useful for brand monitoring, customer feedback analysis, social media monitoring, and more.</p>
                     </div>
                 </div>
                 
@@ -1155,22 +1134,24 @@ Headers:
                             POST /nlp/sentiment/advanced
                         </div>
                         <p>Advanced emotion analysis with multiple emotion categories and confidence scores.</p>
-                        
+                        <br>
                         <p><strong>Required parameters:</strong></p>
-                        <ul>
+                        <br>
+                        <ul style="margin-left: 20px;">
                             <li><strong>user_input</strong>: Text to analyze for sentiment or emotions</li>
                             <li><strong>X-Token</strong>: Your API authentication token (header)</li>
                         </ul>
-                        
+                        <br>
                         <p><strong>Optional parameters:</strong></p>
-                        <ul>
+                        <br>
+                        <ul style="margin-left: 20px;">
                             <li><strong>model</strong>: LLM model to use (gpt-4o-mini or gpt-4o, default: gpt-4o-mini)</li>
                         </ul>
                     </div>
                 </div>
                 
                 <div class="endpoint-section">
-                    <h4>Basic Sentiment Analysis</h4>
+                    <h4 style="font-size: 150%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Basic Sentiment Analysis</h4>
                     <p>The Basic Sentiment Analysis endpoint categorizes text into positive, neutral, or negative sentiment with confidence scores.</p>
                     
                     <div class="example-grid">
@@ -1210,7 +1191,7 @@ Headers:
                 </div>
                 
                 <div class="endpoint-section">
-                    <h4>Advanced Emotion Analysis</h4>
+                    <h4 style="font-size: 150%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Advanced Emotion Analysis</h4>
                     <p>The Advanced Emotion Analysis endpoint provides more granular analysis of emotions present in text, detecting multiple emotional states with confidence scores.</p>
                     
                     <div class="example-grid">
@@ -1251,8 +1232,11 @@ Headers:
                         </div>
                     </div>
                     
-                    <h4>Supported Emotions</h4>
+                    <br>
+                    <h4 style="font-size: 150%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Supported Emotions</h4>
+                    <br>
                     <p>The advanced emotion analysis can detect a wide range of emotions, including:</p>
+                    <br>
                     <div class="features-grid">
                         <div class="feature-card">
                             <div class="feature-icon" style="background: var(--sentiment-gradient);">
@@ -1289,7 +1273,8 @@ Headers:
                         <div class="info-box-content">
                             <h4>Pro Tip: Sentiment Analysis</h4>
                             <p>For optimal sentiment analysis results:</p>
-                            <ul>
+                            <br>
+                            <ul style="margin-left: 10px;">
                                 <li>Provide sufficient context in your input text</li>
                                 <li>For nuanced emotion analysis, use the advanced endpoint</li>
                                 <li>If you need to detect ambivalent or mixed emotions, use the advanced endpoint and look for multiple emotions with high confidence scores</li>
@@ -1309,10 +1294,11 @@ Headers:
                     <div class="section-icon">
                         <i class="fas fa-coins"></i>
                     </div>
-                    <h2>Credit Usage</h2>
+                    <h2 style="font-size: 220%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Credit Usage</h2>
                 </div>
                 
                 <p>NLP services consume AI credits based on the model used:</p>
+                <br>
                 <div class="features-grid" style="grid-template-columns: 1fr 1fr;">
                     <div class="feature-card">
                         <div class="feature-icon">
@@ -1347,7 +1333,7 @@ Headers:
                     <div class="section-icon">
                         <i class="fas fa-lightbulb"></i>
                     </div>
-                    <h2>Use Cases</h2>
+                    <h2 style="font-size: 220%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Use Cases</h2>
                 </div>
                 
                 <div class="use-cases-grid">
@@ -1382,8 +1368,9 @@ Headers:
         <!-- CTA Section -->
         <section class="cta-section">
             <div class="cta-container">
-                <h2>Start Analyzing Text Today</h2>
-                <p>Integrate our powerful NLP services into your applications and unlock the insights hidden in your text data.</p>
+                <img src="/static/GAIA6.png" alt="GAIA Logo" style="height: 100px; margin-right: 0.5rem;">
+                <h2 style="font-size: 220%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Start Analyzing Text Today</h2>
+                <p>Integrate GAIA's powerful NLP services into your applications and unlock the insights hidden in your text data.</p>
                 <div class="cta-buttons" style="justify-content: center;">
                     <a href="/static/resources/AIAPIS.postman_collection" class="cta-btn" style="background-color: var(--accent-color); color: var(--dark-color);" download>
                         <i class="fas fa-download"></i> Download Postman Collection

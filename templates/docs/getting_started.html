@@ -728,25 +728,10 @@
         .cta-section {
             padding: 5rem 3rem;
             text-align: center;
-            background: linear-gradient(135deg, rgba(1, 0, 15, 0.95) 0%, rgba(35, 0, 33, 0.95) 100%), url("/static/GAIA_eye.png") center/cover no-repeat;
+            background: linear-gradient(135deg, rgba(1, 0, 15, 1) 0%, rgba(35, 0, 33, 1) 100%);
             color: var(--white-color);
-            position: relative;
-            overflow: hidden;
         }
-        
-        .cta-section::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            right: 0;
-            bottom: 0;
-            left: 0;
-            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23FFFFFF' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
-            opacity: 0.15;
-            pointer-events: none;
-            z-index: 0;
-        }
-        
+
         .cta-container {
             max-width: 800px;
             margin: 0 auto;
@@ -985,7 +970,7 @@
         <section class="content-section">
             <div class="section-container">
                 <div class="section-header">
-                    <h2>Getting Started Process</h2>
+                    <h2 style="font-size: 220%">Getting Started Process</h2>
                     <p>Follow these steps to start using GAIA's AI Services</p>
                 </div>
                 
@@ -994,11 +979,6 @@
                         <div class="step-number">1</div>
                         <h3>Request an API Key</h3>
                         <p>Complete our registration form to request an API key with appropriate permissions for your needs. You can request a key for yourself as an employee or for a service account.</p>
-                        <div class="btn-container">
-                            <a href="#request-key" class="cta-btn" style="background: var(--magenta-gradient); color: white;">
-                                <i class="fas fa-key"></i> Request Key
-                            </a>
-                        </div>
                     </div>
                     
                     <!-- New Step Card for Download Postman Collection -->
@@ -1006,12 +986,7 @@
                         <div class="step-number">2</div>
                         <h3>Download GAIA'S Postman Collection</h3>
                         <p>The easiest way to get started with GAIA is to use our Postman collection, which includes all endpoints. You can call GAIA's API endpoints using any programming language through the collection.</p>
-                        <p style="margin-top: 1rem; font-size: 0.9rem;">You can also view and test our endpoints directly on the <a href="/apidocs/">API Swagger documentation</a>.</p>
-                        <div class="btn-container">
-                            <a href="/static/resources/AIAPIS.postman_collection" class="cta-btn" style="background-color: var(--accent-color); color: var(--dark-color);" download>
-                                <i class="fas fa-download"></i> Download Collection
-                            </a>
-                        </div>
+                        <p style="margin-top: 1rem; font-size: 0.9rem;">You can also view and test our endpoints directly on the <a href="/static/resources/AIAPIS.postman_collection">API Swagger documentation</a>.</p>
                     </div>
                     <div class="step-card">
                         <div class="step-number">3</div>
@@ -1039,11 +1014,7 @@
                         <div class="step-number">4</div>
                         <h3>Explore Available Endpoints</h3>
                         <p>Browse GAIA's comprehensive documentation to discover all available AI services. From language models to image generation, speech services, and document intelligence – choose the endpoints that meet your application's needs.</p>
-                        <div class="btn-container">
-                            <a href="/apidocs/" class="cta-btn" style="background: var(--magenta-gradient); color: white;">
-                                <i class="fas fa-book"></i> Swagger API Docs
-                            </a>
-                        </div>
+
                     </div>
                     
                     <div class="step-card">

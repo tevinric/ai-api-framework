@@ -664,6 +664,7 @@
                 display: block;
             }
         }
+
         
         /* Footer */
         .footer {
@@ -708,7 +709,7 @@
         <section class="hero" style="height: 550px;">
             <div class="hero-container">
                 <h2 style="font-size: 220%;">Balance Management</h2>
-                <p>Monitor and manage your API credit consumption with our comprehensive Balance Management endpoints. Track your usage, view detailed statistics, and optimize your AI utilization across different services.</p>
+                <p>Monitor and manage your API credit consumption with GAIA's comprehensive Balance Management endpoints. Track your usage, view detailed statistics, and optimize your AI utilization across different services.</p>
             </div>
         </section>
         
@@ -849,9 +850,6 @@
 }</code></pre>
                         </div>
                         <div class="dashboard-card-footer">
-                            <a href="/apidocs/#/Balance%20Management/check_balance_route" class="cta-btn">
-                                Swagger API Docs <i class="fas fa-arrow-right"></i>
-                            </a>
                         </div>
                     </div>
                     
@@ -875,9 +873,6 @@ GET /usage/user?user_id=12345678-1234-5678-1234-567812345678&time_period=2025-03
 X-Token: eyJhbGciOiJIUzI1NiIsInR5...</code></pre>
                         </div>
                         <div class="dashboard-card-footer">
-                            <a href="/apidocs/#/Balance%20Management/usage_by_user_route" class="cta-btn">
-                                Swagger API Docs <i class="fas fa-arrow-right"></i>
-                            </a>
                         </div>
                     </div>
                 </div>
@@ -943,28 +938,15 @@ GET /usage/department?department=Engineering&time_period=2025-03
 <span class="code-comment"># Headers</span>
 X-Token: eyJhbGciOiJIUzI1NiIsInR5...</code></pre>
                         </div>
-                        <div class="dashboard-card-footer">
-                            <a href="/apidocs/#/Balance%20Management/usage_by_department_route" class="cta-btn">
-                                Swagger API Docs <i class="fas fa-arrow-right"></i>
-                            </a>
-                        </div>
+
                     </div>
                 </div>
                 
-                <div style="margin-top: 4rem; text-align: center;">
-                    <p style="margin-bottom: 1.5rem; font-size: 1.1rem;">For complete details and examples, please refer to our documentation:</p>
-                    <div style="display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap;">
-                        <a href="/apidocs/" style="display: inline-flex; align-items: center; background: var(--magenta-gradient); color: white; padding: 0.75rem 1.5rem; border-radius: 6px; text-decoration: none; font-weight: 600; transition: all 0.3s; box-shadow: 0 4px 15px rgba(59, 1, 56, 0.15);">
-                            <i class="fas fa-book" style="margin-right: 0.5rem;"></i> Swagger API Docs
-                        </a>
-                        <a href="/static/resources/AIAPIS.postman_collection" class="cta-btn" style="background-color: var(--accent-color); color: var(--dark-color);" download>
-                            <i class="fas fa-download"></i> Download Postman Collection
-                        </a>
-                    </div>
-                </div>
+                
             </div>
         </section>
     </main>
+
     
     {% include 'footer.html' %}
     
