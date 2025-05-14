@@ -13,187 +13,25 @@ from apis.utils.config import (
 import os
 import tempfile
 import base64
+import matplotlib.pyplot as plt
 from azure.ai.formrecognizer import DocumentAnalysisClient
 from apis.utils.fileService import FileService
 import requests
 import re
 from collections import defaultdict
 import math
-# Add these imports at the top of the file
 import fitz  # PyMuPDF
 import io
-from PIL import Image
-import shutil
-import subprocess
+from PIL import Image, ImageDraw
 from pathlib import Path
-
-def convert_pdf_to_images(pdf_path, dpi=300):
-    """Convert a PDF file to a list of base64-encoded images
-    
-    Args:
-        pdf_path (str): Path to the PDF file
-        dpi (int): Resolution for the converted images
-        
-    Returns:
-        tuple: (base64_images, error_message)
-            base64_images is a list of dicts with mime_type, base64_data, and page_num
-            error_message is None if successful, otherwise contains the error description
-    """
-    base64_images = []
-    try:
-        # Open the PDF
-        pdf_document = fitz.open(pdf_path)
-        
-        for page_num in range(len(pdf_document)):
-            page = pdf_document[page_num]
-            
-            # Render page to an image
-            pix = page.get_pixmap(matrix=fitz.Matrix(dpi/72, dpi/72))
-            
-            # Convert to PIL Image
-            img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-            
-            # Convert to base64
-            img_byte_arr = io.BytesIO()
-            img.save(img_byte_arr, format='PNG')
-            img_byte_arr = img_byte_arr.getvalue()
-            base64_img = base64.b64encode(img_byte_arr).decode('utf-8')
-            
-            base64_images.append({
-                "mime_type": "image/png",
-                "base64_data": base64_img,
-                "page_num": page_num + 1
-            })
-        
-        pdf_document.close()
-        return base64_images, None
-    
-    except Exception as e:
-        error_msg = f"Error converting PDF to images: {str(e)}"
-        logger.error(error_msg)
-        return [], error_msg
-
-def convert_document_to_pdf(file_path, output_path, content_type, file_name):
-    """Convert Office documents to PDF using appropriate methods
-    
-    Args:
-        file_path (str): Path to the input file
-        output_path (str): Path where the PDF should be saved
-        content_type (str): MIME type of the file
-        file_name (str): Original file name
-        
-    Returns:
-        tuple: (success, error_message)
-            success is a boolean indicating if the conversion was successful
-            error_message is None if successful, otherwise contains the error description
-    """
-    try:
-        # Determine file type based on content_type and filename
-        is_pptx = content_type == 'application/vnd.openxmlformats-officedocument.presentationml.presentation' or file_name.endswith('.pptx')
-        is_ppt = content_type == 'application/vnd.ms-powerpoint' or file_name.endswith('.ppt')
-        is_docx = content_type == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' or file_name.endswith('.docx')
-        is_doc = content_type == 'application/msword' or file_name.endswith('.doc')
-        is_xlsx = content_type == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' or file_name.endswith('.xlsx')
-        is_xls = content_type == 'application/vnd.ms-excel' or file_name.endswith('.xls')
-        
-        # Check if LibreOffice is available
-        libreoffice_available = shutil.which('libreoffice') is not None or shutil.which('soffice') is not None
-        
-        if libreoffice_available:
-            # Use LibreOffice for conversion (works on most platforms)
-            libreoffice_cmd = shutil.which('libreoffice') or shutil.which('soffice')
-            cmd = [libreoffice_cmd, '--headless', '--convert-to', 'pdf', '--outdir', 
-                   os.path.dirname(output_path), file_path]
-            
-            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            out, err = process.communicate()
-            
-            if process.returncode != 0:
-                raise Exception(f"LibreOffice conversion failed: {err.decode('utf-8')}")
-            
-            # LibreOffice creates the PDF with the same name but .pdf extension
-            # Rename to match our expected output path
-            converted_pdf = os.path.splitext(file_path)[0] + '.pdf'
-            if os.path.exists(converted_pdf) and converted_pdf != output_path:
-                os.rename(converted_pdf, output_path)
-            
-            return True, None
-        else:
-            # Fallback methods based on file type
-            if is_pptx or is_ppt:
-                # For PPT files without LibreOffice
-                raise Exception("LibreOffice not available for PPT conversion")
-            
-            elif is_docx or is_doc:
-                # For Word files without LibreOffice
-                raise Exception("LibreOffice not available for Word conversion")
-            
-            elif is_xlsx or is_xls:
-                # For Excel files without LibreOffice
-                raise Exception("LibreOffice not available for Excel conversion")
-            
-            else:
-                raise Exception(f"Unsupported document type for conversion: {content_type}")
-    
-    except Exception as e:
-        error_msg = f"Error converting document to PDF: {str(e)}"
-        logger.error(error_msg)
-        return False, error_msg
-
-def process_document_for_multimodal(file_path, content_type, file_name):
-    """Process a document file for multimodal content
-    
-    Args:
-        file_path (str): Path to the document file
-        content_type (str): MIME type of the file
-        file_name (str): Original file name
-        
-    Returns:
-        tuple: (base64_images, error_message)
-            base64_images is a list of dicts with mime_type, base64_data, and page_num
-            error_message is None if successful, otherwise contains the error description
-    """
-    temp_files = []  # Track temporary files for cleanup
-    
-    try:
-        # Process based on file type
-        is_pdf = content_type == 'application/pdf' or file_name.endswith('.pdf')
-        is_office_doc = any(ext in file_name.lower() for ext in ['.ppt', '.pptx', '.doc', '.docx', '.xls', '.xlsx']) or \
-                       any(mime in content_type for mime in ['powerpoint', 'msword', 'spreadsheet'])
-        
-        if is_pdf:
-            # Direct PDF processing
-            return convert_pdf_to_images(file_path)
-        
-        elif is_office_doc:
-            # Convert to PDF first, then process
-            pdf_path = tempfile.mktemp(suffix='.pdf')
-            temp_files.append(pdf_path)
-            
-            success, error = convert_document_to_pdf(file_path, pdf_path, content_type, file_name)
-            if not success:
-                return [], f"Failed to convert document to PDF: {error}"
-            
-            # Now process the PDF
-            return convert_pdf_to_images(pdf_path)
-        
-        else:
-            return [], f"Unsupported document type for image conversion: {content_type}"
-    
-    except Exception as e:
-        error_msg = f"Error processing document for multimodal content: {str(e)}"
-        logger.error(error_msg)
-        return [], error_msg
-    
-    finally:
-        # Clean up temporary files
-        for temp_file in temp_files:
-            try:
-                if os.path.exists(temp_file):
-                    os.remove(temp_file)
-            except Exception as e:
-                logger.warning(f"Failed to remove temporary file {temp_file}: {str(e)}")
-
+import docx2pdf
+import docx
+import openpyxl
+from pptx import Presentation
+import img2pdf
+import csv
+import pandas as pd
+import numpy as np
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -1077,6 +915,395 @@ def process_with_document_intelligence(file_path, filename):
         logger.error(f"Error processing document with Document Intelligence: {str(e)}")
         return f"[Error processing document with Document Intelligence: {str(e)}]"
 
+def convert_pdf_to_images(pdf_path, dpi=300):
+    """Convert a PDF file to a list of base64-encoded images
+    
+    Args:
+        pdf_path (str): Path to the PDF file
+        dpi (int): Resolution for the converted images
+        
+    Returns:
+        tuple: (base64_images, error_message)
+            base64_images is a list of dicts with mime_type, base64_data, and page_num
+            error_message is None if successful, otherwise contains the error description
+    """
+    base64_images = []
+    try:
+        # Open the PDF
+        pdf_document = fitz.open(pdf_path)
+        
+        for page_num in range(len(pdf_document)):
+            page = pdf_document[page_num]
+            
+            # Render page to an image
+            pix = page.get_pixmap(matrix=fitz.Matrix(dpi/72, dpi/72))
+            
+            # Convert to PIL Image
+            img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+            
+            # Convert to base64
+            img_byte_arr = io.BytesIO()
+            img.save(img_byte_arr, format='PNG')
+            img_byte_arr = img_byte_arr.getvalue()
+            base64_img = base64.b64encode(img_byte_arr).decode('utf-8')
+            
+            base64_images.append({
+                "mime_type": "image/png",
+                "base64_data": base64_img,
+                "page_num": page_num + 1
+            })
+        
+        pdf_document.close()
+        return base64_images, None
+    
+    except Exception as e:
+        error_msg = f"Error converting PDF to images: {str(e)}"
+        logger.error(error_msg)
+        return [], error_msg
+
+def docx_to_pdf(docx_path, pdf_path):
+    """Convert a DOCX file to PDF using python-docx2pdf
+    
+    Args:
+        docx_path (str): Path to the input DOCX file
+        pdf_path (str): Path where the PDF should be saved
+        
+    Returns:
+        tuple: (success, error_message)
+    """
+    try:
+        docx2pdf.convert(docx_path, pdf_path)
+        return True, None
+    except Exception as e:
+        # Fallback: Create a PDF with text content
+        try:
+            doc = docx.Document(docx_path)
+            text_content = "\n".join([para.text for para in doc.paragraphs])
+            
+            # Create PDF from text content
+            return create_pdf_from_text(text_content, pdf_path)
+        except Exception as inner_e:
+            return False, f"Error converting DOCX to PDF: {str(e)}, fallback failed: {str(inner_e)}"
+
+def pptx_to_images(pptx_path):
+    """Convert PowerPoint presentation to a series of images
+    
+    Args:
+        pptx_path (str): Path to the PowerPoint file
+        
+    Returns:
+        tuple: (image_list, error_message)
+            image_list is a list of PIL.Image objects
+    """
+    try:
+        images = []
+        prs = Presentation(pptx_path)
+        
+        # For each slide, convert to an image
+        for i, slide in enumerate(prs.slides):
+            # Create a blank slide image with white background
+            width, height = 1280, 720  # Default slide size
+            slide_img = Image.new('RGB', (width, height), (255, 255, 255))
+            
+            # Try to extract actual slide dimensions if available
+            if hasattr(prs, 'slide_width') and hasattr(prs, 'slide_height'):
+                # Convert EMU to pixels (assuming 96 DPI)
+                width = int(prs.slide_width / 914400 * 96)
+                height = int(prs.slide_height / 914400 * 96)
+                slide_img = Image.new('RGB', (width, height), (255, 255, 255))
+            
+            # Draw text content on the image
+            draw = ImageDraw.Draw(slide_img)
+            y_position = 50
+            
+            # Extract and position text elements
+            for shape in slide.shapes:
+                if hasattr(shape, "text"):
+                    draw.text((50, y_position), shape.text, fill=(0, 0, 0))
+                    y_position += 30
+            
+            images.append(slide_img)
+        
+        return images, None
+    except Exception as e:
+        return [], f"Error converting PPTX to images: {str(e)}"
+
+def excel_to_images(excel_path):
+    """Convert Excel file to a series of images, one per worksheet
+    
+    Args:
+        excel_path (str): Path to the Excel file
+        
+    Returns:
+        tuple: (image_list, error_message)
+            image_list is a list of PIL.Image objects
+    """
+    try:
+        images = []
+        workbook = openpyxl.load_workbook(excel_path, data_only=True)
+        
+        for sheet_name in workbook.sheetnames:
+            sheet = workbook[sheet_name]
+            
+            # Determine the used range of the worksheet
+            max_row = sheet.max_row
+            max_col = sheet.max_column
+            
+            # Create pandas DataFrame from sheet data
+            data = []
+            for row in range(1, min(max_row + 1, 100)):  # Limit to 100 rows for performance
+                row_data = []
+                for col in range(1, min(max_col + 1, 20)):  # Limit to 20 columns
+                    cell_value = sheet.cell(row=row, column=col).value
+                    row_data.append(cell_value if cell_value is not None else "")
+                data.append(row_data)
+            
+            # Create a DataFrame
+            if data:
+                df = pd.DataFrame(data[1:], columns=data[0] if data else None)
+                
+                # Create a figure and render the DataFrame
+                fig, ax = plt.subplots(figsize=(12, 8))
+                ax.axis('tight')
+                ax.axis('off')
+                table = ax.table(cellText=df.values, colLabels=df.columns, loc='center', 
+                                cellLoc='center', colColours=['#f2f2f2']*len(df.columns))
+                
+                # Save the figure to a PIL Image
+                buf = io.BytesIO()
+                plt.savefig(buf, format='png', bbox_inches='tight')
+                buf.seek(0)
+                img = Image.open(buf)
+                images.append(img)
+                plt.close(fig)
+                
+                # Add sheet name as a separate image
+                title_img = Image.new('RGB', (1280, 100), (255, 255, 255))
+                draw = ImageDraw.Draw(title_img)
+                draw.text((640, 50), f"Sheet: {sheet_name}", fill=(0, 0, 0), anchor="mm")
+                images.append(title_img)
+        
+        return images, None
+    except Exception as e:
+        # Fallback: Create images with text representation
+        try:
+            images = []
+            workbook = openpyxl.load_workbook(excel_path, data_only=True)
+            
+            for sheet_name in workbook.sheetnames:
+                sheet = workbook[sheet_name]
+                
+                # Create a text representation of the sheet
+                text_content = f"Sheet: {sheet_name}\n\n"
+                for row in range(1, min(sheet.max_row + 1, 100)):
+                    row_text = ""
+                    for col in range(1, min(sheet.max_column + 1, 20)):
+                        cell_value = sheet.cell(row=row, column=col).value
+                        row_text += f"{cell_value if cell_value is not None else ''}\t"
+                    text_content += row_text + "\n"
+                
+                # Create an image from the text
+                img = Image.new('RGB', (1280, 720), (255, 255, 255))
+                draw = ImageDraw.Draw(img)
+                draw.text((50, 50), text_content, fill=(0, 0, 0))
+                images.append(img)
+            
+            return images, None
+        except Exception as inner_e:
+            return [], f"Error converting Excel to images: {str(e)}, fallback failed: {str(inner_e)}"
+
+def create_pdf_from_text(text, output_path):
+    """Create a PDF file from text content
+    
+    Args:
+        text (str): Text content to include in the PDF
+        output_path (str): Path where the PDF should be saved
+        
+    Returns:
+        tuple: (success, error_message)
+    """
+    try:
+        # Create a new PDF with PyMuPDF
+        doc = fitz.open()
+        page = doc.new_page()
+        
+        # Add text to the page
+        page.insert_text((50, 50), text)
+        
+        # Save the document
+        doc.save(output_path)
+        doc.close()
+        
+        return True, None
+    except Exception as e:
+        return False, f"Error creating PDF from text: {str(e)}"
+
+def create_pdf_from_images(images, output_path):
+    """Create a PDF file from a list of PIL Image objects
+    
+    Args:
+        images (list): List of PIL.Image objects
+        output_path (str): Path where the PDF should be saved
+        
+    Returns:
+        tuple: (success, error_message)
+    """
+    try:
+        # If no images, return error
+        if not images:
+            return False, "No images provided to create PDF"
+        
+        # Save images to temporary files
+        temp_image_files = []
+        for i, img in enumerate(images):
+            temp_path = tempfile.mktemp(suffix='.png')
+            img.save(temp_path, 'PNG')
+            temp_image_files.append(temp_path)
+        
+        # Create PDF from images
+        with open(output_path, "wb") as pdf_file:
+            pdf_file.write(img2pdf.convert(temp_image_files))
+        
+        # Clean up temp files
+        for temp_file in temp_image_files:
+            os.remove(temp_file)
+        
+        return True, None
+    except Exception as e:
+        # Clean up temp files in case of error
+        for temp_file in temp_image_files:
+            try:
+                os.remove(temp_file)
+            except:
+                pass
+        return False, f"Error creating PDF from images: {str(e)}"
+
+def convert_document_to_pdf(file_path, output_path, content_type, file_name):
+    """Convert Office documents to PDF using Python packages
+    
+    Args:
+        file_path (str): Path to the input file
+        output_path (str): Path where the PDF should be saved
+        content_type (str): MIME type of the file
+        file_name (str): Original file name
+        
+    Returns:
+        tuple: (success, error_message)
+            success is a boolean indicating if the conversion was successful
+            error_message is None if successful, otherwise contains the error description
+    """
+    try:
+        # Determine file type based on content_type and filename
+        is_pptx = content_type == 'application/vnd.openxmlformats-officedocument.presentationml.presentation' or file_name.endswith('.pptx')
+        is_ppt = content_type == 'application/vnd.ms-powerpoint' or file_name.endswith('.ppt')
+        is_docx = content_type == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' or file_name.endswith('.docx')
+        is_doc = content_type == 'application/msword' or file_name.endswith('.doc')
+        is_xlsx = content_type == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' or file_name.endswith('.xlsx')
+        is_xls = content_type == 'application/vnd.ms-excel' or file_name.endswith('.xls')
+        is_csv = content_type == 'text/csv' or file_name.endswith('.csv')
+        
+        if is_docx:
+            # Convert DOCX to PDF using docx2pdf
+            return docx_to_pdf(file_path, output_path)
+            
+        elif is_pptx or is_ppt:
+            # For PPT files, convert to images then to PDF
+            images, error = pptx_to_images(file_path)
+            if error:
+                return False, error
+                
+            return create_pdf_from_images(images, output_path)
+            
+        elif is_xlsx or is_xls:
+            # For Excel files, convert to images then to PDF
+            images, error = excel_to_images(file_path)
+            if error:
+                return False, error
+                
+            return create_pdf_from_images(images, output_path)
+            
+        elif is_csv:
+            # For CSV files, convert to a formatted text PDF
+            try:
+                with open(file_path, 'r', newline='', encoding='utf-8') as csv_file:
+                    csv_reader = csv.reader(csv_file)
+                    rows = list(csv_reader)
+                    
+                # Format CSV content for PDF
+                text_content = ""
+                for row in rows:
+                    text_content += " | ".join(row) + "\n"
+                    
+                return create_pdf_from_text(text_content, output_path)
+            except Exception as e:
+                return False, f"Error converting CSV to PDF: {str(e)}"
+                
+        elif is_doc:
+            # Old DOC format not directly supported
+            return False, "DOC format not supported with Python-only dependencies. Please convert to DOCX."
+            
+        else:
+            return False, f"Unsupported document type for conversion: {content_type}"
+    
+    except Exception as e:
+        error_msg = f"Error converting document to PDF: {str(e)}"
+        logger.error(error_msg)
+        return False, error_msg
+
+def process_document_for_multimodal(file_path, content_type, file_name):
+    """Process a document file for multimodal content
+    
+    Args:
+        file_path (str): Path to the document file
+        content_type (str): MIME type of the file
+        file_name (str): Original file name
+        
+    Returns:
+        tuple: (base64_images, error_message)
+            base64_images is a list of dicts with mime_type, base64_data, and page_num
+            error_message is None if successful, otherwise contains the error description
+    """
+    temp_files = []  # Track temporary files for cleanup
+    
+    try:
+        # Process based on file type
+        is_pdf = content_type == 'application/pdf' or file_name.endswith('.pdf')
+        is_office_doc = any(ext in file_name.lower() for ext in ['.ppt', '.pptx', '.doc', '.docx', '.xls', '.xlsx', '.csv']) or \
+                       any(mime in content_type for mime in ['powerpoint', 'msword', 'spreadsheet', 'csv'])
+        
+        if is_pdf:
+            # Direct PDF processing
+            return convert_pdf_to_images(file_path)
+        
+        elif is_office_doc:
+            # Convert to PDF first, then process
+            pdf_path = tempfile.mktemp(suffix='.pdf')
+            temp_files.append(pdf_path)
+            
+            success, error = convert_document_to_pdf(file_path, pdf_path, content_type, file_name)
+            if not success:
+                return [], f"Failed to convert document to PDF: {error}"
+            
+            # Now process the PDF
+            return convert_pdf_to_images(pdf_path)
+        
+        else:
+            return [], f"Unsupported document type for image conversion: {content_type}"
+    
+    except Exception as e:
+        error_msg = f"Error processing document for multimodal content: {str(e)}"
+        logger.error(error_msg)
+        return [], error_msg
+    
+    finally:
+        # Clean up temporary files
+        for temp_file in temp_files:
+            try:
+                if os.path.exists(temp_file):
+                    os.remove(temp_file)
+            except Exception as e:
+                logger.warning(f"Failed to remove temporary file {temp_file}: {str(e)}")
+
 def gpt4o_document_intelligence_service(system_prompt, user_input, temperature=0.5, files=None):
     """GPT-4o with Document Intelligence service function for file processing"""
     try:
@@ -1296,8 +1523,8 @@ def gpt4o_multimodal_service(system_prompt, user_input, temperature=0.5, json_ou
                     elif content_type in ['application/pdf', 'application/vnd.openxmlformats-officedocument.presentationml.presentation', 
                                          'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                                          'application/msword', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                                         'application/vnd.ms-excel'] or \
-                         any(file_name.lower().endswith(ext) for ext in ['.pdf', '.ppt', '.pptx', '.doc', '.docx', '.xls', '.xlsx']):
+                                         'application/vnd.ms-excel', 'text/csv'] or \
+                         any(file_name.lower().endswith(ext) for ext in ['.pdf', '.ppt', '.pptx', '.doc', '.docx', '.xls', '.xlsx', '.csv']):
                         
                         logger.info(f"Processing document {file_name} for conversion to images")
                         file_stats["documents_processed"] += 1
@@ -1507,8 +1734,8 @@ def gpt4o_mini_multimodal_service(system_prompt, user_input, temperature=0.5, js
                     elif content_type in ['application/pdf', 'application/vnd.openxmlformats-officedocument.presentationml.presentation', 
                                          'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                                          'application/msword', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                                         'application/vnd.ms-excel'] or \
-                         any(file_name.lower().endswith(ext) for ext in ['.pdf', '.ppt', '.pptx', '.doc', '.docx', '.xls', '.xlsx']):
+                                         'application/vnd.ms-excel', 'text/csv'] or \
+                         any(file_name.lower().endswith(ext) for ext in ['.pdf', '.ppt', '.pptx', '.doc', '.docx', '.xls', '.xlsx', '.csv']):
                         
                         logger.info(f"Processing document {file_name} for conversion to images")
                         file_stats["documents_processed"] += 1
