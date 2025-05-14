@@ -2562,3 +2562,64 @@ def gpt4o_mini_multimodal_service(system_prompt, user_input, temperature=0.5, js
             "success": False,
             "error": str(e)
         }
+
+def deepseek_r1_service(system_prompt, user_input, temperature=0.5, json_output=False, max_tokens=2048):
+    """DeepSeek-R1 LLM service function for chain of thought and deep reasoning"""
+    try:
+        # Fixed endpoint for DeepSeek R1
+        ENDPOINT = 'https://deepseek-r1-aiapi.eastus.models.ai.azure.com'
+        
+        # Initialize Azure Inference client
+        client = ChatCompletionsClient(
+            endpoint=ENDPOINT,
+            credential=AzureKeyCredential(DEEPSEEK_API_KEY)
+        )
+        
+        # Prepare messages for the model
+        messages = []
+        
+        # Add system message if provided
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        
+        # Add user message
+        messages.append({"role": "user", "content": user_input})
+        
+        # Prepare payload
+        payload = {
+            "messages": messages,
+            "max_tokens": max_tokens,
+            "temperature": temperature
+        }
+        
+        # Add response format if JSON output is requested
+        if json_output:
+            payload["response_format"] = {"type": "json_object"}
+        
+        # Make request to LLM
+        response = client.complete(payload)
+        
+        # Extract response data
+        result = response.choices[0].message.content
+        prompt_tokens = response.usage.prompt_tokens
+        completion_tokens = response.usage.completion_tokens
+        total_tokens = response.usage.total_tokens
+        model_name = response.model if hasattr(response, 'model') else "deepseek-r1-aiapi"
+        cached_tokens = 0  # Default to 0 as this model doesn't support cached tokens
+        
+        return {
+            "success": True,
+            "result": result,
+            "model": model_name,
+            "prompt_tokens": prompt_tokens,
+            "completion_tokens": completion_tokens,
+            "total_tokens": total_tokens,
+            "cached_tokens": cached_tokens
+        }
+        
+    except Exception as e:
+        logger.error(f"DeepSeek-R1 API error: {str(e)}")
+        return {
+            "success": False,
+            "error": str(e)
+        }
