@@ -523,7 +523,7 @@ def extract_document_structure(result):
         
         # Add paragraphs
         if hasattr(page, 'paragraphs') and page.paragraphs:
-            for para_idx, para in page.paragraphs:
+            for para_idx, para in enumerate(page.paragraphs):
                 structure[-1]["content"].append({
                     "type": "paragraph",
                     "text": para.content,
@@ -705,14 +705,104 @@ def extract_document_outline(document_structure):
     
     return outline
 
+def process_with_document_intelligence(file_path, filename):
+    """Process a document file using Azure Document Intelligence (fallback method)"""
+    try:
+        # Determine the best model to use based on file type
+        ext = filename.rsplit('.', 1)[1].lower()
+        
+        # Select appropriate prebuilt model
+        if ext in ['xlsx', 'xls', 'csv']:
+            model = "prebuilt-layout"  # Good for tables and structured data
+        else:
+            model = "prebuilt-document"  # General document understanding
+        
+        # Process the document
+        with open(file_path, "rb") as document:
+            poller = document_client.begin_analyze_document(model, document)
+            result = poller.result()
+        
+        # Extract content
+        extracted_text = ""
+        
+        # Track page count
+        page_count = 0
+        
+        # Add document metadata if available
+        if hasattr(result, 'metadata') and result.metadata:
+            page_count = result.metadata.page_count  # Store page count
+            extracted_text += f"Document Metadata:\n"
+            extracted_text += f"Pages: {result.metadata.page_count}\n"
+            if hasattr(result.metadata, 'author') and result.metadata.author:
+                extracted_text += f"Author: {result.metadata.author}\n"
+            if hasattr(result.metadata, 'title') and result.metadata.title:
+                extracted_text += f"Title: {result.metadata.title}\n"
+            extracted_text += "\n"
+        else:
+            # If metadata doesn't have page count, count the pages in the result
+            page_count = len(result.pages) if hasattr(result, 'pages') else 0
+        
+        # Get page-by-page content
+        for page_idx, page in enumerate(result.pages):
+            extracted_text += f"\n--- Page {page_idx + 1} ---\n"
+            
+            # Extract text from paragraphs if available
+            if hasattr(page, 'paragraphs') and page.paragraphs:
+                for para in page.paragraphs:
+                    extracted_text += f"{para.content}\n"
+            # Otherwise extract from lines
+            else:
+                for line in page.lines:
+                    extracted_text += f"{line.content}\n"
+        
+        # Extract tables if present
+        if hasattr(result, 'tables') and result.tables:
+            extracted_text += "\n--- Tables ---\n"
+            for i, table in enumerate(result.tables):
+                extracted_text += f"\nTable {i+1}:\n"
+                
+                # Build a text representation of the table
+                prev_row_idx = -1
+                for cell in table.cells:
+                    if cell.row_index > prev_row_idx:
+                        extracted_text += "\n"
+                        prev_row_idx = cell.row_index
+                    
+                    extracted_text += f"{cell.content}\t"
+                extracted_text += "\n"
+        
+        # Include key-value pairs if detected
+        if hasattr(result, 'key_value_pairs') and result.key_value_pairs:
+            extracted_text += "\n--- Key-Value Pairs ---\n"
+            for pair in result.key_value_pairs:
+                key = pair.key.content if pair.key else "N/A"
+                value = pair.value.content if pair.value else "N/A"
+                extracted_text += f"{key}: {value}\n"
+                
+        return extracted_text, page_count
+    
+    except Exception as e:
+        logger.error(f"Error processing document with Document Intelligence: {str(e)}")
+        return f"[Error processing document with Document Intelligence: {str(e)}]", 0
+
 def process_with_intelligent_extraction(file_path, filename, user_query):
     """Process document with intelligent context extraction based on user query"""
     try:
+        # Track page count
+        page_count = 0
+        
         # Extract full document first
         with open(file_path, "rb") as document:
             poller = document_client.begin_analyze_document("prebuilt-document", document)
             result = poller.result()
         
+        # Get page count from metadata if available
+        if hasattr(result, 'metadata') and result.metadata:
+            page_count = result.metadata.page_count
+        else:
+            # If metadata doesn't have page count, count the pages in the result
+            page_count = len(result.pages) if hasattr(result, 'pages') else 0
+            
         # Extract document structure
         doc_structure = extract_document_structure(result)
         
@@ -822,85 +912,12 @@ def process_with_intelligent_extraction(file_path, filename, user_query):
                     else:
                         break
         
-        return final_content
+        return final_content, page_count
     
     except Exception as e:
         logger.error(f"Error in intelligent document processing: {str(e)}")
         # Fall back to basic document processing if advanced processing fails
         return process_with_document_intelligence(file_path, filename)
-
-def process_with_document_intelligence(file_path, filename):
-    """Process a document file using Azure Document Intelligence (fallback method)"""
-    try:
-        # Determine the best model to use based on file type
-        ext = filename.rsplit('.', 1)[1].lower()
-        
-        # Select appropriate prebuilt model
-        if ext in ['xlsx', 'xls', 'csv']:
-            model = "prebuilt-layout"  # Good for tables and structured data
-        else:
-            model = "prebuilt-document"  # General document understanding
-        
-        # Process the document
-        with open(file_path, "rb") as document:
-            poller = document_client.begin_analyze_document(model, document)
-            result = poller.result()
-        
-        # Extract content
-        extracted_text = ""
-        
-        # Add document metadata if available
-        if hasattr(result, 'metadata') and result.metadata:
-            extracted_text += f"Document Metadata:\n"
-            extracted_text += f"Pages: {result.metadata.page_count}\n"
-            if hasattr(result.metadata, 'author') and result.metadata.author:
-                extracted_text += f"Author: {result.metadata.author}\n"
-            if hasattr(result.metadata, 'title') and result.metadata.title:
-                extracted_text += f"Title: {result.metadata.title}\n"
-            extracted_text += "\n"
-        
-        # Get page-by-page content
-        for page_idx, page in enumerate(result.pages):
-            extracted_text += f"\n--- Page {page_idx + 1} ---\n"
-            
-            # Extract text from paragraphs if available
-            if hasattr(page, 'paragraphs') and page.paragraphs:
-                for para in page.paragraphs:
-                    extracted_text += f"{para.content}\n"
-            # Otherwise extract from lines
-            else:
-                for line in page.lines:
-                    extracted_text += f"{line.content}\n"
-        
-        # Extract tables if present
-        if hasattr(result, 'tables') and result.tables:
-            extracted_text += "\n--- Tables ---\n"
-            for i, table in enumerate(result.tables):
-                extracted_text += f"\nTable {i+1}:\n"
-                
-                # Build a text representation of the table
-                prev_row_idx = -1
-                for cell in table.cells:
-                    if cell.row_index > prev_row_idx:
-                        extracted_text += "\n"
-                        prev_row_idx = cell.row_index
-                    
-                    extracted_text += f"{cell.content}\t"
-                extracted_text += "\n"
-        
-        # Include key-value pairs if detected
-        if hasattr(result, 'key_value_pairs') and result.key_value_pairs:
-            extracted_text += "\n--- Key-Value Pairs ---\n"
-            for pair in result.key_value_pairs:
-                key = pair.key.content if pair.key else "N/A"
-                value = pair.value.content if pair.value else "N/A"
-                extracted_text += f"{key}: {value}\n"
-                
-        return extracted_text
-    
-    except Exception as e:
-        logger.error(f"Error processing document with Document Intelligence: {str(e)}")
-        return f"[Error processing document with Document Intelligence: {str(e)}]"
 
 def gpt4o_document_intelligence_service(system_prompt, user_input, temperature=0.5, files=None):
     """GPT-4o with Document Intelligence service function for file processing"""
@@ -913,7 +930,8 @@ def gpt4o_document_intelligence_service(system_prompt, user_input, temperature=0
         file_stats = {
             "documents_processed": 0,
             "images_processed": 0,
-            "text_files_processed": 0
+            "text_files_processed": 0,
+            "pages_processed": 0  # Add this field to track page counts
         }
         
         # Prepare message content
@@ -961,7 +979,8 @@ def gpt4o_document_intelligence_service(system_prompt, user_input, temperature=0
                     file_stats["documents_processed"] += 1
                     
                     # Process document
-                    extracted_content = process_with_intelligent_extraction(temp_path, file.filename, user_input)
+                    extracted_content, page_count = process_with_intelligent_extraction(temp_path, file.filename, user_input)
+                    file_stats["pages_processed"] += page_count  # Track page count
                     
                     # Add to message content
                     message_content.append({
@@ -1057,7 +1076,8 @@ def gpt4o_multimodal_service(system_prompt, user_input, temperature=0.5, json_ou
         file_stats = {
             "documents_processed": 0,
             "images_processed": 0,
-            "text_files_processed": 0
+            "text_files_processed": 0,
+            "pages_processed": 0  # Add this field to track page counts
         }
         
         # Prepare message content
@@ -1122,7 +1142,8 @@ def gpt4o_multimodal_service(system_prompt, user_input, temperature=0.5, json_ou
                         file_stats["documents_processed"] += 1
                         
                         # Process document with intelligent extraction
-                        extracted_content = process_with_intelligent_extraction(temp_path, file_name, user_input)
+                        extracted_content, page_count = process_with_intelligent_extraction(temp_path, file_name, user_input)
+                        file_stats["pages_processed"] += page_count  # Track page count
                         
                         # Add to message content
                         message_content.append({
@@ -1232,7 +1253,8 @@ def gpt4o_mini_multimodal_service(system_prompt, user_input, temperature=0.5, js
         file_stats = {
             "documents_processed": 0,
             "images_processed": 0,
-            "text_files_processed": 0
+            "text_files_processed": 0,
+            "pages_processed": 0  # Add page count tracking
         }
         
         # Prepare message content
@@ -1297,7 +1319,8 @@ def gpt4o_mini_multimodal_service(system_prompt, user_input, temperature=0.5, js
                         file_stats["documents_processed"] += 1
                         
                         # For mini model, use more aggressive summarization since context is smaller
-                        extracted_content = process_with_intelligent_extraction(temp_path, file_name, user_input)
+                        extracted_content, page_count = process_with_intelligent_extraction(temp_path, file_name, user_input)
+                        file_stats["pages_processed"] += page_count  # Track page count
                         
                         # Add to message content
                         message_content.append({
