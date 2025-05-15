@@ -10,11 +10,7 @@ from datetime import datetime
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def create_api_response(data, status_code=200):
-    """Helper function to create consistent API responses"""
-    response = make_response(jsonify(data))
-    response.status_code = status_code
-    return response
+from apis.utils.config import create_api_response
 
 def admin_grant_endpoint_access_single_route():
     """
@@ -33,6 +29,11 @@ def admin_grant_endpoint_access_single_route():
         type: string
         required: true
         description: A valid token for verification
+      - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems
       - name: body
         in: body
         required: true
@@ -261,6 +262,11 @@ def admin_grant_endpoint_access_multi_route():
         type: string
         required: true
         description: Admin API Key for authentication
+      - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems
       - name: X-Token
         in: header
         type: string
@@ -540,6 +546,11 @@ def admin_grant_endpoint_access_all_route():
         type: string
         required: true
         description: Admin API Key for authentication
+      - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems
       - name: X-Token
         in: header
         type: string
@@ -747,6 +758,11 @@ def admin_delete_endpoint_access_single_route():
         type: string
         required: true
         description: Admin API Key for authentication
+      - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems
       - name: X-Token
         in: header
         type: string
@@ -955,6 +971,11 @@ def admin_delete_endpoint_access_multi_route():
         type: string
         required: true
         description: Admin API Key for authentication
+      - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems
       - name: X-Token
         in: header
         type: string
@@ -1222,6 +1243,11 @@ def admin_delete_endpoint_access_all_route():
         type: string
         required: true
         description: Admin API Key for authentication
+      - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems
       - name: X-Token
         in: header
         type: string
@@ -1410,6 +1436,11 @@ def get_user_accessible_endpoints_route():
         type: string
         required: true
         description: User's API Key for authentication
+      - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems
       - name: X-Token
         in: header
         type: string

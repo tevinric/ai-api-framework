@@ -10,11 +10,7 @@ from datetime import datetime
 # CONFIGURE LOGGING
 logger = logging.getLogger(__name__)
 
-def create_api_response(data, status_code=200):
-    """Helper function to create consistent API responses"""
-    response = make_response(jsonify(data))
-    response.status_code = status_code
-    return response
+from apis.utils.config import create_api_response
 
 def create_user_route():
     """
@@ -28,6 +24,11 @@ def create_user_route():
         type: string
         required: true
         description: Admin API Key for authentication
+      - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems
       - name: token
         in: query
         type: string
@@ -236,7 +237,7 @@ def create_user_route():
         if not user_id:
             return create_api_response({
                 "error": "Server Error",
-                "message": "Failed to create user"
+                "message": "Failed to create user "
             }, 500)
         
         return create_api_response({

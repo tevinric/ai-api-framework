@@ -178,13 +178,20 @@ register_admin_update_user_routes(app)
 # from apis.admin.admin_delete_user import register_admin_delete_user_routes
 # register_admin_delete_user_routes(app)
 
+## RBAC ENDPOINT ACCESS CONTROL
+from apis.admin.admin_endpoint_access import register_admin_endpoint_access_routes
+register_admin_endpoint_access_routes(app)
+
+
 # ENDPOINT MANAGEMENT
 from apis.endpoint_management.admin_endpoint_management import register_admin_endpoint_routes
 register_admin_endpoint_routes(app)
 
+# BALANCE MANAGEMENT ENDPOINTS
 from apis.balance_management.balance_endpoints import register_balance_routes
 register_balance_routes(app)
 
+# LLM ENDPOINTS
 from apis.llm.deepseek_r1 import register_llm_deepseek_r1
 register_llm_deepseek_r1(app)
 
@@ -206,32 +213,29 @@ register_llm_deepseek_v3(app)
 from apis.llm.gpt_o3_mini import register_llm_o3_mini
 register_llm_o3_mini(app)
 
+# IMAGE GENERATION ENDPOINTS
 from apis.image_generation.dalle3 import register_image_generation_routes
 register_image_generation_routes(app)
 
 from apis.image_generation.stable_diffusion_ultra import register_stable_diffusion_ultra_routes
 register_stable_diffusion_ultra_routes(app)
 
+# FILE MANAGEMENT ENDPOINTS
 from apis.file_upload.upload_file import register_file_upload_routes
 register_file_upload_routes(app)
 
 from apis.balance_management.usage_statistics import register_usage_stats_routes
 register_usage_stats_routes(app)
 
-# Register job management routes
+# JOB MANAGEMENT ENDPOINTS
 from apis.jobs.job_routes import register_job_routes
 register_job_routes(app)
 
-# Register asynchronous speech-to-text routes
+# SPEECH SERVICES ENDPOINTS
 from apis.speech_services.stt_async import register_async_speech_to_text_routes
 register_async_speech_to_text_routes(app)
 
-# Comment out original synchronous speech routes as they're replaced by async versions
-# from apis.speech_services.stt import register_speech_to_text_routes
-# register_speech_to_text_routes(app)
-# from apis.speech_services.stt_diarize import register_speech_to_text_diarize_routes
-# register_speech_to_text_diarize_routes(app)
-
+# DOCUMENT INTELLIGENCE ENDPOINTS
 from apis.document_intelligence.summarization import register_document_intelligence_routes
 register_document_intelligence_routes(app)
 
@@ -241,12 +245,14 @@ register_document_intelligence_read_routes(app)
 from apis.document_intelligence.layout import register_document_intelligence_layout_routes
 register_document_intelligence_layout_routes(app)
 
+# OCR ENDPOINTS
 from apis.ocr.sa_id import register_sa_id_ocr_routes
 register_sa_id_ocr_routes(app)
 
 from apis.ocr.vehicle_license_disc import register_vehicle_license_disc_routes
 register_vehicle_license_disc_routes(app)
 
+# RAG ENDPOINTS
 from apis.rag.vectorstore import register_vectorstore_routes
 register_vectorstore_routes(app)
 
@@ -256,23 +262,19 @@ register_consume_vectorstore_routes(app)
 from apis.rag.vectorstore_advanced import register_advanced_vectorstore_routes
 register_advanced_vectorstore_routes(app)
 
+# CONVERSATIONAL AI ENDPOINTS
 from apis.llm_conversation.conversation import register_llm_conversation_routes
 register_llm_conversation_routes(app)
 
+# NLP ENDPOINTS
 from apis.nlp.sentiment_analysis import register_sentiment_routes
 register_sentiment_routes(app)
 
 from apis.nlp.classification import register_nlp_routes
 register_nlp_routes(app)
 
-# from apis.llm_conversation.insurance_conversation import register_insurance_bot_routes
-# register_insurance_bot_routes(app)
 
-from apis.admin.admin_endpoint_access import register_admin_endpoint_access_routes
-register_admin_endpoint_access_routes(app)
 
-# from apis.car_insurance.conversation import register_car_insurance_routes
-# register_car_insurance_routes(app)
 
 
 if __name__ == '__main__':

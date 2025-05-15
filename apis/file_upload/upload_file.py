@@ -14,17 +14,7 @@ logger = logging.getLogger(__name__)
 # Define container for file uploads
 FILE_UPLOAD_CONTAINER = os.environ.get("AZURE_STORAGE_UPLOAD_CONTAINER", "file-uploads")
 
-def create_api_response(data, status_code=200):
-    """Helper function to create consistent API responses"""
-    response = make_response(jsonify(data))
-    response.status_code = status_code
-    
-    # Add correlation ID to response if available in g context
-    correlation_id = getattr(g, 'correlation_id', None)
-    if correlation_id:
-        response.headers['X-Correlation-ID'] = correlation_id
-        
-    return response
+from apis.utils.config import create_api_response
 
 def upload_file_route():
     """
@@ -227,6 +217,11 @@ def get_file_url_route():
         type: string
         required: true
         description: Valid token for authentication
+      - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems
       - name: file_id
         in: query
         type: string
@@ -390,6 +385,11 @@ def delete_file_route():
         type: string
         required: true
         description: Valid token for authentication
+      - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems
       - name: file_id
         in: query
         type: string
@@ -549,6 +549,11 @@ def list_user_files_route():
         type: string
         required: false
         description: API Key for authentication
+      - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems
       - name: X-Token
         in: header
         type: string

@@ -9,10 +9,7 @@ import pytz
 
 logger = logging.getLogger(__name__)
 
-def create_api_response(data, status_code=200):
-    response = make_response(jsonify(data))
-    response.status_code = status_code
-    return response
+from apis.utils.config import create_api_response
 
 def check_balance_route():
     """
@@ -26,6 +23,11 @@ def check_balance_route():
         type: string
         required: true
         description: API Key for authentication
+      - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems
     produces:
       - application/json
     responses:
@@ -90,6 +92,11 @@ def admin_update_balance_route():
         type: string
         required: true
         description: Admin API Key for authentication
+      - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems
       - name: token
         in: query
         type: string

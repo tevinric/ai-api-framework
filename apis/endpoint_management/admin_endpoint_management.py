@@ -10,11 +10,7 @@ from datetime import datetime
 # CONFIGURE LOGGING
 logger = logging.getLogger(__name__)
 
-def create_api_response(data, status_code=200):
-    """Helper function to create consistent API responses"""
-    response = make_response(jsonify(data))
-    response.status_code = status_code
-    return response
+from apis.utils.config import create_api_response
 
 def admin_add_endpoint_route():
     """
@@ -28,6 +24,11 @@ def admin_add_endpoint_route():
         type: string
         required: true
         description: "Admin API Key for authentication"
+    - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems
       - name: token
         in: query
         type: string
@@ -221,6 +222,11 @@ def admin_get_endpoints_route():
         type: string
         required: true
         description: "Admin API Key for authentication"
+    - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems
       - name: token
         in: query
         type: string
@@ -332,6 +338,11 @@ def admin_update_endpoint_route():
         type: string
         required: true
         description: "Admin API Key for authentication"
+    - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems
       - name: token
         in: query
         type: string
