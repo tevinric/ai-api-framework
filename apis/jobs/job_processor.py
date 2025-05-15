@@ -4,6 +4,8 @@ from apis.utils.fileService import FileService
 from apis.speech_services.stt import transcribe_audio, calculate_audio_duration
 from apis.speech_services.stt_diarize import process_transcript_with_llm, split_transcript_into_chunks, count_tokens
 import requests
+import uuid
+from apis.utils.databaseService import DatabaseService
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -15,6 +17,75 @@ class JobProcessor:
     This class contains methods to process different types of async jobs
     like speech-to-text and speech-to-text with diarization.
     """
+    
+    @staticmethod
+    def log_usage_metrics(user_id, job_type, metrics):
+        """Log usage metrics to the user_usage table
+        
+        Args:
+            user_id (str): ID of the user who submitted the job
+            job_type (str): Type of job (e.g., 'stt', 'stt_diarize')
+            metrics (dict): Dictionary containing usage metrics
+            
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        try:
+            # Generate a unique ID for the usage record
+            usage_id = str(uuid.uuid4())
+            
+            # Get endpoint ID based on job type
+            endpoint_path = f"/speech/{job_type}"
+            endpoint_id = DatabaseService.get_endpoint_id_by_path(endpoint_path)
+            
+            if not endpoint_id:
+                logger.error(f"Endpoint ID not found for path: {endpoint_path}")
+                return False
+                
+            # Connect to database
+            conn = DatabaseService.get_connection()
+            cursor = conn.cursor()
+            
+            # Insert usage record
+            query = """
+            INSERT INTO user_usage (
+                id, user_id, endpoint_id, timestamp,
+                images_generated, audio_seconds_processed, pages_processed,
+                documents_processed, model_used, prompt_tokens,
+                completion_tokens, total_tokens, cached_tokens, files_uploaded
+            )
+            VALUES (
+                ?, ?, ?, DATEADD(HOUR, 2, GETUTCDATE()),
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+            )
+            """
+            
+            cursor.execute(query, [
+                usage_id,
+                user_id,
+                endpoint_id,
+                metrics.get("images_generated", 0),
+                metrics.get("audio_seconds_processed", 0),
+                metrics.get("pages_processed", 0),
+                metrics.get("documents_processed", 0),
+                metrics.get("model_used"),
+                metrics.get("prompt_tokens", 0),
+                metrics.get("completion_tokens", 0),
+                metrics.get("total_tokens", 0),
+                metrics.get("cached_tokens", 0),
+                metrics.get("files_uploaded", 0)
+            ])
+            
+            conn.commit()
+            cursor.close()
+            conn.close()
+            
+            logger.info(f"Usage metrics logged for async {job_type} job with ID: {usage_id}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error logging usage metrics for async job: {str(e)}")
+            return False
     
     @staticmethod
     def process_stt_job(job_id, user_id, file_id):
@@ -100,6 +171,12 @@ class JobProcessor:
                 "transcription_details": transcription_result,
                 "seconds_processed": seconds_processed
             }
+            
+            # Log usage metrics
+            metrics = {
+                "audio_seconds_processed": seconds_processed
+            }
+            JobProcessor.log_usage_metrics(user_id, "stt", metrics)
             
             # Update job status to completed with results
             JobService.update_job_status(job_id, 'completed', result_data=result_data)
@@ -277,6 +354,17 @@ class JobProcessor:
                 "embedded_tokens": total_embedded_tokens,
                 "model_used": model_deplopyment
             }
+            
+            # Log usage metrics
+            metrics = {
+                "audio_seconds_processed": seconds_processed,
+                "model_used": model_deplopyment,
+                "prompt_tokens": total_prompt_tokens,
+                "completion_tokens": total_completion_tokens,
+                "total_tokens": total_tokens,
+                "cached_tokens": total_cached_tokens
+            }
+            JobProcessor.log_usage_metrics(user_id, "stt_diarize", metrics)
             
             # Update job status to completed with results
             JobService.update_job_status(job_id, 'completed', result_data=result_data)
