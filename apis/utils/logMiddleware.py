@@ -56,18 +56,27 @@ def api_logger(f):
         method = request.method
         headers = dict(request.headers)
         
-        # Extract correlation ID from header (or generate one if not provided)
-        correlation_id = headers.get('X-Correlation-ID') or str(uuid.uuid4())
+        # Extract correlation ID from header - check multiple case variations
+        correlation_id = (
+            request.headers.get('X-Correlation-ID') or 
+            request.headers.get('x-correlation-id') or 
+            request.headers.get('X-CORRELATION-ID') or
+            str(uuid.uuid4())  # Generate a new one if not provided
+        )
         
         # Store correlation ID in Flask g object for other middleware to access
         g.correlation_id = correlation_id
         
-        # Remove sensitive info from headers
+        # Log the correlation ID for debugging
+        logger.info(f"Request to {endpoint} with Correlation ID: {correlation_id}")
+        
+        # Remove sensitive info from headers for logging
+        headers_for_logging = headers.copy()
         sensitive_headers = ['Authorization', 'API-Key', 'X-Token', 'Api-Key', 'api_key']
         for header in sensitive_headers:
-            if header in headers:
-                headers[header] = '[REDACTED]'
-            
+            if header in headers_for_logging:
+                headers_for_logging[header] = '[REDACTED]'
+        
         # Get request body if it's JSON
         body = None
         if request.is_json:
@@ -121,14 +130,14 @@ def api_logger(f):
                 user_id=user_id,
                 token_id=token_id,
                 request_method=method,
-                request_headers=json.dumps(headers),
+                request_headers=json.dumps(headers_for_logging),
                 request_body=json.dumps(body) if body else None,
                 response_status=response_status,
                 response_time_ms=response_time,
                 user_agent=user_agent,
                 ip_address=ip_address,
                 response_body=json.dumps(response_data) if response_data else None,
-                correlation_id=correlation_id
+                correlation_id=correlation_id  # Pass the correlation ID
             )
             
             # Store the log ID in g for usageMiddleware to access
@@ -159,14 +168,14 @@ def api_logger(f):
                 user_id=user_id,
                 token_id=token_id,
                 request_method=method,
-                request_headers=json.dumps(headers),
+                request_headers=json.dumps(headers_for_logging),
                 request_body=json.dumps(body) if body else None,
                 response_status=500,
                 response_time_ms=response_time,
                 user_agent=user_agent,
                 ip_address=ip_address,
                 error_message=str(e),
-                correlation_id=correlation_id
+                correlation_id=correlation_id  # Pass the correlation ID
             )
             
             # Store the error log ID in g
