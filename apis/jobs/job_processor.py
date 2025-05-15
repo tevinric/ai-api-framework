@@ -19,22 +19,21 @@ class JobProcessor:
     """
     
     @staticmethod
-    def log_usage_metrics(user_id, job_type, metrics, api_log_id=None):
-        """Log usage metrics to the user_usage table
+    def update_usage_metrics(user_id, job_type, metrics):
+        """Update or create usage metrics in the user_usage table
+        
+        This method will check if a usage record already exists for the job's API call
+        and update it rather than creating a duplicate record.
         
         Args:
             user_id (str): ID of the user who submitted the job
             job_type (str): Type of job (e.g., 'stt', 'stt_diarize')
             metrics (dict): Dictionary containing usage metrics
-            api_log_id (str, optional): ID of the API log entry to link to
             
         Returns:
             bool: True if successful, False otherwise
         """
         try:
-            # Generate a unique ID for the usage record
-            usage_id = str(uuid.uuid4())
-            
             # Get endpoint ID based on job type
             endpoint_path = f"/speech/{job_type}"
             endpoint_id = DatabaseService.get_endpoint_id_by_path(endpoint_path)
@@ -47,58 +46,97 @@ class JobProcessor:
             conn = DatabaseService.get_connection()
             cursor = conn.cursor()
             
-            # Insert usage record
+            # First check if we already have a usage record for this user and endpoint
+            # (created within the last hour to avoid updating very old records)
             query = """
-            INSERT INTO user_usage (
-                id, user_id, endpoint_id, timestamp,
-                images_generated, audio_seconds_processed, pages_processed,
-                documents_processed, model_used, prompt_tokens,
-                completion_tokens, total_tokens, cached_tokens, files_uploaded,
-                api_log_id
-            )
-            VALUES (
-                ?, ?, ?, DATEADD(HOUR, 2, GETUTCDATE()),
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                ?
-            )
+            SELECT id 
+            FROM user_usage 
+            WHERE user_id = ? 
+            AND endpoint_id = ? 
+            AND DATEDIFF(hour, timestamp, DATEADD(HOUR, 2, GETUTCDATE())) < 1
+            ORDER BY timestamp DESC
             """
             
-            cursor.execute(query, [
-                usage_id,
-                user_id,
-                endpoint_id,
-                metrics.get("images_generated", 0),
-                metrics.get("audio_seconds_processed", 0),
-                metrics.get("pages_processed", 0),
-                metrics.get("documents_processed", 0),
-                metrics.get("model_used"),
-                metrics.get("prompt_tokens", 0),
-                metrics.get("completion_tokens", 0),
-                metrics.get("total_tokens", 0),
-                metrics.get("cached_tokens", 0),
-                metrics.get("files_uploaded", 0),
-                api_log_id
-            ])
+            cursor.execute(query, [user_id, endpoint_id])
+            existing_record = cursor.fetchone()
             
-            # If we have an api_log_id, update the api_logs table
-            if api_log_id:
+            if existing_record:
+                # Update existing record
+                usage_id = existing_record[0]
+                logger.info(f"Updating existing usage record {usage_id} for {job_type}")
+                
                 update_query = """
-                UPDATE api_logs 
-                SET user_usage_id = ?
+                UPDATE user_usage
+                SET audio_seconds_processed = ?,
+                    model_used = ?,
+                    prompt_tokens = ?,
+                    completion_tokens = ?,
+                    total_tokens = ?,
+                    cached_tokens = ?
                 WHERE id = ?
                 """
-                cursor.execute(update_query, [usage_id, api_log_id])
-            
-            conn.commit()
-            cursor.close()
-            conn.close()
-            
-            logger.info(f"Usage metrics logged for async {job_type} job with ID: {usage_id}" + 
-                       (f", linked to API log: {api_log_id}" if api_log_id else ""))
-            return True
+                
+                cursor.execute(update_query, [
+                    metrics.get("audio_seconds_processed", 0),
+                    metrics.get("model_used"),
+                    metrics.get("prompt_tokens", 0),
+                    metrics.get("completion_tokens", 0),
+                    metrics.get("total_tokens", 0),
+                    metrics.get("cached_tokens", 0),
+                    usage_id
+                ])
+                
+                conn.commit()
+                cursor.close()
+                conn.close()
+                
+                logger.info(f"Successfully updated usage metrics for {job_type} job, usage_id: {usage_id}")
+                return True
+                
+            else:
+                # If no existing record found (which shouldn't happen with middleware),
+                # create a new one as fallback
+                usage_id = str(uuid.uuid4())
+                logger.warning(f"No existing usage record found for {job_type}. Creating new record {usage_id}")
+                
+                insert_query = """
+                INSERT INTO user_usage (
+                    id, user_id, endpoint_id, timestamp,
+                    images_generated, audio_seconds_processed, pages_processed,
+                    documents_processed, model_used, prompt_tokens,
+                    completion_tokens, total_tokens, cached_tokens, files_uploaded
+                )
+                VALUES (
+                    ?, ?, ?, DATEADD(HOUR, 2, GETUTCDATE()),
+                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                )
+                """
+                
+                cursor.execute(insert_query, [
+                    usage_id,
+                    user_id,
+                    endpoint_id,
+                    metrics.get("images_generated", 0),
+                    metrics.get("audio_seconds_processed", 0),
+                    metrics.get("pages_processed", 0),
+                    metrics.get("documents_processed", 0),
+                    metrics.get("model_used"),
+                    metrics.get("prompt_tokens", 0),
+                    metrics.get("completion_tokens", 0),
+                    metrics.get("total_tokens", 0),
+                    metrics.get("cached_tokens", 0),
+                    metrics.get("files_uploaded", 0)
+                ])
+                
+                conn.commit()
+                cursor.close()
+                conn.close()
+                
+                logger.info(f"Created new usage record {usage_id} for {job_type} as fallback")
+                return True
             
         except Exception as e:
-            logger.error(f"Error logging usage metrics for async job: {str(e)}")
+            logger.error(f"Error updating usage metrics for async job: {str(e)}")
             return False
     
     @staticmethod
@@ -138,15 +176,6 @@ class JobProcessor:
         try:
             # Update job status to processing
             JobService.update_job_status(job_id, 'processing')
-            
-            # Get job details to extract api_log_id from parameters
-            job_details, error = JobService.get_job(job_id)
-            api_log_id = None
-            if job_details and "parameters" in job_details and job_details["parameters"]:
-                # The parameters might contain the API log ID in some form
-                params = job_details["parameters"]
-                if "api_log_id" in params:
-                    api_log_id = params["api_log_id"]
             
             # Get file URL
             file_info, error = FileService.get_file_url(file_id, user_id)
@@ -195,11 +224,11 @@ class JobProcessor:
                 "seconds_processed": seconds_processed
             }
             
-            # Log usage metrics with api_log_id if available
+            # Update existing usage metrics
             metrics = {
                 "audio_seconds_processed": seconds_processed
             }
-            JobProcessor.log_usage_metrics(user_id, "stt", metrics, api_log_id)
+            JobProcessor.update_usage_metrics(user_id, "stt", metrics)
             
             # Update job status to completed with results
             JobService.update_job_status(job_id, 'completed', result_data=result_data)
@@ -251,15 +280,6 @@ class JobProcessor:
         try:
             # Update job status to processing
             JobService.update_job_status(job_id, 'processing')
-            
-            # Get job details to extract api_log_id from parameters
-            job_details, error = JobService.get_job(job_id)
-            api_log_id = None
-            if job_details and "parameters" in job_details and job_details["parameters"]:
-                # The parameters might contain the API log ID in some form
-                params = job_details["parameters"]
-                if "api_log_id" in params:
-                    api_log_id = params["api_log_id"]
             
             # Get file URL
             file_info, error = FileService.get_file_url(file_id, user_id)
@@ -387,7 +407,7 @@ class JobProcessor:
                 "model_used": model_deplopyment
             }
             
-            # Log usage metrics with api_log_id if available
+            # Update existing usage metrics
             metrics = {
                 "audio_seconds_processed": seconds_processed,
                 "model_used": model_deplopyment,
@@ -396,7 +416,7 @@ class JobProcessor:
                 "total_tokens": total_tokens,
                 "cached_tokens": total_cached_tokens
             }
-            JobProcessor.log_usage_metrics(user_id, "stt_diarize", metrics, api_log_id)
+            JobProcessor.update_usage_metrics(user_id, "stt_diarize", metrics)
             
             # Update job status to completed with results
             JobService.update_job_status(job_id, 'completed', result_data=result_data)
