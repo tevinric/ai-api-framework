@@ -31,11 +31,7 @@ except ImportError:
 # Define allowed file extensions for ID OCR
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'pdf', 'tiff', 'tif'}
 
-def create_api_response(data, status_code=200):
-    """Helper function to create consistent API responses"""
-    response = make_response(jsonify(data))
-    response.status_code = status_code
-    return response
+from apis.utils.config import create_api_response
 
 def allowed_file(filename):
     """Check if the file extension is allowed for OCR processing"""
@@ -259,6 +255,11 @@ def sa_id_ocr_route():
         type: string
         required: true
         description: Valid token for authentication
+      - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems
       - name: body
         in: body
         required: true

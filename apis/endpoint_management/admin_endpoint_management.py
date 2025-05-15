@@ -24,7 +24,7 @@ def admin_add_endpoint_route():
         type: string
         required: true
         description: "Admin API Key for authentication"
-    - name: X-Correlation-ID
+      - name: X-Correlation-ID
         in: header
         type: string
         required: false
@@ -222,7 +222,7 @@ def admin_get_endpoints_route():
         type: string
         required: true
         description: "Admin API Key for authentication"
-    - name: X-Correlation-ID
+      - name: X-Correlation-ID
         in: header
         type: string
         required: false
@@ -338,7 +338,7 @@ def admin_update_endpoint_route():
         type: string
         required: true
         description: "Admin API Key for authentication"
-    - name: X-Correlation-ID
+      - name: X-Correlation-ID
         in: header
         type: string
         required: false
