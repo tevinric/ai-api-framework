@@ -182,27 +182,30 @@ def create_api_log_and_get_id(user_id, endpoint_id, request_method, response_sta
         
         log_id = str(uuid.uuid4())
         
+        # Get correlation ID from Flask g object if available
+        correlation_id = getattr(g, 'correlation_id', None)
+        
         query = """
         INSERT INTO api_logs (
             id, endpoint_id, user_id, timestamp, request_method, 
-            response_status, response_time_ms
+            response_status, response_time_ms, correlation_id
         )
         VALUES (
             ?, ?, ?, DATEADD(HOUR, 2, GETUTCDATE()), ?, 
-            ?, ?
+            ?, ?, ?
         )
         """
         
         cursor.execute(query, [
             log_id, endpoint_id, user_id, request_method,
-            response_status, response_time_ms
+            response_status, response_time_ms, correlation_id
         ])
         
         conn.commit()
         cursor.close()
         conn.close()
         
-        logger.info(f"Created API log with ID {log_id} for usage tracking")
+        logger.info(f"Created API log with ID {log_id} for usage tracking, Correlation ID: {correlation_id}")
         return log_id
         
     except Exception as e:
