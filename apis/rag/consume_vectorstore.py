@@ -52,11 +52,7 @@ LLM_SERVICES = {
     'llama-3': llama_service,
 }
 
-def create_api_response(data, status_code=200):
-    """Helper function to create consistent API responses"""
-    response = make_response(jsonify(data))
-    response.status_code = status_code
-    return response
+from apis.utils.config import create_api_response
 
 def update_vectorstore_access_timestamp(vectorstore_id):
     """Update the last_accessed timestamp for a vectorstore"""
@@ -93,6 +89,11 @@ def consume_git_policies_route():
         type: string
         required: true
         description: Authentication token
+      - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems
       - name: body
         in: body
         required: true
@@ -456,6 +457,11 @@ def consume_vectorstore_route():
         type: string
         required: true
         description: Authentication token
+      - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems
       - name: body
         in: body
         required: true

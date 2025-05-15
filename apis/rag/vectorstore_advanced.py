@@ -43,12 +43,7 @@ STORAGE_ACCOUNT = os.environ.get("AZURE_STORAGE_ACCOUNT")
 BASE_BLOB_URL = f"https://{STORAGE_ACCOUNT}.blob.core.windows.net/{VECTORSTORE_CONTAINER}"
 
 
-def create_api_response(data, status_code=200):
-    """Helper function to create consistent API responses"""
-    response = make_response(jsonify(data))
-    response.status_code = status_code
-    return response
-
+from apis.utils.config import create_api_response
 
 def update_vectorstore_access_timestamp(vectorstore_id):
     """Update the last_accessed timestamp for a vectorstore"""
@@ -238,6 +233,11 @@ def create_advanced_vectorstore_route():
         type: string
         required: true
         description: Authentication token
+      - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems
       - name: body
         in: body
         required: true

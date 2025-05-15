@@ -33,11 +33,7 @@ FILE_UPLOAD_CONTAINER = os.environ.get("AZURE_STORAGE_UPLOAD_CONTAINER", "file-u
 STORAGE_ACCOUNT = os.environ.get("AZURE_STORAGE_ACCOUNT")
 BASE_BLOB_URL = f"https://{STORAGE_ACCOUNT}.blob.core.windows.net/{FILE_UPLOAD_CONTAINER}"
 
-def create_api_response(data, status_code=200):
-    """Helper function to create consistent API responses"""
-    response = make_response(jsonify(data))
-    response.status_code = status_code
-    return response
+from apis.utils.config import create_api_response
 
 def extract_text_from_pdf(file_path):
     """Extract text from PDF files using PyMuPDF (faster and better for large files)"""
@@ -1176,7 +1172,12 @@ def document_summarization_route():
         in: header
         type: string
         required: true
-        description: Valid token for authentication
+        description: Valid token for authenticatio
+      - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems
       - name: body
         in: body
         required: true
