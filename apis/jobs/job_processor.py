@@ -19,13 +19,14 @@ class JobProcessor:
     """
     
     @staticmethod
-    def log_usage_metrics(user_id, job_type, metrics):
+    def log_usage_metrics(user_id, job_type, metrics, api_log_id=None):
         """Log usage metrics to the user_usage table
         
         Args:
             user_id (str): ID of the user who submitted the job
             job_type (str): Type of job (e.g., 'stt', 'stt_diarize')
             metrics (dict): Dictionary containing usage metrics
+            api_log_id (str, optional): ID of the API log entry to link to
             
         Returns:
             bool: True if successful, False otherwise
@@ -52,11 +53,13 @@ class JobProcessor:
                 id, user_id, endpoint_id, timestamp,
                 images_generated, audio_seconds_processed, pages_processed,
                 documents_processed, model_used, prompt_tokens,
-                completion_tokens, total_tokens, cached_tokens, files_uploaded
+                completion_tokens, total_tokens, cached_tokens, files_uploaded,
+                api_log_id
             )
             VALUES (
                 ?, ?, ?, DATEADD(HOUR, 2, GETUTCDATE()),
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                ?
             )
             """
             
@@ -73,14 +76,25 @@ class JobProcessor:
                 metrics.get("completion_tokens", 0),
                 metrics.get("total_tokens", 0),
                 metrics.get("cached_tokens", 0),
-                metrics.get("files_uploaded", 0)
+                metrics.get("files_uploaded", 0),
+                api_log_id
             ])
+            
+            # If we have an api_log_id, update the api_logs table
+            if api_log_id:
+                update_query = """
+                UPDATE api_logs 
+                SET user_usage_id = ?
+                WHERE id = ?
+                """
+                cursor.execute(update_query, [usage_id, api_log_id])
             
             conn.commit()
             cursor.close()
             conn.close()
             
-            logger.info(f"Usage metrics logged for async {job_type} job with ID: {usage_id}")
+            logger.info(f"Usage metrics logged for async {job_type} job with ID: {usage_id}" + 
+                       (f", linked to API log: {api_log_id}" if api_log_id else ""))
             return True
             
         except Exception as e:
@@ -124,6 +138,15 @@ class JobProcessor:
         try:
             # Update job status to processing
             JobService.update_job_status(job_id, 'processing')
+            
+            # Get job details to extract api_log_id from parameters
+            job_details, error = JobService.get_job(job_id)
+            api_log_id = None
+            if job_details and "parameters" in job_details and job_details["parameters"]:
+                # The parameters might contain the API log ID in some form
+                params = job_details["parameters"]
+                if "api_log_id" in params:
+                    api_log_id = params["api_log_id"]
             
             # Get file URL
             file_info, error = FileService.get_file_url(file_id, user_id)
@@ -172,11 +195,11 @@ class JobProcessor:
                 "seconds_processed": seconds_processed
             }
             
-            # Log usage metrics
+            # Log usage metrics with api_log_id if available
             metrics = {
                 "audio_seconds_processed": seconds_processed
             }
-            JobProcessor.log_usage_metrics(user_id, "stt", metrics)
+            JobProcessor.log_usage_metrics(user_id, "stt", metrics, api_log_id)
             
             # Update job status to completed with results
             JobService.update_job_status(job_id, 'completed', result_data=result_data)
@@ -228,6 +251,15 @@ class JobProcessor:
         try:
             # Update job status to processing
             JobService.update_job_status(job_id, 'processing')
+            
+            # Get job details to extract api_log_id from parameters
+            job_details, error = JobService.get_job(job_id)
+            api_log_id = None
+            if job_details and "parameters" in job_details and job_details["parameters"]:
+                # The parameters might contain the API log ID in some form
+                params = job_details["parameters"]
+                if "api_log_id" in params:
+                    api_log_id = params["api_log_id"]
             
             # Get file URL
             file_info, error = FileService.get_file_url(file_id, user_id)
@@ -355,7 +387,7 @@ class JobProcessor:
                 "model_used": model_deplopyment
             }
             
-            # Log usage metrics
+            # Log usage metrics with api_log_id if available
             metrics = {
                 "audio_seconds_processed": seconds_processed,
                 "model_used": model_deplopyment,
@@ -364,7 +396,7 @@ class JobProcessor:
                 "total_tokens": total_tokens,
                 "cached_tokens": total_cached_tokens
             }
-            JobProcessor.log_usage_metrics(user_id, "stt_diarize", metrics)
+            JobProcessor.log_usage_metrics(user_id, "stt_diarize", metrics, api_log_id)
             
             # Update job status to completed with results
             JobService.update_job_status(job_id, 'completed', result_data=result_data)
