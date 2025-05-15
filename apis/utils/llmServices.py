@@ -915,7 +915,7 @@ def process_with_document_intelligence(file_path, filename):
         logger.error(f"Error processing document with Document Intelligence: {str(e)}")
         return f"[Error processing document with Document Intelligence: {str(e)}]"
 
-def convert_pdf_to_images(pdf_path, dpi=300):
+def convert_pdf_to_images(pdf_path, dpi=150):
     """Convert a PDF file to a list of base64-encoded images
     
     Args:
@@ -1837,7 +1837,6 @@ def gpt4o_mini_multimodal_service(system_prompt, user_input, temperature=0.5, js
             model=DEPLOYMENT,
             messages=messages,
             temperature=temperature,
-            max_tokens=2048,  # Lower token limit for mini
             response_format={"type": "json_object"} if json_output else {"type": "text"}
         )
         
