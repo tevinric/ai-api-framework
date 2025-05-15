@@ -273,6 +273,9 @@ register_sentiment_routes(app)
 from apis.nlp.classification import register_nlp_routes
 register_nlp_routes(app)
 
+# CONTEXT MANAGEMENT ENDPOINTS
+from apis.context import register_context_routes
+register_context_routes(app)
 
 
 
