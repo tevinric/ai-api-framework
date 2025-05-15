@@ -243,3 +243,7 @@ def chatgpt(client):
             )
             response = st.write_stream(stream)
         st.session_state.chat_messages.append({"role": "assistant", "content": response})
+
+
+
+ALTER TABLE api_logs ADD correlation_id NVARCHAR(255);
