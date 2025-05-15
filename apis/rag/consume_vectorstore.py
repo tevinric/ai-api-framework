@@ -24,7 +24,12 @@ from langchain_community.document_loaders import (
 # Import LLM services directly
 from apis.utils.llmServices import (
     gpt4o_service,
-    gpt4o_mini_service
+    gpt4o_mini_service,
+    deepseek_r1_service,
+    deepseek_v3_service,
+    o1_mini_service,
+    o3_mini_service,
+    llama_service
 )
 
 # CONFIGURE LOGGING
@@ -35,6 +40,17 @@ logger = logging.getLogger(__name__)
 VECTORSTORE_CONTAINER = "vectorstores"
 STORAGE_ACCOUNT = os.environ.get("AZURE_STORAGE_ACCOUNT")
 BASE_BLOB_URL = f"https://{STORAGE_ACCOUNT}.blob.core.windows.net/{VECTORSTORE_CONTAINER}"
+
+# Define available LLM models and their services
+LLM_SERVICES = {
+    'gpt-4o': gpt4o_service,
+    'gpt-4o-mini': gpt4o_mini_service,
+    'deepseek-r1': deepseek_r1_service,
+    'deepseek-v3': deepseek_v3_service,
+    'o1-mini': o1_mini_service,
+    'o3-mini': o3_mini_service,
+    'llama-3': llama_service,
+}
 
 def create_api_response(data, status_code=200):
     """Helper function to create consistent API responses"""
@@ -109,19 +125,19 @@ def consume_git_policies_route():
             answer:
               type: string
               example: "Based on the context, the answer to your question is..."
-            model:
+            model_used:
               type: string
               example: "gpt-4o"
             vectorstore_id:
               type: string
               example: "abc123456789"
-            input_tokens:
+            prompt_tokens:
               type: integer
               example: 125
             completion_tokens:
               type: integer
               example: 84
-            output_tokens:
+            total_tokens:
               type: integer
               example: 209
             sources:
@@ -213,11 +229,18 @@ def consume_git_policies_route():
     query = data.get('query')
     system_prompt = data.get('system_prompt', None)
     include_sources = data.get('include_sources', False)
+    model = data.get('model', 'gpt-4o')  # Default to gpt-4o
+    temperature = float(data.get('temperature', 0.15))
+    
+    # Validate model
+    if model not in LLM_SERVICES:
+        return create_api_response({
+            "error": "Bad Request",
+            "message": f"Invalid model. Must be one of: {', '.join(LLM_SERVICES.keys())}"
+        }, 400)
     
     # Set hardcoded parameters for git policies
     vectorstore_id = "f5e57660-79a7-4742-a240-c0fa6fc81b0d"
-    model = "gpt-4o"
-    temperature = 0.15
     
     try:
         # Check if vectorstore exists and user has access
@@ -335,12 +358,22 @@ def consume_git_policies_route():
                 # Prepare request for the LLM model
                 user_input = f"Context: {context}\n\nQuestion: {query}\n\nAnswer the question based on the context provided."
                 
-                # Use gpt4o_service directly instead of making an API call
-                service_response = gpt4o_service(
-                    system_prompt=system_prompt,
-                    user_input=user_input,
-                    temperature=temperature
-                )
+                # Use LLM service directly instead of making an API call
+                llm_service = LLM_SERVICES[model]
+                
+                # Special handling for o3-mini which uses different parameters
+                if model == 'o3-mini':
+                    service_response = llm_service(
+                        system_prompt=system_prompt,
+                        user_input=user_input,
+                        reasoning_effort="medium" if temperature > 0.5 else "high"
+                    )
+                else:
+                    service_response = llm_service(
+                        system_prompt=system_prompt,
+                        user_input=user_input,
+                        temperature=temperature
+                    )
                 
                 if not service_response["success"]:
                     logger.error(f"Error from LLM service: {service_response['error']}")
@@ -353,9 +386,10 @@ def consume_git_policies_route():
                 answer = service_response["result"]
                 
                 # Extract token usage
-                input_tokens = service_response.get("input_tokens", 0)
+                prompt_tokens = service_response.get("prompt_tokens", 0)
                 completion_tokens = service_response.get("completion_tokens", 0)
-                output_tokens = service_response.get("output_tokens", 0)
+                total_tokens = service_response.get("total_tokens", 0)
+                cached_tokens = service_response.get("cached_tokens", 0)
                 
                 # Update the last_accessed timestamp
                 update_vectorstore_access_timestamp(vectorstore_id)
@@ -364,12 +398,13 @@ def consume_git_policies_route():
                 response_data = {
                     "message": "Query processed successfully",
                     "answer": answer,
-                    "model": model,
+                    "model_used": model,
                     "vectorstore_id": vectorstore_id,
                     "vectorstore_name": vectorstore_name,
-                    "input_tokens": input_tokens,
+                    "prompt_tokens": prompt_tokens,
                     "completion_tokens": completion_tokens,
-                    "output_tokens": output_tokens
+                    "total_tokens": total_tokens,
+                    "cached_tokens": cached_tokens
                 }
                 
                 # Add source documents if requested
@@ -469,19 +504,19 @@ def consume_vectorstore_route():
             answer:
               type: string
               example: "Based on the context, the answer to your question is..."
-            model:
+            model_used:
               type: string
               example: "gpt-4o-mini"
             vectorstore_id:
               type: string
               example: "12345678-1234-1234-1234-123456789012"
-            input_tokens:
+            prompt_tokens:
               type: integer
               example: 125
             completion_tokens:
               type: integer
               example: 84
-            output_tokens:
+            total_tokens:
               type: integer
               example: 209
             sources:
@@ -616,11 +651,10 @@ def consume_vectorstore_route():
     include_sources = data.get('include_sources', False)
     
     # Validate model
-    valid_models = ['gpt-4o-mini', 'gpt-4o']
-    if model not in valid_models:
+    if model not in LLM_SERVICES:
         return create_api_response({
             "error": "Bad Request",
-            "message": f"Invalid model. Must be one of: {', '.join(valid_models)}"
+            "message": f"Invalid model. Must be one of: {', '.join(LLM_SERVICES.keys())}"
         }, 400)
     
     # Validate temperature
@@ -746,14 +780,17 @@ def consume_vectorstore_route():
                 user_input = f"Context: {context}\n\nQuestion: {query}\n\nAnswer the question based on the context provided."
                 
                 # Use LLM service directly instead of making an API call
-                if model == 'gpt-4o':
-                    service_response = gpt4o_service(
+                llm_service = LLM_SERVICES[model]
+                
+                # Special handling for o3-mini which uses different parameters
+                if model == 'o3-mini':
+                    service_response = llm_service(
                         system_prompt=system_prompt,
                         user_input=user_input,
-                        temperature=temperature
+                        reasoning_effort="medium" if temperature > 0.5 else "high"
                     )
-                else:  # Default to gpt-4o-mini
-                    service_response = gpt4o_mini_service(
+                else:
+                    service_response = llm_service(
                         system_prompt=system_prompt,
                         user_input=user_input,
                         temperature=temperature
@@ -770,9 +807,10 @@ def consume_vectorstore_route():
                 answer = service_response["result"]
                 
                 # Extract token usage
-                input_tokens = service_response.get("input_tokens", 0)
+                prompt_tokens = service_response.get("prompt_tokens", 0)
                 completion_tokens = service_response.get("completion_tokens", 0)
-                output_tokens = service_response.get("output_tokens", 0)
+                total_tokens = service_response.get("total_tokens", 0)
+                cached_tokens = service_response.get("cached_tokens", 0)
                 
                 # Update the last_accessed timestamp
                 update_vectorstore_access_timestamp(vectorstore_id)
@@ -781,12 +819,13 @@ def consume_vectorstore_route():
                 response_data = {
                     "message": "Query processed successfully",
                     "answer": answer,
-                    "model": model,
+                    "model_used": model,
                     "vectorstore_id": vectorstore_id,
                     "vectorstore_name": vectorstore_name,
-                    "input_tokens": input_tokens,
+                    "prompt_tokens": prompt_tokens,
                     "completion_tokens": completion_tokens,
-                    "output_tokens": output_tokens
+                    "total_tokens": total_tokens,
+                    "cached_tokens": cached_tokens
                 }
                 
                 # Add source documents if requested
@@ -828,5 +867,8 @@ def consume_vectorstore_route():
 
 
 def register_consume_vectorstore_routes(app):
-  app.route('/rag/vectorstore/consume', methods=['POST'])(api_logger(check_balance(consume_vectorstore_route)))
-  app.route('/rag/vectorstore/consume/git_policies', methods=['POST'])(api_logger(check_balance(consume_git_policies_route)))
+  from apis.utils.usageMiddleware import track_usage
+  from apis.utils.rbacMiddleware import check_endpoint_access
+  
+  app.route('/rag/vectorstore/consume', methods=['POST'])(track_usage(api_logger(check_endpoint_access(check_balance(consume_vectorstore_route)))))
+  app.route('/rag/vectorstore/consume/git_policies', methods=['POST'])(track_usage(api_logger(check_endpoint_access(check_balance(consume_git_policies_route)))))

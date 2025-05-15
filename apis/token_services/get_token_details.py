@@ -169,6 +169,9 @@ def get_token_details_route():
 
 def register_token_details_routes(app):
     """Register routes with the Flask app"""
-    app.route('/token/details', methods=['GET'])(api_logger(get_token_details_route))
+
+    from apis.utils.rbacMiddleware import check_endpoint_access
+
+    app.route('/token/details', methods=['GET'])(api_logger(check_endpoint_access(get_token_details_route)))
 
 

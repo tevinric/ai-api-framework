@@ -21,3 +21,4 @@ faiss_cpu
 pymupdf
 pypdf
 azure.ai.formrecognizer
+gevent

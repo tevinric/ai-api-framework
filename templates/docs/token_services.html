@@ -8,9 +8,9 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
-            --primary-color: #4a6fe3;
-            --secondary-color: #6c63ff;
-            --dark-color: #2a2c3b;
+            --primary-color: rgb(1, 96, 136);
+            --secondary-color: rgb(0, 10, 120);
+            --dark-color: rgb(0, 8, 66);
             --light-color: #f5f6fa;
             --text-color: #333;
             --white-color: #ffffff;
@@ -201,12 +201,15 @@
         
         /* Hero */
         .hero {
-            background: linear-gradient(135deg, rgba(1, 0, 15, 1) 0%, rgba(35, 0, 33, 1) 100%);
+            background: url('/static/GAIA _splash3.gif') center/cover no-repeat;
             color: var(--white-color);
             padding: 5rem 3rem;
             position: relative;
             overflow: hidden;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            height: 400px; /* Fixed height for consistency */
+            display: flex;
+            align-items: center;
         }
         
         .hero::before {
@@ -216,26 +219,23 @@
             right: 0;
             bottom: 0;
             left: 0;
-            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23FFFFFF' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
-            opacity: 0.12;
+            background: linear-gradient(to right, rgba(1, 0, 15, 0.85) 0%, rgba(1, 0, 15, 0.5) 40%, transparent 80%);
             pointer-events: none;
-            animation: zoomDots 20s linear infinite;
-            transform-origin: center;
             z-index: 0;
         }
         
         @keyframes zoomDots {
             0% {
-                transform: scale(0.3);
-                opacity: 0.1;
-            }
-            50% {
-                transform: scale(0.7);
+                transform: scale(1.2);
                 opacity: 0.15;
             }
+            50% {
+                transform: scale(1.5);
+                opacity: 0.2;
+            }
             100% {
-                transform: scale(0.3);
-                opacity: 0.1;
+                transform: scale(1.2);
+                opacity: 0.15;
             }
         }
         
@@ -244,6 +244,7 @@
             margin: 0 auto;
             position: relative;
             z-index: 1;
+            width: 100%;
         }
         
         .hero h2 {
@@ -251,7 +252,7 @@
             margin-bottom: 1.5rem;
             line-height: 1.2;
             max-width: 840px;
-            background: linear-gradient(to left, var(--white-color), var(--accent-color));
+            background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             animation: fadeInUp 0.8s ease-out;
@@ -381,6 +382,9 @@
             margin-bottom: 1rem;
             position: relative;
             display: inline-block;
+            background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
         
         .section-header h2::after {
@@ -831,6 +835,7 @@
             
             .hero {
                 padding: 3rem 1.5rem;
+                height: 350px; /* Slightly reduced height for mobile */
             }
             
             .hero h2 {
@@ -899,12 +904,12 @@
     </aside>
     
     <main class="main-content">
-        <section class="hero">
+        <section class="hero" style="height: 550px;">
             <div class="hero-container">
-                <h2>Token Services</h2>
-                <p>The Token Services endpoints allow you to generate, refresh, and manage authentication tokens for API access. Valid tokens are required for all AI API calls. Follow this guide to understand our token-based authentication system.</p>
+                <h2 style="font-size: 220%;">Token Services</h2>
+                <p>GAIA's Token Service endpoints allow you to generate, refresh, and manage authentication tokens for API access. Valid tokens are required for all AI API calls. Follow this guide to understand our token-based authentication system.</p>
                 <div class="cta-buttons">
-                    <a href="/static/files/ai-api-postman-collection.json" class="cta-btn">
+                    <a href="/static/resources/AIAPIS.postman_collection" class="cta-btn" style="background-color: var(--accent-color); color: var(--dark-color);" download>
                         <i class="fas fa-download"></i> Download Postman Collection
                     </a>
                     <a href="/apidocs/" class="cta-btn cta-btn-secondary">
@@ -1027,7 +1032,7 @@
                     <div class="info-box-icon"><i class="fas fa-info-circle"></i></div>
                     <div class="info-box-content">
                         <h4>Authentication Flow</h4>
-                        <p>Our API uses a two-step authentication process:</p>
+                        <p>GAIA uses a two-step authentication process:</p>
                         <br>
                         <ol>
                             <li>First, you authenticate with your unique API key to generate a token</li>
@@ -1315,7 +1320,7 @@
                 
                 <!-- Error Handling Section -->
                 <div style="margin-top: 4rem;">
-                    <h3 style="font-size: 1.8rem; color: var(--dark-color); margin-bottom: 1.5rem; text-align: center;">Error Handling</h3>
+                    <h3 style="font-size: 1.8rem; color: var(--dark-color); margin-bottom: 1.5rem; text-align: center; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Error Handling</h3>
                     <p style="margin-bottom: 2rem; text-align: center; max-width: 800px; margin-left: auto; margin-right: auto; color: #666; line-height: 1.6;">Common authentication errors and how to handle them:</p>
                     
                     <div style="display: flex; flex-wrap: wrap; gap: 1.5rem; justify-content: center; margin-bottom: 3rem;">

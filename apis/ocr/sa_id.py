@@ -186,10 +186,12 @@ def create_json_gpt(text, token):
             "country_of_birth": results.get("Country of Birth", ""),
         }
             
-        # Store LLM token usage
-        id_json["input_tokens"] = llm_result.get("input_tokens", 0)
+        # Store LLM token usage - UPDATED TOKEN REFERENCES
+        id_json["prompt_tokens"] = llm_result.get("prompt_tokens", 0)
         id_json["completion_tokens"] = llm_result.get("completion_tokens", 0)
-        id_json["output_tokens"] = llm_result.get("output_tokens", 0)
+        id_json["total_tokens"] = llm_result.get("total_tokens", 0)
+        id_json["cached_tokens"] = llm_result.get("cached_tokens", 0)
+        id_json["model_used"] = llm_result.get("model", "gpt-4o-mini")
         
         return id_json
     except Exception as ex:
@@ -211,11 +213,13 @@ def extract_id_data(result, token):
                         barcode_json = create_json_barcode(barcode.value)
                         if barcode_json:
                             # Add document processing information
-                            barcode_json["num_documents_processed"] = 1
-                            barcode_json["num_pages_processed"] = len(result.pages)
-                            barcode_json["input_tokens"] = 0
+                            barcode_json["documents_processed"] = 1
+                            barcode_json["pages_processed"] = len(result.pages)
+                            barcode_json["prompt_tokens"] = 0
                             barcode_json["completion_tokens"] = 0
-                            barcode_json["output_tokens"] = 0
+                            barcode_json["total_tokens"] = 0
+                            barcode_json["cached_tokens"] = 0
+                            barcode_json["model_used"] = "none"
                             return barcode_json
                             
         # If no barcode found or valid barcode data extracted, fall back to OCR + GPT
@@ -235,8 +239,8 @@ def extract_id_data(result, token):
         
         if id_json:
             # Add document processing information
-            id_json["num_documents_processed"] = 1
-            id_json["num_pages_processed"] = len(result.pages)
+            id_json["documents_processed"] = 1
+            id_json["pages_processed"] = len(result.pages)
             
         return id_json
     except Exception as ex:
@@ -295,21 +299,27 @@ def sa_id_ocr_route():
             country_of_birth:
               type: string
               description: Country where ID holder was born
-            num_documents_processed:
+            documents_processed:
               type: integer
               description: Number of documents processed
-            num_pages_processed:
+            pages_processed:
               type: integer
               description: Number of pages processed
-            input_tokens:
+            prompt_tokens:
               type: integer
-              description: Number of input tokens consumed (if GPT was used)
+              description: Number of prompt tokens consumed (if GPT was used)
             completion_tokens:
               type: integer
               description: Number of completion tokens consumed (if GPT was used)
-            output_tokens:
+            total_tokens:
               type: integer
               description: Total number of tokens consumed (if GPT was used)
+            cached_tokens:
+              type: integer
+              description: Number of cached tokens (if available)
+            model_used:
+              type: string
+              description: The LLM model used for processing (or "none" if barcode was used)
       400:
         description: Bad request
         schema:
@@ -320,11 +330,7 @@ def sa_id_ocr_route():
               example: Bad Request
             message:
               type: string
-              examples:
-                - "Missing file_id parameter"
-                - "Unsupported file type. Supported types: png, jpg, jpeg, pdf, tiff, tif"
-                - "File ID not found"
-                - "File too large for processing"
+              example: Missing file_id parameter
       401:
         description: Authentication error
         schema:
@@ -335,10 +341,7 @@ def sa_id_ocr_route():
               example: Authentication Error
             message:
               type: string
-              examples:
-                - "Missing X-Token header"
-                - "Invalid token"
-                - "Token has expired"
+              example: Missing X-Token header
       500:
         description: Server error
         schema:
@@ -349,11 +352,7 @@ def sa_id_ocr_route():
               example: Server Error
             message:
               type: string
-              examples:
-                - "Error processing file"
-                - "Error downloading file"
-                - "Document intelligence service unavailable"
-                - "Error extracting document content"
+              example: Error processing file
     """
     # Get token from X-Token header
     token = request.headers.get('X-Token')
@@ -487,5 +486,8 @@ def sa_id_ocr_route():
         }, 500)
 
 def register_sa_id_ocr_routes(app):
+    from apis.utils.usageMiddleware import track_usage
+    from apis.utils.rbacMiddleware import check_endpoint_access    
+    
     """Register SA ID OCR routes with the Flask app"""
-    app.route('/ocr/sa_id_card', methods=['POST'])(api_logger(check_balance(sa_id_ocr_route)))
+    app.route('/ocr/sa_id_card', methods=['POST'])(track_usage(api_logger(check_endpoint_access(check_balance(sa_id_ocr_route)))))

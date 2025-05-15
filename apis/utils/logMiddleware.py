@@ -105,8 +105,8 @@ def api_logger(f):
             except:
                 response_data = None
                 
-            # Log successful request
-            DatabaseService.log_api_call(
+            # Log successful request - IMPORTANT: Store the returned log_id
+            log_id = DatabaseService.log_api_call(
                 endpoint_id=endpoint_id,
                 user_id=user_id,
                 token_id=token_id,
@@ -119,6 +119,16 @@ def api_logger(f):
                 ip_address=ip_address,
                 response_body=json.dumps(response_data) if response_data else None
             )
+            
+            # Store the log ID in g for usageMiddleware to access
+            if log_id:
+                # Set in Flask g object
+                g.current_api_log_id = log_id
+                # Also set directly on request object as a backup
+                setattr(request, '_api_log_id', log_id)
+                logger.info(f"API Log ID set: {log_id}")
+            else:
+                logger.warning("Failed to get API Log ID from DatabaseService")
             
             return response
             
@@ -133,7 +143,7 @@ def api_logger(f):
             user_id = get_user_id_from_request()
             
             # Log failed request
-            DatabaseService.log_api_call(
+            error_log_id = DatabaseService.log_api_call(
                 endpoint_id=endpoint_id,
                 user_id=user_id,
                 token_id=token_id,
@@ -146,6 +156,12 @@ def api_logger(f):
                 ip_address=ip_address,
                 error_message=str(e)
             )
+            
+            # Store the error log ID in g
+            if error_log_id:
+                g.current_api_log_id = error_log_id
+                setattr(request, '_api_log_id', error_log_id)
+                logger.info(f"Error API Log ID set: {error_log_id}")
             
             # Re-raise the exception
             raise

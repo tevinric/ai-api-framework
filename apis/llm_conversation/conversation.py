@@ -34,7 +34,7 @@ LLM_ENDPOINTS = {
     "gpt-4o-mini": "/llm/gpt-4o-mini",
     "o1-mini": "/llm/o1-mini",
     "deepseek-r1": "/llm/deepseek-r1",
-    "llama": "/llm/llama"
+    "llama-3-1-405b": "/llm/llama"
 }
 
 # Map LLM types to their service functions
@@ -43,7 +43,7 @@ LLM_SERVICES = {
     "gpt-4o-mini": gpt4o_mini_service,
     "o1-mini": o1_mini_service,
     "deepseek-r1": deepseek_r1_service,
-    "llama": llama_service
+    "llama-3-1-405b": llama_service
 }
 
 # Map LLM types to their credit costs
@@ -52,7 +52,7 @@ LLM_CREDIT_COSTS = {
     "gpt-4o-mini": 0.5,
     "o1-mini": 5,
     "deepseek-r1": 3,
-    "llama": 3
+    "llama-3-1-405b": 3
 }
 
 # Map LLM types to their endpoint IDs for logging
@@ -184,7 +184,7 @@ def create_chat_route():
           properties:
             llm:
               type: string
-              enum: [gpt-4o, gpt-4o-mini, o1-mini, deepseek-r1, llama]
+              enum: [gpt-4o, gpt-4o-mini, o1-mini, deepseek-r1, llama-3-1-405b]
               description: LLM model to use for conversation
             assistant_type:
               type: string
@@ -221,15 +221,18 @@ def create_chat_route():
             assistant_used:
               type: string
               description: The assistant type used
-            input_tokens:
+            prompt_tokens:
               type: integer
-              description: Number of input tokens used
+              description: Number of prompt tokens used
             completion_tokens:
               type: integer
               description: Number of completion tokens used
-            output_tokens:
+            total_tokens:
               type: integer
-              description: Number of output tokens used
+              description: Total number of tokens used
+            cached_tokens:
+              type: integer
+              description: Number of cached tokens used
       400:
         description: Bad request
         schema:
@@ -434,10 +437,10 @@ def create_chat_route():
             }, 500)
         
         # Extract token usage
-        input_tokens = service_response.get("input_tokens", 0)
+        prompt_tokens = service_response.get("prompt_tokens", 0)  # Renamed from prompt_tokens
         completion_tokens = service_response.get("completion_tokens", 0)
-        output_tokens = service_response.get("output_tokens", 0)
-        cached_tokens = service_response.get("cached_tokens", 0)
+        total_tokens = service_response.get("total_tokens", 0)  # Renamed from total_tokens
+        cached_tokens = service_response.get("cached_tokens", 0)  # Newly included
         
         # Create response
         response_data = {
@@ -445,14 +448,11 @@ def create_chat_route():
             "assistant_message": assistant_message,
             "model_used": llm,
             "assistant_used": assistant_type,
-            "input_tokens": input_tokens,
+            "prompt_tokens": prompt_tokens,
             "completion_tokens": completion_tokens,
-            "output_tokens": output_tokens
+            "total_tokens": total_tokens,
+            "cached_tokens": cached_tokens  # Added to the response
         }
-        
-        # Add cached tokens if available
-        if cached_tokens:
-            response_data["cached_tokens"] = cached_tokens
         
         return create_api_response(response_data, 200)
         
@@ -510,15 +510,18 @@ def continue_conversation_route():
             assistant_used:
               type: string
               description: The assistant type used
-            input_tokens:
+            prompt_tokens:
               type: integer
-              description: Number of input tokens used
+              description: Number of prompt tokens used
             completion_tokens:
               type: integer
               description: Number of completion tokens used
-            output_tokens:
+            total_tokens:
               type: integer
-              description: Number of output tokens used
+              description: Total number of tokens used
+            cached_tokens:
+              type: integer
+              description: Number of cached tokens used
       400:
         description: Bad request
         schema:
@@ -693,9 +696,10 @@ def continue_conversation_route():
             }, 500)
         
         # Extract token usage
-        input_tokens = service_response.get("input_tokens", 0)
+        prompt_tokens = service_response.get("prompt_tokens", 0)  # Renamed from prompt_tokens
         completion_tokens = service_response.get("completion_tokens", 0)
-        output_tokens = service_response.get("output_tokens", 0)
+        total_tokens = service_response.get("total_tokens", 0)  # Renamed from total_tokens
+        cached_tokens = service_response.get("cached_tokens", 0)  # Newly included
         
         # Create response
         response_data = {
@@ -703,9 +707,10 @@ def continue_conversation_route():
             "assistant_message": assistant_message,
             "model_used": llm,
             "assistant_used": assistant_type,
-            "input_tokens": input_tokens,
+            "prompt_tokens": prompt_tokens,
             "completion_tokens": completion_tokens,
-            "output_tokens": output_tokens
+            "total_tokens": total_tokens,
+            "cached_tokens": cached_tokens  # Added to the response
         }
         
         return create_api_response(response_data, 200)
@@ -858,8 +863,11 @@ def delete_conversation_route():
         }, 500)
 
 def register_llm_conversation_routes(app):
+    from apis.utils.usageMiddleware import track_usage
+    from apis.utils.rbacMiddleware import check_endpoint_access
     """Register LLM conversation routes with the Flask app"""
+    
     # We handle balance checking inside the route functions now, but keep the api_logger
-    app.route('/llm/conversation/chat', methods=['POST'])(api_logger(create_chat_route))
-    app.route('/llm/conversation/continue', methods=['POST'])(api_logger(continue_conversation_route))
-    app.route('/llm/conversation', methods=['DELETE'])(api_logger(delete_conversation_route))
+    app.route('/llm/conversation/chat', methods=['POST'])(track_usage(api_logger(check_endpoint_access(create_chat_route))))
+    app.route('/llm/conversation/continue', methods=['POST'])(track_usage(api_logger(check_endpoint_access(continue_conversation_route))))
+    app.route('/llm/conversation', methods=['DELETE'])(api_logger(check_endpoint_access(delete_conversation_route)))

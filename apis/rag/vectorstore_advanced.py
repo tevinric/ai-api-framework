@@ -274,15 +274,114 @@ def create_advanced_vectorstore_route():
       - application/json
     responses:
       200:
-        description: Vectorstore created successfully
+        description: Advanced vectorstore created successfully
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              example: "Advanced vectorstore created successfully"
+            vectorstore_id:
+              type: string
+              example: "12345678-1234-1234-1234-123456789012"
+            path:
+              type: string
+              example: "user123-12345678-1234-1234-1234-123456789012"
+            name:
+              type: string
+              example: "My Advanced Vectorstore"
+            file_count:
+              type: integer
+              example: 5
+            files_uploaded:
+              type: integer
+              example: 5
+            document_count:
+              type: integer
+              example: 98
+            chunk_count:
+              type: integer
+              example: 250
+            embedded_tokens:
+              type: integer
+              example: 125000
+            embedding_model:
+              type: string
+              example: "text-embedding-3-large"
+            processing_stats:
+              type: object
+              properties:
+                start_time:
+                  type: number
+                  example: 1678543210.456
+                end_time:
+                  type: number
+                  example: 1678543289.123
+                processing_time_seconds:
+                  type: number
+                  example: 78.667
+                total_files:
+                  type: integer
+                  example: 5
+                processed_files:
+                  type: integer
+                  example: 5
+                total_pages:
+                  type: integer
+                  example: 35
+                total_documents:
+                  type: integer
+                  example: 98
+                total_chunks:
+                  type: integer
+                  example: 250
+                duplicates_removed:
+                  type: integer
+                  example: 12
       400:
         description: Bad request
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: "Bad Request"
+            message:
+              type: string
+              example: "Missing required field: file_ids"
       401:
         description: Authentication error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: "Authentication Error"
+            message:
+              type: string
+              example: "Token has expired"
       404:
         description: Not found
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: "Not Found"
+            message:
+              type: string
+              example: "File not found"
       500:
         description: Server error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: "Server Error"
+            message:
+              type: string
+              example: "Error creating advanced vectorstore"
     """
     # Get token from X-Token header
     token = request.headers.get('X-Token')
@@ -381,6 +480,7 @@ def create_advanced_vectorstore_route():
         # Process each file
         all_documents = []
         files_processed = 0
+        embedding_model = os.environ.get("AZURE_OPENAI_EMBEDDING_DEPLOYMENT", "text-embedding-3-large")
         
         # Get a database connection to access file data directly
         conn = DatabaseService.get_connection()
@@ -504,11 +604,16 @@ def create_advanced_vectorstore_route():
         
         # Initialize embeddings
         embeddings = AzureOpenAIEmbeddings(
-            azure_deployment=os.environ.get("AZURE_OPENAI_EMBEDDING_DEPLOYMENT", "text-embedding-3-large"),
+            azure_deployment=embedding_model,
             api_key=os.environ.get("OPENAI_API_KEY"),
             azure_endpoint=os.environ.get("OPENAI_API_ENDPOINT"),
             chunk_size=chunk_size
         )
+        
+        # Estimate token count (approximately 4 tokens per word)
+        total_text = " ".join([chunk.page_content for chunk in chunks])
+        words = total_text.split()
+        estimated_tokens = len(words) * 4  # Rough estimation
         
         # Create vectorstore creator
         creator = VectorstoreCreator(embeddings)
@@ -600,8 +705,11 @@ def create_advanced_vectorstore_route():
             "path": vectorstore_path,
             "name": vectorstore_name,
             "file_count": files_processed,
+            "files_uploaded": files_processed,
             "document_count": len(all_documents),
             "chunk_count": len(chunks),
+            "embedded_tokens": estimated_tokens,
+            "embedding_model": embedding_model,
             "processing_stats": processing_stats
         }, 200)
         
@@ -620,5 +728,8 @@ def create_advanced_vectorstore_route():
             
             
 def register_advanced_vectorstore_routes(app):
+    from apis.utils.usageMiddleware import track_usage
+    from apis.utils.rbacMiddleware import check_endpoint_access
+    
     """Register advanced vectorstore routes with the Flask app"""
-    app.route('/rag/vectorstore/document/advanced', methods=['POST'])(api_logger(check_balance(create_advanced_vectorstore_route)))
+    app.route('/rag/vectorstore/document/advanced', methods=['POST'])(track_usage(api_logger(check_endpoint_access(check_balance(create_advanced_vectorstore_route)))))

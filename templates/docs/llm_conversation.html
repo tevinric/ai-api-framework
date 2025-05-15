@@ -8,9 +8,9 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
-            --primary-color: #4a6fe3;
-            --secondary-color: #6c63ff;
-            --dark-color: #2a2c3b;
+            --primary-color: rgb(1, 96, 136);
+            --secondary-color: rgb(0, 10, 120);
+            --dark-color: rgb(0, 8, 66);
             --light-color: #f5f6fa;
             --text-color: #333;
             --white-color: #ffffff;
@@ -31,6 +31,7 @@
             --creative-color: #845EF7;
             --research-color: #FF6B6B;
             --business-color: #20C997;
+            --gold-gradient: linear-gradient(to right, rgb(224, 146, 0), rgb(215, 162, 3));
         }
         
         * {
@@ -203,13 +204,14 @@
         
         /* Hero */
         .hero {
-            background: linear-gradient(135deg, rgba(1, 0, 15, 1) 0%, rgba(35, 0, 33, 1) 100%);
+            background: url('/static/GAIA _splash3.gif') center/cover no-repeat;
             color: var(--white-color);
             padding: 5rem 3rem;
             position: relative;
             overflow: hidden;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
         }
+        
         
         .hero::before {
             content: "";
@@ -218,11 +220,8 @@
             right: 0;
             bottom: 0;
             left: 0;
-            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23FFFFFF' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
-            opacity: 0.12;
+            background: linear-gradient(to right, rgba(1, 0, 15, 0.85) 0%, rgba(1, 0, 15, 0.5) 40%, transparent 80%);
             pointer-events: none;
-            animation: zoomDots 20s linear infinite;
-            transform-origin: center;
             z-index: 0;
         }
         
@@ -253,10 +252,11 @@
             margin-bottom: 1.5rem;
             line-height: 1.2;
             max-width: 840px;
-            background: linear-gradient(to left, var(--white-color), var(--accent-color));
+            background: var(--gold-gradient);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             animation: fadeInUp 0.8s ease-out;
+            font-size: 220%;
         }
         
         .hero p {
@@ -352,6 +352,10 @@
             font-size: 2rem;
             color: var(--dark-color);
             margin: 0;
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 220%;
         }
 
         .chat-flow {
@@ -901,35 +905,23 @@
         .cta-section {
             padding: 5rem 3rem;
             text-align: center;
-            background: linear-gradient(135deg, rgba(1, 0, 15, 0.95) 0%, rgba(35, 0, 33, 0.95) 100%);
-            color: white;
-            position: relative;
-            overflow: hidden;
+            background: linear-gradient(135deg, rgba(1, 0, 15, 1) 0%, rgba(35, 0, 33, 1) 100%);
+            color: var(--white-color);
         }
         
-        .cta-section::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            right: 0;
-            bottom: 0;
-            left: 0;
-            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23FFFFFF' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
-            opacity: 0.15;
-            pointer-events: none;
-            z-index: 0;
-        }
         
         .cta-container {
             max-width: 800px;
             margin: 0 auto;
-            position: relative;
-            z-index: 1;
         }
         
         .cta-section h2 {
             font-size: 2.5rem;
             margin-bottom: 1.5rem;
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 220%;
         }
         
         .cta-section p {
@@ -1102,12 +1094,13 @@
     </aside>
     
     <main class="main-content">
-        <section class="hero">
+        <section class="hero" style="height: 550px;">
             <div class="hero-container">
-                <h2>Conversational AI API</h2>
-                <p>Build powerful, persistent conversation experiences with our Conversational API. Create, continue, and manage conversations across multiple LLM models and specialized assistant types.</p>
+                <br><br>
+                <h2 style="font-size: 220%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Conversational AI</h2>
+                <p>Build powerful, persistent conversational experiences with GAIA's Conversational API. Create, continue, and manage conversations across multiple LLM models and specialized assistant types.</p>
                 <div class="cta-buttons">
-                    <a href="/static/files/ai-api-postman-collection.json" class="cta-btn">
+                    <a href="/static/resources/AIAPIS.postman_collection" class="cta-btn" style="background-color: var(--accent-color); color: var(--dark-color);" download>
                         <i class="fas fa-download"></i> Download Postman Collection
                     </a>
                     <a href="/apidocs/#/LLM%20Conversational" class="cta-btn cta-btn-secondary">
@@ -1130,20 +1123,20 @@
                 <div class="chat-flow">
                     <div class="flow-step">
                         <div class="step-number">1</div>
-                        <h3>Create Conversation</h3>
+                        <h3>Create a conversation</h3>
                         <p>Initialize a new conversation with your preferred LLM model and assistant type</p>
                     </div>
                     
                     <div class="flow-step">
                         <div class="step-number">2</div>
-                        <h3>Get Response</h3>
-                        <p>Receive a contextual response from the AI assistant</p>
+                        <h3>Get a response</h3>
+                        <p>Receive a contextual response from the AI assistant which includes a unique conversation ID for perpetuating the conversation.</p>
                     </div>
                     
                     <div class="flow-step">
                         <div class="step-number">3</div>
-                        <h3>Continue Chat</h3>
-                        <p>Send follow-up messages using the conversation ID</p>
+                        <h3>Continue a chat</h3>
+                        <p>Send follow-up messages using the received conversation ID in subsequent messages withing the same conversation.</p>
                     </div>
                     
                     <div class="flow-step">
@@ -1157,13 +1150,13 @@
                     <h3>Key Features</h3>
                     <ul>
                         <li>
-                            <strong>Multiple LLM Support</strong> - Choose from GPT-4o, GPT-4o-mini, O1-mini, DeepSeek-R1, and Llama models
+                            <strong>Multiple LLM Support</strong> - Choose from a variety of models including GPT-4o, GPT-4o-mini, O1-mini, DeepSeek-R1, and Llama models (more to come)
                         </li>
                         <li>
                             <strong>Persistent Conversations</strong> - Conversations are stored securely and can be continued at any time
                         </li>
                         <li>
-                            <strong>Context Management</strong> - The API automatically manages context between messages for coherent conversations
+                            <strong>Context Management</strong> - GAIA automatically manages context between messages for coherent conversations
                         </li>
                         <li>
                             <strong>Token Usage Tracking</strong> - Monitor input and output tokens for each conversation
@@ -1336,9 +1329,9 @@
                     <h3>Create a New Conversation</h3>
                     <p>Start a new conversation with your chosen LLM model and assistant type.</p>
                     
-                    <div class="code-block">
+                    <div class="response-example">
                         <pre><span class="comment"># Create a new conversation</span>
-<span class="keyword">curl</span> -X POST 'https://ai-api.yourdomain.com/llm/conversation/chat' \
+<span class="keyword">curl</span> -X POST 'https://tihaiapis.tihsa.co.za/llm/conversation/chat' \
   -H 'Content-Type: application/json' \
   -H 'X-Token: YOUR_API_TOKEN' \
   -d '{
@@ -1368,9 +1361,9 @@
                     <h3>Continue an Existing Conversation</h3>
                     <p>Send a follow-up message to an ongoing conversation using the conversation ID.</p>
                     
-                    <div class="code-block">
+                    <div class="response-example">
                         <pre><span class="comment"># Continue an existing conversation</span>
-<span class="keyword">curl</span> -X POST 'https://ai-api.yourdomain.com/llm/conversation/continue' \
+<span class="keyword">curl</span> -X POST 'https://tihaiapis.tihsa.co.za/llm/conversation/continue' \
   -H 'Content-Type: application/json' \
   -H 'X-Token: YOUR_API_TOKEN' \
   -d '{
@@ -1398,9 +1391,9 @@
                     <h3>Delete a Conversation</h3>
                     <p>Remove a conversation and its history when no longer needed.</p>
                     
-                    <div class="code-block">
+                    <div class="response-example">
                         <pre><span class="comment"># Delete a conversation</span>
-<span class="keyword">curl</span> -X DELETE 'https://ai-api.yourdomain.com/llm/conversation?conversation_id=a1b2c3d4-5678-90ab-cdef-ghijklmnopqr' \
+<span class="keyword">curl</span> -X DELETE 'https://tihaiapis.tihsa.co.za/llm/conversation?conversation_id=a1b2c3d4-5678-90ab-cdef-ghijklmnopqr' \
   -H 'X-Token: YOUR_API_TOKEN'</pre>
                     </div>
                     
@@ -1510,10 +1503,11 @@
         <!-- CTA Section -->
         <section class="cta-section">
             <div class="cta-container">
-                <h2>Ready to Build Conversational Experiences?</h2>
+                <img src="/static/GAIA6.png" alt="GAIA Logo" style="height: 100px; margin-right: 0.5rem;">
+                <h2>Ready to Build Conversational Experiences with GAIA?</h2>
                 <p>Start creating intelligent, context-aware conversations with our powerful LLM Conversational API.</p>
                 <div class="cta-buttons" style="justify-content: center;">
-                    <a href="/static/files/ai-api-postman-collection.json" class="cta-btn">
+                    <a href="/static/resources/AIAPIS.postman_collection" class="cta-btn" style="background-color: var(--accent-color); color: var(--dark-color);" download>
                         <i class="fas fa-download"></i> Download Postman Collection
                     </a>
                     <a href="{{ url_for('getting_started') }}" class="cta-btn cta-btn-secondary">

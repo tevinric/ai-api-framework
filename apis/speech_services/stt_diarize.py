@@ -17,6 +17,9 @@ import tiktoken
 # CONFIGURE LOGGING
 logger = logging.getLogger(__name__)
 
+if gpt4o_mini_service:
+    model_deplopyment = "gpt-4o-mini"
+
 # Speech to Text API configuration
 STT_API_KEY = os.environ.get("MS_STT_API_KEY")
 STT_ENDPOINT = os.environ.get("MS_STT_ENDPOINT")
@@ -90,6 +93,25 @@ def transcribe_audio(file_url):
             "response_text": getattr(e.response, 'text', None),
             "status_code": getattr(e.response, 'status_code', None)
         }
+
+def calculate_audio_duration(transcription_result):
+    """
+    Calculate the total audio duration in seconds from the transcription result
+    
+    The Microsoft Speech API returns duration in milliseconds
+    """
+    try:
+        # Check if duration is directly available in milliseconds
+        if 'duration' in transcription_result:
+            # Convert milliseconds to seconds
+            return transcription_result['duration'] / 1000.0
+            
+        # If all else fails, return a default value
+        return 0
+            
+    except Exception as e:
+        logger.error(f"Error calculating audio duration: {str(e)}")
+        return 0
 
 def split_transcript_into_chunks(transcript, max_tokens=MAX_CHUNK_TOKENS):
     """Split transcript into chunks respecting sentence boundaries where possible"""
@@ -165,7 +187,19 @@ def process_transcript_with_llm(transcript, token, chunk_number=None, total_chun
                 "message": f"Error from LLM service: {llm_response.get('error', 'Unknown error')}"
             }
         
-        return llm_response.get("result"), None
+        # Add token usage information to the response
+        result = {
+            "text": llm_response.get("result"),
+            "token_usage": {
+                "prompt_tokens": llm_response.get("prompt_tokens", 0),
+                "completion_tokens": llm_response.get("completion_tokens", 0),
+                "total_tokens": llm_response.get("total_tokens", 0),
+                "cached_tokens": llm_response.get("cached_tokens", 0),
+                "embedded_tokens": llm_response.get("embedded_tokens", 0)
+            }
+        }
+        
+        return result, None
         
     except Exception as e:
         logger.error(f"Error in LLM processing: {str(e)}")
@@ -214,17 +248,86 @@ def enhanced_speech_to_text_route():
             raw_transcript:
               type: string
               description: Original transcript text
+              example: This is the raw transcribed text from the audio file without any speaker identification or timestamps.
             enhanced_transcript:
               type: string
               description: Enhanced transcript with speaker diarization and timestamps
+              example: "[00:00:00] Speaker 1: This is the enhanced transcribed text with speaker diarization.\n[00:00:15] Speaker 2: And this is another speaker responding in the conversation."
+            seconds_processed:
+              type: number
+              description: Duration of the processed audio in seconds
+              example: 45.6
+            prompt_tokens:
+              type: integer
+              description: Number of tokens in the prompt sent to the LLM
+              example: 1000
+            completion_tokens:
+              type: integer
+              description: Number of tokens in the response from the LLM
+              example: 500
+            total_tokens:
+              type: integer
+              description: Total number of tokens processed
+              example: 1500
+            cached_tokens:
+              type: integer
+              description: Number of tokens that were cached
+              example: 0
+            embedded_tokens:
+              type: integer
+              description: Number of tokens embedded
+              example: 0
+            model_used:
+              type: string
+              description: LLM model used for diarization
+              example: gpt-4o-mini
       400:
         description: Bad request
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Bad Request
+            message:
+              type: string
+              enum: [Request body is required, file_id is required]
       401:
         description: Authentication error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Authentication Error
+            message:
+              type: string
+              enum: [Missing X-Token header, Invalid token, Token has expired]
       404:
         description: File not found
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: File Error
+            message:
+              type: string
+              example: File not found
       500:
         description: Server error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              enum: [Server Error, File Error, Transcription Error, LLM Processing Error]
+            message:
+              type: string
+              example: Error processing request
+            details:
+              type: object
+              description: Additional error details if available
     """
     # Get token from X-Token header
     token = request.headers.get('X-Token')
@@ -303,6 +406,9 @@ def enhanced_speech_to_text_route():
                 "details": error
             }, 500)
         
+        # Calculate the duration of the audio file
+        seconds_processed = calculate_audio_duration(transcription_result)
+        
         # Extract the transcript text
         raw_transcript = ""
         if 'combinedPhrases' in transcription_result and transcription_result['combinedPhrases']:
@@ -321,9 +427,16 @@ def enhanced_speech_to_text_route():
         
         enhanced_transcript = ""
         
+        # Initialize token usage counters
+        total_prompt_tokens = 0
+        total_completion_tokens = 0
+        total_tokens = 0
+        total_cached_tokens = 0
+        total_embedded_tokens = 0
+        
         if token_count <= MAX_CHUNK_TOKENS:
             # Process the entire transcript at once
-            processed_transcript, error = process_transcript_with_llm(raw_transcript, token)
+            processed_result, error = process_transcript_with_llm(raw_transcript, token)
             if error:
                 return create_api_response({
                     "error": "LLM Processing Error",
@@ -331,7 +444,16 @@ def enhanced_speech_to_text_route():
                     "details": error
                 }, 500)
             
-            enhanced_transcript = processed_transcript
+            enhanced_transcript = processed_result["text"]
+            
+            # Track token usage
+            token_usage = processed_result.get("token_usage", {})
+            total_prompt_tokens = token_usage.get("prompt_tokens", 0)
+            total_completion_tokens = token_usage.get("completion_tokens", 0)
+            total_tokens = token_usage.get("total_tokens", 0)
+            total_cached_tokens = token_usage.get("cached_tokens", 0)
+            total_embedded_tokens = token_usage.get("embedded_tokens", 0)
+            
         else:
             # Split the transcript into chunks and process each one
             chunks = split_transcript_into_chunks(raw_transcript)
@@ -341,7 +463,7 @@ def enhanced_speech_to_text_route():
             enhanced_chunks = []
             for i, chunk in enumerate(chunks):
                 logger.info(f"Processing chunk {i+1}/{total_chunks}, token count: {count_tokens(chunk)}")
-                processed_chunk, error = process_transcript_with_llm(
+                processed_result, error = process_transcript_with_llm(
                     chunk, token, chunk_number=i+1, total_chunks=total_chunks
                 )
                 
@@ -352,7 +474,15 @@ def enhanced_speech_to_text_route():
                         "details": error
                     }, 500)
                 
-                enhanced_chunks.append(processed_chunk)
+                enhanced_chunks.append(processed_result["text"])
+                
+                # Accumulate token usage
+                token_usage = processed_result.get("token_usage", {})
+                total_prompt_tokens += token_usage.get("prompt_tokens", 0)
+                total_completion_tokens += token_usage.get("completion_tokens", 0)
+                total_tokens += token_usage.get("total_tokens", 0)
+                total_cached_tokens += token_usage.get("cached_tokens", 0)
+                total_embedded_tokens += token_usage.get("embedded_tokens", 0)
             
             # Combine the processed chunks
             enhanced_transcript = "\n\n".join(enhanced_chunks)
@@ -366,7 +496,14 @@ def enhanced_speech_to_text_route():
         response_data = {
             "message": "Audio processed successfully",
             "raw_transcript": raw_transcript,
-            "enhanced_transcript": enhanced_transcript
+            "enhanced_transcript": enhanced_transcript,
+            "seconds_processed": seconds_processed,
+            "prompt_tokens": total_prompt_tokens,
+            "completion_tokens": total_completion_tokens,
+            "total_tokens": total_tokens,
+            "cached_tokens": total_cached_tokens,
+            "embedded_tokens": total_embedded_tokens,
+            "model_used": model_deplopyment
         }
         
         return create_api_response(response_data, 200)
@@ -379,5 +516,8 @@ def enhanced_speech_to_text_route():
         }, 500)
 
 def register_speech_to_text_diarize_routes(app):
+    from apis.utils.usageMiddleware import track_usage
+    from apis.utils.rbacMiddleware import check_endpoint_access
+    
     """Register enhanced speech to text routes with the Flask app"""
-    app.route('/speech/stt_diarize', methods=['POST'])(api_logger(check_balance(enhanced_speech_to_text_route)))
+    app.route('/speech/stt_diarize', methods=['POST'])(track_usage(api_logger(check_endpoint_access(check_balance(enhanced_speech_to_text_route)))))

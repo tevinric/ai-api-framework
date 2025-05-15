@@ -9,6 +9,7 @@ from flasgger import Swagger
 
 from apis.utils.tokenService import TokenService
 from apis.utils.databaseService import DatabaseService
+from apis.app_init import initialize_app
 
 
 # CONFIGURE LOGGING
@@ -16,6 +17,10 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+
+# Initialize application components
+# This starts the job scheduler for async processing
+initialize_app(app)
 
 app.config['SWAGGER'] = {
     'title': 'Swagger'
@@ -26,7 +31,7 @@ swagger_config = {
     "specs": [
         {
             "endpoint": 'apispec',
-            "route": '/apispec_1.json',
+            "route": '/apispec.json',
             "rule_filter": lambda rule: True,
             "model_filter": lambda tag: True,
         }
@@ -40,9 +45,16 @@ swagger_template = {
     "swagger": "2.0",
     "info": {
         "title": "API Documentation",
-        "description": "API endpoints with authentication",
-        "version": "1.0.0"
-    }     
+        "version": "0.0.1"
+    },
+    "securityDefinitions": {
+        "ApiKeyAuth": {
+            "type": "apiKey",
+            "name": "X-Token",
+            "in": "header",
+            "description": "API Key for authentication. Add your token with the X-Token header."
+        }
+    }
 }
 
 
@@ -140,6 +152,10 @@ def technical_support():
 def changelog():    
     return render_template('docs/changelog.html')
 
+@app.route('/docs/coding_companion')
+def coding_companion():    
+    return render_template('docs/coding_companion.html')
+
 # TOKEN SERVICE ENDPOINTS
 ## GET TOKEN
 from apis.token_services.get_token import register_routes as get_token_endpoint 
@@ -190,10 +206,6 @@ register_llm_deepseek_v3(app)
 from apis.llm.gpt_o3_mini import register_llm_o3_mini
 register_llm_o3_mini(app)
 
-
-from apis.rag_query import register_rag_query_routes
-register_rag_query_routes(app)
-
 from apis.image_generation.dalle3 import register_image_generation_routes
 register_image_generation_routes(app)
 
@@ -206,11 +218,19 @@ register_file_upload_routes(app)
 from apis.balance_management.usage_statistics import register_usage_stats_routes
 register_usage_stats_routes(app)
 
-from apis.speech_services.stt import register_speech_to_text_routes
-register_speech_to_text_routes(app)
+# Register job management routes
+from apis.jobs.job_routes import register_job_routes
+register_job_routes(app)
 
-from apis.speech_services.stt_diarize import register_speech_to_text_diarize_routes
-register_speech_to_text_diarize_routes(app)
+# Register asynchronous speech-to-text routes
+from apis.speech_services.stt_async import register_async_speech_to_text_routes
+register_async_speech_to_text_routes(app)
+
+# Comment out original synchronous speech routes as they're replaced by async versions
+# from apis.speech_services.stt import register_speech_to_text_routes
+# register_speech_to_text_routes(app)
+# from apis.speech_services.stt_diarize import register_speech_to_text_diarize_routes
+# register_speech_to_text_diarize_routes(app)
 
 from apis.document_intelligence.summarization import register_document_intelligence_routes
 register_document_intelligence_routes(app)
@@ -245,8 +265,15 @@ register_sentiment_routes(app)
 from apis.nlp.classification import register_nlp_routes
 register_nlp_routes(app)
 
+# from apis.llm_conversation.insurance_conversation import register_insurance_bot_routes
+# register_insurance_bot_routes(app)
+
+from apis.admin.admin_endpoint_access import register_admin_endpoint_access_routes
+register_admin_endpoint_access_routes(app)
+
+# from apis.car_insurance.conversation import register_car_insurance_routes
+# register_car_insurance_routes(app)
+
+
 if __name__ == '__main__':
     app.run(debug=True)
-    
-
-

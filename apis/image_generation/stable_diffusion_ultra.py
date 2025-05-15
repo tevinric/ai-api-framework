@@ -76,7 +76,7 @@ def stable_diffusion_ultra_route():
     consumes:
       - application/json
     security:
-      - ApiKeyHeader: []
+      - ApiKeyAuth: []
     responses:
       200:
         description: Successful image generation
@@ -372,5 +372,7 @@ def register_stable_diffusion_ultra_routes(app):
     """Register routes with the Flask app"""
     from apis.utils.logMiddleware import api_logger
     from apis.utils.balanceMiddleware import check_balance
+    from apis.utils.usageMiddleware import track_usage
+    from apis.utils.rbacMiddleware import check_endpoint_access
     
-    app.route('/image-generation/stable-diffusion-ultra', methods=['POST'])(api_logger(check_balance(stable_diffusion_ultra_route)))
+    app.route('/image-generation/stable-diffusion-ultra', methods=['POST'])(track_usage(api_logger(check_endpoint_access(check_balance(stable_diffusion_ultra_route)))))

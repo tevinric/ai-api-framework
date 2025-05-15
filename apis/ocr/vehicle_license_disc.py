@@ -202,10 +202,12 @@ def create_json_gpt(text, token):
             "veh_expiry": results.get("Date of expiry/Vervaldatum", "")
         }
             
-        # Store LLM token usage
-        vehicle_json["input_tokens"] = llm_result.get("input_tokens", 0)
+        # Store LLM token usage - UPDATED TOKEN REFERENCES
+        vehicle_json["prompt_tokens"] = llm_result.get("prompt_tokens", 0)
         vehicle_json["completion_tokens"] = llm_result.get("completion_tokens", 0)
-        vehicle_json["output_tokens"] = llm_result.get("output_tokens", 0)
+        vehicle_json["total_tokens"] = llm_result.get("total_tokens", 0)
+        vehicle_json["cached_tokens"] = llm_result.get("cached_tokens", 0)
+        vehicle_json["model_used"] = llm_result.get("model", "gpt-4o-mini")
         
         return vehicle_json
     except Exception as ex:
@@ -227,11 +229,13 @@ def extract_vehicle_data(result, token):
                         barcode_json = create_json_barcode(barcode.value)
                         if barcode_json:
                             # Add document processing information
-                            barcode_json["num_documents_processed"] = 1
-                            barcode_json["num_pages_processed"] = len(result.pages)
-                            barcode_json["input_tokens"] = 0
+                            barcode_json["documents_processed"] = 1
+                            barcode_json["pages_processed"] = len(result.pages)
+                            barcode_json["prompt_tokens"] = 0
                             barcode_json["completion_tokens"] = 0
-                            barcode_json["output_tokens"] = 0
+                            barcode_json["total_tokens"] = 0
+                            barcode_json["cached_tokens"] = 0
+                            barcode_json["model_used"] = "none"
                             barcode_json["extraction_method"] = "barcode analysis"
                             return barcode_json
                             
@@ -252,8 +256,8 @@ def extract_vehicle_data(result, token):
         
         if vehicle_json:
             # Add document processing information
-            vehicle_json["num_documents_processed"] = 1
-            vehicle_json["num_pages_processed"] = len(result.pages)
+            vehicle_json["documents_processed"] = 1
+            vehicle_json["pages_processed"] = len(result.pages)
             vehicle_json["extraction_method"] = "image ocr"
             
         return vehicle_json
@@ -325,21 +329,27 @@ def vehicle_license_disc_route():
             extraction_method:
               type: string
               description: Method used to extract the data (barcode analysis or image ocr)
-            num_documents_processed:
+            documents_processed:
               type: integer
               description: Number of documents processed
-            num_pages_processed:
+            pages_processed:
               type: integer
               description: Number of pages processed
-            input_tokens:
+            prompt_tokens:
               type: integer
-              description: Number of input tokens consumed (if GPT was used)
+              description: Number of prompt tokens consumed (if GPT was used)
             completion_tokens:
               type: integer
               description: Number of completion tokens consumed (if GPT was used)
-            output_tokens:
+            total_tokens:
               type: integer
               description: Total number of tokens consumed (if GPT was used)
+            cached_tokens:
+              type: integer
+              description: Number of cached tokens (if available)
+            model_used:
+              type: string
+              description: The LLM model used for processing (or "none" if barcode was used)
       400:
         description: Bad request
         schema:
@@ -350,11 +360,7 @@ def vehicle_license_disc_route():
               example: Bad Request
             message:
               type: string
-              examples:
-                - "Missing file_id parameter"
-                - "Unsupported file type. Supported types: png, jpg, jpeg, pdf, tiff, tif"
-                - "File ID not found"
-                - "File too large for processing"
+              example: Missing file_id parameter
       401:
         description: Authentication error
         schema:
@@ -365,10 +371,7 @@ def vehicle_license_disc_route():
               example: Authentication Error
             message:
               type: string
-              examples:
-                - "Missing X-Token header"
-                - "Invalid token"
-                - "Token has expired"
+              example: Missing X-Token header
       500:
         description: Server error
         schema:
@@ -379,11 +382,7 @@ def vehicle_license_disc_route():
               example: Server Error
             message:
               type: string
-              examples:
-                - "Error processing file"
-                - "Error downloading file"
-                - "Document intelligence service unavailable"
-                - "Error extracting document content"
+              example: Error processing file
     """
     # Get token from X-Token header
     token = request.headers.get('X-Token')
@@ -517,5 +516,9 @@ def vehicle_license_disc_route():
         }, 500)
 
 def register_vehicle_license_disc_routes(app):
+    from apis.utils.usageMiddleware import track_usage
+    from apis.utils.rbacMiddleware import check_endpoint_access    
+    
+
     """Register vehicle license disc OCR routes with the Flask app"""
-    app.route('/ocr/vehicle_license_disc', methods=['POST'])(api_logger(check_balance(vehicle_license_disc_route)))
+    app.route('/ocr/vehicle_license_disc', methods=['POST'])(track_usage(api_logger(check_endpoint_access(check_balance(vehicle_license_disc_route)))))

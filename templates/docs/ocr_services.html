@@ -196,7 +196,7 @@
         
         /* Hero */
         .hero {
-            background: linear-gradient(135deg, rgba(1, 0, 15, 1) 0%, rgba(35, 0, 33, 1) 100%);
+            background: url('/static/GAIA _splash3.gif') center/cover no-repeat;
             color: var(--white-color);
             padding: 5rem 3rem;
             position: relative;
@@ -211,11 +211,8 @@
             right: 0;
             bottom: 0;
             left: 0;
-            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23FFFFFF' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
-            opacity: 0.12;
+            background: linear-gradient(to right, rgba(1, 0, 15, 0.85) 0%, rgba(1, 0, 15, 0.5) 40%, transparent 80%);
             pointer-events: none;
-            animation: zoomDots 20s linear infinite;
-            transform-origin: center;
             z-index: 0;
         }
         
@@ -776,24 +773,10 @@
         .cta-section {
             padding: 5rem 3rem;
             text-align: center;
-            background: linear-gradient(135deg, rgba(1, 0, 15, 0.95) 0%, rgba(35, 0, 33, 0.95) 100%);
-            color: white;
-            position: relative;
-            overflow: hidden;
+            background: linear-gradient(135deg, rgba(1, 0, 15, 1) 0%, rgba(35, 0, 33, 1) 100%);
+            color: var(--white-color);
         }
         
-        .cta-section::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            right: 0;
-            bottom: 0;
-            left: 0;
-            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23FFFFFF' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
-            opacity: 0.15;
-            pointer-events: none;
-            z-index: 0;
-        }
         
         .cta-container {
             max-width: 800px;
@@ -966,12 +949,13 @@
     </aside>
     
     <main class="main-content">
-        <section class="hero">
+        <section class="hero" style="height: 550px;">
+            <br><br>
             <div class="hero-container">
-                <h2>OCR Services</h2>
-                <p>Extract valuable information from South African ID documents and vehicle license discs using our specialized OCR services. Turn images into structured data for seamless integration into your applications.</p>
+                <h2 style="font-size: 220%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">OCR Services</h2>
+                <p>Extract valuable information using GAIA's specialized OCR services. Turn images into structured data for seamless integration into your applications.</p>
                 <div class="cta-buttons">
-                    <a href="/static/files/ai-api-postman-collection.json" class="cta-btn">
+                    <a href="/static/resources/AIAPIS.postman_collection" class="cta-btn" style="background-color: var(--accent-color); color: var(--dark-color);" download>
                         <i class="fas fa-download"></i> Download Postman Collection
                     </a>
                     <a href="/apidocs/#/OCR" class="cta-btn cta-btn-secondary">
@@ -988,10 +972,10 @@
                     <div class="section-icon">
                         <i class="fas fa-eye"></i>
                     </div>
-                    <h2>Overview</h2>
+                    <h2 style="font-size: 220%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Overview</h2>
                 </div>
                 
-                <p class="section-intro">Our OCR (Optical Character Recognition) services provide specialized document extraction capabilities for South African ID documents and vehicle license discs. These services extract structured data from document images and return it in a standardized JSON format.</p>
+                <p class="section-intro">GAIA's OCR (Optical Character Recognition) services provide specialized document extraction capabilities for documents such as South African ID documents and vehicle license discs (more coming soon). These services extract structured data from document images and return it in a standardized JSON format.</p>
                 <br><br>
                 
                 <div class="features-grid">
@@ -1000,7 +984,7 @@
                             <i class="fas fa-id-card"></i>
                         </div>
                         <h3>South African ID Processing</h3>
-                        <p>Extract key information from both green ID books and smart ID cards, including personal details, ID numbers, and citizenship information.</p>
+                        <p>Extract key information from smart ID cards, including personal details, ID numbers, and citizenship information.</p>
                     </div>
                     
                     <div class="feature-card">
@@ -1043,15 +1027,11 @@
         <section class="model-section">
             <div class="model-container">
                 <div class="model-header" style="display: flex; align-items: center;">
-                    <div class="model-icon sa-id-icon">
-                        <i class="fas fa-id-card"></i>
-                    </div>
                     <div class="model-info" style="flex-grow: 1; margin-left: 1rem;">
-                        <h2 style="display: flex; justify-content: space-between; align-items: center;">
+                        <h2 style="font-size: 220%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
                             South African ID Documents
-                            <div class="credit-badge">4 AI Credits</div>
                         </h2>
-                        <p>Extract structured information from South African ID documents including green ID books and smart ID cards using advanced OCR technology. The service can extract data from the barcode (when present) or directly from the image using machine learning.</p>
+                        <p>Extract structured information from South African ID documents (Smart ID cards) using advanced OCR technology. The service can extract data from the barcode (when present) or directly from the image using Generative AI models.</p>
                     </div>
                 </div>
                 
@@ -1074,13 +1054,15 @@
                             POST /ocr/sa_id_card
                         </div>
                         <p>Extract information from South African ID documents by sending a POST request to this endpoint with your file ID.</p>
+                        <br>
                         <p>Required parameters:</p>
                         <ul>
                             <li><strong>file_id</strong>: ID of the previously uploaded ID document image</li>
                             <li><strong>X-Token</strong>: Your API authentication token (header)</li>
                         </ul>
+                        <br>
                         <p>File upload process:</p>
-                        <ol>
+                        <ol style="margin-left: 40px">
                             <li>First, upload your ID document image using the <code>/file</code> endpoint</li>
                             <li>Receive a <code>file_id</code> for your uploaded image</li>
                             <li>Submit this <code>file_id</code> to the OCR endpoint</li>
@@ -1089,7 +1071,8 @@
                     </div>
                 </div>
                 
-                <h3>Example</h3>
+                <h3 style="font-size: 150%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Example</h3>
+                <br>
                 <div class="example-grid">
                     <div class="example-settings sa-id-settings">
                         <h3 class="settings-title">Request Details</h3>
@@ -1211,14 +1194,11 @@
         <section class="model-section alternate">
             <div class="model-container">
                 <div class="model-header">
-                    <div class="model-icon vehicle-license-icon">
-                        <i class="fas fa-car"></i>
-                    </div>
                     <div class="model-info">
-                        <h2 style="display: flex; justify-content: space-between; align-items: center;">
+                        <h2 style="font-size: 220%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
                             Vehicle License Disc
-                            <div class="credit-badge">4 AI Credits</div>
                         </h2>
+                        <br>
                         <p>Extract detailed information from South African vehicle license discs using OCR technology. The service can extract data from the barcode (when present) or directly from the license disc image using machine learning.</p>
                     </div>
                 </div>
@@ -1242,13 +1222,14 @@
                             POST /ocr/vehicle_license_disc
                         </div>
                         <p>Extract information from South African vehicle license discs by sending a POST request to this endpoint with your file ID.</p>
+                        <br>
                         <p>Required parameters:</p>
                         <ul>
                             <li><strong>file_id</strong>: ID of the previously uploaded license disc image</li>
                             <li><strong>X-Token</strong>: Your API authentication token (header)</li>
                         </ul>
                         <p>File upload process:</p>
-                        <ol>
+                        <ol style="margin-left: 40px;">
                             <li>First, upload your license disc image using the <code>/file</code> endpoint</li>
                             <li>Receive a <code>file_id</code> for your uploaded image</li>
                             <li>Submit this <code>file_id</code> to the OCR endpoint</li>
@@ -1387,10 +1368,11 @@
         <!-- CTA Section -->
         <section class="cta-section">
             <div class="cta-container">
-                <h2>Start Extracting Document Data Today</h2>
-                <p>Integrate our powerful OCR services into your applications and automate your document processing workflows.</p>
+                <img src="/static/GAIA6.png" alt="GAIA Logo" style="height: 100px; margin-right: 0.5rem;">
+                <h2>Start adding OCR capabilities to your applications today</h2>
+                <p>Integrate GAIA's powerful OCR services into your applications and automate your document processing workflows.</p>
                 <div class="cta-buttons" style="justify-content: center;">
-                    <a href="/static/files/ai-api-postman-collection.json" class="cta-btn">
+                    <a href="/static/resources/AIAPIS.postman_collection" class="cta-btn" style="background-color: var(--accent-color); color: var(--dark-color);" download>
                         <i class="fas fa-download"></i> Download Postman Collection
                     </a>
                     <a href="/apidocs/#/OCR" class="cta-btn cta-btn-secondary">

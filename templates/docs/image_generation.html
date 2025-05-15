@@ -8,9 +8,9 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
-            --primary-color: #4a6fe3;
-            --secondary-color: #6c63ff;
-            --dark-color: #2a2c3b;
+            --primary-color: rgb(1, 96, 136);
+            --secondary-color: rgb(0, 10, 120);
+            --dark-color: rgb(0, 8, 66);
             --light-color: #f5f6fa;
             --text-color: #333;
             --white-color: #ffffff;
@@ -24,6 +24,7 @@
             --openai-gradient: linear-gradient(90deg, #10a37f 0%, #0f9675 100%);
             --stable-diffusion-color: #6741d9;
             --stable-diffusion-gradient: linear-gradient(90deg, #6741d9 0%, #5231af 100%);
+            --gold-gradient: linear-gradient(to right, rgb(224, 146, 0), rgb(215, 162, 3));
         }
         
         * {
@@ -196,7 +197,7 @@
         
         /* Hero */
         .hero {
-            background: linear-gradient(135deg, rgba(1, 0, 15, 1) 0%, rgba(35, 0, 33, 1) 100%);
+            background: url('/static/GAIA _splash3.gif') center/cover no-repeat;
             color: var(--white-color);
             padding: 5rem 3rem;
             position: relative;
@@ -211,11 +212,8 @@
             right: 0;
             bottom: 0;
             left: 0;
-            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23FFFFFF' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
-            opacity: 0.12;
+            background: linear-gradient(to right, rgba(1, 0, 15, 0.85) 0%, rgba(1, 0, 15, 0.5) 40%, transparent 80%);
             pointer-events: none;
-            animation: zoomDots 20s linear infinite;
-            transform-origin: center;
             z-index: 0;
         }
         
@@ -246,10 +244,11 @@
             margin-bottom: 1.5rem;
             line-height: 1.2;
             max-width: 840px;
-            background: linear-gradient(to left, var(--white-color), var(--accent-color));
+            background: var(--gold-gradient);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             animation: fadeInUp 0.8s ease-out;
+            font-size: 220%;
         }
         
         .hero p {
@@ -345,6 +344,10 @@
             font-size: 2rem;
             color: var(--dark-color);
             margin: 0;
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 220%;
         }
         
         .features-grid {
@@ -452,6 +455,10 @@
             font-size: 2rem;
             color: var(--dark-color);
             margin-bottom: 0.5rem;
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 220%;
         }
         
         .model-info p {
@@ -714,24 +721,11 @@
         .cta-section {
             padding: 5rem 3rem;
             text-align: center;
-            background: linear-gradient(135deg, rgba(1, 0, 15, 0.95) 0%, rgba(35, 0, 33, 0.95) 100%);
-            color: white;
-            position: relative;
-            overflow: hidden;
+            background: linear-gradient(135deg, rgba(1, 0, 15, 1) 0%, rgba(35, 0, 33, 1) 100%);
+            color: var(--white-color);
         }
         
-        .cta-section::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            right: 0;
-            bottom: 0;
-            left: 0;
-            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23FFFFFF' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
-            opacity: 0.15;
-            pointer-events: none;
-            z-index: 0;
-        }
+
         
         .cta-container {
             max-width: 800px;
@@ -743,6 +737,10 @@
         .cta-section h2 {
             font-size: 2.5rem;
             margin-bottom: 1.5rem;
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 220%;
         }
         
         .cta-section p {
@@ -892,12 +890,13 @@
     </aside>
     
     <main class="main-content">
-        <section class="hero">
+        <section class="hero" style="height: 550px;">
             <div class="hero-container">
-                <h2>Image Generation API</h2>
-                <p>Create stunning, high-quality images for your applications with our powerful Image Generation APIs. From photorealistic visualizations to creative illustrations, unlock the potential of AI-powered image creation.</p>
+                <br><br>
+                <h2>Image Generation</h2>
+                <p>Create stunning, high-quality images for your applications with GAIA's powerful Image Generation APIs. From photorealistic visualizations to creative illustrations, unlock the potential of AI-powered image creation.</p>
                 <div class="cta-buttons">
-                    <a href="/static/files/ai-api-postman-collection.json" class="cta-btn">
+                    <a href="/static/resources/AIAPIS.postman_collection" class="cta-btn" style="background-color: var(--accent-color); color: var(--dark-color);" download>
                         <i class="fas fa-download"></i> Download Postman Collection
                     </a>
                     <a href="/apidocs/#/Image%20Generation" class="cta-btn cta-btn-secondary">
@@ -912,13 +911,13 @@
             <div class="overview-container">
                 <div class="section-header">
                     <div class="section-icon">
-                        <i class="fas fa-paint-brush"></i>
+                        <i class="fas fa-paint-brush" style="color: primary;"></i>
                     </div>
                     <h2>Overview</h2>
                 </div>
                 
-                <p class="section-intro">Our Image Generation APIs provide access to state-of-the-art AI models that generated images from text descriptions. 
-                    With an option of models and customization settings to choose from, you can generate bespoke images to meet the needs of your projects.
+                <p class="section-intro">GAIA'S Image Generation APIs provide access to state-of-the-art AI models that generate images from text prompts. 
+                    With an option of models and customization settings to choose from, you can generate bespoke images to meet the needs of your applications.
                 </p>
                 <br><br>
                 
@@ -962,15 +961,12 @@
         <section class="model-section">
             <div class="model-container">
                 <div class="model-header" style="display: flex; align-items: center;">
-                    <div class="model-icon dalle-icon">
-                        <i class="fas fa-palette"></i>
-                    </div>
                     <div class="model-info" style="flex-grow: 1; margin-left: 1rem;">
                         <h2 style="display: flex; justify-content: space-between; align-items: center;">
                             DALL-E 3
-                            <div class="credit-badge">5 AI Credits</div>
                         </h2>
-                        <p>OpenAI's advanced image generation model capable of creating detailed, high-quality images from text descriptions with remarkable accuracy.</p>
+                        <br>
+                        <p> Access OpenAI's most advanced image generation model capable of creating detailed, high-quality images from text descriptions with remarkable accuracy.</p>
                     </div>
                 </div>
                 
@@ -994,6 +990,7 @@
                             POST /image-generation/dalle3
                         </div>
                         <p>Generate images with DALL-E 3 by sending a POST request to this endpoint with your prompt and configuration options.</p>
+                        <br>
                         <p>Required parameters:</p>
                         <ul>
                             <li><strong>prompt</strong>: Text description of the image to generate</li>
@@ -1009,7 +1006,8 @@
                     </div>
                 </div>
                 
-                <h3>Examples</h3>
+                <h3 style="font-size: 150%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">DALL-E 3 Examples</h3>
+                <br>
                 <div class="examples-tabs">
                     <div class="example-tab dalle-tab active">Architectural Visualization</div>
                     <div class="example-tab dalle-tab">Product Visualization</div>
@@ -1284,14 +1282,11 @@
         <section class="model-section alternate">
             <div class="model-container">
                 <div class="model-header">
-                    <div class="model-icon stable-diffusion-icon">
-                        <i class="fas fa-wave-square"></i>
-                    </div>
                     <div class="model-info">
                         <h2 style="display: flex; justify-content: space-between; align-items: center;">
-                            STABLE DIUFFION - ULTRA
-                            <div class="credit-badge">5 AI Credits</div>
+                            STABLE DIFFUSION - ULTRA
                         </h2>
+                        <br>
                         <p>A powerful diffusion-based image generation model capable of creating highly detailed images with exceptional quality and creative flexibility.</p>
                     </div>
                 </div>
@@ -1315,6 +1310,7 @@
                             POST /image-generation/stable-diffusion-ultra
                         </div>
                         <p>Generate images with Stable Diffusion Ultra by sending a POST request to this endpoint with your prompt and configuration options.</p>
+                        <br>
                         <p>Required parameters:</p>
                         <ul>
                             <li><strong>prompt</strong>: Text description of the image to generate</li>
@@ -1330,7 +1326,8 @@
                     </div>
                 </div>
                 
-                <h3>Examples</h3>
+                <h3 style="font-size: 150%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">STABLE DIFFUSION ULTRA Examples</h3>
+                <br>
                 <div class="examples-tabs">
                     <div class="example-tab stable-diffusion-tab active">Data Center</div>
                     <div class="example-tab stable-diffusion-tab">Sustainable Urban Development</div>
@@ -1657,10 +1654,11 @@
         <!-- CTA Section -->
         <section class="cta-section">
             <div class="cta-container">
+                <img src="/static/GAIA6.png" alt="GAIA Logo" style="height: 100px; margin-right: 0.5rem;">
                 <h2>Start Generating Amazing Images Today</h2>
-                <p>Integrate our powerful Image Generation APIs into your applications and unlock countless creative possibilities.</p>
+                <p>Integrate GAIA's powerful Image Generation APIs into your applications and unlock countless creative possibilities.</p>
                 <div class="cta-buttons" style="justify-content: center;">
-                    <a href="/static/files/ai-api-postman-collection.json" class="cta-btn">
+                    <a href="/static/resources/AIAPIS.postman_collection" class="cta-btn" style="background-color: var(--accent-color); color: var(--dark-color);" download>
                         <i class="fas fa-download"></i> Download Postman Collection
                     </a>
                     <a href="/apidocs/#/Image%20Generation" class="cta-btn cta-btn-secondary">

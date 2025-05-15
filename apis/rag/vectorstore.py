@@ -139,14 +139,83 @@ def create_vectorstore_route():
     responses:
       200:
         description: Vectorstore created successfully
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              example: "Vectorstore created successfully"
+            vectorstore_id:
+              type: string
+              example: "12345678-1234-1234-1234-123456789012"
+            path:
+              type: string
+              example: "user123-12345678-1234-1234-1234-123456789012"
+            name:
+              type: string
+              example: "My Vectorstore"
+            file_count:
+              type: integer
+              example: 3
+            files_uploaded:
+              type: integer
+              example: 3
+            document_count:
+              type: integer
+              example: 42
+            chunk_count:
+              type: integer
+              example: 120
+            embedded_tokens:
+              type: integer
+              example: 65000
+            embedding_model:
+              type: string
+              example: "text-embedding-3-large"
       400:
         description: Bad request
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: "Bad Request"
+            message:
+              type: string
+              example: "Missing required field: file_ids"
       401:
         description: Authentication error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: "Authentication Error"
+            message:
+              type: string
+              example: "Token has expired"
       404:
         description: Not found
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: "Not Found"
+            message:
+              type: string
+              example: "File not found"
       500:
         description: Server error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: "Server Error"
+            message:
+              type: string
+              example: "Error creating vectorstore"
     """
     # Get token from X-Token header
     token = request.headers.get('X-Token')
@@ -228,6 +297,7 @@ def create_vectorstore_route():
         # Process each file
         all_documents = []
         files_processed = 0
+        embedding_model = os.environ.get("AZURE_OPENAI_EMBEDDING_DEPLOYMENT", "text-embedding-3-large")
         
         # Get a database connection to access file data directly
         conn = DatabaseService.get_connection()
@@ -309,10 +379,15 @@ def create_vectorstore_route():
         
         # Initialize embeddings
         embeddings = AzureOpenAIEmbeddings(
-            azure_deployment=os.environ.get("AZURE_OPENAI_EMBEDDING_DEPLOYMENT", "text-embedding-3-large"),
+            azure_deployment=embedding_model,
             api_key=os.environ.get("OPENAI_API_KEY"),
             azure_endpoint=os.environ.get("OPENAI_API_ENDPOINT")
         )
+        
+        # Estimate token count (approximately 4 tokens per word)
+        total_text = " ".join([chunk.page_content for chunk in chunks])
+        words = total_text.split()
+        estimated_tokens = len(words) * 4  # Rough estimation
         
         # Create FAISS index
         vectorstore = FAISS.from_documents(chunks, embeddings)
@@ -392,8 +467,11 @@ def create_vectorstore_route():
             "path": vectorstore_path,
             "name": vectorstore_name,
             "file_count": files_processed,
+            "files_uploaded": files_processed,
             "document_count": len(all_documents),
-            "chunk_count": len(chunks)
+            "chunk_count": len(chunks),
+            "embedded_tokens": estimated_tokens,
+            "embedding_model": embedding_model
         }, 200)
         
     except Exception as e:
@@ -440,6 +518,9 @@ def delete_vectorstore_route():
             vectorstore_id:
               type: string
               example: "12345678-1234-1234-1234-123456789012"
+            name:
+              type: string
+              example: "My Vectorstore"
       400:
         description: Bad request
         schema:
@@ -689,9 +770,15 @@ def load_vectorstore_route():
             name:
               type: string
               example: "My Vectorstore"
+            file_count:
+              type: integer
+              example: 3
             document_count:
               type: integer
               example: 42
+            chunk_count:
+              type: integer
+              example: 120
             created_at:
               type: string
               format: date-time
@@ -700,6 +787,9 @@ def load_vectorstore_route():
               type: string
               format: date-time
               example: "2023-06-02T14:22:33.123456+02:00"
+            embedding_model:
+              type: string
+              example: "text-embedding-3-large"
       400:
         description: Bad request
         schema:
@@ -917,8 +1007,9 @@ def load_vectorstore_route():
             # Test loading the vectorstore to ensure it's valid
             try:
                 # Initialize embeddings
+                embedding_model = os.environ.get("AZURE_OPENAI_EMBEDDING_DEPLOYMENT", "text-embedding-3-large")
                 embeddings = AzureOpenAIEmbeddings(
-                    azure_deployment=os.environ.get("AZURE_OPENAI_EMBEDDING_DEPLOYMENT", "text-embedding-3-large"),
+                    azure_deployment=embedding_model,
                     api_key=os.environ.get("OPENAI_API_KEY"),
                     azure_endpoint=os.environ.get("OPENAI_API_ENDPOINT")
                 )
@@ -948,7 +1039,8 @@ def load_vectorstore_route():
                 "document_count": document_count,
                 "chunk_count": chunk_count,
                 "created_at": created_at,
-                "last_accessed": last_accessed
+                "last_accessed": last_accessed,
+                "embedding_model": embedding_model
             }, 200)
             
         except Exception as e:
@@ -1014,6 +1106,9 @@ def list_vectorstores_route():
                   document_count:
                     type: integer
                     example: 42
+                  chunk_count:
+                    type: integer
+                    example: 120
                   created_at:
                     type: string
                     format: date-time
@@ -1022,6 +1117,12 @@ def list_vectorstores_route():
                     type: string
                     format: date-time
                     example: "2023-06-02T14:22:33.123456+02:00"
+                  owner_id:
+                    type: string
+                    example: "98765432-9876-9876-9876-987654321098"
+            count:
+              type: integer
+              example: 3
       401:
         description: Authentication error
         schema:
@@ -1210,16 +1311,31 @@ def create_vectorstore_from_string_route():
           properties:
             message:
               type: string
-              example: "Vectorstore created successfully"
+              example: "Vectorstore created successfully from string content"
             vectorstore_id:
               type: string
               example: "12345678-1234-1234-1234-123456789012"
             path:
               type: string
               example: "user123-12345678-1234-1234-1234-123456789012"
+            name:
+              type: string
+              example: "My String Vectorstore"
+            content_length:
+              type: integer
+              example: 5000
             chunk_count:
               type: integer
-              example: 5
+              example: 12
+            content_source:
+              type: string
+              example: "User Input"
+            embedded_tokens:
+              type: integer
+              example: 1200
+            embedding_model:
+              type: string
+              example: "text-embedding-3-large"
       400:
         description: Bad request
         schema:
@@ -1371,9 +1487,14 @@ def create_vectorstore_from_string_route():
         vectorstore_id = str(uuid.uuid4())
         vectorstore_path = f"{user_id}-{vectorstore_id}"
         
+        # Estimate token count (approximately 4 tokens per word)
+        words = content.split()
+        estimated_tokens = len(words) * 4  # Rough estimation
+        
         # Initialize embeddings
+        embedding_model = os.environ.get("AZURE_OPENAI_EMBEDDING_DEPLOYMENT", "text-embedding-3-large")
         embeddings = AzureOpenAIEmbeddings(
-            azure_deployment=os.environ.get("AZURE_OPENAI_EMBEDDING_DEPLOYMENT", "text-embedding-3-large"),
+            azure_deployment=embedding_model,
             api_key=os.environ.get("OPENAI_API_KEY"),
             azure_endpoint=os.environ.get("OPENAI_API_ENDPOINT")
         )
@@ -1458,7 +1579,9 @@ def create_vectorstore_from_string_route():
             "name": vectorstore_name,
             "content_length": len(content),
             "chunk_count": len(chunks),
-            "content_source": content_source
+            "content_source": content_source,
+            "embedded_tokens": estimated_tokens,
+            "embedding_model": embedding_model
         }, 200)
         
     except Exception as e:
@@ -1475,9 +1598,13 @@ def create_vectorstore_from_string_route():
             logger.error(f"Error cleaning up temporary directory: {str(e)}")
 
 def register_vectorstore_routes(app):
+    from apis.utils.usageMiddleware import track_usage
+    from apis.utils.rbacMiddleware import check_endpoint_access
+    
+    
     """Register vectorstore routes with the Flask app"""
-    app.route('/rag/vectorstore/document', methods=['POST'])(api_logger(check_balance(create_vectorstore_route)))
-    app.route('/rag/vectorstore/string', methods=['POST'])(api_logger(check_balance(create_vectorstore_from_string_route)))
-    app.route('/rag/vectorstore/load', methods=['POST'])(api_logger(check_balance(load_vectorstore_route)))
-    app.route('/rag/vectorstore', methods=['DELETE'])(api_logger(check_balance(delete_vectorstore_route)))
-    app.route('/rag/vectorstore/list', methods=['GET'])(api_logger(check_balance(list_vectorstores_route)))
+    app.route('/rag/vectorstore/document', methods=['POST'])(track_usage(api_logger(check_endpoint_access(check_balance(create_vectorstore_route)))))
+    app.route('/rag/vectorstore/string', methods=['POST'])(track_usage(api_logger(check_endpoint_access(check_balance(create_vectorstore_from_string_route)))))
+    app.route('/rag/vectorstore/load', methods=['POST'])(track_usage(api_logger(check_endpoint_access(check_balance(load_vectorstore_route)))))
+    app.route('/rag/vectorstore', methods=['DELETE'])(api_logger(check_balance(check_endpoint_access(delete_vectorstore_route))))
+    app.route('/rag/vectorstore/list', methods=['GET'])(api_logger(check_endpoint_access(check_balance(list_vectorstores_route))))

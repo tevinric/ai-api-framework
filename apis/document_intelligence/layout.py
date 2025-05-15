@@ -334,16 +334,103 @@ def document_layout_route():
                           description: Whether page contains handwritten content
                         text:
                           type: array
+                          items:
+                            type: object
+                            properties:
+                              type:
+                                type: string
+                                description: Type of text element (e.g., "paragraph", "line")
+                              content:
+                                type: string
+                                description: Text content
+                              role:
+                                type: string
+                                description: Role of the text (if available)
                           description: Extracted text content
                         tables:
                           type: array
+                          items:
+                            type: object
+                            properties:
+                              row_count:
+                                type: integer
+                                description: Number of rows in the table
+                              column_count:
+                                type: integer
+                                description: Number of columns in the table
+                              cells:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    row_index:
+                                      type: integer
+                                      description: Row index of the cell
+                                    column_index:
+                                      type: integer
+                                      description: Column index of the cell
+                                    row_span:
+                                      type: integer
+                                      description: Row span of the cell
+                                    column_span:
+                                      type: integer
+                                      description: Column span of the cell
+                                    content:
+                                      type: string
+                                      description: Content of the cell
+                                    kind:
+                                      type: string
+                                      description: Kind of cell (if available)
+                                description: Cell information
+                              formatted:
+                                type: string
+                                description: Formatted table in requested format
+                              table_summary:
+                                type: string
+                                description: Markdown summary of the table
                           description: Extracted tables
                         selection_marks:
                           type: array
+                          items:
+                            type: object
+                            properties:
+                              state:
+                                type: string
+                                description: State of the selection mark (e.g., "selected", "unselected")
+                              confidence:
+                                type: number
+                                description: Confidence score for the state detection
                           description: Extracted selection marks (checkboxes)
                         barcodes:
                           type: array
+                          items:
+                            type: object
+                            properties:
+                              value:
+                                type: string
+                                description: Decoded barcode value
+                              type:
+                                type: string
+                                description: Type of barcode detected
+                              confidence:
+                                type: number
+                                description: Confidence score for the barcode detection
                           description: Extracted barcodes
+                        page_text_all:
+                          type: string
+                          description: All text content from the page combined
+                        detected_languages:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              language:
+                                type: string
+                                description: Detected language code
+                              confidence:
+                                type: number
+                                description: Confidence score for language detection
+                          description: Detected languages for this page
       400:
         description: Bad request
         schema:

@@ -196,7 +196,7 @@
         
         /* Hero */
         .hero {
-            background: linear-gradient(135deg, rgba(1, 0, 15, 1) 0%, rgba(35, 0, 33, 1) 100%);
+            background: url('/static/GAIA _splash3.gif') center/cover no-repeat;
             color: var(--white-color);
             padding: 5rem 3rem;
             position: relative;
@@ -211,11 +211,8 @@
             right: 0;
             bottom: 0;
             left: 0;
-            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23FFFFFF' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
-            opacity: 0.12;
+            background: linear-gradient(to right, rgba(1, 0, 15, 0.85) 0%, rgba(1, 0, 15, 0.5) 40%, transparent 80%);
             pointer-events: none;
-            animation: zoomDots 20s linear infinite;
-            transform-origin: center;
             z-index: 0;
         }
         
@@ -670,23 +667,8 @@
         .cta-section {
             padding: 5rem 3rem;
             text-align: center;
-            background: linear-gradient(135deg, rgba(1, 0, 15, 0.95) 0%, rgba(35, 0, 33, 0.95) 100%);
-            color: white;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .cta-section::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            right: 0;
-            bottom: 0;
-            left: 0;
-            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23FFFFFF' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
-            opacity: 0.15;
-            pointer-events: none;
-            z-index: 0;
+            background: linear-gradient(135deg, rgba(1, 0, 15, 1) 0%, rgba(35, 0, 33, 1) 100%);
+            color: var(--white-color);
         }
         
         .cta-container {
@@ -936,12 +918,13 @@
     </aside>
     
     <main class="main-content">
-        <section class="hero">
+        <section class="hero" style="height: 550px;">
+            <br><br>
             <div class="hero-container">
-                <h2>RAG (Retrieval-Augmented Generation) Services</h2>
-                <p>Enhance your AI applications with context-aware responses using our powerful RAG services. Combine the capabilities of vector search with state-of-the-art language models to deliver accurate, factual answers grounded in your organization's specific content.</p>
+                <h2 style="font-size: 220%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">RAG (Retrieval-Augmented Generation) Services</h2>
+                <p>Enhance your AI applications with context-aware responses using GAIA's RAG services. Combine the capabilities of vector search with state-of-the-art language models to deliver accurate, factual answers grounded in your custom specific content.</p>
                 <div class="cta-buttons">
-                    <a href="/static/files/ai-api-postman-collection.json" class="cta-btn">
+                    <a href="/static/resources/AIAPIS.postman_collection" class="cta-btn" style="background-color: var(--accent-color); color: var(--dark-color);" download>
                         <i class="fas fa-download"></i> Download Postman Collection
                     </a>
                     <a href="/apidocs/#/RAG" class="cta-btn cta-btn-secondary">
@@ -958,7 +941,7 @@
                     <div class="section-icon">
                         <i class="fas fa-brain"></i>
                     </div>
-                    <h2>What is RAG?</h2>
+                    <h2 style="font-size: 220%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">What is RAG?</h2>
                 </div>
                 
                 <div class="info-box">
@@ -975,8 +958,9 @@
                     </div>
                 </div>
                 
-                <p class="section-intro">Our RAG API provides powerful tools for building AI applications that can answer questions and generate text based on your specific documents and content. By combining the power of vector databases with state-of-the-art language models, you can create intelligent systems that deliver accurate, contextually relevant responses.</p>
-                
+                <p class="section-intro">GAIA's RAG APIs provides powerful tools for building AI applications that can answer questions and generate text based on your specific documents and content. By combining the power of vector databases with state-of-the-art language models, you can create intelligent systems that deliver accurate, contextually relevant responses.</p>
+                <br>
+
                 <div class="features-grid">
                     <div class="feature-card">
                         <div class="feature-icon">
@@ -1017,10 +1001,7 @@
         <section class="model-section alternate">
             <div class="model-container">
                 <div class="section-header">
-                    <div class="section-icon">
-                        <i class="fas fa-cog"></i>
-                    </div>
-                    <h2>How RAG Works</h2>
+                    <h2 style="font-size: 220%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">How RAG Works</h2>
                 </div>
 
                 <div class="rag-flow">
@@ -1031,7 +1012,7 @@
                         <div class="rag-flow-content">
                             <h4>1. Create a Vectorstore</h4>
                             <p>Upload documents (PDF, DOCX, TXT, etc.) or text strings to create a vectorstore. The system processes your content by:</p>
-                            <ul>
+                            <ul style="margin-left: 30px;">
                                 <li>Splitting documents into smaller, manageable chunks</li>
                                 <li>Creating vector embeddings that capture semantic meaning</li>
                                 <li>Building an index for fast similarity search</li>
@@ -1045,7 +1026,7 @@
                         <div class="rag-flow-content">
                             <h4>2. Retrieve Relevant Information</h4>
                             <p>When a query is submitted, the system:</p>
-                            <ul>
+                            <ul style="margin-left: 30px;">
                                 <li>Converts the query into a vector embedding</li>
                                 <li>Searches the vectorstore to find the most semantically similar chunks</li>
                                 <li>Retrieves the top matches to use as context</li>
@@ -1059,7 +1040,7 @@
                         <div class="rag-flow-content">
                             <h4>3. Generate Contextual Response</h4>
                             <p>The retrieved information is provided to a language model, which:</p>
-                            <ul>
+                            <ul style="margin-left: 30px;">
                                 <li>Analyzes both the original query and the retrieved context</li>
                                 <li>Generates a response that answers the query based specifically on the provided context</li>
                                 <li>Delivers accurate, factual information grounded in your data</li>
@@ -1074,10 +1055,7 @@
         <section class="overview-section">
             <div class="overview-container">
                 <div class="section-header">
-                    <div class="section-icon">
-                        <i class="fas fa-network-wired"></i>
-                    </div>
-                    <h2>Available Endpoints</h2>
+                    <h2 style="font-size: 220%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Available Endpoints</h2>
                 </div>
                 
                 <div class="api-endpoints">
@@ -1129,15 +1107,12 @@
         <section class="model-section">
             <div class="model-container">
                 <div class="model-header">
-                    <div class="model-icon document-icon">
-                        <i class="fas fa-file-alt"></i>
-                    </div>
                     <div class="model-info">
-                        <h2 style="display: flex; justify-content: space-between; align-items: center;">
+                        <h2 style="font-size: 220%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
                             Document Vectorstore
-                            <div class="credit-badge">3 AI Credits</div>
                         </h2>
                         <p>Create vectorstores from document files such as PDFs, Word documents, text files, and spreadsheets. Use this approach when you have existing documents that you want to make searchable and queryable.</p>
+                        <br>
                     </div>
                 </div>
                 
@@ -1159,13 +1134,17 @@
                             POST /rag/vectorstore/document
                         </div>
                         <p>Create a vectorstore from document files that you've previously uploaded via the /file endpoint.</p>
+                        <br>
                         <p>Required parameters:</p>
-                        <ul>
+                        <br>
+                        <ul style="margin-left: 10px;">
                             <li><strong>file_ids</strong> - Array of file IDs to process</li>
                             <li><strong>X-Token</strong> - Your API authentication token (header)</li>
                         </ul>
+                        <br>
                         <p>Optional parameters:</p>
-                        <ul>
+                        <br>
+                        <ul style="margin-left: 10px;">
                             <li><strong>vectorstore_name</strong> - Name for the vectorstore (default: auto-generated)</li>
                             <li><strong>chunk_size</strong> - Size of text chunks (default: 1000)</li>
                             <li><strong>chunk_overlap</strong> - Overlap between chunks (default: 200)</li>
@@ -1194,15 +1173,12 @@
         <section class="model-section alternate">
             <div class="model-container">
                 <div class="model-header">
-                    <div class="model-icon string-icon">
-                        <i class="fas fa-align-left"></i>
-                    </div>
                     <div class="model-info">
-                        <h2 style="display: flex; justify-content: space-between; align-items: center;">
+                        <h2 style="font-size: 220%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
                             String Vectorstore
-                            <div class="credit-badge">2 AI Credits</div>
                         </h2>
                         <p>Create vectorstores directly from text strings without requiring document uploads. Ideal for API responses, short-form content, or information already available as text.</p>
+                        <br>
                     </div>
                 </div>
                 
@@ -1225,13 +1201,17 @@
                             POST /rag/vectorstore/string
                         </div>
                         <p>Create a vectorstore directly from text content without requiring document upload.</p>
+                        <br
                         <p>Required parameters:</p>
-                        <ul>
+                        <br>
+                        <ul style="margin-left: 10px;">
                             <li><strong>content</strong> - Text content to create the vectorstore from</li>
                             <li><strong>X-Token</strong> - Your API authentication token (header)</li>
                         </ul>
+                        <br>
                         <p>Optional parameters:</p>
-                        <ul>
+                        <br>
+                        <ul Style="margin-left: 10px;">
                             <li><strong>content_source</strong> - Source identifier (default: "User Input")</li>
                             <li><strong>vectorstore_name</strong> - Name for the vectorstore (default: auto-generated)</li>
                             <li><strong>chunk_size</strong> - Size of text chunks (default: 500)</li>
@@ -1262,14 +1242,10 @@
         <section class="model-section">
             <div class="model-container">
                 <div class="section-header">
-                    <div class="section-icon">
-                        <i class="fas fa-search-plus"></i>
-                    </div>
-                    <h2>Querying Vectorstores</h2>
+                    <h2 style="font-size: 220%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Querying Vectorstores</h2>
                 </div>
-                
-                <p>Once you've created a vectorstore, you can query it to retrieve information and generate responses using our LLM models. This is the core RAG functionality that allows you to get answers based on your specific content.</p>
-                
+                <p>Once you've created a vectorstore, you can query it to retrieve information and generate responses using GAIA's LLM models. This is the core RAG functionality that allows you to get answers based on your specific content.</p>
+                <br><br>
                 <div class="model-details">
                     <div class="model-detail-card">
                         <h3><i class="fas fa-code"></i> Query API Endpoint</h3>
@@ -1277,13 +1253,16 @@
                             POST /rag/vectorstore/consume
                         </div>
                         <p>Required parameters:</p>
-                        <ul>
+                        <br>
+                        <ul style="margin-left: 10px;">
                             <li><strong>vectorstore_id</strong> - ID of the vectorstore to query</li>
                             <li><strong>query</strong> - User question or request to answer</li>
                             <li><strong>X-Token</strong> - Your API authentication token (header)</li>
                         </ul>
+                        <br>
                         <p>Optional parameters:</p>
-                        <ul>
+                        <br>
+                        <ul style="margin-left: 10px;">
                             <li><strong>model</strong> - LLM model to use (gpt-4o-mini or gpt-4o, default: gpt-4o-mini)</li>
                             <li><strong>system_prompt</strong> - Custom system prompt to guide model behavior</li>
                             <li><strong>temperature</strong> - Controls randomness (0=focused, 1=creative, default: 0.5)</li>
@@ -1295,27 +1274,31 @@
                     <div class="model-detail-card">
                         <h3><i class="fas fa-lightbulb"></i> Custom System Prompts</h3>
                         <p>The <code>system_prompt</code> parameter allows you to control how the model uses the retrieved information. You can customize the prompt for different use cases:</p>
+                        <br>
                         
                         <div class="setting-group">
-                            <span class="setting-label">Technical Support</span>
+                            <span class="setting-label"><b>Technical Support: </b></span>
                             <div class="setting-value">
                                 "You are a technical support specialist. Use the context to provide step-by-step solutions to technical problems. If the solution isn't in the context, tell the user you don't have that information."
                             </div>
+                            <br>
                         </div>
                         
                         <div class="setting-group">
-                            <span class="setting-label">Legal Document Analysis</span>
+                            <span class="setting-label"><b>Legal Document Analysis: </b></span>
                             <div class="setting-value">
                                 "You are a legal assistant analyzing contracts. Based on the provided context, explain legal terms in plain language. Do not provide legal advice beyond what's in the context."
                             </div>
+                            <br>
                         </div>
                         
                         <div class="setting-group">
-                            <span class="setting-label">Educational Content</span>
+                            <span class="setting-label"><b>Educational Content: </b></span>
                             <div class="setting-value">
                                 "You are a helpful tutor. Explain concepts from the context in simple terms appropriate for a high school student, using analogies when possible."
                             </div>
                         </div>
+                        <br>
                     </div>
                 </div>
                 
@@ -1341,10 +1324,7 @@
         <section class="overview-section alternate">
             <div class="overview-container">
                 <div class="section-header">
-                    <div class="section-icon">
-                        <i class="fas fa-lightbulb"></i>
-                    </div>
-                    <h2>Use Cases</h2>
+                    <h2 style="font-size: 220%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Use Cases</h2>
                 </div>
                 
                 <p class="section-intro">RAG services can be applied to a wide range of business needs. Here are some common use cases where our RAG API can deliver significant value:</p>
@@ -1402,19 +1382,16 @@
         <section class="model-section">
             <div class="model-container">
                 <div class="section-header">
-                    <div class="section-icon">
-                        <i class="fas fa-sliders-h"></i>
-                    </div>
-                    <h2>Advanced Options</h2>
+                    <h2 style="font-size: 220%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Advanced Options</h2>
                 </div>
-                
                 <p>For more complex document processing needs, our platform offers advanced features to improve the quality of your vectorstores and queries.</p>
-                
+                <br><br>
                 <div class="model-details">
                     <div class="model-detail-card">
                         <h3><i class="fas fa-file-pdf"></i> Enhanced PDF Processing</h3>
                         <p>The advanced document processing endpoint (/rag/vectorstore/document/advanced) provides improved handling of PDF documents:</p>
-                        <ul>
+                        <br>
+                        <ul style="margin-left: 20px;">
                             <li>Better extraction of text from complex layouts</li>
                             <li>Improved handling of tables and structured content</li>
                             <li>Automatic duplicate detection and removal</li>
@@ -1427,7 +1404,8 @@
                     <div class="model-detail-card">
                         <h3><i class="fas fa-fingerprint"></i> Vectorstore Management</h3>
                         <p>Our platform provides tools to manage your vectorstores efficiently:</p>
-                        <ul>
+                        <br>
+                        <ul style="margin-left: 20px;">
                             <li>List all your vectorstores with metadata</li>
                             <li>Load vectorstore details to check document count and settings</li>
                             <li>Delete vectorstores when they're no longer needed</li>
@@ -1443,13 +1421,14 @@
                         <h4>Git Policy Endpoint</h4>
                         <p>Our platform includes a specialized endpoint for Git policy questions at <code>/rag/vectorstore/consume/git_policies</code></p>
                         <p>This pre-configured vectorstore contains comprehensive Git best practices and company policies, providing:</p>
-                        <ul>
+                        <ul style="margin-left: 20px;">
                             <li>Guidance on branch strategies</li>
                             <li>Commit message conventions</li>
                             <li>Pull request workflows</li>
                             <li>Code review standards</li>
                             <li>Merge and release procedures</li>
                         </ul>
+                        <br>
                         <p>Unlike other endpoints, this one doesn't require a vectorstore_id parameter, as it uses a pre-indexed knowledge base.</p>
                     </div>
                 </div>
@@ -1459,10 +1438,11 @@
         <!-- CTA Section -->
         <section class="cta-section">
             <div class="cta-container">
+                <img src="/static/GAIA6.png" alt="GAIA Logo" style="height: 100px; margin-right: 0.5rem;">
                 <h2>Start Building with RAG Today</h2>
-                <p>Integrate our powerful RAG services into your applications and unlock the potential of AI systems that can deliver accurate, context-aware responses based on your specific content.</p>
+                <p>Integrate GAIA's powerful RAG services into your applications and unlock the potential of AI systems that can deliver accurate, context-aware responses based on your specific content.</p>
                 <div class="cta-buttons" style="justify-content: center;">
-                    <a href="/static/files/ai-api-postman-collection.json" class="cta-btn">
+                    <a href="/static/resources/AIAPIS.postman_collection" class="cta-btn" style="background-color: var(--accent-color); color: var(--dark-color);" download>
                         <i class="fas fa-download"></i> Download Postman Collection
                     </a>
                     <a href="/apidocs/#/RAG" class="cta-btn cta-btn-secondary">

@@ -20,3 +20,6 @@ apis/speech_services/__pycache__/
 apis/token_services/__pycache__/
 apis/utils/__pycache__/
 apis/nlp/__pycache__/
+apis/jobs/
+apis/jobs/__pycache__/
+apis/car_insurance/__pycache__/

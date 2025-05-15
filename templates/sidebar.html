@@ -1,6 +1,20 @@
-<!-- filepath: c:\Users\E100545\Git\ai-api-framework\templates\sidebar.html -->
+<style>
+    /* Change the hover color */
+    .sidebar-link:hover {
+        background-color: #f0f0f0; /* Replace with your desired hover color */
+        color: #333; /* Replace with your desired text color */
+    }
+    
+    /* Change the active color */
+    .sidebar-link.active {
+        background-color:rgb(4, 1, 39); /* Replace with your desired active background color */
+        color: #fff; /* Replace with your desired active text color */
+    }
+    </style>
+
+
 <div class="sidebar-category">Main</div>
-<a href="{{ url_for('home') }}" class="sidebar-link active">
+<a href="{{ url_for('home') }}" class="sidebar-link">
     <i class="fas fa-home"></i> Home
 </a>
 <a href="/apidocs/" class="sidebar-link">

@@ -227,4 +227,7 @@ def refresh_token_route():
 
 def register_refresh_token_routes(app):
     """Register refresh token routes with the Flask app"""
-    app.route('/token/refresh', methods=['GET'])(api_logger(refresh_token_route))
+    
+    from apis.utils.rbacMiddleware import check_endpoint_access
+
+    app.route('/token/refresh', methods=['GET'])(api_logger(check_endpoint_access(refresh_token_route)))

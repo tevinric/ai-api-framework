@@ -7,6 +7,7 @@ import pytz
 from datetime import datetime
 import calendar
 import re
+import json
 
 # CONFIGURE LOGGING
 logger = logging.getLogger(__name__)
@@ -38,8 +39,7 @@ def usage_by_user_route():
         in: query
         type: string
         required: true
-        description: Time period for statistics, either "all" or in format "YYYY-MM"
-        example: "2024-03"
+        description: Time period for statistics, either "all" or in format "YYYY-MM" (e.g. "2024-03")
     produces:
       - application/json
     responses:
@@ -265,8 +265,7 @@ def usage_by_department_route():
         in: query
         type: string
         required: true
-        description: Time period for statistics, either "all" or in format "YYYY-MM"
-        example: "2024-03"
+        description: Time period for statistics, either "all" or in format "YYYY-MM" (e.g. "2024-03")
     produces:
       - application/json
     responses:
@@ -704,7 +703,501 @@ def get_department_statistics(department, time_period):
         if conn:
             conn.close()
 
+def user_activity_summary_route():
+    """
+    Get detailed activity summary for a user for a specific calendar month
+    ---
+    tags:
+      - Balance Management
+    parameters:
+      - name: X-Token
+        in: header
+        type: string
+        required: true
+        description: Valid token for authentication
+      - name: time_period
+        in: query
+        type: string
+        required: true
+        description: Time period for activity summary in format "YYYY-MM" (e.g. "2025-04")
+    produces:
+      - application/json
+    responses:
+      200:
+        description: User activity summary retrieved successfully
+      400:
+        description: Bad request
+      401:
+        description: Authentication error
+      500:
+        description: Server error
+    """
+    # Get token from X-Token header
+    token = request.headers.get('X-Token')
+    if not token:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "Missing X-Token header"
+        }, 401)
+
+    # Validate token
+    token_details = DatabaseService.get_token_details_by_value(token)
+    if not token_details:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "Invalid token"
+        }, 401)
+
+    # Check if token is expired
+    now = datetime.now(pytz.UTC)
+    expiration_time = token_details["token_expiration_time"]
+
+    if expiration_time.tzinfo is None:
+        johannesburg_tz = pytz.timezone('Africa/Johannesburg')
+        expiration_time = johannesburg_tz.localize(expiration_time)
+
+    if now > expiration_time:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "Token has expired"
+        }, 401)
+
+    # Set user_id in request context
+    user_id = token_details["user_id"]
+
+    # Get time_period from query string
+    time_period = request.args.get('time_period')
+    if not time_period or not re.match(r'^\d{4}-\d{2}$', time_period):
+        return create_api_response({
+            "error": "Bad Request",
+            "message": "Invalid or missing time_period. Must be in format 'YYYY-MM'"
+        }, 400)
+
+    try:
+        # Parse YYYY-MM format
+        year, month = map(int, time_period.split('-'))
+        _, last_day = calendar.monthrange(year, month)
+        start_date = f"{year}-{month:02d}-01"
+        end_date = f"{year}-{month:02d}-{last_day}"
+
+        conn = DatabaseService.get_connection()
+        cursor = conn.cursor()
+        
+        # Query to get endpoint usage details with model consumption grouped by endpoint
+        query = """
+        WITH ModelUsage AS (
+            SELECT 
+                u.endpoint_id,
+                u.model_used,
+                SUM(u.prompt_tokens) AS prompt_tokens,
+                SUM(u.completion_tokens) AS completion_tokens,
+                SUM(u.total_tokens) AS total_tokens,
+                SUM(u.cached_tokens) AS cached_tokens
+            FROM 
+                user_usage u
+            WHERE 
+                u.user_id = ? 
+                AND u.timestamp BETWEEN ? AND ?
+                AND u.model_used IS NOT NULL
+            GROUP BY 
+                u.endpoint_id, u.model_used
+        )
+        SELECT 
+            e.id AS endpoint_id,
+            e.endpoint_name,
+            SUM(u.pages_processed) AS pages_processed,
+            SUM(u.images_generated) AS images_generated,
+            SUM(u.audio_seconds_processed) AS audio_seconds_processed,
+            (
+                SELECT 
+                    STRING_AGG(
+                        CONCAT('"', m.model_used, '": {"prompt_tokens":', m.prompt_tokens, 
+                        ', "completion_tokens":', m.completion_tokens, 
+                        ', "total_tokens":', m.total_tokens, 
+                        ', "cached_tokens":', m.cached_tokens, '}'), 
+                        ', '
+                    )
+                FROM 
+                    ModelUsage m
+                WHERE 
+                    m.endpoint_id = e.id
+            ) AS model_consumption_json
+        FROM 
+            user_usage u
+        JOIN 
+            endpoints e ON u.endpoint_id = e.id
+        WHERE 
+            u.user_id = ? 
+            AND u.timestamp BETWEEN ? AND ?
+        GROUP BY 
+            e.id, e.endpoint_name
+        """
+
+        # Execute query with parameters
+        cursor.execute(query, [user_id, start_date, end_date, user_id, start_date, end_date])
+        results = cursor.fetchall()
+
+        activity_summary = []
+        for row in results:
+            endpoint_id = row[0]
+            endpoint_name = row[1]
+            pages_processed = row[2] or 0
+            images_generated = row[3] or 0
+            audio_seconds_processed = float(row[4]) if row[4] else 0.0
+            
+            # Parse model consumption JSON or create empty dict if NULL
+            model_consumption = {}
+            if row[5]:
+                # Convert the string representation to a valid JSON
+                model_consumption_str = '{' + row[5] + '}'
+                try:
+                    model_consumption = json.loads(model_consumption_str)
+                except json.JSONDecodeError:
+                    logger.error(f"Error parsing model consumption JSON: {row[5]}")
+
+            activity_summary.append({
+                "endpointID": endpoint_id,
+                "endpointName": endpoint_name,
+                "pages_processed": pages_processed,
+                "images_generated": images_generated,
+                "audio_seconds_processed": audio_seconds_processed,
+                "model_consumption": model_consumption
+            })
+
+        response_data = {
+            "userID": user_id,
+            "reporting_period": time_period,
+            "activity_summary": activity_summary
+        }
+
+        return create_api_response(response_data, 200)
+
+    except Exception as e:
+        logger.error(f"Error retrieving user activity summary: {str(e)}")
+        return create_api_response({
+            "error": "Server Error",
+            "message": f"Error retrieving user activity summary: {str(e)}"
+        }, 500)
+
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+def user_model_usage_summary_route():
+    """
+    Get detailed model usage statistics for a user for a specific calendar month
+    ---
+    tags:
+      - Balance Management
+    parameters:
+      - name: X-Token
+        in: header
+        type: string
+        required: true
+        description: Valid token for authentication
+      - name: time_period
+        in: query
+        type: string
+        required: true
+        description: Time period for model usage summary in format "YYYY-MM" (e.g. "2025-04")
+    produces:
+      - application/json
+    responses:
+      200:
+        description: User model usage summary retrieved successfully
+      400:
+        description: Bad request
+      401:
+        description: Authentication error
+      500:
+        description: Server error
+    """
+    # Get token from X-Token header
+    token = request.headers.get('X-Token')
+    if not token:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "Missing X-Token header"
+        }, 401)
+
+    # Validate token
+    token_details = DatabaseService.get_token_details_by_value(token)
+    if not token_details:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "Invalid token"
+        }, 401)
+
+    # Check if token is expired
+    now = datetime.now(pytz.UTC)
+    expiration_time = token_details["token_expiration_time"]
+
+    if expiration_time.tzinfo is None:
+        johannesburg_tz = pytz.timezone('Africa/Johannesburg')
+        expiration_time = johannesburg_tz.localize(expiration_time)
+
+    if now > expiration_time:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "Token has expired"
+        }, 401)
+
+    # Set user_id in request context
+    user_id = token_details["user_id"]
+
+    # Get time_period from query string
+    time_period = request.args.get('time_period')
+    if not time_period or not re.match(r'^\d{4}-\d{2}$', time_period):
+        return create_api_response({
+            "error": "Bad Request",
+            "message": "Invalid or missing time_period. Must be in format 'YYYY-MM'"
+        }, 400)
+
+    try:
+        # Parse YYYY-MM format
+        year, month = map(int, time_period.split('-'))
+        _, last_day = calendar.monthrange(year, month)
+        start_date = f"{year}-{month:02d}-01"
+        end_date = f"{year}-{month:02d}-{last_day}"
+
+        conn = DatabaseService.get_connection()
+        cursor = conn.cursor()
+        
+        # 1. Get LLM model usage statistics
+        llm_query = """
+        SELECT 
+            u.model_used,
+            SUM(u.prompt_tokens) AS prompt_tokens,
+            SUM(u.completion_tokens) AS completion_tokens,
+            SUM(u.total_tokens) AS total_tokens,
+            SUM(u.cached_tokens) AS cached_tokens,
+            COUNT(DISTINCT u.id) AS number_of_calls
+        FROM 
+            user_usage u
+        JOIN
+            endpoints e ON u.endpoint_id = e.id
+        WHERE 
+            u.user_id = ? 
+            AND u.timestamp BETWEEN ? AND ?
+            AND u.model_used IS NOT NULL
+            AND e.endpoint_type = 'llm'
+        GROUP BY 
+            u.model_used
+        ORDER BY
+            SUM(u.total_tokens) DESC
+        """
+        
+        cursor.execute(llm_query, [user_id, start_date, end_date])
+        llm_results = cursor.fetchall()
+        
+        llm_models = []
+        for row in llm_results:
+            llm_models.append({
+                "model_name": row[0],
+                "prompt_tokens": row[1] or 0,
+                "completion_tokens": row[2] or 0,
+                "total_tokens": row[3] or 0,
+                "cached_tokens": row[4] or 0,
+                "number_of_calls": row[5] or 0
+            })
+        
+        # 2. Get image generation model usage statistics
+        image_query = """
+        SELECT 
+            u.model_used,
+            SUM(u.images_generated) AS images_generated,
+            COUNT(DISTINCT u.id) AS number_of_calls
+        FROM 
+            user_usage u
+        JOIN
+            endpoints e ON u.endpoint_id = e.id
+        WHERE 
+            u.user_id = ? 
+            AND u.timestamp BETWEEN ? AND ?
+            AND e.endpoint_type = 'image'
+        GROUP BY 
+            u.model_used
+        ORDER BY
+            SUM(u.images_generated) DESC
+        """
+        
+        cursor.execute(image_query, [user_id, start_date, end_date])
+        image_results = cursor.fetchall()
+        
+        image_models = []
+        for row in image_results:
+            model_name = row[0] if row[0] else "unspecified"
+            image_models.append({
+                "model_name": model_name,
+                "images_generated": row[1] or 0,
+                "number_of_calls": row[2] or 0
+            })
+        
+        # 3. Get speech service usage statistics
+        speech_query = """
+        SELECT 
+            u.model_used,
+            SUM(u.audio_seconds_processed) AS audio_seconds,
+            COUNT(DISTINCT u.id) AS number_of_calls
+        FROM 
+            user_usage u
+        JOIN
+            endpoints e ON u.endpoint_id = e.id
+        WHERE 
+            u.user_id = ? 
+            AND u.timestamp BETWEEN ? AND ?
+            AND e.endpoint_type = 'speech'
+        GROUP BY 
+            u.model_used
+        ORDER BY
+            SUM(u.audio_seconds_processed) DESC
+        """
+        
+        cursor.execute(speech_query, [user_id, start_date, end_date])
+        speech_results = cursor.fetchall()
+        
+        speech_models = []
+        for row in speech_results:
+            model_name = row[0] if row[0] else "unspecified"
+            audio_seconds = float(row[1]) if row[1] else 0.0
+            speech_models.append({
+                "model_name": model_name,
+                "audio_seconds_processed": audio_seconds,
+                "number_of_calls": row[2] or 0
+            })
+        
+        # 4. Get document processing statistics
+        document_query = """
+        SELECT 
+            e.endpoint_name,
+            SUM(u.pages_processed) AS pages_processed,
+            SUM(u.documents_processed) AS documents_processed,
+            COUNT(DISTINCT u.id) AS number_of_calls
+        FROM 
+            user_usage u
+        JOIN
+            endpoints e ON u.endpoint_id = e.id
+        WHERE 
+            u.user_id = ? 
+            AND u.timestamp BETWEEN ? AND ?
+            AND (e.endpoint_type = 'document' OR e.endpoint_type = 'ocr')
+        GROUP BY 
+            e.endpoint_name
+        ORDER BY
+            SUM(u.pages_processed) DESC
+        """
+        
+        cursor.execute(document_query, [user_id, start_date, end_date])
+        document_results = cursor.fetchall()
+        
+        document_services = []
+        for row in document_results:
+            document_services.append({
+                "service_name": row[0],
+                "pages_processed": row[1] or 0,
+                "documents_processed": row[2] or 0,
+                "number_of_calls": row[3] or 0
+            })
+        
+        # 5. Get file upload statistics
+        upload_query = """
+        SELECT 
+            SUM(u.files_uploaded) AS files_uploaded,
+            COUNT(DISTINCT u.id) AS number_of_uploads
+        FROM 
+            user_usage u
+        WHERE 
+            u.user_id = ? 
+            AND u.timestamp BETWEEN ? AND ?
+            AND u.files_uploaded > 0
+        """
+        
+        cursor.execute(upload_query, [user_id, start_date, end_date])
+        upload_result = cursor.fetchone()
+        
+        files_uploaded = upload_result[0] or 0
+        number_of_uploads = upload_result[1] or 0
+        
+        # 6. Get grand totals
+        totals_query = """
+        SELECT 
+            SUM(u.prompt_tokens) AS total_prompt_tokens,
+            SUM(u.completion_tokens) AS total_completion_tokens,
+            SUM(u.total_tokens) AS total_tokens,
+            SUM(u.cached_tokens) AS total_cached_tokens,
+            SUM(u.images_generated) AS total_images_generated,
+            SUM(u.audio_seconds_processed) AS total_audio_seconds,
+            SUM(u.pages_processed) AS total_pages_processed,
+            SUM(u.documents_processed) AS total_documents_processed,
+            SUM(u.files_uploaded) AS total_files_uploaded,
+            COUNT(DISTINCT u.id) AS total_api_calls
+        FROM 
+            user_usage u
+        WHERE 
+            u.user_id = ? 
+            AND u.timestamp BETWEEN ? AND ?
+        """
+        
+        cursor.execute(totals_query, [user_id, start_date, end_date])
+        totals_result = cursor.fetchone()
+        
+        # Build the complete response
+        totals = {
+            "prompt_tokens": totals_result[0] or 0,
+            "completion_tokens": totals_result[1] or 0,
+            "total_tokens": totals_result[2] or 0,
+            "cached_tokens": totals_result[3] or 0,
+            "images_generated": totals_result[4] or 0,
+            "audio_seconds_processed": float(totals_result[5]) if totals_result[5] else 0.0,
+            "pages_processed": totals_result[6] or 0,
+            "documents_processed": totals_result[7] or 0,
+            "files_uploaded": totals_result[8] or 0,
+            "total_api_calls": totals_result[9] or 0
+        }
+        
+        # Get user details for the response
+        user_details = DatabaseService.get_user_by_id(user_id)
+        user_name = None
+        if user_details:
+            user_name = user_details.get("common_name") or user_details.get("user_name")
+        else:
+            user_name = "Unknown User"
+
+        response_data = {
+            "userID": user_id,
+            "userName": user_name,
+            "reporting_period": time_period,
+            "llm_models": llm_models,
+            "image_models": image_models,
+            "speech_models": speech_models,
+            "document_services": document_services,
+            "files_uploaded": {
+                "total_files": files_uploaded,
+                "number_of_uploads": number_of_uploads
+            },
+            "totals": totals
+        }
+
+        return create_api_response(response_data, 200)
+
+    except Exception as e:
+        logger.error(f"Error retrieving user model usage summary: {str(e)}")
+        return create_api_response({
+            "error": "Server Error",
+            "message": f"Error retrieving user model usage summary: {str(e)}"
+        }, 500)
+
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
 def register_usage_stats_routes(app):
     """Register usage statistics routes with the Flask app"""
     app.route('/usage/user', methods=['GET'])(api_logger(usage_by_user_route))
     app.route('/usage/department', methods=['GET'])(api_logger(usage_by_department_route))
+    app.route('/usage/activity', methods=['GET'])(api_logger(user_activity_summary_route))
+    app.route('/usage/models', methods=['GET'])(api_logger(user_model_usage_summary_route))
