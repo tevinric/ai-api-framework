@@ -1,3 +1,6 @@
+import os
+os.environ['CUDA_VISIBLE_DEVICES'] = ''  # Disable GPU for FAISS
+
 from flask import jsonify, request, g, make_response
 from apis.utils.tokenService import TokenService
 from apis.utils.databaseService import DatabaseService
@@ -6,11 +9,10 @@ from apis.utils.balanceMiddleware import check_balance
 from apis.utils.config import get_azure_blob_client, ensure_container_exists
 import logging
 import pytz
-import os
-import uuid
 import tempfile
 import shutil
 from datetime import datetime
+import uuid
 from langchain_openai import AzureOpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -111,6 +113,39 @@ def count_embedding_tokens(text):
         logger.error(f"Error counting embedding tokens: {str(e)}")
         # Fallback to character-based approximation
         return max(1, len(text) // 4)
+
+def load_faiss_vectorstore(local_path, embeddings):
+    """
+    Load a FAISS vectorstore with CPU-only configuration
+    
+    Args:
+        local_path (str): Path to the vectorstore
+        embeddings: The embeddings instance
+        
+    Returns:
+        FAISS: The loaded vectorstore
+    """
+    try:
+        # Load with CPU-only configuration
+        import faiss
+        # Ensure we're using CPU-only FAISS
+        faiss.get_num_gpus = lambda: 0
+        
+        vectorstore = FAISS.load_local(
+            local_path,
+            embeddings,
+            allow_dangerous_deserialization=True
+        )
+        
+        return vectorstore
+    except ImportError:
+        # If can't directly import faiss, just load normally
+        logger.warning("Could not import faiss directly. Using standard FAISS loading.")
+        return FAISS.load_local(
+            local_path,
+            embeddings,
+            allow_dangerous_deserialization=True
+        )
 
 def consume_git_policies_route():
     """
@@ -366,12 +401,8 @@ def consume_git_policies_route():
                     azure_endpoint=os.environ.get("OPENAI_API_ENDPOINT")
                 )
                 
-                # Load the vectorstore
-                vectorstore = FAISS.load_local(
-                    local_vs_path,
-                    embeddings,
-                    allow_dangerous_deserialization=True
-                )
+                # Load the vectorstore with CPU-only configuration
+                vectorstore = load_faiss_vectorstore(local_vs_path, embeddings)
                 
                 logger.info(f"Successfully loaded git policies vectorstore {vectorstore_id}")
                 
@@ -796,12 +827,8 @@ def consume_vectorstore_route():
                     azure_endpoint=os.environ.get("OPENAI_API_ENDPOINT")
                 )
                 
-                # Load the vectorstore
-                vectorstore = FAISS.load_local(
-                    local_vs_path,
-                    embeddings,
-                    allow_dangerous_deserialization=True
-                )
+                # Load the vectorstore with CPU-only configuration
+                vectorstore = load_faiss_vectorstore(local_vs_path, embeddings)
                 
                 logger.info(f"Successfully loaded vectorstore {vectorstore_id}")
                 
