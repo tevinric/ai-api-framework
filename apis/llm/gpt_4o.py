@@ -1,3 +1,4 @@
+# apis/llm/gpt_4o.py
 from flask import jsonify, request, g, make_response
 from apis.utils.tokenService import TokenService
 from apis.utils.databaseService import DatabaseService
@@ -84,6 +85,9 @@ def gpt4o_route():
               items:
                 type: string
               description: Array of file IDs to process with the model for multimodal analysis
+            context_id:
+              type: string
+              description: ID of a context file to use as an enhanced system prompt (optional)
     produces:
       - application/json
     responses:
@@ -251,6 +255,7 @@ def gpt4o_route():
     temperature = float(data.get('temperature', 0.5))
     json_output = data.get('json_output', False)
     file_ids = data.get('file_ids', [])
+    context_id = data.get('context_id')  # New parameter for context_id
     
     # Validate temperature range
     if not (0 <= temperature <= 1):
@@ -263,6 +268,17 @@ def gpt4o_route():
         # Log API usage
         logger.info(f"GPT-4o API called by user: {user_id}")
         
+        # Apply context if provided
+        if context_id:
+            from apis.llm.context_integration import apply_context_to_system_prompt
+            enhanced_system_prompt, error = apply_context_to_system_prompt(system_prompt, context_id, g.user_id)
+            if error:
+                logger.warning(f"Error applying context {context_id}: {error}")
+                # Continue with original system prompt but log the issue
+                enhanced_system_prompt = system_prompt
+        else:
+            enhanced_system_prompt = system_prompt
+        
         # Check if this is a multimodal request with file_ids
         if file_ids and isinstance(file_ids, list) and len(file_ids) > 0:
             logger.info(f"Multimodal request with {len(file_ids)} files")
@@ -274,9 +290,9 @@ def gpt4o_route():
                     "message": "Too many files. GPT-4o can process a maximum of 20 files per request."
                 }, 400)
             
-            # Use the multimodal service function
+            # Use the multimodal service function with enhanced system prompt
             service_response = gpt4o_multimodal_service(
-                system_prompt=system_prompt,
+                system_prompt=enhanced_system_prompt,  # Use enhanced prompt with context
                 user_input=user_input,
                 temperature=temperature,
                 json_output=json_output,
@@ -284,9 +300,9 @@ def gpt4o_route():
                 user_id=user_id
             )
         else:
-            # Use the standard service function for text-only requests
+            # Use the standard service function for text-only requests with enhanced system prompt
             service_response = gpt4o_service(
-                system_prompt=system_prompt,
+                system_prompt=enhanced_system_prompt,  # Use enhanced prompt with context
                 user_input=user_input,
                 temperature=temperature,
                 json_output=json_output
@@ -320,6 +336,10 @@ def gpt4o_route():
         
         if "file_processing_details" in service_response:
             response_data["file_processing_details"] = service_response["file_processing_details"]
+        
+        # Include context usage info if context was used
+        if context_id:
+            response_data["context_used"] = context_id
         
         return create_api_response(response_data, 200)
         
