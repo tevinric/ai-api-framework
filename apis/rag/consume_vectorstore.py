@@ -77,6 +77,31 @@ def update_vectorstore_access_timestamp(vectorstore_id):
     except Exception as e:
         logger.error(f"Error updating last_accessed timestamp: {str(e)}")
 
+def count_embedding_tokens(text):
+    """
+    Count tokens for the embedding model using tiktoken
+    
+    Args:
+        text (str): The text to count tokens for
+        
+    Returns:
+        int: Token count
+    """
+    try:
+        # Import the tokenizer from tiktoken
+        import tiktoken
+        
+        # Use cl100k_base tokenizer for text-embedding-3-large
+        encoding = tiktoken.get_encoding("cl100k_base")
+        
+        # Count tokens
+        token_count = len(encoding.encode(text))
+        return token_count
+    except Exception as e:
+        # Fallback for any issues
+        logger.warning(f"Error using tiktoken: {str(e)}. Using approximate count.")
+        return max(1, len(text) // 4)
+
 def consume_git_policies_route():
     """
     Consume the Git policies vectorstore with a query - RAG-based conversational assistant
@@ -141,6 +166,9 @@ def consume_git_policies_route():
             total_tokens:
               type: integer
               example: 209
+            embedded_tokens:
+              type: integer
+              example: 50
             sources:
               type: array
               items:
@@ -232,6 +260,10 @@ def consume_git_policies_route():
     include_sources = data.get('include_sources', False)
     model = data.get('model', 'gpt-4o')  # Default to gpt-4o
     temperature = float(data.get('temperature', 0.15))
+    
+    # Count embedding tokens using tiktoken
+    embedded_tokens = count_embedding_tokens(query)
+    logger.info(f"Query embedding tokens: {embedded_tokens}")
     
     # Validate model
     if model not in LLM_SERVICES:
@@ -405,7 +437,8 @@ def consume_git_policies_route():
                     "prompt_tokens": prompt_tokens,
                     "completion_tokens": completion_tokens,
                     "total_tokens": total_tokens,
-                    "cached_tokens": cached_tokens
+                    "cached_tokens": cached_tokens,
+                    "embedded_tokens": embedded_tokens
                 }
                 
                 # Add source documents if requested
@@ -525,6 +558,9 @@ def consume_vectorstore_route():
             total_tokens:
               type: integer
               example: 209
+            embedded_tokens:
+              type: integer
+              example: 50
             sources:
               type: array
               items:
@@ -655,6 +691,10 @@ def consume_vectorstore_route():
     system_prompt = data.get('system_prompt', None)
     temperature = float(data.get('temperature', 0.5))
     include_sources = data.get('include_sources', False)
+    
+    # Count embedding tokens using tiktoken
+    embedded_tokens = count_embedding_tokens(query)
+    logger.info(f"Query embedding tokens: {embedded_tokens}")
     
     # Validate model
     if model not in LLM_SERVICES:
@@ -831,7 +871,8 @@ def consume_vectorstore_route():
                     "prompt_tokens": prompt_tokens,
                     "completion_tokens": completion_tokens,
                     "total_tokens": total_tokens,
-                    "cached_tokens": cached_tokens
+                    "cached_tokens": cached_tokens,
+                    "embedded_tokens": embedded_tokens
                 }
                 
                 # Add source documents if requested
