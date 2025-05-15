@@ -81,6 +81,37 @@ def update_vectorstore_access_timestamp(vectorstore_id):
     except Exception as e:
         logger.error(f"Error updating last_accessed timestamp: {str(e)}")
 
+def count_embedding_tokens(text):
+    """
+    Count tokens for the embedding model using proper OpenAI tokenization
+    
+    Args:
+        text (str): The text to count tokens for
+        
+    Returns:
+        int: Token count
+    """
+    try:
+        # Import the tokenizer from OpenAI's tiktoken library
+        import tiktoken
+        
+        # Use cl100k_base tokenizer which is appropriate for text-embedding-3-large
+        encoding = tiktoken.get_encoding("cl100k_base")
+        
+        # Count tokens
+        token_count = len(encoding.encode(text))
+        
+        return token_count
+    except ImportError:
+        # Fallback if tiktoken is not available
+        logger.warning("tiktoken library not available, using approximate token count")
+        # Simple approximation: ~4 characters per token
+        return max(1, len(text) // 4)
+    except Exception as e:
+        logger.error(f"Error counting embedding tokens: {str(e)}")
+        # Fallback to character-based approximation
+        return max(1, len(text) // 4)
+
 def consume_git_policies_route():
     """
     Consume the Git policies vectorstore with a query - RAG-based conversational assistant
@@ -140,6 +171,9 @@ def consume_git_policies_route():
             total_tokens:
               type: integer
               example: 209
+            embedded_tokens:
+              type: integer
+              example: 50
             sources:
               type: array
               items:
@@ -341,6 +375,10 @@ def consume_git_policies_route():
                 
                 logger.info(f"Successfully loaded git policies vectorstore {vectorstore_id}")
                 
+                # Count embedding tokens for the query using proper tokenizer
+                embedded_tokens = count_embedding_tokens(query)
+                logger.info(f"Query embedding tokens: {embedded_tokens}")
+                
                 # Perform vector search to get relevant documents
                 docs = vectorstore.similarity_search(query, k=4)
                 
@@ -404,7 +442,8 @@ def consume_git_policies_route():
                     "prompt_tokens": prompt_tokens,
                     "completion_tokens": completion_tokens,
                     "total_tokens": total_tokens,
-                    "cached_tokens": cached_tokens
+                    "cached_tokens": cached_tokens,
+                    "embedded_tokens": embedded_tokens
                 }
                 
                 # Add source documents if requested
@@ -519,6 +558,9 @@ def consume_vectorstore_route():
             total_tokens:
               type: integer
               example: 209
+            embedded_tokens:
+              type: integer
+              example: 50
             sources:
               type: array
               items:
@@ -763,6 +805,10 @@ def consume_vectorstore_route():
                 
                 logger.info(f"Successfully loaded vectorstore {vectorstore_id}")
                 
+                # Count embedding tokens for the query using proper tokenizer
+                embedded_tokens = count_embedding_tokens(query)
+                logger.info(f"Query embedding tokens: {embedded_tokens}")
+                
                 # Perform vector search to get relevant documents
                 docs = vectorstore.similarity_search(query, k=4)
                 
@@ -825,7 +871,8 @@ def consume_vectorstore_route():
                     "prompt_tokens": prompt_tokens,
                     "completion_tokens": completion_tokens,
                     "total_tokens": total_tokens,
-                    "cached_tokens": cached_tokens
+                    "cached_tokens": cached_tokens,
+                    "embedded_tokens": embedded_tokens
                 }
                 
                 # Add source documents if requested
