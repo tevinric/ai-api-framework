@@ -18,6 +18,12 @@ def create_api_response(data, status_code=200):
     """Helper function to create consistent API responses"""
     response = make_response(jsonify(data))
     response.status_code = status_code
+    
+    # Add correlation ID to response if available in g context
+    correlation_id = getattr(g, 'correlation_id', None)
+    if correlation_id:
+        response.headers['X-Correlation-ID'] = correlation_id
+        
     return response
 
 def upload_file_route():
@@ -34,6 +40,11 @@ def upload_file_route():
         type: string
         required: true
         description: Valid token for authentication
+      - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems
       - name: files
         in: formData
         type: file
