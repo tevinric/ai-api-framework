@@ -1,6 +1,3 @@
-import os
-os.environ['CUDA_VISIBLE_DEVICES'] = ''  # Disable GPU for FAISS
-
 from flask import jsonify, request, g, make_response
 from apis.utils.tokenService import TokenService
 from apis.utils.databaseService import DatabaseService
@@ -9,10 +6,11 @@ from apis.utils.balanceMiddleware import check_balance
 from apis.utils.config import get_azure_blob_client, ensure_container_exists
 import logging
 import pytz
+import os
+import uuid
 import tempfile
 import shutil
 from datetime import datetime
-import uuid
 from langchain_openai import AzureOpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -85,7 +83,7 @@ def update_vectorstore_access_timestamp(vectorstore_id):
 
 def count_embedding_tokens(text):
     """
-    Count tokens for the embedding model using proper OpenAI tokenization
+    Count tokens for the embedding model using tiktoken
     
     Args:
         text (str): The text to count tokens for
@@ -94,58 +92,19 @@ def count_embedding_tokens(text):
         int: Token count
     """
     try:
-        # Import the tokenizer from OpenAI's tiktoken library
+        # Import the tokenizer from tiktoken
         import tiktoken
         
-        # Use cl100k_base tokenizer which is appropriate for text-embedding-3-large
+        # Use cl100k_base tokenizer for text-embedding-3-large
         encoding = tiktoken.get_encoding("cl100k_base")
         
         # Count tokens
         token_count = len(encoding.encode(text))
-        
         return token_count
-    except ImportError:
-        # Fallback if tiktoken is not available
-        logger.warning("tiktoken library not available, using approximate token count")
-        # Simple approximation: ~4 characters per token
-        return max(1, len(text) // 4)
     except Exception as e:
-        logger.error(f"Error counting embedding tokens: {str(e)}")
-        # Fallback to character-based approximation
+        # Fallback for any issues
+        logger.warning(f"Error using tiktoken: {str(e)}. Using approximate count.")
         return max(1, len(text) // 4)
-
-def load_faiss_vectorstore(local_path, embeddings):
-    """
-    Load a FAISS vectorstore with CPU-only configuration
-    
-    Args:
-        local_path (str): Path to the vectorstore
-        embeddings: The embeddings instance
-        
-    Returns:
-        FAISS: The loaded vectorstore
-    """
-    try:
-        # Load with CPU-only configuration
-        import faiss
-        # Ensure we're using CPU-only FAISS
-        faiss.get_num_gpus = lambda: 0
-        
-        vectorstore = FAISS.load_local(
-            local_path,
-            embeddings,
-            allow_dangerous_deserialization=True
-        )
-        
-        return vectorstore
-    except ImportError:
-        # If can't directly import faiss, just load normally
-        logger.warning("Could not import faiss directly. Using standard FAISS loading.")
-        return FAISS.load_local(
-            local_path,
-            embeddings,
-            allow_dangerous_deserialization=True
-        )
 
 def consume_git_policies_route():
     """
@@ -301,6 +260,10 @@ def consume_git_policies_route():
     model = data.get('model', 'gpt-4o')  # Default to gpt-4o
     temperature = float(data.get('temperature', 0.15))
     
+    # Count embedding tokens using tiktoken
+    embedded_tokens = count_embedding_tokens(query)
+    logger.info(f"Query embedding tokens: {embedded_tokens}")
+    
     # Validate model
     if model not in LLM_SERVICES:
         return create_api_response({
@@ -401,14 +364,14 @@ def consume_git_policies_route():
                     azure_endpoint=os.environ.get("OPENAI_API_ENDPOINT")
                 )
                 
-                # Load the vectorstore with CPU-only configuration
-                vectorstore = load_faiss_vectorstore(local_vs_path, embeddings)
+                # Load the vectorstore
+                vectorstore = FAISS.load_local(
+                    local_vs_path,
+                    embeddings,
+                    allow_dangerous_deserialization=True
+                )
                 
                 logger.info(f"Successfully loaded git policies vectorstore {vectorstore_id}")
-                
-                # Count embedding tokens for the query using proper tokenizer
-                embedded_tokens = count_embedding_tokens(query)
-                logger.info(f"Query embedding tokens: {embedded_tokens}")
                 
                 # Perform vector search to get relevant documents
                 docs = vectorstore.similarity_search(query, k=4)
@@ -723,6 +686,10 @@ def consume_vectorstore_route():
     temperature = float(data.get('temperature', 0.5))
     include_sources = data.get('include_sources', False)
     
+    # Count embedding tokens using tiktoken
+    embedded_tokens = count_embedding_tokens(query)
+    logger.info(f"Query embedding tokens: {embedded_tokens}")
+    
     # Validate model
     if model not in LLM_SERVICES:
         return create_api_response({
@@ -827,14 +794,14 @@ def consume_vectorstore_route():
                     azure_endpoint=os.environ.get("OPENAI_API_ENDPOINT")
                 )
                 
-                # Load the vectorstore with CPU-only configuration
-                vectorstore = load_faiss_vectorstore(local_vs_path, embeddings)
+                # Load the vectorstore
+                vectorstore = FAISS.load_local(
+                    local_vs_path,
+                    embeddings,
+                    allow_dangerous_deserialization=True
+                )
                 
                 logger.info(f"Successfully loaded vectorstore {vectorstore_id}")
-                
-                # Count embedding tokens for the query using proper tokenizer
-                embedded_tokens = count_embedding_tokens(query)
-                logger.info(f"Query embedding tokens: {embedded_tokens}")
                 
                 # Perform vector search to get relevant documents
                 docs = vectorstore.similarity_search(query, k=4)
