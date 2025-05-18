@@ -18,7 +18,7 @@ def gpt4o_mini_route():
     Consumes 0.5 AI credits per call
     
     OpenAI GPT-4o-mini LLM model for everyday text completion tasks.
-    Supports multimodal input with file references for enhanced document processing.
+    Supports multimodal input with image file references for enhanced visual analysis.
     
     ---
     tags:
@@ -64,7 +64,7 @@ def gpt4o_mini_route():
               type: array
               items:
                 type: string
-              description: Array of file IDs to process with the model for multimodal analysis
+              description: Array of image file IDs to process with the model (supports PNG, JPG, JPEG only)
     produces:
       - application/json
     responses:
@@ -110,17 +110,11 @@ def gpt4o_mini_route():
             files_processed:
               type: integer
               example: 1
-              description: Number of files processed in the request
+              description: Number of image files processed in the request
             file_processing_details:
               type: object
               properties:
-                documents_processed:
-                  type: integer
-                  example: 1
                 images_processed:
-                  type: integer
-                  example: 1
-                text_files_processed:
                   type: integer
                   example: 1
 
@@ -253,7 +247,7 @@ def gpt4o_mini_route():
             if len(file_ids) > 10:  # Lower limit for GPT-4o-mini due to smaller context
                 return create_api_response({
                     "response": "400",
-                    "message": "Too many files. GPT-4o-mini can process a maximum of 10 files per request."
+                    "message": "Too many files. GPT-4o-mini can process a maximum of 10 image files per request."
                 }, 400)
             
             # Use the multimodal service function
