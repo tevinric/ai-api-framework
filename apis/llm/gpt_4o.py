@@ -15,17 +15,8 @@ import base64
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Allowed file extensions and MIME types
-ALLOWED_EXTENSIONS = {
-    'pdf': 'application/pdf',
-    'txt': 'text/plain',
-    'doc': 'application/msword',
-    'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'csv': 'text/csv',
-    'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    'xls': 'application/vnd.ms-excel',
-    'ppt': 'application/vnd.ms-powerpoint',
-    'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+# Allowed image file extensions and MIME types
+ALLOWED_IMAGE_EXTENSIONS = {
     'png': 'image/png',
     'jpg': 'image/jpeg',
     'jpeg': 'image/jpeg'
@@ -38,7 +29,7 @@ def gpt4o_route():
     Consumes 2 AI credits per call
     
     OpenAI GPT-4o LLM model for text completion and content generation.
-    Supports multimodal input with file references for enhanced document processing.
+    Supports multimodal input with image file references for enhanced visual analysis.
     
     ---
     tags:
@@ -84,10 +75,14 @@ def gpt4o_route():
               type: array
               items:
                 type: string
+<<<<<<< HEAD
               description: Array of file IDs to process with the model for multimodal analysis
             context_id:
               type: string
               description: ID of a context file to use as an enhanced system prompt (optional)
+=======
+              description: Array of image file IDs to process with the model (supports PNG, JPG, JPEG only)
+>>>>>>> a37eb8c2960b4114fd1c6c202127027b75aa9973
     produces:
       - application/json
     responses:
@@ -133,17 +128,11 @@ def gpt4o_route():
             files_processed:
               type: integer
               example: 1
-              description: Number of files processed in the request
+              description: Number of image files processed in the request
             file_processing_details:
               type: object
               properties:
-                documents_processed:
-                  type: integer
-                  example: 1
                 images_processed:
-                  type: integer
-                  example: 1
-                text_files_processed:
                   type: integer
                   example: 1
       400:
@@ -287,7 +276,7 @@ def gpt4o_route():
             if len(file_ids) > 20:  # Reasonable limit for GPT-4o
                 return create_api_response({
                     "response": "400",
-                    "message": "Too many files. GPT-4o can process a maximum of 20 files per request."
+                    "message": "Too many files. GPT-4o can process a maximum of 20 image files per request."
                 }, 400)
             
             # Use the multimodal service function with enhanced system prompt

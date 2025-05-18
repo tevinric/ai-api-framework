@@ -1,7 +1,7 @@
 -- Create context_files table
 CREATE TABLE context_files (
     id VARCHAR(36) PRIMARY KEY,
-    user_id VARCHAR(36) NOT NULL,
+    user_id NVARCHAR(36) NOT NULL,
     name NVARCHAR(255) NULL,
     description NVARCHAR(MAX) NULL,
     path NVARCHAR(255) NOT NULL,
