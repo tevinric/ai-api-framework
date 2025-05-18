@@ -75,14 +75,10 @@ def gpt4o_route():
               type: array
               items:
                 type: string
-<<<<<<< HEAD
-              description: Array of file IDs to process with the model for multimodal analysis
+              description: Array of image file IDs to process with the model (supports PNG, JPG, JPEG only)
             context_id:
               type: string
               description: ID of a context file to use as an enhanced system prompt (optional)
-=======
-              description: Array of image file IDs to process with the model (supports PNG, JPG, JPEG only)
->>>>>>> a37eb8c2960b4114fd1c6c202127027b75aa9973
     produces:
       - application/json
     responses:
