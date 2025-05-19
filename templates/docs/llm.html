@@ -401,7 +401,7 @@
             height: 100%;
             display: flex;
             flex-direction: column;
-            min-height: 550px; /* Consistent card height */
+            min-height: 600px; /* Increased for additional content */
         }
         
         .model-card:hover {
@@ -456,7 +456,7 @@
             flex-wrap: wrap;
             gap: 0.5rem;
             margin-bottom: 1.5rem;
-            min-height: 50px; /* Consistent tag section height */
+            min-height: 80px; /* Increased to accommodate more tags */
         }
         
         .model-tag {
@@ -529,6 +529,34 @@
         
         .model-tag.configurable {
             background-color: #5C940D;
+        }
+        
+        .model-tag.multimodal {
+            background-color: #FF9500;
+        }
+        
+        .model-tag.context {
+            background-color: #8E4EC6;
+        }
+        
+        .context-info {
+            background-color: #f0f8ff;
+            border-left: 4px solid #339AF0;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .context-info h5 {
+            color: #339AF0;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+        
+        .context-info p {
+            font-size: 0.85rem;
+            color: #666;
+            margin: 0;
         }
         
         .model-details {
@@ -649,6 +677,171 @@
             }
         }
         
+        /* Documentation sections */
+        .documentation-section {
+            padding: 4rem 3rem;
+            background-color: #f8faff;
+        }
+        
+        .doc-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .doc-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        .doc-header h2 {
+            font-size: 2.5rem;
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1rem;
+        }
+        
+        .doc-header p {
+            font-size: 1.1rem;
+            color: #666;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        
+        .doc-tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .doc-tab {
+            padding: 1rem 2rem;
+            border: none;
+            background: none;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #666;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .doc-tab.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+        
+        .doc-tab:hover {
+            color: var(--secondary-color);
+        }
+        
+        .doc-content {
+            background-color: var(--white-color);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        }
+        
+        .doc-content.hidden {
+            display: none;
+        }
+        
+        .tutorial-step {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            border-left: 4px solid var(--accent-color);
+            background-color: #f8faff;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .tutorial-step h3 {
+            color: var(--dark-color);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .tutorial-step h3 i {
+            margin-right: 0.5rem;
+            color: var(--accent-color);
+        }
+        
+        .code-block {
+            background-color: #2d3748;
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            margin: 1rem 0;
+            position: relative;
+        }
+        
+        .code-block::before {
+            content: attr(data-language);
+            position: absolute;
+            top: 0.5rem;
+            right: 1rem;
+            font-size: 0.8rem;
+            color: #a0aec0;
+            text-transform: uppercase;
+        }
+        
+        .code-comment {
+            color: #68d391;
+        }
+        
+        .code-keyword {
+            color: #f6ad55;
+        }
+        
+        .code-string {
+            color: #81e6d9;
+        }
+        
+        .code-number {
+            color: #f093c4;
+        }
+        
+        .warning-box {
+            background-color: #fffbf0;
+            border: 1px solid #f6e05e;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .warning-box h4 {
+            color: #d69e2e;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .warning-box h4 i {
+            margin-right: 0.5rem;
+        }
+        
+        .info-box {
+            background-color: #e6fffa;
+            border: 1px solid #38b2ac;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .info-box h4 {
+            color: #38b2ac;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .info-box h4 i {
+            margin-right: 0.5rem;
+        }
+        
         /* CTA section */
         .cta-section {
             padding: 5rem 3rem;
@@ -656,7 +849,6 @@
             background: linear-gradient(135deg, rgba(1, 0, 15, 1) 0%, rgba(35, 0, 33, 1) 100%);
             color: var(--white-color);
         }
-        
         
         .cta-container {
             max-width: 800px;
@@ -744,6 +936,15 @@
             .model-cards {
                 grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             }
+            
+            .doc-tabs {
+                flex-wrap: wrap;
+            }
+            
+            .doc-tab {
+                flex: 1;
+                min-width: 150px;
+            }
         }
         
         @media (max-width: 768px) {
@@ -763,12 +964,17 @@
                 font-size: 2rem;
             }
             
-            .provider-section {
+            .provider-section,
+            .documentation-section {
                 padding: 3rem 1.5rem;
             }
             
             .model-cards {
                 grid-template-columns: 1fr;
+            }
+            
+            .doc-tabs {
+                flex-direction: column;
             }
         }
         
@@ -806,8 +1012,8 @@
         <section class="hero" style="height: 550px;">
             <div class="hero-container">
                 <br><br>
-                <h2 style="font-size: 220%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Language Models (LLMs)</h2>
-                <p>GAIA provide easy access to the leading Large Language Models available on the market. These LLMs can be used for a wide variety of tasks to power your AI workflows.</p>
+                <h2 style="font-size: 220%; background: var(--gold-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Language Models (LLMs)</h2>
+                <p>GAIA provides easy access to the leading Large Language Models available on the market. These LLMs can be used for a wide variety of tasks including text generation, multimodal analysis with images, and complex reasoning to power your AI workflows.</p>
                 <div class="cta-buttons">
                     <a href="/static/resources/AIAPIS.postman_collection" class="cta-btn" style="background-color: var(--accent-color); color: var(--dark-color);" download>
                         <i class="fas fa-download"></i> Download Postman Collection
@@ -834,13 +1040,19 @@
                     <div class="model-card openai-card">
                         <div class="model-header">
                             <h3 class="model-name">GPT-4o</h3>
-                            <p class="model-description">OpenAI's latest iteration of the GPT models for text completion and content generation.</p>
+                            <p class="model-description">OpenAI's flagship multimodal model for complex reasoning, content generation, and image analysis.</p>
                         </div>
                         <div class="model-body">
                             <div class="model-tags">
-                                <span class="model-tag content"><i class="fas fa-pen-fancy"></i>General AI</span>
-                                <span class="model-tag json"><i class="fas fa-code"></i>Task variety</span>
-                                <span class="model-tag reasoning"><i class="fas fa-brain"></i>Reasoning</span>
+                                <span class="model-tag content"><i class="fas fa-pen-fancy"></i>Content Generation</span>
+                                <span class="model-tag multimodal"><i class="fas fa-eye"></i>Vision Support</span>
+                                <span class="model-tag reasoning"><i class="fas fa-brain"></i>Advanced Reasoning</span>
+                                <span class="model-tag context"><i class="fas fa-file-text"></i>Context Files</span>
+                                <span class="model-tag json"><i class="fas fa-code"></i>Structured Output</span>
+                            </div>
+                            <div class="context-info">
+                                <h5><i class="fas fa-window-maximize"></i> Context Window: ~128k tokens</h5>
+                                <p>Excellent for complex documents, long conversations, and detailed analysis tasks</p>
                             </div>
                             <div class="model-details">
                                 <div class="detail-item">
@@ -848,18 +1060,23 @@
                                     <div class="detail-value">/llm/gpt-4o</div>
                                 </div>
                                 <div class="detail-item">
-                                    <div class="detail-label">Features</div>
+                                    <div class="detail-label">Key Features</div>
                                     <div class="detail-value">
                                         <ul class="feature-list">
-                                            <li>High-quality content generation</li>
-                                            <li>Excellent problem solving capabilities</li>
-                                            <li>Structured JSON output</li>
+                                            <li>Superior text and image understanding</li>
+                                            <li>Complex problem solving and reasoning</li>
+                                            <li>Support for context files and multimodal inputs</li>
+                                            <li>High-quality structured JSON output</li>
                                         </ul>
                                     </div>
                                 </div>
                                 <div class="detail-item">
-                                    <div class="detail-label">Best for</div>
-                                    <div class="detail-value">Complex content generation, nuanced responses, sophisticated reasoning tasks</div>
+                                    <div class="detail-label">Best Use Cases</div>
+                                    <div class="detail-value">Complex analysis, research tasks, image interpretation, code generation, creative writing, document analysis</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Image Support</div>
+                                    <div class="detail-value">Up to 20 images (PNG, JPG, JPEG) per request</div>
                                 </div>
                             </div>
                             <div class="endpoint-box">
@@ -874,20 +1091,22 @@
                         </div>
                     </div>
                     
-                    <!-- GPT-4o Document Card -->
-
-                    
                     <!-- GPT-4o Mini Card -->
                     <div class="model-card openai-card">
                         <div class="model-header">
                             <h3 class="model-name">GPT-4o-mini</h3>
-                            <p class="model-description">Lightweight version of GPT-4o for everyday text completion tasks</p>
+                            <p class="model-description">Fast, cost-effective multimodal model perfect for everyday tasks and applications.</p>
                         </div>
                         <div class="model-body">
                             <div class="model-tags">
-                                <span class="model-tag fast"><i class="fas fa-bolt"></i>Fast</span>
+                                <span class="model-tag fast"><i class="fas fa-bolt"></i>Fast & Efficient</span>
                                 <span class="model-tag cost"><i class="fas fa-coins"></i>Cost-effective</span>
-                                <span class="model-tag json"><i class="fas fa-code"></i>JSON</span>
+                                <span class="model-tag multimodal"><i class="fas fa-eye"></i>Vision Support</span>
+                                <span class="model-tag json"><i class="fas fa-code"></i>JSON Output</span>
+                            </div>
+                            <div class="context-info">
+                                <h5><i class="fas fa-window-maximize"></i> Context Window: ~128k tokens</h5>
+                                <p>Great for moderate-length texts and multiple images with fast response times</p>
                             </div>
                             <div class="model-details">
                                 <div class="detail-item">
@@ -895,18 +1114,23 @@
                                     <div class="detail-value">/llm/gpt-4o-mini</div>
                                 </div>
                                 <div class="detail-item">
-                                    <div class="detail-label">Features</div>
+                                    <div class="detail-label">Key Features</div>
                                     <div class="detail-value">
                                         <ul class="feature-list">
-                                            <li>Cost-effective processing</li>
-                                            <li>Fast response times</li>
-                                            <li>JSON output capability</li>
+                                            <li>Fast processing for quick responses</li>
+                                            <li>Cost-effective for high-volume usage</li>
+                                            <li>Image analysis and understanding</li>
+                                            <li>Reliable JSON output formatting</li>
                                         </ul>
                                     </div>
                                 </div>
                                 <div class="detail-item">
-                                    <div class="detail-label">Best for</div>
-                                    <div class="detail-value">Everyday applications, content generation, development and testing</div>
+                                    <div class="detail-label">Best Use Cases</div>
+                                    <div class="detail-value">Everyday content generation, image descriptions, chatbots, development testing, simple automation</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Image Support</div>
+                                    <div class="detail-value">Up to 10 images (PNG, JPG, JPEG) per request</div>
                                 </div>
                             </div>
                             <div class="endpoint-box">
@@ -925,13 +1149,18 @@
                     <div class="model-card openai-card">
                         <div class="model-header">
                             <h3 class="model-name">O1-mini</h3>
-                            <p class="model-description">Specialized model for complex reasoning and deep problem-solving</p>
+                            <p class="model-description">Specialized reasoning model with advanced chain-of-thought capabilities for complex problem solving.</p>
                         </div>
                         <div class="model-body">
                             <div class="model-tags">
-                                <span class="model-tag reasoning"><i class="fas fa-brain"></i>Reasoning</span>
-                                <span class="model-tag problem-solving"><i class="fas fa-chess"></i>Problem-solving</span>
-                                <span class="model-tag complexity"><i class="fas fa-project-diagram"></i>Complexity</span>
+                                <span class="model-tag reasoning"><i class="fas fa-brain"></i>Deep Reasoning</span>
+                                <span class="model-tag problem-solving"><i class="fas fa-chess"></i>Problem Solving</span>
+                                <span class="model-tag chain-of-thought"><i class="fas fa-code-branch"></i>Chain of Thought</span>
+                                <span class="model-tag technical"><i class="fas fa-laptop-code"></i>STEM & Code</span>
+                            </div>
+                            <div class="context-info">
+                                <h5><i class="fas fa-window-maximize"></i> Context Window: ~128k tokens</h5>
+                                <p>Designed for complex reasoning tasks that require step-by-step thinking</p>
                             </div>
                             <div class="model-details">
                                 <div class="detail-item">
@@ -939,18 +1168,19 @@
                                     <div class="detail-value">/llm/o1-mini</div>
                                 </div>
                                 <div class="detail-item">
-                                    <div class="detail-label">Features</div>
+                                    <div class="detail-label">Key Features</div>
                                     <div class="detail-value">
                                         <ul class="feature-list">
-                                            <li>Superior chain-of-thought reasoning</li>
-                                            <li>Complex problem-solving capabilities</li>
-                                            <li>Advanced analytical processing</li>
+                                            <li>Advanced chain-of-thought reasoning</li>
+                                            <li>Exceptional performance on STEM problems</li>
+                                            <li>Complex mathematical and logical analysis</li>
+                                            <li>Multi-step problem decomposition</li>
                                         </ul>
                                     </div>
                                 </div>
                                 <div class="detail-item">
-                                    <div class="detail-label">Best for</div>
-                                    <div class="detail-value">Scientific computing, multi-step logic, complex analysis tasks</div>
+                                    <div class="detail-label">Best Use Cases</div>
+                                    <div class="detail-value">Scientific computing, mathematical problems, code debugging, complex logical reasoning, research analysis</div>
                                 </div>
                             </div>
                             <div class="endpoint-box">
@@ -969,13 +1199,18 @@
                     <div class="model-card openai-card">
                         <div class="model-header">
                             <h3 class="model-name">O3-mini</h3>
-                            <p class="model-description">Text generation model with variable reasoning effort settings</p>
+                            <p class="model-description">Advanced model with configurable reasoning effort levels for optimized performance across different task complexities.</p>
                         </div>
                         <div class="model-body">
                             <div class="model-tags">
-                                <span class="model-tag variable-reasoning"><i class="fas fa-brain"></i>Variable Reasoning</span>
-                                <span class="model-tag json"><i class="fas fa-code"></i>JSON</span>
-                                <span class="model-tag long-form"><i class="fas fa-file-alt"></i>Long-form</span>
+                                <span class="model-tag variable-reasoning"><i class="fas fa-sliders-h"></i>Variable Reasoning</span>
+                                <span class="model-tag json"><i class="fas fa-code"></i>JSON Output</span>
+                                <span class="model-tag long-form"><i class="fas fa-file-alt"></i>Long-form Content</span>
+                                <span class="model-tag configurable"><i class="fas fa-cogs"></i>Configurable</span>
+                            </div>
+                            <div class="context-info">
+                                <h5><i class="fas fa-window-maximize"></i> Context Window: Up to 120k tokens</h5>
+                                <p>Adjustable reasoning depth allows optimization for different complexity levels</p>
                             </div>
                             <div class="model-details">
                                 <div class="detail-item">
@@ -983,18 +1218,23 @@
                                     <div class="detail-value">/llm/o3-mini</div>
                                 </div>
                                 <div class="detail-item">
-                                    <div class="detail-label">Features</div>
+                                    <div class="detail-label">Key Features</div>
                                     <div class="detail-value">
                                         <ul class="feature-list">
-                                            <li>Adjustable reasoning effort (high/medium/low)</li>
-                                            <li>Long context handling</li>
-                                            <li>Content optimization settings</li>
+                                            <li>Three reasoning modes: high, medium, low</li>
+                                            <li>Configurable completion token limits</li>
+                                            <li>Optimized for different task complexities</li>
+                                            <li>Excellent long-form content generation</li>
                                         </ul>
                                     </div>
                                 </div>
                                 <div class="detail-item">
-                                    <div class="detail-label">Best for</div>
-                                    <div class="detail-value">Applications requiring configurable depth of reasoning, long-form content</div>
+                                    <div class="detail-label">Best Use Cases</div>
+                                    <div class="detail-value">Long-form writing, detailed analysis, configurable reasoning tasks, content optimization, research reports</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Reasoning Levels</div>
+                                    <div class="detail-value">High (complex), Medium (balanced), Low (faster)</div>
                                 </div>
                             </div>
                             <div class="endpoint-box">
@@ -1027,13 +1267,18 @@
                     <div class="model-card deepseek-card">
                         <div class="model-header">
                             <h3 class="model-name">DeepSeek-R1</h3>
-                            <p class="model-description">Specialized for deep reasoning and complex problem-solving</p>
+                            <p class="model-description">Advanced reasoning model optimized for deep analytical thinking and complex problem solving.</p>
                         </div>
                         <div class="model-body">
                             <div class="model-tags">
-                                <span class="model-tag reasoning"><i class="fas fa-brain"></i>Reasoning</span>
+                                <span class="model-tag reasoning"><i class="fas fa-brain"></i>Deep Reasoning</span>
                                 <span class="model-tag chain-of-thought"><i class="fas fa-code-branch"></i>Chain of Thought</span>
-                                <span class="model-tag technical"><i class="fas fa-laptop-code"></i>Technical</span>
+                                <span class="model-tag technical"><i class="fas fa-laptop-code"></i>Technical Analysis</span>
+                                <span class="model-tag json"><i class="fas fa-code"></i>JSON Output</span>
+                            </div>
+                            <div class="context-info">
+                                <h5><i class="fas fa-window-maximize"></i> Context Window: High capacity</h5>
+                                <p>Designed for tasks requiring deep analytical reasoning and step-by-step thinking</p>
                             </div>
                             <div class="model-details">
                                 <div class="detail-item">
@@ -1041,18 +1286,19 @@
                                     <div class="detail-value">/llm/deepseek-r1</div>
                                 </div>
                                 <div class="detail-item">
-                                    <div class="detail-label">Features</div>
+                                    <div class="detail-label">Key Features</div>
                                     <div class="detail-value">
                                         <ul class="feature-list">
-                                            <li>Multi-step reasoning capabilities</li>
+                                            <li>Superior chain-of-thought reasoning</li>
                                             <li>Excellent technical content handling</li>
                                             <li>Deep analytical processing</li>
+                                            <li>Consistent structured output</li>
                                         </ul>
                                     </div>
                                 </div>
                                 <div class="detail-item">
-                                    <div class="detail-label">Best for</div>
-                                    <div class="detail-value">Complex reasoning tasks, technical analysis, scientific problems</div>
+                                    <div class="detail-label">Best Use Cases</div>
+                                    <div class="detail-value">Complex reasoning tasks, technical analysis, scientific problems, code review, mathematical proofs</div>
                                 </div>
                             </div>
                             <div class="endpoint-box">
@@ -1071,13 +1317,18 @@
                     <div class="model-card deepseek-card">
                         <div class="model-header">
                             <h3 class="model-name">DeepSeek-V3</h3>
-                            <p class="model-description">General purpose LLM for text generation and task completion</p>
+                            <p class="model-description">Versatile general-purpose model for text generation and comprehensive task completion.</p>
                         </div>
                         <div class="model-body">
                             <div class="model-tags">
-                                <span class="model-tag content"><i class="fas fa-pen-fancy"></i>Content</span>
-                                <span class="model-tag json"><i class="fas fa-code"></i>JSON</span>
-                                <span class="model-tag task-oriented"><i class="fas fa-tasks"></i>Task-oriented</span>
+                                <span class="model-tag content"><i class="fas fa-pen-fancy"></i>Content Creation</span>
+                                <span class="model-tag json"><i class="fas fa-code"></i>JSON Support</span>
+                                <span class="model-tag task-oriented"><i class="fas fa-tasks"></i>Task Completion</span>
+                                <span class="model-tag configurable"><i class="fas fa-sliders-h"></i>Configurable</span>
+                            </div>
+                            <div class="context-info">
+                                <h5><i class="fas fa-window-maximize"></i> Context Window: Up to 4k tokens output</h5>
+                                <p>Balanced performance for general-purpose applications with reliable outputs</p>
                             </div>
                             <div class="model-details">
                                 <div class="detail-item">
@@ -1085,18 +1336,19 @@
                                     <div class="detail-value">/llm/deepseek-v3</div>
                                 </div>
                                 <div class="detail-item">
-                                    <div class="detail-label">Features</div>
+                                    <div class="detail-label">Key Features</div>
                                     <div class="detail-value">
                                         <ul class="feature-list">
-                                            <li>General task completion</li>
                                             <li>High-quality text generation</li>
-                                            <li>JSON output support</li>
+                                            <li>Reliable task completion</li>
+                                            <li>Flexible temperature controls</li>
+                                            <li>Consistent JSON formatting</li>
                                         </ul>
                                     </div>
                                 </div>
                                 <div class="detail-item">
-                                    <div class="detail-label">Best for</div>
-                                    <div class="detail-value">Content generation, task automation, general-purpose applications</div>
+                                    <div class="detail-label">Best Use Cases</div>
+                                    <div class="detail-value">Content generation, task automation, general-purpose applications, API integrations, workflow automation</div>
                                 </div>
                             </div>
                             <div class="endpoint-box">
@@ -1129,13 +1381,18 @@
                     <div class="model-card meta-card">
                         <div class="model-header">
                             <h3 class="model-name">Llama 3.1 (405B)</h3>
-                            <p class="model-description">Meta's largest language model with 405 billion parameters</p>
+                            <p class="model-description">Meta's most powerful open-source model with 405 billion parameters for diverse applications.</p>
                         </div>
                         <div class="model-body">
                             <div class="model-tags">
-                                <span class="model-tag content"><i class="fas fa-pen-fancy"></i>Content</span>
-                                <span class="model-tag json"><i class="fas fa-code"></i>JSON</span>
-                                <span class="model-tag configurable"><i class="fas fa-sliders-h"></i>Configurable</span>
+                                <span class="model-tag content"><i class="fas fa-pen-fancy"></i>Content Creation</span>
+                                <span class="model-tag json"><i class="fas fa-code"></i>JSON Support</span>
+                                <span class="model-tag configurable"><i class="fas fa-sliders-h"></i>Highly Configurable</span>
+                                <span class="model-tag long-form"><i class="fas fa-file-alt"></i>Long-form</span>
+                            </div>
+                            <div class="context-info">
+                                <h5><i class="fas fa-window-maximize"></i> Context Window: Large capacity</h5>
+                                <p>Massive parameter count provides exceptional versatility across diverse applications</p>
                             </div>
                             <div class="model-details">
                                 <div class="detail-item">
@@ -1143,18 +1400,23 @@
                                     <div class="detail-value">/llm/llama</div>
                                 </div>
                                 <div class="detail-item">
-                                    <div class="detail-label">Features</div>
+                                    <div class="detail-label">Key Features</div>
                                     <div class="detail-value">
                                         <ul class="feature-list">
-                                            <li>Massive 405B parameter model</li>
-                                            <li>Highly configurable settings (temperature, top_p)</li>
-                                            <li>Comprehensive JSON support</li>
+                                            <li>Massive 405B parameter architecture</li>
+                                            <li>Highly configurable parameters (temperature, top_p)</li>
+                                            <li>Advanced penalty controls</li>
+                                            <li>Comprehensive JSON output support</li>
                                         </ul>
                                     </div>
                                 </div>
                                 <div class="detail-item">
-                                    <div class="detail-label">Best for</div>
-                                    <div class="detail-value">Versatile text generation, creative content, diverse applications</div>
+                                    <div class="detail-label">Best Use Cases</div>
+                                    <div class="detail-value">Versatile text generation, creative content, research, multilingual tasks, open-ended conversations</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Configuration</div>
+                                    <div class="detail-value">Temperature, top_p, presence/frequency penalties</div>
                                 </div>
                             </div>
                             <div class="endpoint-box">
@@ -1172,11 +1434,293 @@
             </div>
         </section>
         
+        <!-- Documentation Section -->
+        <section class="documentation-section">
+            <div class="doc-container">
+                <div class="doc-header">
+                    <h2>Complete LLM Integration Guide</h2>
+                    <p>Learn how to integrate multimodal capabilities, context files, and advanced features into your applications</p>
+                </div>
+                
+                <div class="doc-tabs">
+                    <button class="doc-tab active" data-tab="multimodal">Multimodal Usage</button>
+                    <button class="doc-tab" data-tab="context">Context Files</button>
+                    <button class="doc-tab" data-tab="best-practices">Best Practices</button>
+                    <button class="doc-tab" data-tab="examples">Code Examples</button>
+                </div>
+                
+                <!-- Multimodal Tab -->
+                <div class="doc-content" id="multimodal-content">
+                    <h3>Working with Images in LLMs</h3>
+                    <p>GPT-4o and GPT-4o-mini support multimodal inputs, allowing you to send images along with text prompts for comprehensive analysis.</p>
+                    
+                    <div class="tutorial-step">
+                        <h3><i class="fas fa-upload"></i> Step 1: Upload Images</h3>
+                        <p>First, upload your images using the File Management API. Only PNG, JPG, and JPEG formats are supported.</p>
+                        <div class="code-block" data-language="bash">
+<span class="code-comment"># Upload an image file</span>
+curl -X POST "https://api.gaia.com/files/upload" \
+  -H "X-Token: your_token_here" \
+  -F "file=@image.png" \
+  -F "description=Product image for analysis"
+                        </div>
+                        <p>The response will include a file_id that you'll use in your LLM request:</p>
+                        <div class="code-block" data-language="json">
+{
+  <span class="code-string">"file_id"</span>: <span class="code-string">"12345678-1234-1234-1234-123456789012"</span>,
+  <span class="code-string">"file_name"</span>: <span class="code-string">"image.png"</span>,
+  <span class="code-string">"content_type"</span>: <span class="code-string">"image/png"</span>,
+  <span class="code-string">"file_size"</span>: <span class="code-number">2048576</span>
+}
+                        </div>
+                    </div>
+                    
+                    <div class="tutorial-step">
+                        <h3><i class="fas fa-paper-plane"></i> Step 2: Send Multimodal Request</h3>
+                        <p>Include the file_ids array in your LLM request to enable image analysis alongside your text prompt.</p>
+                        <div class="code-block" data-language="bash">
+curl -X POST "https://api.gaia.com/llm/gpt-4o" \
+  -H "X-Token: your_token_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "system_prompt": "You are an expert image analyst.",
+    "user_input": "Analyze this product image and describe its features.",
+    "file_ids": ["12345678-1234-1234-1234-123456789012"],
+    "temperature": 0.7
+  }'
+                        </div>
+                    </div>
+                    
+                    <div class="warning-box">
+                        <h4><i class="fas fa-exclamation-triangle"></i> Image Limits</h4>
+                        <p><strong>GPT-4o:</strong> Maximum 20 images per request<br>
+                        <strong>GPT-4o-mini:</strong> Maximum 10 images per request<br>
+                        <strong>Supported formats:</strong> PNG, JPG, JPEG only</p>
+                    </div>
+                    
+                    <div class="info-box">
+                        <h4><i class="fas fa-lightbulb"></i> Token Estimation</h4>
+                        <p>Each image consumes approximately 765 tokens from your context window. The total request size (text + images) is checked against the model's context limit before processing.</p>
+                    </div>
+                </div>
+                
+                <!-- Context Files Tab -->
+                <div class="doc-content hidden" id="context-content">
+                    <h3>Using Context Files for Enhanced Responses</h3>
+                    <p>Context files allow you to provide additional background information that enhances the LLM's responses without including it directly in your prompt.</p>
+                    
+                    <div class="tutorial-step">
+                        <h3><i class="fas fa-file-plus"></i> Step 1: Create a Context File</h3>
+                        <p>Upload content or files to create a searchable context that can be referenced in LLM calls.</p>
+                        <div class="code-block" data-language="bash">
+curl -X POST "https://api.gaia.com/context" \
+  -H "X-Token: your_token_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "content": "Company ABC provides AI solutions for businesses...",
+    "name": "Company Knowledge Base",
+    "description": "Internal knowledge about company products and services"
+  }'
+                        </div>
+                    </div>
+                    
+                    <div class="tutorial-step">
+                        <h3><i class="fas fa-link"></i> Step 2: Reference Context in LLM Calls</h3>
+                        <p>Use the context_id parameter (supported by GPT-4o) to automatically enhance your system prompt with relevant context.</p>
+                        <div class="code-block" data-language="bash">
+curl -X POST "https://api.gaia.com/llm/gpt-4o" \
+  -H "X-Token: your_token_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "system_prompt": "You are a helpful assistant.",
+    "user_input": "Tell me about our AI solutions.",
+    "context_id": "context-uuid-here",
+    "temperature": 0.5
+  }'
+                        </div>
+                    </div>
+                    
+                    <div class="info-box">
+                        <h4><i class="fas fa-info-circle"></i> How Context Integration Works</h4>
+                        <p>When you provide a context_id, GAIA automatically retrieves the context content and appends it to your system prompt with clear separators. This allows the LLM to reference the additional information when generating responses.</p>
+                    </div>
+                    
+                    <div class="tutorial-step">
+                        <h3><i class="fas fa-edit"></i> Step 3: Manage Context Files</h3>
+                        <p>You can update, retrieve, and delete context files as needed:</p>
+                        <div class="code-block" data-language="bash">
+<span class="code-comment"># List all contexts</span>
+curl -X GET "https://api.gaia.com/context/list" \
+  -H "X-Token: your_token_here"
+
+<span class="code-comment"># Update context content</span>
+curl -X PUT "https://api.gaia.com/context" \
+  -H "X-Token: your_token_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "context_id": "your-context-id",
+    "content": "Updated content...",
+    "append": true
+  }'
+
+<span class="code-comment"># Delete a context</span>
+curl -X DELETE "https://api.gaia.com/context?context_id=your-context-id" \
+  -H "X-Token: your_token_here"
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Best Practices Tab -->
+                <div class="doc-content hidden" id="best-practices-content">
+                    <h3>LLM Best Practices and Optimization</h3>
+                    
+                    <div class="tutorial-step">
+                        <h3><i class="fas fa-target"></i> Choosing the Right Model</h3>
+                        <ul class="feature-list">
+                            <li><strong>GPT-4o:</strong> Complex reasoning, multimodal analysis, context-heavy tasks</li>
+                            <li><strong>GPT-4o-mini:</strong> Quick responses, cost-effective applications, simple image analysis</li>
+                            <li><strong>O1-mini:</strong> Mathematical problems, code debugging, logical reasoning</li>
+                            <li><strong>O3-mini:</strong> Long-form content, configurable reasoning depth</li>
+                            <li><strong>DeepSeek-R1:</strong> Technical analysis, research tasks, chain-of-thought reasoning</li>
+                            <li><strong>DeepSeek-V3:</strong> General-purpose applications, API integrations</li>
+                            <li><strong>Llama 3.1:</strong> Open-ended conversations, creative content, multilingual tasks</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="tutorial-step">
+                        <h3><i class="fas fa-thermometer-half"></i> Temperature and Parameter Optimization</h3>
+                        <p>Adjust model parameters based on your use case:</p>
+                        <ul class="feature-list">
+                            <li><strong>Low temperature (0.1-0.3):</strong> Factual responses, consistent outputs</li>
+                            <li><strong>Medium temperature (0.4-0.7):</strong> Balanced creativity and consistency</li>
+                            <li><strong>High temperature (0.8-1.0):</strong> Creative writing, diverse outputs</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="warning-box">
+                        <h4><i class="fas fa-clock"></i> Context Window Management</h4>
+                        <p>Monitor your token usage to avoid context window limits:</p>
+                        <ul class="feature-list">
+                            <li>Each image ≈ 765 tokens</li>
+                            <li>Text ≈ 1 token per 4 characters</li>
+                            <li>Reserve tokens for model response</li>
+                            <li>Consider pagination for large inputs</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="tutorial-step">
+                        <h3><i class="fas fa-coins"></i> Cost Optimization Strategies</h3>
+                        <ul class="feature-list">
+                            <li>Use GPT-4o-mini for development and testing</li>
+                            <li>Implement request caching for repeated queries</li>
+                            <li>Optimize prompt length while maintaining clarity</li>
+                            <li>Use context files instead of repeating information in prompts</li>
+                            <li>Choose appropriate models based on task complexity</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Examples Tab -->
+                <div class="doc-content hidden" id="examples-content">
+                    <h3>Practical Implementation Examples</h3>
+                    
+                    <div class="tutorial-step">
+                        <h3><i class="fas fa-eye"></i> Image Analysis with GPT-4o</h3>
+                        <div class="code-block" data-language="bash">
+<span class="code-comment"># Step 1: Upload image</span>
+curl -X POST "https://api.gaia.com/files/upload" \
+  -H "X-Token: your_token_here" \
+  -F "file=@product.jpg" \
+  -F "description=Product image for analysis"
+
+<span class="code-comment"># Response will include the file_id</span>
+<span class="code-comment"># {</span>
+<span class="code-comment">#   "file_id": "12345678-1234-1234-1234-123456789012",</span>
+<span class="code-comment">#   "file_name": "product.jpg",</span>
+<span class="code-comment">#   "content_type": "image/jpeg"</span>
+<span class="code-comment"># }</span>
+
+<span class="code-comment"># Step 2: Analyze image</span>
+curl -X POST "https://api.gaia.com/llm/gpt-4o" \
+  -H "X-Token: your_token_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "system_prompt": "You are an expert image analyst.",
+    "user_input": "Describe this image in detail.",
+    "file_ids": ["12345678-1234-1234-1234-123456789012"],
+    "temperature": 0.5
+  }'
+                        </div>
+                    </div>
+                    
+                    <div class="tutorial-step">
+                        <h3><i class="fas fa-file-text"></i> Context-Enhanced Responses</h3>
+                        <div class="code-block" data-language="bash">
+<span class="code-comment"># Step 1: Create context with company information</span>
+curl -X POST "https://api.gaia.com/context" \
+  -H "X-Token: your_token_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "content": "Company ABC specializes in AI solutions for businesses. Our products include chatbots, analytics tools, and automation platforms. Founded in 2020, we serve over 500 clients worldwide.",
+    "name": "Company Knowledge Base",
+    "description": "Internal company information"
+  }'
+
+<span class="code-comment"># Response will include the context_id</span>
+<span class="code-comment"># {</span>
+<span class="code-comment">#   "context_id": "context-uuid-here",</span>
+<span class="code-comment">#   "name": "Company Knowledge Base",</span>
+<span class="code-comment">#   "description": "Internal company information"</span>
+<span class="code-comment"># }</span>
+
+<span class="code-comment"># Step 2: Use context in LLM call</span>
+curl -X POST "https://api.gaia.com/llm/gpt-4o" \
+  -H "X-Token: your_token_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "system_prompt": "You are a helpful company assistant.",
+    "user_input": "What products does our company offer?",
+    "context_id": "context-uuid-here",
+    "temperature": 0.3
+  }'
+                        </div>
+                    </div>
+                    
+                    <div class="tutorial-step">
+                        <h3><i class="fas fa-robot"></i> Advanced Reasoning with O1-mini</h3>
+                        <div class="code-block" data-language="bash">
+<span class="code-comment"># Use O1-mini for complex reasoning tasks</span>
+curl -X POST "https://api.gaia.com/llm/o1-mini" \
+  -H "X-Token: your_token_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "system_prompt": "You are an expert problem solver. Work through problems step by step.",
+    "user_input": "A company wants to optimize their delivery routes. They have 5 warehouses and need to deliver to 20 locations. Each warehouse can serve up to 6 locations, but some locations are closer to certain warehouses. How should they allocate deliveries to minimize total distance? \n\nWarehouse A: Can reach locations 1,2,3,4,5,6 (distances: 2,3,4,1,2,3)\nWarehouse B: Can reach locations 5,6,7,8,9,10 (distances: 1,2,1,3,2,4)\n\nWhat'\''s the optimal allocation strategy?",
+    "temperature": 0.1
+  }'
+
+<span class="code-comment"># Response includes detailed solution and token usage</span>
+<span class="code-comment"># {</span>
+<span class="code-comment">#   "message": "Step-by-step solution...",</span>
+<span class="code-comment">#   "total_tokens": 2847,</span>
+<span class="code-comment">#   "model": "o1-mini"</span>
+<span class="code-comment"># }</span>
+                        </div>
+                    </div>
+                    
+                    <div class="info-box">
+                        <h4><i class="fas fa-code"></i> Complete API Example</h4>
+                        <p>For production applications, consider creating wrapper scripts that handle token management, error handling, and response parsing automatically using your preferred programming language.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
         <!-- CTA Section -->
         <section class="cta-section">
             <div class="cta-container">
                 <img src="/static/GAIA6.png" alt="GAIA Logo" style="height: 100px; margin-right: 0.5rem;">
-                <h2>Infuse LLMS into your workflows with GAIA today!</h2>
+                <h2>Infuse LLMs into your workflows with GAIA today!</h2>
                 <p>Download our Postman Collection to quickly start integrating these powerful language models into your applications.</p>
                 <div class="cta-buttons" style="justify-content: center;">
                     <a href="/static/resources/AIAPIS.postman_collection" class="cta-btn" style="background-color: var(--accent-color); color: var(--dark-color);" download>
@@ -1238,6 +1782,27 @@
             
             // Run on scroll
             window.addEventListener('scroll', animateOnScroll);
+            
+            // Documentation tabs functionality
+            const tabs = document.querySelectorAll('.doc-tab');
+            const contents = document.querySelectorAll('.doc-content');
+            
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // Remove active class from all tabs and contents
+                    tabs.forEach(t => t.classList.remove('active'));
+                    contents.forEach(c => c.classList.add('hidden'));
+                    
+                    // Add active class to clicked tab
+                    this.classList.add('active');
+                    
+                    // Show corresponding content
+                    const targetContent = document.getElementById(this.dataset.tab + '-content');
+                    if (targetContent) {
+                        targetContent.classList.remove('hidden');
+                    }
+                });
+            });
         });
     </script>
 </body>
