@@ -22,6 +22,3 @@ pymupdf
 pypdf
 azure.ai.formrecognizer
 gevent
-matplotlib
-docx2pdf
-img2pdf
