@@ -62,6 +62,24 @@ parameters:
         department:
           type: string
           description: Updated department name (optional)
+        phone_ext:
+          type: string
+          description: Updated phone extension (optional)
+        division:
+          type: string
+          description: Updated division name (optional)
+        sub_division:
+          type: string
+          description: Updated sub-division name (optional)
+        cost_center:
+          type: string
+          description: Updated cost center (optional)
+        manager_full_name:
+          type: string
+          description: Updated manager's full name (optional)
+        manager_email:
+          type: string
+          description: Updated manager's email address (optional)
         scope:
           type: integer
           description: Updated permission scope (optional, 1-5)
@@ -245,7 +263,10 @@ responses:
     
     # Prepare update data (only include fields that are provided AND different from current values)
     update_data = {}
-    valid_fields = ['user_name', 'user_email', 'common_name', 'company', 'department', 'scope', 'active', 'comment','aic_balance']
+    valid_fields = ['user_name', 'user_email', 'common_name', 'company', 'department', 
+                    'phone_ext', 'division', 'sub_division', 'cost_center', 
+                    'manager_full_name', 'manager_email', 
+                    'scope', 'active', 'comment', 'aic_balance']
     
     for field in valid_fields:
         if field in data and data[field] is not None:
