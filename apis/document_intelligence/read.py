@@ -284,208 +284,318 @@ def document_read_route():
               type: string
               example: Error processing document
     """
-    # Get token from X-Token header
-    token = request.headers.get('X-Token')
-    if not token:
-        return create_api_response({
-            "error": "Authentication Error",
-            "message": "Missing X-Token header"
-        }, 401)
-    
-    # Validate token
-    token_details = DatabaseService.get_token_details_by_value(token)
-    if not token_details:
-        return create_api_response({
-            "error": "Authentication Error",
-            "message": "Invalid token"
-        }, 401)
-        
-    # Check if token is expired
-    now = datetime.now(pytz.UTC)
-    expiration_time = token_details["token_expiration_time"]
-    
-    # Ensure expiration_time is timezone-aware
-    if expiration_time.tzinfo is None:
-        johannesburg_tz = pytz.timezone('Africa/Johannesburg')
-        expiration_time = johannesburg_tz.localize(expiration_time)
-        
-    if now > expiration_time:
-        return create_api_response({
-            "error": "Authentication Error",
-            "message": "Token has expired"
-        }, 401)
-        
-    g.user_id = token_details["user_id"]
-    g.token_id = token_details["id"]
-    
-    # Get request data
-    data = request.get_json()
-    if not data:
-        return create_api_response({
-            "error": "Bad Request",
-            "message": "Request body is required"
-        }, 400)
-    
-    # Validate file_ids
-    file_ids = data.get('file_ids')
-    if not file_ids or not isinstance(file_ids, list) or len(file_ids) == 0:
-        return create_api_response({
-            "error": "Bad Request",
-            "message": "file_ids must be a non-empty array of file IDs"
-        }, 400)
-    
-    # Extract other parameters with defaults
-    options = {
-        'barcode_detection': data.get('barcode_detection', False),
-        'language': data.get('language', False),
-        'page_selection': data.get('page_selection', 'all_pages'),
-        'page_range': data.get('page_range', None),
-        'token': token
-    }
-    
-    # Get Document Intelligence configuration
-    endpoint = os.environ.get("AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT")
-    api_key = os.environ.get("AZURE_DOCUMENT_INTELLIGENCE_KEY")
-    
-    if not endpoint or not api_key:
-        return create_api_response({
-            "error": "Server Error",
-            "message": "Document Intelligence service not properly configured"
-        }, 500)
-    
-    # Initialize Document Intelligence client
     try:
-        document_client = DocumentIntelligenceClient(
-            endpoint=endpoint, 
-            credential=AzureKeyCredential(api_key)
-        )
-    except Exception as e:
-        logger.error(f"Error initializing Document Intelligence client: {str(e)}")
-        return create_api_response({
-            "error": "Server Error",
-            "message": f"Error initializing Document Intelligence service: {str(e)}"
-        }, 500)
-    
-    # Process each file
-    results = []
-    total_documents = 0
-    total_pages = 0
-    
-    for file_id in file_ids:
-        temp_file_path = None
+        # Get token from X-Token header
+        token = request.headers.get('X-Token')
+        if not token:
+            return create_api_response({
+                "error": "Authentication Error",
+                "message": "Missing X-Token header"
+            }, 401)
+        
+        # Validate token
+        token_details = DatabaseService.get_token_details_by_value(token)
+        if not token_details:
+            return create_api_response({
+                "error": "Authentication Error",
+                "message": "Invalid token"
+            }, 401)
+            
+        # Check if token is expired
+        now = datetime.now(pytz.UTC)
+        expiration_time = token_details["token_expiration_time"]
+        
+        # Ensure expiration_time is timezone-aware
+        if expiration_time.tzinfo is None:
+            johannesburg_tz = pytz.timezone('Africa/Johannesburg')
+            expiration_time = johannesburg_tz.localize(expiration_time)
+            
+        if now > expiration_time:
+            return create_api_response({
+                "error": "Authentication Error",
+                "message": "Token has expired"
+            }, 401)
+            
+        g.user_id = token_details["user_id"]
+        g.token_id = token_details["id"]
+        
+        # Get request data
+        data = request.get_json()
+        if not data:
+            return create_api_response({
+                "error": "Bad Request",
+                "message": "Request body is required"
+            }, 400)
+        
+        # Validate file_ids
+        file_ids = data.get('file_ids')
+        if not file_ids or not isinstance(file_ids, list) or len(file_ids) == 0:
+            return create_api_response({
+                "error": "Bad Request",
+                "message": "file_ids must be a non-empty array of file IDs"
+            }, 400)
+        
+        # Extract other parameters with defaults
+        options = {
+            'barcode_detection': data.get('barcode_detection', False),
+            'language': data.get('language', False),
+            'page_selection': data.get('page_selection', 'all_pages'),
+            'page_range': data.get('page_range', None),
+            'token': token
+        }
+        
+        # Get Document Intelligence configuration
+        endpoint = os.environ.get("AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT")
+        api_key = os.environ.get("AZURE_DOCUMENT_INTELLIGENCE_KEY")
+        
+        if not endpoint or not api_key:
+            return create_api_response({
+                "error": "Server Error",
+                "message": "Document Intelligence service not properly configured"
+            }, 500)
+        
+        # Initialize Document Intelligence client
         try:
-            # Get file URL using FileService
-            file_info, error = FileService.get_file_url(file_id, g.user_id)
-            
-            if error:
-                logger.error(f"Error retrieving file URL: {error}")
-                results.append({
-                    "file_id": file_id,
-                    "error": error
-                })
-                continue
-            
-            file_url = file_info.get("file_url")
-            file_name = file_info.get("file_name")
-            
-            logger.info(f"Retrieved file URL: {file_url} for file: {file_name}")
-            
-            if not file_url:
-                logger.error("Missing file_url in file info")
-                results.append({
-                    "file_id": file_id,
-                    "file_name": file_name if file_name else "Unknown",
-                    "error": "Failed to retrieve file URL"
-                })
-                continue
-            
-            # Check if the file has a supported extension
-            supported_extensions = ['.jpg', '.jpeg', '.jpe', '.jif', '.jfi', '.jfif', '.png', '.tif', '.tiff', '.pdf']
-            file_extension = os.path.splitext(file_name.lower())[1] if file_name else ''
-            
-            if not file_extension or file_extension not in supported_extensions:
-                logger.warning(f"Unsupported file type: {file_extension} for file: {file_name}")
-                results.append({
-                    "file_id": file_id,
-                    "file_name": file_name if file_name else "Unknown",
-                    "error": f"Unsupported file type. Only {', '.join(supported_extensions)} files are supported."
-                })
-                continue
-            
-            logger.info(f"File type validation passed for file: {file_name} with extension: {file_extension}")
-            
-            # Download the file content
+            document_client = DocumentIntelligenceClient(
+                endpoint=endpoint, 
+                credential=AzureKeyCredential(api_key)
+            )
+        except Exception as e:
+            logger.error(f"Error initializing Document Intelligence client: {str(e)}")
+            return create_api_response({
+                "error": "Server Error",
+                "message": f"Error initializing Document Intelligence service: {str(e)}"
+            }, 500)
+        
+        # Process each file
+        results = []
+        total_documents = 0
+        total_pages = 0
+        
+        for file_id in file_ids:
+            temp_file_path = None
             try:
-                logger.info(f"Downloading file from URL: {file_url}")
+                # Get file URL using FileService
+                file_info, error = FileService.get_file_url(file_id, g.user_id)
                 
-                # Download the file directly
-                response = requests.get(file_url, timeout=60)
-                
-                # If it's an Azure blob URL, we might need to add authorization
-                if response.status_code != 200 and "blob.core.windows.net" in file_url:
-                    response = requests.get(
-                        file_url,
-                        headers={"Authorization": f"Bearer {token}"},
-                        timeout=60
-                    )
-                
-                if response.status_code != 200:
-                    logger.error(f"Failed to download file: Status {response.status_code}")
+                if error:
+                    logger.error(f"Error retrieving file URL: {error}")
                     results.append({
                         "file_id": file_id,
-                        "file_name": file_name,
-                        "error": f"Failed to download file: Status {response.status_code}"
+                        "error": error
                     })
                     continue
                 
-                content_length = len(response.content)
-                logger.info(f"Downloaded {content_length} bytes for file {file_name}")
+                file_url = file_info.get("file_url")
+                file_name = file_info.get("file_name")
                 
-                if content_length == 0:
-                    logger.error("Downloaded file is empty")
+                logger.info(f"Retrieved file URL: {file_url} for file: {file_name}")
+                
+                if not file_url:
+                    logger.error("Missing file_url in file info")
                     results.append({
                         "file_id": file_id,
-                        "file_name": file_name,
-                        "error": "Downloaded file is empty"
+                        "file_name": file_name if file_name else "Unknown",
+                        "error": "Failed to retrieve file URL"
                     })
                     continue
                 
-                # Save to a temporary file
-                temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=file_extension)
-                temp_file_path = temp_file.name
-                temp_file.write(response.content)
-                temp_file.close()
+                # Check if the file has a supported extension
+                supported_extensions = ['.jpg', '.jpeg', '.jpe', '.jif', '.jfi', '.jfif', '.png', '.tif', '.tiff', '.pdf']
+                file_extension = os.path.splitext(file_name.lower())[1] if file_name else ''
                 
-                logger.info(f"Saved file to temporary location: {temp_file_path}")
+                if not file_extension or file_extension not in supported_extensions:
+                    logger.warning(f"Unsupported file type: {file_extension} for file: {file_name}")
+                    results.append({
+                        "file_id": file_id,
+                        "file_name": file_name if file_name else "Unknown",
+                        "error": f"Unsupported file type. Only {', '.join(supported_extensions)} files are supported."
+                    })
+                    continue
                 
-                # Call Document Intelligence to analyze the document from the file
+                logger.info(f"File type validation passed for file: {file_name} with extension: {file_extension}")
+                
+                # Download the file content
                 try:
-                    logger.info(f"Sending document to Document Intelligence service")
+                    logger.info(f"Downloading file from URL: {file_url}")
                     
-                    # Create analyzer options based on requested features
-                    analyzer_options = {}
-                    if options['language']:
-                        analyzer_options["features"] = ["languages"]
+                    # Download the file directly
+                    response = requests.get(file_url, timeout=60)
                     
-                    # Open the file and use it directly with Document Intelligence
-                    with open(temp_file_path, "rb") as document_file:
-                        # Start the document analysis using the file content
-                        poller = document_client.begin_analyze_document(
-                            "prebuilt-read",
-                            document_file,
-                            **analyzer_options
+                    # If it's an Azure blob URL, we might need to add authorization
+                    if response.status_code != 200 and "blob.core.windows.net" in file_url:
+                        response = requests.get(
+                            file_url,
+                            headers={"Authorization": f"Bearer {token}"},
+                            timeout=60
                         )
                     
-                    logger.info(f"Waiting for Document Intelligence to complete analysis...")
-                    result = poller.result()
-                    
-                    # Check if document was analyzed successfully
-                    if not result or not result.pages:
-                        logger.warning(f"No results returned from Document Intelligence for file: {file_name}")
+                    if response.status_code != 200:
+                        logger.error(f"Failed to download file: Status {response.status_code}")
                         results.append({
                             "file_id": file_id,
                             "file_name": file_name,
-                            "error": "No text content detected in document"
+                            "error": f"Failed to download file: Status {response.status_code}"
+                        })
+                        continue
+                    
+                    content_length = len(response.content)
+                    logger.info(f"Downloaded {content_length} bytes for file {file_name}")
+                    
+                    if content_length == 0:
+                        logger.error("Downloaded file is empty")
+                        results.append({
+                            "file_id": file_id,
+                            "file_name": file_name,
+                            "error": "Downloaded file is empty"
+                        })
+                        continue
+                    
+                    # Save to a temporary file
+                    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=file_extension)
+                    temp_file_path = temp_file.name
+                    temp_file.write(response.content)
+                    temp_file.close()
+                    
+                    logger.info(f"Saved file to temporary location: {temp_file_path}")
+                    
+                    # Call Document Intelligence to analyze the document from the file
+                    try:
+                        logger.info(f"Sending document to Document Intelligence service")
+                        
+                        # Create analyzer options based on requested features
+                        analyzer_options = {}
+                        if options['language']:
+                            analyzer_options["features"] = ["languages"]
+                        
+                        # Open the file and use it directly with Document Intelligence
+                        with open(temp_file_path, "rb") as document_file:
+                            # Start the document analysis using the file content
+                            poller = document_client.begin_analyze_document(
+                                "prebuilt-read",
+                                document_file,
+                                **analyzer_options
+                            )
+                        
+                        logger.info(f"Waiting for Document Intelligence to complete analysis...")
+                        result = poller.result()
+                        
+                        # Check if document was analyzed successfully
+                        if not result or not result.pages:
+                            logger.warning(f"No results returned from Document Intelligence for file: {file_name}")
+                            results.append({
+                                "file_id": file_id,
+                                "file_name": file_name,
+                                "error": "No text content detected in document"
+                            })
+                            
+                            # Clean up the temporary file
+                            if temp_file_path and os.path.exists(temp_file_path):
+                                os.unlink(temp_file_path)
+                                temp_file_path = None
+                                
+                            continue
+                        
+                        # Determine which pages to process
+                        document_page_count = len(result.pages)
+                        if options['page_selection'] == 'range' and options['page_range']:
+                            pages_to_process = parse_page_range(options['page_range'], document_page_count)
+                        else:
+                            pages_to_process = list(range(1, document_page_count + 1))
+                        
+                        # Format results for the response
+                        document_result = {
+                            "file_id": file_id,
+                            "file_name": file_name,
+                            "total_pages": document_page_count,
+                            "processed_pages": len(pages_to_process),
+                            "has_handwritten_content": False,  # Will update if handwritten content is detected
+                            "pages": []
+                        }
+                        
+                        # Check for handwritten content if styles are available
+                        if hasattr(result, 'styles') and result.styles:
+                            document_result["has_handwritten_content"] = any(
+                                style.is_handwritten for style in result.styles if hasattr(style, 'is_handwritten')
+                            )
+                        
+                        # Process each requested page
+                        for page in result.pages:
+                            # Skip pages not in the requested range
+                            if page.page_number not in pages_to_process:
+                                continue
+                            
+                            page_info = {
+                                "page_number": page.page_number,
+                                "width": page.width,
+                                "height": page.height,
+                                "unit": page.unit,
+                                "has_handwritten_content": False,  # Will update based on styles
+                                "text": []
+                            }
+                            
+                            # Extract all line content
+                            line_contents = [line.content for line in page.lines if line.content.strip()]
+                            
+                            # Group lines into paragraphs
+                            paragraphs = group_lines_into_paragraphs(line_contents)
+                            
+                            # Add paragraphs to the response
+                            for paragraph in paragraphs:
+                                if paragraph.strip():  # Skip empty paragraphs
+                                    page_info["text"].append({
+                                        "type": "paragraph",
+                                        "content": paragraph
+                                    })
+                            
+                            # Create page_text_all with all paragraphs from this page
+                            page_text_all = ""
+                            for text_item in page_info["text"]:
+                                if text_item["type"] == "paragraph" and text_item["content"].strip():
+                                    page_text_all += text_item["content"] + "\n\n"
+                            
+                            # Add the consolidated page text
+                            page_info["page_text_all"] = page_text_all.strip()
+                            
+                            # If language detection was requested, include that
+                            if options['language'] and hasattr(page, 'languages') and page.languages:
+                                page_info["detected_languages"] = [
+                                    {
+                                        "language": lang.locale,
+                                        "confidence": lang.confidence
+                                    } 
+                                    for lang in page.languages
+                                ]
+                            
+                            # Check if page has handwritten content (safely)
+                            if hasattr(result, 'styles') and result.styles:
+                                for style in result.styles:
+                                    if (hasattr(style, 'is_handwritten') and 
+                                        style.is_handwritten and 
+                                        hasattr(style, 'page_number') and
+                                        style.page_number == page.page_number):
+                                        page_info["has_handwritten_content"] = True
+                                        break
+                            
+                            # Add to results
+                            document_result["pages"].append(page_info)
+                        
+                        # Clean up the temporary file
+                        if temp_file_path and os.path.exists(temp_file_path):
+                            os.unlink(temp_file_path)
+                            temp_file_path = None
+                        
+                        # Add to overall results
+                        results.append(document_result)
+                        total_documents += 1
+                        total_pages += len(document_result["pages"])
+                        
+                    except HttpResponseError as e:
+                        logger.error(f"Azure Document Intelligence service error: {str(e)}")
+                        results.append({
+                            "file_id": file_id,
+                            "file_name": file_name,
+                            "error": f"Document analysis error: {str(e)}"
                         })
                         
                         # Clean up the temporary file
@@ -494,125 +604,31 @@ def document_read_route():
                             temp_file_path = None
                             
                         continue
-                    
-                    # Determine which pages to process
-                    document_page_count = len(result.pages)
-                    if options['page_selection'] == 'range' and options['page_range']:
-                        pages_to_process = parse_page_range(options['page_range'], document_page_count)
-                    else:
-                        pages_to_process = list(range(1, document_page_count + 1))
-                    
-                    # Format results for the response
-                    document_result = {
-                        "file_id": file_id,
-                        "file_name": file_name,
-                        "total_pages": document_page_count,
-                        "processed_pages": len(pages_to_process),
-                        "has_handwritten_content": False,  # Will update if handwritten content is detected
-                        "pages": []
-                    }
-                    
-                    # Check for handwritten content if styles are available
-                    if hasattr(result, 'styles') and result.styles:
-                        document_result["has_handwritten_content"] = any(
-                            style.is_handwritten for style in result.styles if hasattr(style, 'is_handwritten')
-                        )
-                    
-                    # Process each requested page
-                    for page in result.pages:
-                        # Skip pages not in the requested range
-                        if page.page_number not in pages_to_process:
-                            continue
                         
-                        page_info = {
-                            "page_number": page.page_number,
-                            "width": page.width,
-                            "height": page.height,
-                            "unit": page.unit,
-                            "has_handwritten_content": False,  # Will update based on styles
-                            "text": []
-                        }
+                    except Exception as e:
+                        logger.error(f"Error analyzing document: {str(e)}")
+                        results.append({
+                            "file_id": file_id,
+                            "file_name": file_name,
+                            "error": f"Document analysis error: {str(e)}"
+                        })
                         
-                        # Extract all line content
-                        line_contents = [line.content for line in page.lines if line.content.strip()]
+                        # Clean up the temporary file
+                        if temp_file_path and os.path.exists(temp_file_path):
+                            os.unlink(temp_file_path)
+                            temp_file_path = None
+                            
+                        continue
                         
-                        # Group lines into paragraphs
-                        paragraphs = group_lines_into_paragraphs(line_contents)
-                        
-                        # Add paragraphs to the response
-                        for paragraph in paragraphs:
-                            if paragraph.strip():  # Skip empty paragraphs
-                                page_info["text"].append({
-                                    "type": "paragraph",
-                                    "content": paragraph
-                                })
-                        
-                        # Create page_text_all with all paragraphs from this page
-                        page_text_all = ""
-                        for text_item in page_info["text"]:
-                            if text_item["type"] == "paragraph" and text_item["content"].strip():
-                                page_text_all += text_item["content"] + "\n\n"
-                        
-                        # Add the consolidated page text
-                        page_info["page_text_all"] = page_text_all.strip()
-                        
-                        # If language detection was requested, include that
-                        if options['language'] and hasattr(page, 'languages') and page.languages:
-                            page_info["detected_languages"] = [
-                                {
-                                    "language": lang.locale,
-                                    "confidence": lang.confidence
-                                } 
-                                for lang in page.languages
-                            ]
-                        
-                        # Check if page has handwritten content (safely)
-                        if hasattr(result, 'styles') and result.styles:
-                            for style in result.styles:
-                                if (hasattr(style, 'is_handwritten') and 
-                                    style.is_handwritten and 
-                                    hasattr(style, 'page_number') and
-                                    style.page_number == page.page_number):
-                                    page_info["has_handwritten_content"] = True
-                                    break
-                        
-                        # Add to results
-                        document_result["pages"].append(page_info)
-                    
-                    # Clean up the temporary file
-                    if temp_file_path and os.path.exists(temp_file_path):
-                        os.unlink(temp_file_path)
-                        temp_file_path = None
-                    
-                    # Add to overall results
-                    results.append(document_result)
-                    total_documents += 1
-                    total_pages += len(document_result["pages"])
-                    
-                except HttpResponseError as e:
-                    logger.error(f"Azure Document Intelligence service error: {str(e)}")
-                    results.append({
-                        "file_id": file_id,
-                        "file_name": file_name,
-                        "error": f"Document analysis error: {str(e)}"
-                    })
-                    
-                    # Clean up the temporary file
-                    if temp_file_path and os.path.exists(temp_file_path):
-                        os.unlink(temp_file_path)
-                        temp_file_path = None
-                        
-                    continue
-                    
                 except Exception as e:
-                    logger.error(f"Error analyzing document: {str(e)}")
+                    logger.error(f"Error downloading or processing file: {str(e)}")
                     results.append({
                         "file_id": file_id,
-                        "file_name": file_name,
-                        "error": f"Document analysis error: {str(e)}"
+                        "file_name": file_name if file_name else "Unknown",
+                        "error": f"Error downloading or processing file: {str(e)}"
                     })
                     
-                    # Clean up the temporary file
+                    # Clean up the temporary file if it exists
                     if temp_file_path and os.path.exists(temp_file_path):
                         os.unlink(temp_file_path)
                         temp_file_path = None
@@ -620,42 +636,27 @@ def document_read_route():
                     continue
                     
             except Exception as e:
-                logger.error(f"Error downloading or processing file: {str(e)}")
+                logger.error(f"Error processing file ID {file_id}: {str(e)}")
                 results.append({
                     "file_id": file_id,
-                    "file_name": file_name if file_name else "Unknown",
-                    "error": f"Error downloading or processing file: {str(e)}"
+                    "error": f"Processing error: {str(e)}"
                 })
                 
                 # Clean up the temporary file if it exists
                 if temp_file_path and os.path.exists(temp_file_path):
                     os.unlink(temp_file_path)
-                    temp_file_path = None
                     
                 continue
-                
-        except Exception as e:
-            logger.error(f"Error processing file ID {file_id}: {str(e)}")
-            results.append({
-                "file_id": file_id,
-                "error": f"Processing error: {str(e)}"
-            })
-            
-            # Clean up the temporary file if it exists
-            if temp_file_path and os.path.exists(temp_file_path):
-                os.unlink(temp_file_path)
-                
-            continue
-    
-    # If no documents were processed successfully, return an error
-    if total_documents == 0:
-        return create_api_response({
-            "error": "Processing Error",
-            "message": "No documents were processed successfully",
-            "results": results
-        }, 400)
-    
-    # Return the processed results
+        
+        # If no documents were processed successfully, return an error
+        if total_documents == 0:
+            return create_api_response({
+                "error": "Processing Error",
+                "message": "No documents were processed successfully",
+                "results": results
+            }, 400)
+        
+        # Return the processed results
         return create_api_response({
             "message": "Documents successfully processed",
             "documents_processed": total_documents,
@@ -663,10 +664,23 @@ def document_read_route():
             "model_used": "doc_intelligence",  # Added model identification
             "results": results
         }, 200)
-    
+        
+    except Exception as e:
+        # Catch any uncaught exceptions and return a proper response
+        logger.error(f"Unhandled exception in document_read_route: {str(e)}")
+        return create_api_response({
+            "error": "Server Error",
+            "message": f"An unexpected error occurred: {str(e)}"
+        }, 500)
+
 def register_document_intelligence_read_routes(app):
     """Register document intelligence routes with the Flask app"""
+    # Import track_usage middleware
     from apis.utils.usageMiddleware import track_usage
     from apis.utils.rbacMiddleware import check_endpoint_access
     
-    app.route('/docint/read', methods=['POST'])(track_usage(api_logger(check_endpoint_access(check_balance(document_read_route)))))
+    # Wrap the document_read_route with track_usage first
+    tracked_read_route = track_usage(document_read_route)
+    
+    # Then register it with the other middleware
+    app.route('/docint/read', methods=['POST'])(api_logger(check_endpoint_access(check_balance(tracked_read_route))))
