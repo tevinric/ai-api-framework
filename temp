@@ -1,27 +1,27 @@
 INFO:werkzeug:127.0.0.1 - - [23/May/2025 10:00:27] "POST /docint/read HTTP/1.1" 500 -
 Traceback (most recent call last):
-  File "C:\Users\E100545\Git\ai-api-framework\.venv\Lib\site-packages\flask\app.py", line 1536, in __call__
+  File "C:\Users\XXXX\Git\ai-api-framework\.venv\Lib\site-packages\flask\app.py", line 1536, in __call__
     return self.wsgi_app(environ, start_response)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\E100545\Git\ai-api-framework\.venv\Lib\site-packages\flask\app.py", line 1514, in wsgi_app
+  File "C:\Users\XXXX\Git\ai-api-framework\.venv\Lib\site-packages\flask\app.py", line 1514, in wsgi_app
     response = self.handle_exception(e)
                ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\E100545\Git\ai-api-framework\.venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+  File "C:\Users\XXXX\Git\ai-api-framework\.venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
     response = self.full_dispatch_request()
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\E100545\Git\ai-api-framework\.venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+  File "C:\Users\XXXX\Git\ai-api-framework\.venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
     rv = self.handle_user_exception(e)
          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\E100545\Git\ai-api-framework\.venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+  File "C:\Users\XXXX\Git\ai-api-framework\.venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
     rv = self.dispatch_request()
          ^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\E100545\Git\ai-api-framework\.venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request    
+  File "C:\Users\XXXX\Git\ai-api-framework\.venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request    
     return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\E100545\Git\ai-api-framework\apis\utils\usageMiddleware.py", line 228, in decorated_function
+  File "C:\Users\XXXX\Git\ai-api-framework\apis\utils\usageMiddleware.py", line 228, in decorated_function
     response = f(*args, **kwargs)
                ^^^^^^^^^^^^^^^^^^
-  File "C:\Users\E100545\Git\ai-api-framework\apis\utils\logMiddleware.py", line 121, in decorated_function
+  File "C:\Users\XXXX\Git\ai-api-framework\apis\utils\logMiddleware.py", line 121, in decorated_function
     response_status = response.status_code
                       ^^^^^^^^^^^^^^^^^^^^
 AttributeError: 'NoneType' object has no attribute 'status_code'
