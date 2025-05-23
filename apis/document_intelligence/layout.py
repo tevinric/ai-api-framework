@@ -967,13 +967,13 @@ def document_layout_route():
             "error": "Server Error",
             "message": f"An unexpected error occurred: {str(e)}"
         }, 500)
-
+        
 def register_document_intelligence_layout_routes(app):
     """Register document intelligence routes with the Flask app"""
     # Import middlewares
     from apis.utils.usageMiddleware import track_usage
     from apis.utils.rbacMiddleware import check_endpoint_access
     
-    # The api_logger must be the outermost middleware to ensure it creates the API log first
-    # Then track_usage should be able to find and reuse that log ID
-    app.route('/docint/layout', methods=['POST'])(api_logger(check_endpoint_access(check_balance(track_usage(document_layout_route)))))
+    # Use the same middleware ordering as the RAG endpoints
+    # track_usage -> api_logger -> check_endpoint_access -> check_balance -> route_function
+    app.route('/docint/layout', methods=['POST'])(track_usage(api_logger(check_endpoint_access(check_balance(document_layout_route)))))
