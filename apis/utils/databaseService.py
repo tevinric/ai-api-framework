@@ -259,6 +259,12 @@ class DatabaseService:
             common_name = user_data.get('common_name')
             company = user_data.get('company')
             department = user_data.get('department')
+            phone_ext = user_data.get('phone_ext')
+            division = user_data.get('division')
+            sub_division = user_data.get('sub_division')
+            cost_center = user_data.get('cost_center')
+            manager_full_name = user_data.get('manager_full_name')
+            manager_email = user_data.get('manager_email')
             scope = user_data.get('scope', 1)
             active = user_data.get('active', True)
             comment = user_data.get('comment')
@@ -281,6 +287,12 @@ class DatabaseService:
                 common_name,
                 company,
                 department,
+                phone_ext,
+                division,
+                sub_division,
+                cost_center,
+                manager_full_name,
+                manager_email,
                 api_key, 
                 scope, 
                 active, 
@@ -290,7 +302,7 @@ class DatabaseService:
                 aic_balance
             )
             VALUES (
-                ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                 DATEADD(HOUR, 2, GETUTCDATE()),
                 DATEADD(HOUR, 2, GETUTCDATE()),
                 ?,
@@ -306,6 +318,12 @@ class DatabaseService:
                 common_name,
                 company,
                 department,
+                phone_ext,
+                division,
+                sub_division,
+                cost_center,
+                manager_full_name,
+                manager_email,
                 api_key,
                 scope,
                 1 if active else 0,  # Convert boolean to bit
