@@ -1,130 +1,27 @@
-ERROR:root:jsonify failure; defaulting to json.dumps
+INFO:werkzeug:127.0.0.1 - - [23/May/2025 10:00:27] "POST /docint/read HTTP/1.1" 500 -
 Traceback (most recent call last):
-  File "C:\Users\User\AICOE\aiportal\.venv\Lib\site-packages\flasgger\base.py", line 164, in get
-    return jsonify(self.loader())
-                   ^^^^^^^^^^^^^
-  File "C:\Users\User\AICOE\aiportal\.venv\Lib\site-packages\flasgger\base.py", line 438, in get_apispecs
-    specs = get_specs(
-            ^^^^^^^^^^
-  File "C:\Users\User\AICOE\aiportal\.venv\Lib\site-packages\flasgger\utils.py", line 180, in get_specs
-    doc_summary, doc_description, doc_swag = parse_docstring(
-                                             ^^^^^^^^^^^^^^^^
-  File "C:\Users\User\AICOE\aiportal\.venv\Lib\site-packages\flasgger\utils.py", line 675, in parse_docstring
-    swag = yaml.safe_load(full_doc[yaml_sep + 4:])
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\User\AICOE\aiportal\.venv\Lib\site-packages\yaml\__init__.py", line 125, in safe_load
-    return load(stream, SafeLoader)
-           ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\User\AICOE\aiportal\.venv\Lib\site-packages\yaml\__init__.py", line 81, in load
-    return loader.get_single_data()
-           ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\User\AICOE\aiportal\.venv\Lib\site-packages\yaml\constructor.py", line 49, in get_single_data
-    node = self.get_single_node()
-           ^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\User\AICOE\aiportal\.venv\Lib\site-packages\yaml\composer.py", line 39, in get_single_node
-    if not self.check_event(StreamEndEvent):
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\User\AICOE\aiportal\.venv\Lib\site-packages\yaml\parser.py", line 98, in check_event
-    self.current_event = self.state()
-                         ^^^^^^^^^^^^
-  File "C:\Users\User\AICOE\aiportal\.venv\Lib\site-packages\yaml\parser.py", line 171, in parse_document_start
-    raise ParserError(None, None,
-yaml.parser.ParserError: expected '<document start>', but found '<scalar>'
-  in "<unicode string>", line 44, column 1:
-    <<<<<<< HEAD
-    ^
-INFO:werkzeug:127.0.0.1 - - [18/May/2025 19:22:01] "GET /apispec.json HTTP/1.1" 500 -
-Traceback (most recent call last):
-  File "C:\Users\User\AICOE\aiportal\.venv\Lib\site-packages\flasgger\base.py", line 164, in get
-    return jsonify(self.loader())
-                   ^^^^^^^^^^^^^^
-  File "C:\Users\User\AICOE\aiportal\.venv\Lib\site-packages\flasgger\base.py", line 438, in get_apispecs
-    specs = get_specs(
-            ^^^^^^^^^^
-  File "C:\Users\User\AICOE\aiportal\.venv\Lib\site-packages\flasgger\utils.py", line 180, in get_specs
-    doc_summary, doc_description, doc_swag = parse_docstring(
-                                             ^^^^^^^^^^^^^^^^
-  File "C:\Users\User\AICOE\aiportal\.venv\Lib\site-packages\flasgger\utils.py", line 675, in parse_docstring
-    swag = yaml.safe_load(full_doc[yaml_sep + 4:])
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\User\AICOE\aiportal\.venv\Lib\site-packages\yaml\__init__.py", line 125, in safe_load
-    return load(stream, SafeLoader)
-           ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\User\AICOE\aiportal\.venv\Lib\site-packages\yaml\__init__.py", line 81, in load
-    return loader.get_single_data()
-           ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\User\AICOE\aiportal\.venv\Lib\site-packages\yaml\constructor.py", line 49, in get_single_data
-    node = self.get_single_node()
-           ^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\User\AICOE\aiportal\.venv\Lib\site-packages\yaml\composer.py", line 39, in get_single_node
-    if not self.check_event(StreamEndEvent):
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\User\AICOE\aiportal\.venv\Lib\site-packages\yaml\parser.py", line 98, in check_event
-    self.current_event = self.state()
-                         ^^^^^^^^^^^^
-  File "C:\Users\User\AICOE\aiportal\.venv\Lib\site-packages\yaml\parser.py", line 171, in parse_document_start
-    raise ParserError(None, None,
-yaml.parser.ParserError: expected '<document start>', but found '<scalar>'
-  in "<unicode string>", line 44, column 1:
-    <<<<<<< HEAD
-    ^
-
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "C:\Users\User\AICOE\aiportal\.venv\Lib\site-packages\flask\app.py", line 1536, in __call__
+  File "C:\Users\E100545\Git\ai-api-framework\.venv\Lib\site-packages\flask\app.py", line 1536, in __call__
     return self.wsgi_app(environ, start_response)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\User\AICOE\aiportal\.venv\Lib\site-packages\flask\app.py", line 1514, in wsgi_app
+  File "C:\Users\E100545\Git\ai-api-framework\.venv\Lib\site-packages\flask\app.py", line 1514, in wsgi_app
     response = self.handle_exception(e)
                ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\User\AICOE\aiportal\.venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+  File "C:\Users\E100545\Git\ai-api-framework\.venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
     response = self.full_dispatch_request()
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\User\AICOE\aiportal\.venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+  File "C:\Users\E100545\Git\ai-api-framework\.venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
     rv = self.handle_user_exception(e)
          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\User\AICOE\aiportal\.venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+  File "C:\Users\E100545\Git\ai-api-framework\.venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
     rv = self.dispatch_request()
          ^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\User\AICOE\aiportal\.venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+  File "C:\Users\E100545\Git\ai-api-framework\.venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request    
     return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\User\AICOE\aiportal\.venv\Lib\site-packages\flask\views.py", line 110, in view
-    return current_app.ensure_sync(self.dispatch_request)(**kwargs)  # type: ignore[no-any-return]
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\User\AICOE\aiportal\.venv\Lib\site-packages\flask\views.py", line 191, in dispatch_request
-    return current_app.ensure_sync(meth)(**kwargs)  # type: ignore[no-any-return]
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\User\AICOE\aiportal\.venv\Lib\site-packages\flasgger\base.py", line 168, in get
-    specs = json.dumps(self.loader())
-                       ^^^^^^^^^^^^^^
-  File "C:\Users\User\AICOE\aiportal\.venv\Lib\site-packages\flasgger\base.py", line 438, in get_apispecs
-    specs = get_specs(
-            ^^^^^^^^^^
-  File "C:\Users\User\AICOE\aiportal\.venv\Lib\site-packages\flasgger\utils.py", line 180, in get_specs
-    doc_summary, doc_description, doc_swag = parse_docstring(
-                                             ^^^^^^^^^^^^^^^^
-  File "C:\Users\User\AICOE\aiportal\.venv\Lib\site-packages\flasgger\utils.py", line 675, in parse_docstring
-    swag = yaml.safe_load(full_doc[yaml_sep + 4:])
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\User\AICOE\aiportal\.venv\Lib\site-packages\yaml\__init__.py", line 125, in safe_load
-    return load(stream, SafeLoader)
-           ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\User\AICOE\aiportal\.venv\Lib\site-packages\yaml\__init__.py", line 81, in load
-    return loader.get_single_data()
-           ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\User\AICOE\aiportal\.venv\Lib\site-packages\yaml\constructor.py", line 49, in get_single_data
-    node = self.get_single_node()
-           ^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\User\AICOE\aiportal\.venv\Lib\site-packages\yaml\composer.py", line 39, in get_single_node
-    if not self.check_event(StreamEndEvent):
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\User\AICOE\aiportal\.venv\Lib\site-packages\yaml\parser.py", line 98, in check_event
-    self.current_event = self.state()
-                         ^^^^^^^^^^^^
-  File "C:\Users\User\AICOE\aiportal\.venv\Lib\site-packages\yaml\parser.py", line 171, in parse_document_start
-    raise ParserError(None, None,
-yaml.parser.ParserError: expected '<document start>', but found '<scalar>'
-  in "<unicode string>", line 44, column 1:
-    <<<<<<< HEAD
+  File "C:\Users\E100545\Git\ai-api-framework\apis\utils\usageMiddleware.py", line 228, in decorated_function
+    response = f(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\E100545\Git\ai-api-framework\apis\utils\logMiddleware.py", line 121, in decorated_function
+    response_status = response.status_code
+                      ^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'status_code'
