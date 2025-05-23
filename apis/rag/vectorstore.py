@@ -1532,9 +1532,8 @@ def create_vectorstore_from_string_route():
         vectorstore_id = str(uuid.uuid4())
         vectorstore_path = f"{user_id}-{vectorstore_id}"
         
-        # Estimate token count (approximately 4 tokens per word)
-        words = content.split()
-        estimated_tokens = len(words) * 4  # Rough estimation
+        # Count tokens using tiktoken
+        estimated_tokens = count_embedding_tokens(content)
         
         # Initialize embeddings
         embedding_model = os.environ.get("AZURE_OPENAI_EMBEDDING_DEPLOYMENT", "text-embedding-3-large")
