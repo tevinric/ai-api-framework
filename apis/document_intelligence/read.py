@@ -662,7 +662,10 @@ def document_read_route():
         "pages_processed": total_pages,
         "results": results
     }, 200)
-
+    
 def register_document_intelligence_read_routes(app):
     """Register document intelligence routes with the Flask app"""
-    app.route('/docint/read', methods=['POST'])(api_logger(check_balance(document_read_route)))
+    from apis.utils.usageMiddleware import track_usage
+    from apis.utils.rbacMiddleware import check_endpoint_access
+    
+    app.route('/docint/read', methods=['POST'])(track_usage(api_logger(check_endpoint_access(check_balance(document_read_route)))))
