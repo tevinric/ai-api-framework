@@ -58,6 +58,24 @@ def create_user_route():
             department:
               type: string
               description: Department name for the new user (optional)
+            phone_ext:
+              type: string
+              description: Phone extension for the new user (optional)
+            division:
+              type: string
+              description: Division name for the new user (optional)
+            sub_division:
+              type: string
+              description: Sub-division name for the new user (optional)
+            cost_center:
+              type: string
+              description: Cost center for the new user (optional)
+            manager_full_name:
+              type: string
+              description: Manager's full name for the new user (optional)
+            manager_email:
+              type: string
+              description: Manager's email address for the new user (optional)
             scope:
               type: integer
               description: Permission scope for the new user (1-5)
@@ -219,8 +237,14 @@ def create_user_route():
         'scope': data.get('scope', 1),  # Default scope is 1
         'active': data.get('active', True),  # Default active is True
         'comment': data.get('comment', None),
-        'company': data.get('company', None),  # New field
-        'department': data.get('department', None)  # New field
+        'company': data.get('company', None),  # Company field
+        'department': data.get('department', None),  # Department field
+        'phone_ext': data.get('phone_ext', None),  # New fields
+        'division': data.get('division', None),
+        'sub_division': data.get('sub_division', None),
+        'cost_center': data.get('cost_center', None),
+        'manager_full_name': data.get('manager_full_name', None),
+        'manager_email': data.get('manager_email', None)
     }
     
     # Validate scope is within allowed range (1-5)
