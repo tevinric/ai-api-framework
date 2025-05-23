@@ -10,7 +10,7 @@ CREATE TABLE users (
     department NVARCHAR(255),         -- Department name
     phone_ext NVARCHAR(50),           -- Phone extension
     division NVARCHAR(255),           -- Division name
-    sub_division NVARCHAR(255),       -- Sub-division name
+    sub_department NVARCHAR(255),       -- Sub-division name
     cost_center NVARCHAR(100),        -- Cost center
     manager_full_name NVARCHAR(255),  -- Manager's full name
     manager_email NVARCHAR(255),      -- Manager's email address
