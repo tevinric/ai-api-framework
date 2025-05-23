@@ -70,17 +70,6 @@ def count_embedding_tokens(text):
         logger.warning(f"Error using tiktoken: {str(e)}. Using approximate count.")
         return max(1, len(text) // 4)
 
-# In create_vectorstore_route, replace the token estimation code with:
-# (Around line 275-277 in the original file)
-# Count tokens using tiktoken
-total_text = " ".join([chunk.page_content for chunk in chunks])
-estimated_tokens = count_embedding_tokens(total_text)
-
-# In create_vectorstore_from_string_route, replace the token estimation code with:
-# (Around line 680-682 in the original file)
-# Count tokens using tiktoken
-estimated_tokens = count_embedding_tokens(content)
-
 
 def update_vectorstore_access_timestamp(vectorstore_id):
     """Update the last_accessed timestamp for a vectorstore"""
@@ -647,10 +636,9 @@ def create_advanced_vectorstore_route():
             chunk_size=chunk_size
         )
         
-        # Estimate token count (approximately 4 tokens per word)
+        # Count tokens using tiktoken
         total_text = " ".join([chunk.page_content for chunk in chunks])
-        words = total_text.split()
-        estimated_tokens = len(words) * 4  # Rough estimation
+        estimated_tokens = count_embedding_tokens(total_text)
         
         # Create vectorstore creator
         creator = VectorstoreCreator(embeddings)
