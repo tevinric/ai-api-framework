@@ -957,7 +957,10 @@ def document_layout_route():
         "pages_processed": total_pages,
         "results": results
     }, 200)
-
+    
 def register_document_intelligence_layout_routes(app):
     """Register document intelligence routes with the Flask app"""
-    app.route('/docint/layout', methods=['POST'])(api_logger(check_balance(document_layout_route)))
+    from apis.utils.usageMiddleware import track_usage
+    from apis.utils.rbacMiddleware import check_endpoint_access
+    
+    app.route('/docint/layout', methods=['POST'])(track_usage(api_logger(check_endpoint_access(check_balance(document_layout_route)))))
