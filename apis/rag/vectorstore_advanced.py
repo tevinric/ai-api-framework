@@ -45,6 +45,43 @@ BASE_BLOB_URL = f"https://{STORAGE_ACCOUNT}.blob.core.windows.net/{VECTORSTORE_C
 
 from apis.utils.config import create_api_response
 
+def count_embedding_tokens(text):
+    """
+    Count tokens for the embedding model using tiktoken
+    
+    Args:
+        text (str): The text to count tokens for
+        
+    Returns:
+        int: Token count
+    """
+    try:
+        # Import the tokenizer from tiktoken
+        import tiktoken
+        
+        # Use cl100k_base tokenizer for text-embedding-3-large
+        encoding = tiktoken.get_encoding("cl100k_base")
+        
+        # Count tokens
+        token_count = len(encoding.encode(text))
+        return token_count
+    except Exception as e:
+        # Fallback for any issues
+        logger.warning(f"Error using tiktoken: {str(e)}. Using approximate count.")
+        return max(1, len(text) // 4)
+
+# In create_vectorstore_route, replace the token estimation code with:
+# (Around line 275-277 in the original file)
+# Count tokens using tiktoken
+total_text = " ".join([chunk.page_content for chunk in chunks])
+estimated_tokens = count_embedding_tokens(total_text)
+
+# In create_vectorstore_from_string_route, replace the token estimation code with:
+# (Around line 680-682 in the original file)
+# Count tokens using tiktoken
+estimated_tokens = count_embedding_tokens(content)
+
+
 def update_vectorstore_access_timestamp(vectorstore_id):
     """Update the last_accessed timestamp for a vectorstore"""
     try:
