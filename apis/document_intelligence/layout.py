@@ -951,12 +951,13 @@ def document_layout_route():
         }, 400)
     
     # Return the processed results
-    return create_api_response({
-        "message": "Documents successfully processed",
-        "documents_processed": total_documents,
-        "pages_processed": total_pages,
-        "results": results
-    }, 200)
+        return create_api_response({
+            "message": "Documents successfully processed",
+            "documents_processed": total_documents,
+            "pages_processed": total_pages,
+            "model_used": "doc_intelligence",  # Added model identification
+            "results": results
+        }, 200)
     
 def register_document_intelligence_layout_routes(app):
     """Register document intelligence routes with the Flask app"""
