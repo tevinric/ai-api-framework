@@ -64,7 +64,7 @@ def create_user_route():
             division:
               type: string
               description: Division name for the new user (optional)
-            sub_division:
+            sub_department:
               type: string
               description: Sub-division name for the new user (optional)
             cost_center:
@@ -241,7 +241,7 @@ def create_user_route():
         'department': data.get('department', None),  # Department field
         'phone_ext': data.get('phone_ext', None),  # New fields
         'division': data.get('division', None),
-        'sub_division': data.get('sub_division', None),
+        'sub_department': data.get('sub_department', None),
         'cost_center': data.get('cost_center', None),
         'manager_full_name': data.get('manager_full_name', None),
         'manager_email': data.get('manager_email', None)

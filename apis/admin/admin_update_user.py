@@ -68,7 +68,7 @@ parameters:
         division:
           type: string
           description: Updated division name (optional)
-        sub_division:
+        sub_department:
           type: string
           description: Updated sub-division name (optional)
         cost_center:
@@ -264,7 +264,7 @@ responses:
     # Prepare update data (only include fields that are provided AND different from current values)
     update_data = {}
     valid_fields = ['user_name', 'user_email', 'common_name', 'company', 'department', 
-                    'phone_ext', 'division', 'sub_division', 'cost_center', 
+                    'phone_ext', 'division', 'sub_department', 'cost_center', 
                     'manager_full_name', 'manager_email', 
                     'scope', 'active', 'comment', 'aic_balance']
     

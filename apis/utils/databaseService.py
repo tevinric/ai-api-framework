@@ -261,7 +261,7 @@ class DatabaseService:
             department = user_data.get('department')
             phone_ext = user_data.get('phone_ext')
             division = user_data.get('division')
-            sub_division = user_data.get('sub_division')
+            sub_department = user_data.get('sub_department')
             cost_center = user_data.get('cost_center')
             manager_full_name = user_data.get('manager_full_name')
             manager_email = user_data.get('manager_email')
@@ -289,7 +289,7 @@ class DatabaseService:
                 department,
                 phone_ext,
                 division,
-                sub_division,
+                sub_department,
                 cost_center,
                 manager_full_name,
                 manager_email,
@@ -320,7 +320,7 @@ class DatabaseService:
                 department,
                 phone_ext,
                 division,
-                sub_division,
+                sub_department,
                 cost_center,
                 manager_full_name,
                 manager_email,
