@@ -10,6 +10,8 @@ import azure.cognitiveservices.speech as speechsdk
 import os
 import io
 import tempfile
+import wave
+import tiktoken
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -25,6 +27,118 @@ class JobProcessor:
     This class contains methods to process different types of async jobs
     like speech-to-text, speech-to-text with diarization, and text-to-speech.
     """
+    
+    @staticmethod
+    def get_tokenizer():
+        """Get tiktoken encoder for token counting"""
+        try:
+            # Use GPT-4 tokenizer as a standard
+            return tiktoken.encoding_for_model("gpt-4")
+        except:
+            # Fallback to cl100k_base encoding
+            return tiktoken.get_encoding("cl100k_base")
+    
+    @staticmethod
+    def count_text_tokens(text):
+        """Count the number of tokens in the text using tiktoken"""
+        try:
+            tokenizer = JobProcessor.get_tokenizer()
+            return len(tokenizer.encode(text))
+        except Exception as e:
+            logger.error(f"Error counting tokens: {str(e)}")
+            # Fallback estimation: roughly 4 characters per token
+            return len(text) // 4
+    
+    @staticmethod
+    def get_accurate_audio_duration(audio_data, output_format):
+        """
+        Get accurate audio duration from the audio data
+        
+        Args:
+            audio_data (bytes): The audio file data
+            output_format (str): The output format used for synthesis
+            
+        Returns:
+            float: Duration in seconds
+        """
+        try:
+            # Create a temporary file to analyze the audio
+            with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+                temp_file.write(audio_data)
+                temp_file.flush()
+                
+                try:
+                    if 'mp3' in output_format.lower():
+                        # For MP3 files, try to use mutagen if available, otherwise estimate
+                        try:
+                            from mutagen.mp3 import MP3
+                            audio = MP3(temp_file.name)
+                            duration = audio.info.length
+                            logger.info(f"Got MP3 duration from mutagen: {duration} seconds")
+                            return duration
+                        except ImportError:
+                            logger.warning("Mutagen not available for MP3 duration, using estimation")
+                            # Estimate based on bitrate (more accurate than before)
+                            if '32kbitrate' in output_format:
+                                # 32 kbps MP3: roughly 4KB per second
+                                estimated_duration = len(audio_data) / 4000
+                            elif '128kbitrate' in output_format:
+                                # 128 kbps MP3: roughly 16KB per second  
+                                estimated_duration = len(audio_data) / 16000
+                            else:
+                                # Default estimate
+                                estimated_duration = len(audio_data) / 4000
+                            logger.info(f"Estimated MP3 duration: {estimated_duration} seconds")
+                            return estimated_duration
+                        except Exception as e:
+                            logger.error(f"Error reading MP3 with mutagen: {str(e)}")
+                            # Fallback to bitrate estimation
+                            estimated_duration = len(audio_data) / 4000
+                            return estimated_duration
+                    
+                    elif 'riff' in output_format.lower() or 'pcm' in output_format.lower():
+                        # For WAV/PCM files, use wave library (built into Python)
+                        try:
+                            with wave.open(temp_file.name, 'rb') as wav_file:
+                                frames = wav_file.getnframes()
+                                sample_rate = wav_file.getframerate()
+                                duration = frames / float(sample_rate)
+                                logger.info(f"Got WAV duration from wave library: {duration} seconds")
+                                return duration
+                        except Exception as e:
+                            logger.error(f"Error reading WAV with wave library: {str(e)}")
+                            # Fallback calculation for PCM
+                            if '16khz' in output_format:
+                                sample_rate = 16000
+                            elif '22050hz' in output_format:
+                                sample_rate = 22050
+                            elif '24khz' in output_format:
+                                sample_rate = 24000
+                            else:
+                                sample_rate = 16000  # Default
+                            
+                            # 16-bit mono PCM: 2 bytes per sample
+                            duration = len(audio_data) / (sample_rate * 2)
+                            logger.info(f"Estimated PCM duration: {duration} seconds")
+                            return duration
+                    
+                    else:
+                        # Unknown format, use generic estimation
+                        estimated_duration = len(audio_data) / (16000 * 2)
+                        logger.warning(f"Unknown audio format, using generic estimation: {estimated_duration} seconds")
+                        return estimated_duration
+                        
+                finally:
+                    # Clean up temporary file
+                    try:
+                        os.unlink(temp_file.name)
+                    except:
+                        pass
+                        
+        except Exception as e:
+            logger.error(f"Error getting accurate audio duration: {str(e)}")
+            # Final fallback - use the original estimation method
+            return len(audio_data) / (16000 * 2)
     
     @staticmethod
     def update_usage_metrics(user_id, job_type, metrics):
@@ -461,7 +575,9 @@ class JobProcessor:
                 "output_format": "audio-16khz-32kbitrate-mono-mp3",
                 "text_length": 45,
                 "audio_duration_seconds": 3.2,
-                "files_uploaded": 1
+                "files_uploaded": 1,
+                "prompt_tokens": 12,
+                "model_used": "ms_tts"
             }
             
         Error handling:
@@ -484,6 +600,10 @@ class JobProcessor:
                 logger.error(error_msg)
                 JobService.update_job_status(job_id, 'failed', error_msg)
                 return False
+            
+            # Count tokens in the input text
+            prompt_tokens = JobProcessor.count_text_tokens(text)
+            logger.info(f"Input text has {prompt_tokens} tokens")
             
             # Check if Azure Speech Service credentials are configured
             if not TTS_SPEECH_KEY or not TTS_SERVICE_REGION:
@@ -513,7 +633,10 @@ class JobProcessor:
                 
                 # Get the audio data
                 audio_data = result.audio_data
-                audio_duration = len(audio_data) / (16000 * 2)  # Estimate duration based on sample rate and bit depth
+                
+                # Get accurate audio duration using the improved method
+                audio_duration = JobProcessor.get_accurate_audio_duration(audio_data, output_format)
+                logger.info(f"Accurate audio duration: {audio_duration} seconds")
                 
                 # Create a file-like object from the audio data
                 audio_file = io.BytesIO(audio_data)
@@ -570,13 +693,17 @@ class JobProcessor:
                     "output_format": output_format,
                     "text_length": len(text),
                     "audio_duration_seconds": round(audio_duration, 2),
-                    "files_uploaded": 1
+                    "files_uploaded": 1,
+                    "prompt_tokens": prompt_tokens,
+                    "model_used": "ms_tts"
                 }
                 
                 # Update existing usage metrics
                 metrics = {
                     "files_uploaded": 1,
-                    "audio_seconds_processed": round(audio_duration, 2)
+                    "audio_seconds_processed": round(audio_duration, 2),
+                    "prompt_tokens": prompt_tokens,
+                    "model_used": "ms_tts"
                 }
                 JobProcessor.update_usage_metrics(user_id, "tts", metrics)
                 
