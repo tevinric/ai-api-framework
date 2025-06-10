@@ -22,5 +22,4 @@ pymupdf
 pypdf
 azure.ai.formrecognizer
 gevent
-register_text_to_speech_routes
 azure-cognitiveservices-speech

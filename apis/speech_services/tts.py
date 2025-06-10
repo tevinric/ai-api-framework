@@ -46,8 +46,18 @@ def submit_tts_job_route():
             voice_name:
               type: string
               description: Voice name to use for synthesis (optional)
-              example: "en-US-JennyNeural"
-              default: "en-US-JennyNeural"
+              example: "en-ZA-LukeNeural"
+              default: "en-ZA-LukeNeural"
+              enum: [
+                "en-ZA-LukeNeural",
+                "en-ZA-LeahNeural",
+                "en-GB-SoniaNeural",
+                "en-GB-RyanNeural",
+                "en-US-AriaNeural",
+                "en-US-GuyNeural",
+                "en-AU-NatashaNeural",
+                "en-AU-WilliamNeural"
+              ]
             output_format:
               type: string
               description: Audio output format (optional)

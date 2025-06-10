@@ -235,7 +235,7 @@ register_job_routes(app)
 from apis.speech_services.stt_async import register_async_speech_to_text_routes
 register_async_speech_to_text_routes(app)
 
-from apis.speech_services.tts.py import register_text_to_speech_routes
+from apis.speech_services.tts import register_text_to_speech_routes
 register_text_to_speech_routes(app)
 
 # DOCUMENT INTELLIGENCE ENDPOINTS
