@@ -1,27 +1,31 @@
-INFO:werkzeug:127.0.0.1 - - [23/May/2025 10:00:27] "POST /docint/read HTTP/1.1" 500 -
-Traceback (most recent call last):
-  File "C:\Users\XXXX\Git\ai-api-framework\.venv\Lib\site-packages\flask\app.py", line 1536, in __call__
-    return self.wsgi_app(environ, start_response)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\XXXX\Git\ai-api-framework\.venv\Lib\site-packages\flask\app.py", line 1514, in wsgi_app
-    response = self.handle_exception(e)
-               ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\XXXX\Git\ai-api-framework\.venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
-    response = self.full_dispatch_request()
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\XXXX\Git\ai-api-framework\.venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
-    rv = self.handle_user_exception(e)
-         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\XXXX\Git\ai-api-framework\.venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
-    rv = self.dispatch_request()
-         ^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\XXXX\Git\ai-api-framework\.venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request    
-    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\XXXX\Git\ai-api-framework\apis\utils\usageMiddleware.py", line 228, in decorated_function
-    response = f(*args, **kwargs)
-               ^^^^^^^^^^^^^^^^^^
-  File "C:\Users\XXXX\Git\ai-api-framework\apis\utils\logMiddleware.py", line 121, in decorated_function
-    response_status = response.status_code
-                      ^^^^^^^^^^^^^^^^^^^^
-AttributeError: 'NoneType' object has no attribute 'status_code'
+
+'''
+  For more samples please visit https://github.com/Azure-Samples/cognitive-services-speech-sdk
+'''
+
+import azure.cognitiveservices.speech as speechsdk
+
+# Creates an instance of a speech config with specified subscription key and service region.
+speech_key = "{YOUR_SUBCRIPTION_KEY}"
+service_region = "southafricanorth"
+
+speech_config = speechsdk.SpeechConfig(subscription=speech_key, region=service_region)
+# Note: the voice setting will not overwrite the voice element in input SSML.
+# speech_config.speech_synthesis_voice_name = "en-US-BrandonMultilingualNeural"
+speech_config.speech_synthesis_voice_name = "{VOICE_NAME}"
+
+text = "Hi, this is Brandon Multilingual"
+
+# use the default speaker as audio output.
+speech_synthesizer = speechsdk.SpeechSynthesizer(speech_config=speech_config)
+
+result = speech_synthesizer.speak_text_async(text).get()
+# Check result
+if result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted:
+    print("Speech synthesized for text [{}]".format(text))
+elif result.reason == speechsdk.ResultReason.Canceled:
+    cancellation_details = result.cancellation_details
+    print("Speech synthesis canceled: {}".format(cancellation_details.reason))
+    if cancellation_details.reason == speechsdk.CancellationReason.Error:
+        print("Error details: {}".format(cancellation_details.error_details))
+                
