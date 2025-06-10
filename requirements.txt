@@ -23,3 +23,4 @@ pypdf
 azure.ai.formrecognizer
 gevent
 azure-cognitiveservices-speech
+mutagen
