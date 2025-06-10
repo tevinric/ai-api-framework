@@ -1,0 +1,75 @@
+<style>
+    /* Change the hover color */
+    .sidebar-link:hover {
+        background-color: #f0f0f0; /* Replace with your desired hover color */
+        color: #333; /* Replace with your desired text color */
+    }
+    
+    /* Change the active color */
+    .sidebar-link.active {
+        background-color:rgb(4, 1, 39); /* Replace with your desired active background color */
+        color: #fff; /* Replace with your desired active text color */
+    }
+    </style>
+
+
+<div class="sidebar-category">Main</div>
+<a href="{{ url_for('home') }}" class="sidebar-link">
+    <i class="fas fa-home"></i> Home
+</a>
+<a href="/apidocs/" class="sidebar-link">
+    <i class="fas fa-book"></i> API Documentation
+</a>
+<a href="{{ url_for('getting_started') }}" class="sidebar-link">
+    <i class="fas fa-rocket"></i> Getting Started
+</a>
+
+<!-- SIDEBAR - ENDPOINTS -->
+<div class="sidebar-category">Endpoints</div>
+<a href="{{ url_for('token_services') }}" class="sidebar-link">
+    <i class="fas fa-key"></i> Token Services
+</a>
+<a href="{{ url_for('balance_management') }}" class="sidebar-link">
+    <i class="fas fa-wallet"></i> Balance Management
+</a>
+<a href="{{ url_for('llm') }}" class="sidebar-link">
+    <i class="fas fa-robot"></i> Language Models
+</a>
+<a href="{{ url_for('llm_conversation') }}" class="sidebar-link">
+    <i class="fas fa-commenting"></i> LLM Conversational
+</a>
+<a href="{{ url_for('image_generation') }}" class="sidebar-link">
+    <i class="fas fa-image"></i> Image Generation
+</a>
+<a href="{{ url_for('speech_services') }}" class="sidebar-link">
+    <i class="fas fa-microphone"></i> Speech Services
+</a>
+<a href="{{ url_for('file_management') }}" class="sidebar-link">
+    <i class="fas fa-file-alt"></i> File Management
+</a>
+<a href="{{ url_for('document_intelligence') }}" class="sidebar-link">
+    <i class="fa fa-book"></i> Document Intelligence
+</a>
+<a href="{{ url_for('ocr_services') }}" class="sidebar-link">
+    <i class="fa fa-eye"></i> OCR
+</a>
+<a href="{{ url_for('nlp') }}" class="sidebar-link">
+    <i class="fa fa-language"></i> NLP
+</a>
+<a href="{{ url_for('rag') }}" class="sidebar-link">
+    <i class="fas fa-search"></i> RAG Services
+</a>
+
+<div class="sidebar-category">Resources</div>
+<a href="{{ url_for('file_portal') }}" class="sidebar-link">
+    <i class="fas fa-file"></i> File Portal
+</a>
+<a href="{{ url_for('faq') }}" class="sidebar-link">
+    <i class="fas fa-question-circle"></i> FAQ
+</a>
+<a href="{{ url_for('technical_support') }}" class="sidebar-link">
+    <i class="fas fa-tachometer-alt"></i> Technical Support
+</a>
+<a href="{{ url_for('changelog') }}" class="sidebar-link">
+    <i class="fas fa-history"></i> Changelog
+</a>

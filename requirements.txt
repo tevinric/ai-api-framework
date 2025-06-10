@@ -11,3 +11,14 @@ faiss_cpu
 azure.storage.blob
 azure.ai.inference
 gunicorn
+pymupdf
+python-pptx
+openpyxl
+python-docx
+pandas
+azure.ai.documentintelligence
+faiss_cpu
+pymupdf
+pypdf
+azure.ai.formrecognizer
+gevent

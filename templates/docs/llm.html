@@ -1,0 +1,1809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Language Models - AI API Platform</title>
+    <link rel="icon" href="/static/images/Telesure-logo.png" type="image/png">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: rgb(1, 96, 136);
+            --secondary-color: rgb(0, 10, 120);
+            --dark-color: rgb(0, 8, 66);
+            --light-color: #f5f6fa;
+            --text-color: #333;
+            --white-color: #ffffff;
+            --accent-color: #00d4ff;
+            --accent-gradient: linear-gradient(90deg, #00d4ff 0%, #6c63ff 100%);
+            --magenta-dark: #3B0138;
+            --magenta-gradient: linear-gradient(90deg, #3B0138 0%, #4a6fe3 100%);
+            --sidebar-width: 280px;
+            --header-height: 60px;
+            --openai-color: #10a37f;
+            --openai-gradient: linear-gradient(90deg, #10a37f 0%, #0f9675 100%);
+            --deepseek-color: #8036e7;
+            --deepseek-gradient: linear-gradient(90deg, #8036e7 0%, #6b21d3 100%);
+            --meta-color: #0668e1;
+            --meta-gradient: linear-gradient(90deg, #0668e1 0%, #0552b5 100%);
+            --gold-gradient: linear-gradient(to right, rgb(224, 146, 0), rgb(215, 162, 3));
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--light-color);
+            color: var(--text-color);
+            position: relative;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%234a6fe3' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        .header {
+            background-color: #03001A;
+            color: var(--white-color);
+            padding: 0 2rem;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: var(--header-height);
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo i {
+            font-size: 1.8rem;
+            margin-right: 0.5rem;
+            color: var(--accent-color);
+        }
+        
+        .logo h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+        
+        .nav {
+            display: flex;
+            align-items: center;
+        }
+        
+        .nav-item {
+            margin-left: 1.5rem;
+            color: var(--white-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+            display: flex;
+            align-items: center;
+        }
+        
+        .nav-item:hover {
+            color: var(--accent-color);
+        }
+        
+        .nav-item i {
+            margin-right: 0.5rem;
+        }
+        
+        .swagger-btn {
+            background-color: var(--accent-color);
+            color: var(--dark-color);
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-weight: 600;
+            transition: all 0.3s;
+            box-shadow: 0 4px 10px rgba(0, 212, 255, 0.3);
+        }
+        
+        .swagger-btn:hover {
+            background-color: #00b8e6;
+            transform: translateY(-2px);
+            color: var(--dark-color);
+            box-shadow: 0 6px 15px rgba(0, 212, 255, 0.4);
+        }
+        
+        /* Mobile menu toggle */
+        .menu-toggle {
+            display: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            top: var(--header-height);
+            left: 0;
+            height: calc(100vh - var(--header-height));
+            width: var(--sidebar-width);
+            background-color: var(--white-color);
+            border-right: 1px solid rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+            z-index: 900;
+            padding: 1.5rem 0;
+            transition: transform 0.3s ease-in-out;
+        }
+        
+        .sidebar-category {
+            padding: 0.5rem 1.5rem;
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar-link {
+            display: block;
+            padding: 0.7rem 1.5rem;
+            padding-left: 2.5rem;
+            color: var(--text-color);
+            text-decoration: none;
+            transition: background-color 0.2s, color 0.2s;
+            font-size: 0.95rem;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar-link:hover {
+            background-color: rgba(106, 100, 255, 0.05);
+            color: var(--primary-color);
+        }
+        
+        .sidebar-link.active {
+            color: var(--primary-color);
+            background-color: rgba(106, 100, 255, 0.08);
+            border-left: 3px solid var(--primary-color);
+        }
+        
+        .sidebar-link i {
+            margin-right: 0.5rem;
+            width: 20px;
+            text-align: center;
+        }
+        
+        /* Main content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            margin-top: var(--header-height);
+            padding: 0;
+            min-height: calc(100vh - var(--header-height));
+        }
+        
+        /* Hero */
+        .hero {
+            background: url('/static/GAIA _splash3.gif') center/cover no-repeat;
+            color: var(--white-color);
+            padding: 5rem 3rem;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        .hero::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background: linear-gradient(to right, rgba(1, 0, 15, 0.85) 0%, rgba(1, 0, 15, 0.5) 40%, transparent 80%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        @keyframes zoomDots {
+            0% {
+                transform: scale(0.3);
+                opacity: 0.1;
+            }
+            50% {
+                transform: scale(0.7);
+                opacity: 0.15;
+            }
+            100% {
+                transform: scale(0.3);
+                opacity: 0.1;
+            }
+        }
+        
+        .hero-container {
+            max-width: 1440px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .hero h2 {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+            max-width: 840px;
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: fadeInUp 0.8s ease-out;
+            font-size: 220%;
+        }
+        
+        .hero p {
+            font-size: 1.2rem;
+            max-width: 700px;
+            margin-bottom: 2rem;
+            line-height: 1.7;
+            color: rgba(255, 255, 255, 0.9);
+            animation: fadeInUp 1s ease-out;
+        }
+        
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            animation: fadeInUp 1.2s ease-out;
+        }
+        
+        .cta-btn {
+            display: inline-flex;
+            align-items: center;
+            background-color: var(--accent-color);
+            color: var(--dark-color);
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
+        }
+        
+        .cta-btn:hover {
+            background-color: #00b8e6;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 212, 255, 0.4);
+        }
+        
+        .cta-btn-secondary {
+            background-color: transparent;
+            color: var(--white-color);
+            border: 2px solid var(--white-color);
+            box-shadow: none;
+        }
+        
+        .cta-btn-secondary:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--white-color);
+            box-shadow: 0 4px 15px rgba(255, 255, 255, 0.2);
+        }
+        
+        .cta-btn i {
+            margin-right: 0.5rem;
+        }
+        
+        /* Provider section */
+        .provider-section {
+            padding: 4rem 3rem;
+            position: relative;
+        }
+        
+        .provider-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .provider-header {
+            text-align: left;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid var(--light-color);
+            padding-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .provider-icon {
+            width: 40px;
+            height: 40px;
+            margin-right: 1rem;
+            border-radius: 8px;
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+            flex-shrink: 0;
+        }
+        
+        .openai-icon {
+            background-color: var(--openai-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .openai-icon i {
+            color: white;
+            font-size: 24px;
+        }
+        
+        .deepseek-icon {
+            background-color: var(--deepseek-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .deepseek-icon i {
+            color: white;
+            font-size: 24px;
+        }
+        
+        .meta-icon {
+            background-color: var(--meta-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .meta-icon i {
+            color: white;
+            font-size: 24px;
+        }
+        
+        .provider-header h2 {
+            font-size: 2rem;
+            color: var(--dark-color);
+            margin: 0;
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 220%;
+        }
+        
+        /* Model cards */
+        .model-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+        
+        .model-card {
+            background-color: var(--white-color);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 1;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            min-height: 600px; /* Increased for additional content */
+        }
+        
+        .model-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* OpenAI Model Card */
+        .openai-card .model-header {
+            background: var(--openai-gradient);
+        }
+        
+        /* DeepSeek Model Card */
+        .deepseek-card .model-header {
+            background: var(--deepseek-gradient);
+        }
+        
+        /* Meta Model Card */
+        .meta-card .model-header {
+            background: var(--meta-gradient);
+        }
+        
+        .model-header {
+            padding: 1.5rem;
+            color: white;
+            position: relative;
+            height: 130px; /* Fixed header height */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .model-name {
+            font-size: 1.6rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .model-description {
+            font-size: 0.95rem;
+            opacity: 0.9;
+        }
+        
+        .model-body {
+            padding: 1.5rem;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .model-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            min-height: 80px; /* Increased to accommodate more tags */
+        }
+        
+        .model-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.4rem 0.8rem;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: white;
+            background-color: var(--primary-color);
+        }
+        
+        .model-tag i {
+            margin-right: 0.4rem;
+            font-size: 0.9rem;
+        }
+        
+        .model-tag.reasoning {
+            background-color: #FF6B6B;
+        }
+        
+        .model-tag.content {
+            background-color: #51CF66;
+        }
+        
+        .model-tag.json {
+            background-color: #339AF0;
+        }
+        
+        .model-tag.docs {
+            background-color: #845EF7;
+        }
+        
+        .model-tag.fast {
+            background-color: #FAB005;
+        }
+        
+        .model-tag.cost {
+            background-color: #20C997;
+        }
+        
+        .model-tag.technical {
+            background-color: #6741D9;
+        }
+        
+        .model-tag.problem-solving {
+            background-color: #E03131;
+        }
+        
+        .model-tag.complexity {
+            background-color: #5F3DC4;
+        }
+        
+        .model-tag.variable-reasoning {
+            background-color: #F76707;
+        }
+        
+        .model-tag.long-form {
+            background-color: #0CA678;
+        }
+        
+        .model-tag.chain-of-thought {
+            background-color: #C2255C;
+        }
+        
+        .model-tag.task-oriented {
+            background-color: #1971C2;
+        }
+        
+        .model-tag.configurable {
+            background-color: #5C940D;
+        }
+        
+        .model-tag.multimodal {
+            background-color: #FF9500;
+        }
+        
+        .model-tag.context {
+            background-color: #8E4EC6;
+        }
+        
+        .context-info {
+            background-color: #f0f8ff;
+            border-left: 4px solid #339AF0;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .context-info h5 {
+            color: #339AF0;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+        
+        .context-info p {
+            font-size: 0.85rem;
+            color: #666;
+            margin: 0;
+        }
+        
+        .model-details {
+            margin-bottom: 1.5rem;
+            flex-grow: 1;
+        }
+        
+        .detail-item {
+            display: flex;
+            margin-bottom: 0.75rem;
+            align-items: flex-start;
+        }
+        
+        .detail-label {
+            width: 120px;
+            font-weight: 600;
+            color: var(--dark-color);
+            flex-shrink: 0;
+        }
+        
+        .detail-value {
+            color: #666;
+        }
+        
+        .feature-list {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        
+        .feature-list li {
+            position: relative;
+            padding-left: 1.2rem;
+            margin-bottom: 0.4rem;
+            line-height: 1.4;
+        }
+        
+        .feature-list li::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+        
+        .endpoint-box {
+            background-color: #f5f7fa;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: var(--dark-color);
+            border-left: 3px solid var(--primary-color);
+        }
+        
+        .model-footer {
+            border-top: 1px solid #eee;
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .model-btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.6rem 1.2rem;
+            border-radius: 4px;
+            font-weight: 600;
+            text-decoration: none;
+            color: white;
+            background-color: var(--primary-color);
+            transition: all 0.3s;
+        }
+        
+        .model-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .model-btn i {
+            margin-right: 0.5rem;
+        }
+        
+        .openai-card .model-btn {
+            background-color: var(--openai-color);
+        }
+        
+        .deepseek-card .model-btn {
+            background-color: var(--deepseek-color);
+        }
+        
+        .meta-card .model-btn {
+            background-color: var(--meta-color);
+        }
+        
+        .credit-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-weight: 600;
+            color: white;
+            background: linear-gradient(135deg, rgba(1, 0, 15, 1) 0%, rgba(74, 111, 227, 1) 100%);
+            animation: pulse 3s infinite ease-in-out;
+        }
+        
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(0, 212, 255, 0.4);
+            }
+            70% {
+                box-shadow: 0 0 0 8px rgba(0, 212, 255, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(0, 212, 255, 0);
+            }
+        }
+        
+        /* Documentation sections */
+        .documentation-section {
+            padding: 4rem 3rem;
+            background-color: #f8faff;
+        }
+        
+        .doc-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .doc-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        .doc-header h2 {
+            font-size: 2.5rem;
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1rem;
+        }
+        
+        .doc-header p {
+            font-size: 1.1rem;
+            color: #666;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        
+        .doc-tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .doc-tab {
+            padding: 1rem 2rem;
+            border: none;
+            background: none;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #666;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .doc-tab.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+        
+        .doc-tab:hover {
+            color: var(--secondary-color);
+        }
+        
+        .doc-content {
+            background-color: var(--white-color);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        }
+        
+        .doc-content.hidden {
+            display: none;
+        }
+        
+        .tutorial-step {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            border-left: 4px solid var(--accent-color);
+            background-color: #f8faff;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .tutorial-step h3 {
+            color: var(--dark-color);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .tutorial-step h3 i {
+            margin-right: 0.5rem;
+            color: var(--accent-color);
+        }
+        
+        .code-block {
+            background-color: #2d3748;
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            margin: 1rem 0;
+            position: relative;
+        }
+        
+        .code-block::before {
+            content: attr(data-language);
+            position: absolute;
+            top: 0.5rem;
+            right: 1rem;
+            font-size: 0.8rem;
+            color: #a0aec0;
+            text-transform: uppercase;
+        }
+        
+        .code-comment {
+            color: #68d391;
+        }
+        
+        .code-keyword {
+            color: #f6ad55;
+        }
+        
+        .code-string {
+            color: #81e6d9;
+        }
+        
+        .code-number {
+            color: #f093c4;
+        }
+        
+        .warning-box {
+            background-color: #fffbf0;
+            border: 1px solid #f6e05e;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .warning-box h4 {
+            color: #d69e2e;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .warning-box h4 i {
+            margin-right: 0.5rem;
+        }
+        
+        .info-box {
+            background-color: #e6fffa;
+            border: 1px solid #38b2ac;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .info-box h4 {
+            color: #38b2ac;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .info-box h4 i {
+            margin-right: 0.5rem;
+        }
+        
+        /* CTA section */
+        .cta-section {
+            padding: 5rem 3rem;
+            text-align: center;
+            background: linear-gradient(135deg, rgba(1, 0, 15, 1) 0%, rgba(35, 0, 33, 1) 100%);
+            color: var(--white-color);
+        }
+        
+        .cta-container {
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .cta-section h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 220%;
+        }
+        
+        .cta-section p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+        
+        /* Footer */
+        .footer {
+            background-color: #03001A;
+            color: var(--white-color);
+            text-align: center;
+            padding: 3rem;
+            margin-top: 3rem;
+            margin-left: var(--sidebar-width);
+            position: relative;
+        }
+        
+        .footer p {
+            margin-bottom: 1rem;
+            position: relative;
+        }
+        
+        /* Animation keyframes */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        /* Responsive styles */
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+                box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+                z-index: 1001;
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .footer {
+                margin-left: 0;
+            }
+            
+            .menu-toggle {
+                display: block;
+            }
+            
+            .model-cards {
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            }
+            
+            .doc-tabs {
+                flex-wrap: wrap;
+            }
+            
+            .doc-tab {
+                flex: 1;
+                min-width: 150px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .header {
+                padding: 0 1rem;
+            }
+            
+            .nav-item:not(.swagger-btn) {
+                display: none;
+            }
+            
+            .hero {
+                padding: 3rem 1.5rem;
+            }
+            
+            .hero h2 {
+                font-size: 2rem;
+            }
+            
+            .provider-section,
+            .documentation-section {
+                padding: 3rem 1.5rem;
+            }
+            
+            .model-cards {
+                grid-template-columns: 1fr;
+            }
+            
+            .doc-tabs {
+                flex-direction: column;
+            }
+        }
+        
+        /* Dark overlay when sidebar is active on mobile */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        
+        @media (max-width: 992px) {
+            .sidebar-overlay.active {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- RENDER THE HEADER TEMPLATE-->
+    {% include 'header.html' %}
+    
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    
+    <!-- RENDER THE SIDEBAR TEMPLATE-->
+    <aside class="sidebar">
+        {% include 'sidebar.html' %}
+    </aside>
+    
+    <main class="main-content">
+        <section class="hero" style="height: 550px;">
+            <div class="hero-container">
+                <br><br>
+                <h2 style="font-size: 220%; background: var(--gold-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Language Models (LLMs)</h2>
+                <p>GAIA provides easy access to the leading Large Language Models available on the market. These LLMs can be used for a wide variety of tasks including text generation, multimodal analysis with images, and complex reasoning to power your AI workflows.</p>
+                <div class="cta-buttons">
+                    <a href="/static/resources/AIAPIS.postman_collection" class="cta-btn" style="background-color: var(--accent-color); color: var(--dark-color);" download>
+                        <i class="fas fa-download"></i> Download Postman Collection
+                    </a>
+                    <a href="/apidocs/" class="cta-btn cta-btn-secondary">
+                        <i class="fas fa-book"></i> Swagger API Docs
+                    </a>
+                </div>
+            </div>
+        </section>
+        
+        <!-- OpenAI Models -->
+        <section class="provider-section">
+            <div class="provider-container">
+                <div class="provider-header">
+                    <div class="provider-icon openai-icon">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <h2>Azure OpenAI Models</h2>
+                </div>
+                
+                <div class="model-cards">
+                    <!-- GPT-4o Model Card -->
+                    <div class="model-card openai-card">
+                        <div class="model-header">
+                            <h3 class="model-name">GPT-4o</h3>
+                            <p class="model-description">OpenAI's flagship multimodal model for complex reasoning, content generation, and image analysis.</p>
+                        </div>
+                        <div class="model-body">
+                            <div class="model-tags">
+                                <span class="model-tag content"><i class="fas fa-pen-fancy"></i>Content Generation</span>
+                                <span class="model-tag multimodal"><i class="fas fa-eye"></i>Vision Support</span>
+                                <span class="model-tag reasoning"><i class="fas fa-brain"></i>Advanced Reasoning</span>
+                                <span class="model-tag context"><i class="fas fa-file-text"></i>Context Files</span>
+                                <span class="model-tag json"><i class="fas fa-code"></i>Structured Output</span>
+                            </div>
+                            <div class="context-info">
+                                <h5><i class="fas fa-window-maximize"></i> Context Window: ~128k tokens</h5>
+                                <p>Excellent for complex documents, long conversations, and detailed analysis tasks</p>
+                            </div>
+                            <div class="model-details">
+                                <div class="detail-item">
+                                    <div class="detail-label">Endpoint</div>
+                                    <div class="detail-value">/llm/gpt-4o</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Key Features</div>
+                                    <div class="detail-value">
+                                        <ul class="feature-list">
+                                            <li>Superior text and image understanding</li>
+                                            <li>Complex problem solving and reasoning</li>
+                                            <li>Support for context files and multimodal inputs</li>
+                                            <li>High-quality structured JSON output</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Best Use Cases</div>
+                                    <div class="detail-value">Complex analysis, research tasks, image interpretation, code generation, creative writing, document analysis</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Image Support</div>
+                                    <div class="detail-value">Up to 20 images (PNG, JPG, JPEG) per request</div>
+                                </div>
+                            </div>
+                            <div class="endpoint-box">
+                                POST /llm/gpt-4o
+                            </div>
+                        </div>
+                        <div class="model-footer">
+                            <a href="/apidocs/#/LLM/create_gpt4o_route" class="model-btn">
+                                <i class="fas fa-code"></i> API Reference
+                            </a>
+                            <div class="credit-badge">2 AI Credits</div>
+                        </div>
+                    </div>
+                    
+                    <!-- GPT-4o Mini Card -->
+                    <div class="model-card openai-card">
+                        <div class="model-header">
+                            <h3 class="model-name">GPT-4o-mini</h3>
+                            <p class="model-description">Fast, cost-effective multimodal model perfect for everyday tasks and applications.</p>
+                        </div>
+                        <div class="model-body">
+                            <div class="model-tags">
+                                <span class="model-tag fast"><i class="fas fa-bolt"></i>Fast & Efficient</span>
+                                <span class="model-tag cost"><i class="fas fa-coins"></i>Cost-effective</span>
+                                <span class="model-tag multimodal"><i class="fas fa-eye"></i>Vision Support</span>
+                                <span class="model-tag json"><i class="fas fa-code"></i>JSON Output</span>
+                            </div>
+                            <div class="context-info">
+                                <h5><i class="fas fa-window-maximize"></i> Context Window: ~128k tokens</h5>
+                                <p>Great for moderate-length texts and multiple images with fast response times</p>
+                            </div>
+                            <div class="model-details">
+                                <div class="detail-item">
+                                    <div class="detail-label">Endpoint</div>
+                                    <div class="detail-value">/llm/gpt-4o-mini</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Key Features</div>
+                                    <div class="detail-value">
+                                        <ul class="feature-list">
+                                            <li>Fast processing for quick responses</li>
+                                            <li>Cost-effective for high-volume usage</li>
+                                            <li>Image analysis and understanding</li>
+                                            <li>Reliable JSON output formatting</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Best Use Cases</div>
+                                    <div class="detail-value">Everyday content generation, image descriptions, chatbots, development testing, simple automation</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Image Support</div>
+                                    <div class="detail-value">Up to 10 images (PNG, JPG, JPEG) per request</div>
+                                </div>
+                            </div>
+                            <div class="endpoint-box">
+                                POST /llm/gpt-4o-mini
+                            </div>
+                        </div>
+                        <div class="model-footer">
+                            <a href="/apidocs/#/LLM/create_gpt4o_mini_route" class="model-btn">
+                                <i class="fas fa-code"></i> API Reference
+                            </a>
+                            <div class="credit-badge">0.5 AI Credits</div>
+                        </div>
+                    </div>
+                    
+                    <!-- O1-mini Card -->
+                    <div class="model-card openai-card">
+                        <div class="model-header">
+                            <h3 class="model-name">O1-mini</h3>
+                            <p class="model-description">Specialized reasoning model with advanced chain-of-thought capabilities for complex problem solving.</p>
+                        </div>
+                        <div class="model-body">
+                            <div class="model-tags">
+                                <span class="model-tag reasoning"><i class="fas fa-brain"></i>Deep Reasoning</span>
+                                <span class="model-tag problem-solving"><i class="fas fa-chess"></i>Problem Solving</span>
+                                <span class="model-tag chain-of-thought"><i class="fas fa-code-branch"></i>Chain of Thought</span>
+                                <span class="model-tag technical"><i class="fas fa-laptop-code"></i>STEM & Code</span>
+                            </div>
+                            <div class="context-info">
+                                <h5><i class="fas fa-window-maximize"></i> Context Window: ~128k tokens</h5>
+                                <p>Designed for complex reasoning tasks that require step-by-step thinking</p>
+                            </div>
+                            <div class="model-details">
+                                <div class="detail-item">
+                                    <div class="detail-label">Endpoint</div>
+                                    <div class="detail-value">/llm/o1-mini</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Key Features</div>
+                                    <div class="detail-value">
+                                        <ul class="feature-list">
+                                            <li>Advanced chain-of-thought reasoning</li>
+                                            <li>Exceptional performance on STEM problems</li>
+                                            <li>Complex mathematical and logical analysis</li>
+                                            <li>Multi-step problem decomposition</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Best Use Cases</div>
+                                    <div class="detail-value">Scientific computing, mathematical problems, code debugging, complex logical reasoning, research analysis</div>
+                                </div>
+                            </div>
+                            <div class="endpoint-box">
+                                POST /llm/o1-mini
+                            </div>
+                        </div>
+                        <div class="model-footer">
+                            <a href="/apidocs/#/LLM/create_o1_mini_route" class="model-btn">
+                                <i class="fas fa-code"></i> API Reference
+                            </a>
+                            <div class="credit-badge">5 AI Credits</div>
+                        </div>
+                    </div>
+                    
+                    <!-- O3-mini Card -->
+                    <div class="model-card openai-card">
+                        <div class="model-header">
+                            <h3 class="model-name">O3-mini</h3>
+                            <p class="model-description">Advanced model with configurable reasoning effort levels for optimized performance across different task complexities.</p>
+                        </div>
+                        <div class="model-body">
+                            <div class="model-tags">
+                                <span class="model-tag variable-reasoning"><i class="fas fa-sliders-h"></i>Variable Reasoning</span>
+                                <span class="model-tag json"><i class="fas fa-code"></i>JSON Output</span>
+                                <span class="model-tag long-form"><i class="fas fa-file-alt"></i>Long-form Content</span>
+                                <span class="model-tag configurable"><i class="fas fa-cogs"></i>Configurable</span>
+                            </div>
+                            <div class="context-info">
+                                <h5><i class="fas fa-window-maximize"></i> Context Window: Up to 120k tokens</h5>
+                                <p>Adjustable reasoning depth allows optimization for different complexity levels</p>
+                            </div>
+                            <div class="model-details">
+                                <div class="detail-item">
+                                    <div class="detail-label">Endpoint</div>
+                                    <div class="detail-value">/llm/o3-mini</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Key Features</div>
+                                    <div class="detail-value">
+                                        <ul class="feature-list">
+                                            <li>Three reasoning modes: high, medium, low</li>
+                                            <li>Configurable completion token limits</li>
+                                            <li>Optimized for different task complexities</li>
+                                            <li>Excellent long-form content generation</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Best Use Cases</div>
+                                    <div class="detail-value">Long-form writing, detailed analysis, configurable reasoning tasks, content optimization, research reports</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Reasoning Levels</div>
+                                    <div class="detail-value">High (complex), Medium (balanced), Low (faster)</div>
+                                </div>
+                            </div>
+                            <div class="endpoint-box">
+                                POST /llm/o3-mini
+                            </div>
+                        </div>
+                        <div class="model-footer">
+                            <a href="/apidocs/#/LLM/create_o3_mini_route" class="model-btn">
+                                <i class="fas fa-code"></i> API Reference
+                            </a>
+                            <div class="credit-badge">3 AI Credits</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- DeepSeek Models -->
+        <section class="provider-section" style="background-color: #f8faff;">
+            <div class="provider-container">
+                <div class="provider-header">
+                    <div class="provider-icon deepseek-icon">
+                        <i class="fas fa-layer-group"></i>
+                    </div>
+                    <h2>DeepSeek Models</h2>
+                </div>
+                
+                <div class="model-cards">
+                    <!-- DeepSeek-R1 Card -->
+                    <div class="model-card deepseek-card">
+                        <div class="model-header">
+                            <h3 class="model-name">DeepSeek-R1</h3>
+                            <p class="model-description">Advanced reasoning model optimized for deep analytical thinking and complex problem solving.</p>
+                        </div>
+                        <div class="model-body">
+                            <div class="model-tags">
+                                <span class="model-tag reasoning"><i class="fas fa-brain"></i>Deep Reasoning</span>
+                                <span class="model-tag chain-of-thought"><i class="fas fa-code-branch"></i>Chain of Thought</span>
+                                <span class="model-tag technical"><i class="fas fa-laptop-code"></i>Technical Analysis</span>
+                                <span class="model-tag json"><i class="fas fa-code"></i>JSON Output</span>
+                            </div>
+                            <div class="context-info">
+                                <h5><i class="fas fa-window-maximize"></i> Context Window: High capacity</h5>
+                                <p>Designed for tasks requiring deep analytical reasoning and step-by-step thinking</p>
+                            </div>
+                            <div class="model-details">
+                                <div class="detail-item">
+                                    <div class="detail-label">Endpoint</div>
+                                    <div class="detail-value">/llm/deepseek-r1</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Key Features</div>
+                                    <div class="detail-value">
+                                        <ul class="feature-list">
+                                            <li>Superior chain-of-thought reasoning</li>
+                                            <li>Excellent technical content handling</li>
+                                            <li>Deep analytical processing</li>
+                                            <li>Consistent structured output</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Best Use Cases</div>
+                                    <div class="detail-value">Complex reasoning tasks, technical analysis, scientific problems, code review, mathematical proofs</div>
+                                </div>
+                            </div>
+                            <div class="endpoint-box">
+                                POST /llm/deepseek-r1
+                            </div>
+                        </div>
+                        <div class="model-footer">
+                            <a href="/apidocs/#/LLM/create_deepseek_r1_route" class="model-btn">
+                                <i class="fas fa-code"></i> API Reference
+                            </a>
+                            <div class="credit-badge">3 AI Credits</div>
+                        </div>
+                    </div>
+                    
+                    <!-- DeepSeek-V3 Card -->
+                    <div class="model-card deepseek-card">
+                        <div class="model-header">
+                            <h3 class="model-name">DeepSeek-V3</h3>
+                            <p class="model-description">Versatile general-purpose model for text generation and comprehensive task completion.</p>
+                        </div>
+                        <div class="model-body">
+                            <div class="model-tags">
+                                <span class="model-tag content"><i class="fas fa-pen-fancy"></i>Content Creation</span>
+                                <span class="model-tag json"><i class="fas fa-code"></i>JSON Support</span>
+                                <span class="model-tag task-oriented"><i class="fas fa-tasks"></i>Task Completion</span>
+                                <span class="model-tag configurable"><i class="fas fa-sliders-h"></i>Configurable</span>
+                            </div>
+                            <div class="context-info">
+                                <h5><i class="fas fa-window-maximize"></i> Context Window: Up to 4k tokens output</h5>
+                                <p>Balanced performance for general-purpose applications with reliable outputs</p>
+                            </div>
+                            <div class="model-details">
+                                <div class="detail-item">
+                                    <div class="detail-label">Endpoint</div>
+                                    <div class="detail-value">/llm/deepseek-v3</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Key Features</div>
+                                    <div class="detail-value">
+                                        <ul class="feature-list">
+                                            <li>High-quality text generation</li>
+                                            <li>Reliable task completion</li>
+                                            <li>Flexible temperature controls</li>
+                                            <li>Consistent JSON formatting</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Best Use Cases</div>
+                                    <div class="detail-value">Content generation, task automation, general-purpose applications, API integrations, workflow automation</div>
+                                </div>
+                            </div>
+                            <div class="endpoint-box">
+                                POST /llm/deepseek-v3
+                            </div>
+                        </div>
+                        <div class="model-footer">
+                            <a href="/apidocs/#/LLM/create_deepseek_v3_route" class="model-btn">
+                                <i class="fas fa-code"></i> API Reference
+                            </a>
+                            <div class="credit-badge">3 AI Credits</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Meta Models -->
+        <section class="provider-section">
+            <div class="provider-container">
+                <div class="provider-header">
+                    <div class="provider-icon meta-icon">
+                        <i class="fab fa-facebook"></i>
+                    </div>
+                    <h2>Meta Models</h2>
+                </div>
+                
+                <div class="model-cards">
+                    <!-- Llama Card -->
+                    <div class="model-card meta-card">
+                        <div class="model-header">
+                            <h3 class="model-name">Llama 3.1 (405B)</h3>
+                            <p class="model-description">Meta's most powerful open-source model with 405 billion parameters for diverse applications.</p>
+                        </div>
+                        <div class="model-body">
+                            <div class="model-tags">
+                                <span class="model-tag content"><i class="fas fa-pen-fancy"></i>Content Creation</span>
+                                <span class="model-tag json"><i class="fas fa-code"></i>JSON Support</span>
+                                <span class="model-tag configurable"><i class="fas fa-sliders-h"></i>Highly Configurable</span>
+                                <span class="model-tag long-form"><i class="fas fa-file-alt"></i>Long-form</span>
+                            </div>
+                            <div class="context-info">
+                                <h5><i class="fas fa-window-maximize"></i> Context Window: Large capacity</h5>
+                                <p>Massive parameter count provides exceptional versatility across diverse applications</p>
+                            </div>
+                            <div class="model-details">
+                                <div class="detail-item">
+                                    <div class="detail-label">Endpoint</div>
+                                    <div class="detail-value">/llm/llama</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Key Features</div>
+                                    <div class="detail-value">
+                                        <ul class="feature-list">
+                                            <li>Massive 405B parameter architecture</li>
+                                            <li>Highly configurable parameters (temperature, top_p)</li>
+                                            <li>Advanced penalty controls</li>
+                                            <li>Comprehensive JSON output support</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Best Use Cases</div>
+                                    <div class="detail-value">Versatile text generation, creative content, research, multilingual tasks, open-ended conversations</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Configuration</div>
+                                    <div class="detail-value">Temperature, top_p, presence/frequency penalties</div>
+                                </div>
+                            </div>
+                            <div class="endpoint-box">
+                                POST /llm/llama
+                            </div>
+                        </div>
+                        <div class="model-footer">
+                            <a href="/apidocs/#/LLM/create_llama_route" class="model-btn">
+                                <i class="fas fa-code"></i> API Reference
+                            </a>
+                            <div class="credit-badge">3 AI Credits</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Documentation Section -->
+        <section class="documentation-section">
+            <div class="doc-container">
+                <div class="doc-header">
+                    <h2>Complete LLM Integration Guide</h2>
+                    <p>Learn how to integrate multimodal capabilities, context files, and advanced features into your applications</p>
+                </div>
+                
+                <div class="doc-tabs">
+                    <button class="doc-tab active" data-tab="multimodal">Multimodal Usage</button>
+                    <button class="doc-tab" data-tab="context">Context Files</button>
+                    <button class="doc-tab" data-tab="best-practices">Best Practices</button>
+                    <button class="doc-tab" data-tab="examples">Code Examples</button>
+                </div>
+                
+                <!-- Multimodal Tab -->
+                <div class="doc-content" id="multimodal-content">
+                    <h3>Working with Images in LLMs</h3>
+                    <p>GPT-4o and GPT-4o-mini support multimodal inputs, allowing you to send images along with text prompts for comprehensive analysis.</p>
+                    
+                    <div class="tutorial-step">
+                        <h3><i class="fas fa-upload"></i> Step 1: Upload Images</h3>
+                        <p>First, upload your images using the File Management API. Only PNG, JPG, and JPEG formats are supported.</p>
+                        <div class="code-block" data-language="bash">
+<span class="code-comment"># Upload an image file</span>
+curl -X POST "https://api.gaia.com/files/upload" \
+  -H "X-Token: your_token_here" \
+  -F "file=@image.png" \
+  -F "description=Product image for analysis"
+                        </div>
+                        <p>The response will include a file_id that you'll use in your LLM request:</p>
+                        <div class="code-block" data-language="json">
+{
+  <span class="code-string">"file_id"</span>: <span class="code-string">"12345678-1234-1234-1234-123456789012"</span>,
+  <span class="code-string">"file_name"</span>: <span class="code-string">"image.png"</span>,
+  <span class="code-string">"content_type"</span>: <span class="code-string">"image/png"</span>,
+  <span class="code-string">"file_size"</span>: <span class="code-number">2048576</span>
+}
+                        </div>
+                    </div>
+                    
+                    <div class="tutorial-step">
+                        <h3><i class="fas fa-paper-plane"></i> Step 2: Send Multimodal Request</h3>
+                        <p>Include the file_ids array in your LLM request to enable image analysis alongside your text prompt.</p>
+                        <div class="code-block" data-language="bash">
+curl -X POST "https://api.gaia.com/llm/gpt-4o" \
+  -H "X-Token: your_token_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "system_prompt": "You are an expert image analyst.",
+    "user_input": "Analyze this product image and describe its features.",
+    "file_ids": ["12345678-1234-1234-1234-123456789012"],
+    "temperature": 0.7
+  }'
+                        </div>
+                    </div>
+                    
+                    <div class="warning-box">
+                        <h4><i class="fas fa-exclamation-triangle"></i> Image Limits</h4>
+                        <p><strong>GPT-4o:</strong> Maximum 20 images per request<br>
+                        <strong>GPT-4o-mini:</strong> Maximum 10 images per request<br>
+                        <strong>Supported formats:</strong> PNG, JPG, JPEG only</p>
+                    </div>
+                    
+                    <div class="info-box">
+                        <h4><i class="fas fa-lightbulb"></i> Token Estimation</h4>
+                        <p>Each image consumes approximately 765 tokens from your context window. The total request size (text + images) is checked against the model's context limit before processing.</p>
+                    </div>
+                </div>
+                
+                <!-- Context Files Tab -->
+                <div class="doc-content hidden" id="context-content">
+                    <h3>Using Context Files for Enhanced Responses</h3>
+                    <p>Context files allow you to provide additional background information that enhances the LLM's responses without including it directly in your prompt.</p>
+                    
+                    <div class="tutorial-step">
+                        <h3><i class="fas fa-file-plus"></i> Step 1: Create a Context File</h3>
+                        <p>Upload content or files to create a searchable context that can be referenced in LLM calls.</p>
+                        <div class="code-block" data-language="bash">
+curl -X POST "https://api.gaia.com/context" \
+  -H "X-Token: your_token_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "content": "Company ABC provides AI solutions for businesses...",
+    "name": "Company Knowledge Base",
+    "description": "Internal knowledge about company products and services"
+  }'
+                        </div>
+                    </div>
+                    
+                    <div class="tutorial-step">
+                        <h3><i class="fas fa-link"></i> Step 2: Reference Context in LLM Calls</h3>
+                        <p>Use the context_id parameter (supported by GPT-4o) to automatically enhance your system prompt with relevant context.</p>
+                        <div class="code-block" data-language="bash">
+curl -X POST "https://api.gaia.com/llm/gpt-4o" \
+  -H "X-Token: your_token_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "system_prompt": "You are a helpful assistant.",
+    "user_input": "Tell me about our AI solutions.",
+    "context_id": "context-uuid-here",
+    "temperature": 0.5
+  }'
+                        </div>
+                    </div>
+                    
+                    <div class="info-box">
+                        <h4><i class="fas fa-info-circle"></i> How Context Integration Works</h4>
+                        <p>When you provide a context_id, GAIA automatically retrieves the context content and appends it to your system prompt with clear separators. This allows the LLM to reference the additional information when generating responses.</p>
+                    </div>
+                    
+                    <div class="tutorial-step">
+                        <h3><i class="fas fa-edit"></i> Step 3: Manage Context Files</h3>
+                        <p>You can update, retrieve, and delete context files as needed:</p>
+                        <div class="code-block" data-language="bash">
+<span class="code-comment"># List all contexts</span>
+curl -X GET "https://api.gaia.com/context/list" \
+  -H "X-Token: your_token_here"
+
+<span class="code-comment"># Update context content</span>
+curl -X PUT "https://api.gaia.com/context" \
+  -H "X-Token: your_token_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "context_id": "your-context-id",
+    "content": "Updated content...",
+    "append": true
+  }'
+
+<span class="code-comment"># Delete a context</span>
+curl -X DELETE "https://api.gaia.com/context?context_id=your-context-id" \
+  -H "X-Token: your_token_here"
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Best Practices Tab -->
+                <div class="doc-content hidden" id="best-practices-content">
+                    <h3>LLM Best Practices and Optimization</h3>
+                    
+                    <div class="tutorial-step">
+                        <h3><i class="fas fa-target"></i> Choosing the Right Model</h3>
+                        <ul class="feature-list">
+                            <li><strong>GPT-4o:</strong> Complex reasoning, multimodal analysis, context-heavy tasks</li>
+                            <li><strong>GPT-4o-mini:</strong> Quick responses, cost-effective applications, simple image analysis</li>
+                            <li><strong>O1-mini:</strong> Mathematical problems, code debugging, logical reasoning</li>
+                            <li><strong>O3-mini:</strong> Long-form content, configurable reasoning depth</li>
+                            <li><strong>DeepSeek-R1:</strong> Technical analysis, research tasks, chain-of-thought reasoning</li>
+                            <li><strong>DeepSeek-V3:</strong> General-purpose applications, API integrations</li>
+                            <li><strong>Llama 3.1:</strong> Open-ended conversations, creative content, multilingual tasks</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="tutorial-step">
+                        <h3><i class="fas fa-thermometer-half"></i> Temperature and Parameter Optimization</h3>
+                        <p>Adjust model parameters based on your use case:</p>
+                        <ul class="feature-list">
+                            <li><strong>Low temperature (0.1-0.3):</strong> Factual responses, consistent outputs</li>
+                            <li><strong>Medium temperature (0.4-0.7):</strong> Balanced creativity and consistency</li>
+                            <li><strong>High temperature (0.8-1.0):</strong> Creative writing, diverse outputs</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="warning-box">
+                        <h4><i class="fas fa-clock"></i> Context Window Management</h4>
+                        <p>Monitor your token usage to avoid context window limits:</p>
+                        <ul class="feature-list">
+                            <li>Each image ≈ 765 tokens</li>
+                            <li>Text ≈ 1 token per 4 characters</li>
+                            <li>Reserve tokens for model response</li>
+                            <li>Consider pagination for large inputs</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="tutorial-step">
+                        <h3><i class="fas fa-coins"></i> Cost Optimization Strategies</h3>
+                        <ul class="feature-list">
+                            <li>Use GPT-4o-mini for development and testing</li>
+                            <li>Implement request caching for repeated queries</li>
+                            <li>Optimize prompt length while maintaining clarity</li>
+                            <li>Use context files instead of repeating information in prompts</li>
+                            <li>Choose appropriate models based on task complexity</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Examples Tab -->
+                <div class="doc-content hidden" id="examples-content">
+                    <h3>Practical Implementation Examples</h3>
+                    
+                    <div class="tutorial-step">
+                        <h3><i class="fas fa-eye"></i> Image Analysis with GPT-4o</h3>
+                        <div class="code-block" data-language="bash">
+<span class="code-comment"># Step 1: Upload image</span>
+curl -X POST "https://api.gaia.com/files/upload" \
+  -H "X-Token: your_token_here" \
+  -F "file=@product.jpg" \
+  -F "description=Product image for analysis"
+
+<span class="code-comment"># Response will include the file_id</span>
+<span class="code-comment"># {</span>
+<span class="code-comment">#   "file_id": "12345678-1234-1234-1234-123456789012",</span>
+<span class="code-comment">#   "file_name": "product.jpg",</span>
+<span class="code-comment">#   "content_type": "image/jpeg"</span>
+<span class="code-comment"># }</span>
+
+<span class="code-comment"># Step 2: Analyze image</span>
+curl -X POST "https://api.gaia.com/llm/gpt-4o" \
+  -H "X-Token: your_token_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "system_prompt": "You are an expert image analyst.",
+    "user_input": "Describe this image in detail.",
+    "file_ids": ["12345678-1234-1234-1234-123456789012"],
+    "temperature": 0.5
+  }'
+                        </div>
+                    </div>
+                    
+                    <div class="tutorial-step">
+                        <h3><i class="fas fa-file-text"></i> Context-Enhanced Responses</h3>
+                        <div class="code-block" data-language="bash">
+<span class="code-comment"># Step 1: Create context with company information</span>
+curl -X POST "https://api.gaia.com/context" \
+  -H "X-Token: your_token_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "content": "Company ABC specializes in AI solutions for businesses. Our products include chatbots, analytics tools, and automation platforms. Founded in 2020, we serve over 500 clients worldwide.",
+    "name": "Company Knowledge Base",
+    "description": "Internal company information"
+  }'
+
+<span class="code-comment"># Response will include the context_id</span>
+<span class="code-comment"># {</span>
+<span class="code-comment">#   "context_id": "context-uuid-here",</span>
+<span class="code-comment">#   "name": "Company Knowledge Base",</span>
+<span class="code-comment">#   "description": "Internal company information"</span>
+<span class="code-comment"># }</span>
+
+<span class="code-comment"># Step 2: Use context in LLM call</span>
+curl -X POST "https://api.gaia.com/llm/gpt-4o" \
+  -H "X-Token: your_token_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "system_prompt": "You are a helpful company assistant.",
+    "user_input": "What products does our company offer?",
+    "context_id": "context-uuid-here",
+    "temperature": 0.3
+  }'
+                        </div>
+                    </div>
+                    
+                    <div class="tutorial-step">
+                        <h3><i class="fas fa-robot"></i> Advanced Reasoning with O1-mini</h3>
+                        <div class="code-block" data-language="bash">
+<span class="code-comment"># Use O1-mini for complex reasoning tasks</span>
+curl -X POST "https://api.gaia.com/llm/o1-mini" \
+  -H "X-Token: your_token_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "system_prompt": "You are an expert problem solver. Work through problems step by step.",
+    "user_input": "A company wants to optimize their delivery routes. They have 5 warehouses and need to deliver to 20 locations. Each warehouse can serve up to 6 locations, but some locations are closer to certain warehouses. How should they allocate deliveries to minimize total distance? \n\nWarehouse A: Can reach locations 1,2,3,4,5,6 (distances: 2,3,4,1,2,3)\nWarehouse B: Can reach locations 5,6,7,8,9,10 (distances: 1,2,1,3,2,4)\n\nWhat'\''s the optimal allocation strategy?",
+    "temperature": 0.1
+  }'
+
+<span class="code-comment"># Response includes detailed solution and token usage</span>
+<span class="code-comment"># {</span>
+<span class="code-comment">#   "message": "Step-by-step solution...",</span>
+<span class="code-comment">#   "total_tokens": 2847,</span>
+<span class="code-comment">#   "model": "o1-mini"</span>
+<span class="code-comment"># }</span>
+                        </div>
+                    </div>
+                    
+                    <div class="info-box">
+                        <h4><i class="fas fa-code"></i> Complete API Example</h4>
+                        <p>For production applications, consider creating wrapper scripts that handle token management, error handling, and response parsing automatically using your preferred programming language.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- CTA Section -->
+        <section class="cta-section">
+            <div class="cta-container">
+                <img src="/static/GAIA6.png" alt="GAIA Logo" style="height: 100px; margin-right: 0.5rem;">
+                <h2>Infuse LLMs into your workflows with GAIA today!</h2>
+                <p>Download our Postman Collection to quickly start integrating these powerful language models into your applications.</p>
+                <div class="cta-buttons" style="justify-content: center;">
+                    <a href="/static/resources/AIAPIS.postman_collection" class="cta-btn" style="background-color: var(--accent-color); color: var(--dark-color);" download>
+                        <i class="fas fa-download"></i> Download Postman Collection
+                    </a>
+                    <a href="{{ url_for('llm_conversation') }}" class="cta-btn cta-btn-secondary">
+                        <i class="fas fa-comments"></i> Explore Conversational AI
+                    </a>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    {% include 'footer.html' %}
+    
+    <script>
+        // Toggle sidebar on mobile
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuToggle = document.getElementById('menu-toggle');
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            
+            menuToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('active');
+                overlay.classList.toggle('active');
+            });
+            
+            overlay.addEventListener('click', function() {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            });
+            
+            // Highlight current page in sidebar
+            const currentPage = window.location.pathname;
+            const sidebarLinks = document.querySelectorAll('.sidebar-link');
+            
+            sidebarLinks.forEach(link => {
+                if (link.getAttribute('href') === currentPage) {
+                    link.classList.add('active');
+                }
+            });
+            
+            // Add scroll animation for elements
+            const animateOnScroll = function() {
+                const elements = document.querySelectorAll('.model-card, .provider-header');
+                
+                elements.forEach(element => {
+                    const elementPosition = element.getBoundingClientRect().top;
+                    const screenPosition = window.innerHeight / 1.2;
+                    
+                    if (elementPosition < screenPosition) {
+                        element.style.animation = 'fadeInUp 0.6s ease-out forwards';
+                    }
+                });
+            };
+            
+            // Run on load
+            animateOnScroll();
+            
+            // Run on scroll
+            window.addEventListener('scroll', animateOnScroll);
+            
+            // Documentation tabs functionality
+            const tabs = document.querySelectorAll('.doc-tab');
+            const contents = document.querySelectorAll('.doc-content');
+            
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // Remove active class from all tabs and contents
+                    tabs.forEach(t => t.classList.remove('active'));
+                    contents.forEach(c => c.classList.add('hidden'));
+                    
+                    // Add active class to clicked tab
+                    this.classList.add('active');
+                    
+                    // Show corresponding content
+                    const targetContent = document.getElementById(this.dataset.tab + '-content');
+                    if (targetContent) {
+                        targetContent.classList.remove('hidden');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

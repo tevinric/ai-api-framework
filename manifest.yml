@@ -90,23 +90,53 @@ spec:
                 name: tihaiapi-credentials
                 key: LLAMA_API_KEY
 
+          - name: DEEPSEEK_V3_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: tihaiapi-credentials
+                key: DEEPSEEK_V3_API_KEY
+
+          - name: STABLE_DIFFUSION_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: tihaiapi-credentials
+                key: STABLE_DIFFUSION_API_KEY    
+
+          - name: MS_STT_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: tihaiapi-credentials
+                key: MS_STT_API_KEY
+
+          - name: MS_STT_ENDPOINT
+            valueFrom:
+              secretKeyRef:
+                name: tihaiapi-credentials
+                key: MS_STT_ENDPOINT 
+
           - name: AZURE_STORAGE_CONNECTION_STRING
             valueFrom:
               secretKeyRef:
                 name: tihaiapi-credentials
                 key: AZURE_STORAGE_CONNECTION_STRING     
 
-          - name: AZURE_STORAGE_CONTAINER
+          - name: FILE_UPLOADS_CONTAINER
             valueFrom:
               secretKeyRef:
                 name: tihaiapi-credentials
-                key: AZURE_STORAGE_CONTAINER     
+                key: FILE_UPLOADS_CONTAINER
+
+          - name: IMAGE_GENERATION_CONTAINER
+            valueFrom:
+              secretKeyRef:
+                name: tihaiapi-credentials
+                key: IMAGE_GENERATION_CONTAINER
 
           - name: AZURE_STORAGE_ACCOUNT
             valueFrom:
               secretKeyRef:
                 name: tihaiapi-credentials
-                key: AZURE_STORAGE_ACCOUNT 
+                key: AZURE_STORAGE_ACCOUNT            
 
           - name: AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT
             valueFrom:

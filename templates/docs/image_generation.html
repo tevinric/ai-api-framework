@@ -1,0 +1,1755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Generation API - AI API Platform</title>
+    <link rel="icon" href="/static/images/Telesure-logo.png" type="image/png">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: rgb(1, 96, 136);
+            --secondary-color: rgb(0, 10, 120);
+            --dark-color: rgb(0, 8, 66);
+            --light-color: #f5f6fa;
+            --text-color: #333;
+            --white-color: #ffffff;
+            --accent-color: #00d4ff;
+            --accent-gradient: linear-gradient(90deg, #00d4ff 0%, #6c63ff 100%);
+            --magenta-dark: #3B0138;
+            --magenta-gradient: linear-gradient(90deg, #3B0138 0%, #4a6fe3 100%);
+            --sidebar-width: 280px;
+            --header-height: 60px;
+            --openai-color: #10a37f;
+            --openai-gradient: linear-gradient(90deg, #10a37f 0%, #0f9675 100%);
+            --stable-diffusion-color: #6741d9;
+            --stable-diffusion-gradient: linear-gradient(90deg, #6741d9 0%, #5231af 100%);
+            --gold-gradient: linear-gradient(to right, rgb(224, 146, 0), rgb(215, 162, 3));
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--light-color);
+            color: var(--text-color);
+            position: relative;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%234a6fe3' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        .header {
+            background-color: #03001A;
+            color: var(--white-color);
+            padding: 0 2rem;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: var(--header-height);
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo i {
+            font-size: 1.8rem;
+            margin-right: 0.5rem;
+            color: var(--accent-color);
+        }
+        
+        .logo h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+        
+        .nav {
+            display: flex;
+            align-items: center;
+        }
+        
+        .nav-item {
+            margin-left: 1.5rem;
+            color: var(--white-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+            display: flex;
+            align-items: center;
+        }
+        
+        .nav-item:hover {
+            color: var(--accent-color);
+        }
+        
+        .nav-item i {
+            margin-right: 0.5rem;
+        }
+        
+        .swagger-btn {
+            background-color: var(--accent-color);
+            color: var(--dark-color);
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-weight: 600;
+            transition: all 0.3s;
+            box-shadow: 0 4px 10px rgba(0, 212, 255, 0.3);
+        }
+        
+        .swagger-btn:hover {
+            background-color: #00b8e6;
+            transform: translateY(-2px);
+            color: var(--dark-color);
+            box-shadow: 0 6px 15px rgba(0, 212, 255, 0.4);
+        }
+        
+        /* Mobile menu toggle */
+        .menu-toggle {
+            display: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            top: var(--header-height);
+            left: 0;
+            height: calc(100vh - var(--header-height));
+            width: var(--sidebar-width);
+            background-color: var(--white-color);
+            border-right: 1px solid rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+            z-index: 900;
+            padding: 1.5rem 0;
+            transition: transform 0.3s ease-in-out;
+        }
+        
+        .sidebar-category {
+            padding: 0.5rem 1.5rem;
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar-link {
+            display: block;
+            padding: 0.7rem 1.5rem;
+            padding-left: 2.5rem;
+            color: var(--text-color);
+            text-decoration: none;
+            transition: background-color 0.2s, color 0.2s;
+            font-size: 0.95rem;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar-link:hover {
+            background-color: rgba(106, 100, 255, 0.05);
+            color: var(--primary-color);
+        }
+        
+        .sidebar-link.active {
+            color: var(--primary-color);
+            background-color: rgba(106, 100, 255, 0.08);
+            border-left: 3px solid var(--primary-color);
+        }
+        
+        .sidebar-link i {
+            margin-right: 0.5rem;
+            width: 20px;
+            text-align: center;
+        }
+        
+        /* Main content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            margin-top: var(--header-height);
+            padding: 0;
+            min-height: calc(100vh - var(--header-height));
+        }
+        
+        /* Hero */
+        .hero {
+            background: url('/static/GAIA _splash3.gif') center/cover no-repeat;
+            color: var(--white-color);
+            padding: 5rem 3rem;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        .hero::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background: linear-gradient(to right, rgba(1, 0, 15, 0.85) 0%, rgba(1, 0, 15, 0.5) 40%, transparent 80%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        @keyframes zoomDots {
+            0% {
+                transform: scale(0.3);
+                opacity: 0.1;
+            }
+            50% {
+                transform: scale(0.7);
+                opacity: 0.15;
+            }
+            100% {
+                transform: scale(0.3);
+                opacity: 0.1;
+            }
+        }
+        
+        .hero-container {
+            max-width: 1440px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .hero h2 {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+            max-width: 840px;
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: fadeInUp 0.8s ease-out;
+            font-size: 220%;
+        }
+        
+        .hero p {
+            font-size: 1.2rem;
+            max-width: 700px;
+            margin-bottom: 2rem;
+            line-height: 1.7;
+            color: rgba(255, 255, 255, 0.9);
+            animation: fadeInUp 1s ease-out;
+        }
+        
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            animation: fadeInUp 1.2s ease-out;
+        }
+        
+        .cta-btn {
+            display: inline-flex;
+            align-items: center;
+            background-color: var(--accent-color);
+            color: var(--dark-color);
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
+        }
+        
+        .cta-btn:hover {
+            background-color: #00b8e6;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 212, 255, 0.4);
+        }
+        
+        .cta-btn-secondary {
+            background-color: transparent;
+            color: var(--white-color);
+            border: 2px solid var(--white-color);
+            box-shadow: none;
+        }
+        
+        .cta-btn-secondary:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--white-color);
+            box-shadow: 0 4px 15px rgba(255, 255, 255, 0.2);
+        }
+        
+        .cta-btn i {
+            margin-right: 0.5rem;
+        }
+        
+        /* Overview section */
+        .overview-section {
+            padding: 4rem 3rem;
+            position: relative;
+        }
+        
+        .overview-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .section-header {
+            text-align: left;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid var(--light-color);
+            padding-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-icon {
+            width: 40px;
+            height: 40px;
+            margin-right: 1rem;
+            border-radius: 8px;
+            background-color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .section-icon i {
+            color: white;
+            font-size: 20px;
+        }
+        
+        .section-header h2 {
+            font-size: 2rem;
+            color: var(--dark-color);
+            margin: 0;
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 220%;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+        
+        .feature-card {
+            background-color: var(--white-color);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            margin-bottom: 1rem;
+            border-radius: 12px;
+            background: var(--accent-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .feature-icon i {
+            color: white;
+            font-size: 24px;
+        }
+        
+        .feature-card h3 {
+            margin-bottom: 0.75rem;
+            color: var(--dark-color);
+        }
+        
+        .feature-card p {
+            color: #666;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        
+        /* Model sections */
+        .model-section {
+            padding: 4rem 3rem;
+            position: relative;
+        }
+        
+        .model-section.alternate {
+            background-color: #f8faff;
+        }
+        
+        .model-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .model-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        
+        .model-icon {
+            width: 50px;
+            height: 50px;
+            margin-right: 1rem;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .dalle-icon {
+            background: var(--openai-gradient);
+        }
+        
+        .dalle-icon i {
+            color: white;
+            font-size: 24px;
+        }
+        
+        .stable-diffusion-icon {
+            background: var(--stable-diffusion-gradient);
+        }
+        
+        .stable-diffusion-icon i {
+            color: white;
+            font-size: 24px;
+        }
+        
+        .model-info {
+            flex-grow: 1;
+        }
+        
+        .model-info h2 {
+            font-size: 2rem;
+            color: var(--dark-color);
+            margin-bottom: 0.5rem;
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 220%;
+        }
+        
+        .model-info p {
+            color: #666;
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+        
+        .model-details {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+        
+        .model-detail-card {
+            background-color: var(--white-color);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            flex: 1;
+            min-width: 280px;
+        }
+        
+        .model-detail-card h3 {
+            margin-bottom: 1rem;
+            color: var(--dark-color);
+            display: flex;
+            align-items: center;
+        }
+        
+        .model-detail-card h3 i {
+            margin-right: 0.5rem;
+            color: var(--primary-color);
+        }
+        
+        .model-detail-card ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        
+        .model-detail-card li {
+            position: relative;
+            padding-left: 1.5rem;
+            margin-bottom: 0.5rem;
+            line-height: 1.5;
+        }
+        
+        .model-detail-card li:before {
+            content: "\f00c";
+            font-family: "Font Awesome 5 Free";
+            font-weight: 900;
+            position: absolute;
+            left: 0;
+            color: var(--primary-color);
+        }
+        
+        .dalle-card li:before {
+            color: var(--openai-color);
+        }
+        
+        .stable-diffusion-card li:before {
+            color: var(--stable-diffusion-color);
+        }
+        
+        .endpoint-box {
+            background-color: #f5f7fa;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: var(--dark-color);
+        }
+        
+        .dalle-card .endpoint-box {
+            border-left: 3px solid var(--openai-color);
+        }
+        
+        .stable-diffusion-card .endpoint-box {
+            border-left: 3px solid var(--stable-diffusion-color);
+        }
+        
+        /* Examples section */
+        .examples-tabs {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 2rem;
+            overflow-x: auto;
+            padding-bottom: 1px;
+            scrollbar-width: thin;
+        }
+        
+        .examples-tabs::-webkit-scrollbar {
+            height: 4px;
+        }
+        
+        .examples-tabs::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        
+        .examples-tabs::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 10px;
+        }
+        
+        .example-tab {
+            padding: 0.75rem 1.25rem;
+            cursor: pointer;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s;
+            white-space: nowrap;
+            border-bottom: 2px solid transparent;
+        }
+        
+        .example-tab.active {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--primary-color);
+        }
+        
+        .dalle-tab.active {
+            color: var(--openai-color);
+            border-bottom: 2px solid var(--openai-color);
+        }
+        
+        .stable-diffusion-tab.active {
+            color: var(--stable-diffusion-color);
+            border-bottom: 2px solid var(--stable-diffusion-color);
+        }
+        
+        .example-content {
+            display: none;
+        }
+        
+        .example-content.active {
+            display: block;
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        .example-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+        
+        .example-settings {
+            background-color: var(--white-color);
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            padding: 1.5rem;
+            height: 100%;
+        }
+        
+        .settings-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .setting-group {
+            margin-bottom: 1.25rem;
+        }
+        
+        .setting-label {
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+        
+        .setting-value {
+            color: #666;
+            margin-bottom: 0.75rem;
+            line-height: 1.5;
+            background-color: #f9f9f9;
+            padding: 0.75rem;
+            border-radius: 6px;
+            border-left: 3px solid var(--primary-color);
+        }
+        
+        .dalle-settings .setting-value {
+            border-left-color: var(--openai-color);
+        }
+        
+        .stable-diffusion-settings .setting-value {
+            border-left-color: var(--stable-diffusion-color);
+        }
+        
+        .example-image {
+            background-color: var(--white-color);
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        
+        .image-header {
+            padding: 1rem 1.5rem;
+            background-color: #f5f7fa;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .image-header h4 {
+            margin: 0;
+            color: var(--dark-color);
+            font-size: 1.1rem;
+        }
+        
+        .image-container {
+            flex-grow: 1;
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 300px;
+            background-color: #fafafa;
+            position: relative;
+        }
+        
+        .image-placeholder {
+            width: 100%;
+            height: 300px;
+            background-color: #eee;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-style: italic;
+        }
+        
+        .prompt-container {
+            padding: 1rem 1.5rem;
+            background-color: #f5f7fa;
+            border-top: 1px solid #eee;
+        }
+        
+        .prompt-container p {
+            margin: 0;
+            color: #666;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        
+        .prompt-label {
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-bottom: 0.5rem;
+        }
+        
+        /* CTA section */
+        .cta-section {
+            padding: 5rem 3rem;
+            text-align: center;
+            background: linear-gradient(135deg, rgba(1, 0, 15, 1) 0%, rgba(35, 0, 33, 1) 100%);
+            color: var(--white-color);
+        }
+        
+
+        
+        .cta-container {
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .cta-section h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 220%;
+        }
+        
+        .cta-section p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+        
+        /* Footer */
+        .footer {
+            background-color: #03001A;
+            color: var(--white-color);
+            text-align: center;
+            padding: 3rem;
+            margin-top: 3rem;
+            margin-left: var(--sidebar-width);
+            position: relative;
+        }
+        
+        .footer p {
+            margin-bottom: 1rem;
+            position: relative;
+        }
+        
+        /* Animation keyframes */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        /* Responsive styles */
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+                box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+                z-index: 1001;
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .footer {
+                margin-left: 0;
+            }
+            
+            .menu-toggle {
+                display: block;
+            }
+            
+            .example-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .features-grid {
+                grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .header {
+                padding: 0 1rem;
+            }
+            
+            .nav-item:not(.swagger-btn) {
+                display: none;
+            }
+            
+            .hero {
+                padding: 3rem 1.5rem;
+            }
+            
+            .hero h2 {
+                font-size: 2rem;
+            }
+            
+            .overview-section, .model-section {
+                padding: 3rem 1.5rem;
+            }
+            
+            .model-details {
+                flex-direction: column;
+                gap: 1.5rem;
+            }
+        }
+        
+        /* Dark overlay when sidebar is active on mobile */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        
+        @media (max-width: 992px) {
+            .sidebar-overlay.active {
+                display: block;
+            }
+        }
+        
+        .credit-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.35rem 0.35rem; 
+            border-radius: 4px;
+            font-weight: 400;
+            font-size: 1.5rem; 
+            color: white;
+            background: linear-gradient(135deg, rgba(1, 0, 15, 1) 0%, rgba(74, 111, 227, 1) 100%);
+            animation: pulse 3s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body>
+    <!-- RENDER THE HEADER TEMPLATE-->
+    {% include 'header.html' %}
+    
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    
+    <!-- RENDER THE SIDEBAR TEMPLATE-->
+    <aside class="sidebar">
+        {% include 'sidebar.html' %}
+    </aside>
+    
+    <main class="main-content">
+        <section class="hero" style="height: 550px;">
+            <div class="hero-container">
+                <br><br>
+                <h2>Image Generation</h2>
+                <p>Create stunning, high-quality images for your applications with GAIA's powerful Image Generation APIs. From photorealistic visualizations to creative illustrations, unlock the potential of AI-powered image creation.</p>
+                <div class="cta-buttons">
+                    <a href="/static/resources/AIAPIS.postman_collection" class="cta-btn" style="background-color: var(--accent-color); color: var(--dark-color);" download>
+                        <i class="fas fa-download"></i> Download Postman Collection
+                    </a>
+                    <a href="/apidocs/#/Image%20Generation" class="cta-btn cta-btn-secondary">
+                        <i class="fas fa-book"></i> Swagger API Docs
+                    </a>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Overview section -->
+        <section class="overview-section">
+            <div class="overview-container">
+                <div class="section-header">
+                    <div class="section-icon">
+                        <i class="fas fa-paint-brush" style="color: primary;"></i>
+                    </div>
+                    <h2>Overview</h2>
+                </div>
+                
+                <p class="section-intro">GAIA'S Image Generation APIs provide access to state-of-the-art AI models that generate images from text prompts. 
+                    With an option of models and customization settings to choose from, you can generate bespoke images to meet the needs of your applications.
+                </p>
+                <br><br>
+                
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                        <h3>Advanced AI Models</h3>
+                        <p>Access cutting-edge models like DALL-E 3 and Stable Diffusion Ultra to generate images with unprecedented quality and creativity.</p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-sliders-h"></i>
+                        </div>
+                        <h3>Customization Options</h3>
+                        <p>Control image parameters including size, quality, style, and more to achieve your desired visual outcome.</p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-tachometer-alt"></i>
+                        </div>
+                        <h3>High Performance</h3>
+                        <p>Generate high-quality images quickly with optimized API performance for seamless integration into your applications.</p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-lock"></i>
+                        </div>
+                        <h3>Secure Storage</h3>
+                        <p>All generated images are securely stored and accessible through our file management system with unique identifiers.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- DALL-E 3 section -->
+        <section class="model-section">
+            <div class="model-container">
+                <div class="model-header" style="display: flex; align-items: center;">
+                    <div class="model-info" style="flex-grow: 1; margin-left: 1rem;">
+                        <h2 style="display: flex; justify-content: space-between; align-items: center;">
+                            DALL-E 3
+                        </h2>
+                        <br>
+                        <p> Access OpenAI's most advanced image generation model capable of creating detailed, high-quality images from text descriptions with remarkable accuracy.</p>
+                    </div>
+                </div>
+                
+                <div class="model-details">
+                    <div class="model-detail-card dalle-card">
+                        <h3><i class="fas fa-cogs"></i> Features</h3>
+                        <ul>
+                            <li>Photorealistic image generation</li>
+                            <li>Detailed artistic renderings</li>
+                            <li>Excellent understanding of complex prompts</li>
+                            <li>Multiple size options (1024x1024, 1792x1024, 1024x1792)</li>
+                            <li>Quality control (standard or HD)</li>
+                            <li>Style adjustment (vivid or natural)</li>
+                        </ul>
+                        
+                    </div>
+                    
+                    <div class="model-detail-card dalle-card" style="line-height: 1.8;">
+                        <h3><i class="fas fa-code"></i> API Endpoint</h3>
+                        <div class="endpoint-box">
+                            POST /image-generation/dalle3
+                        </div>
+                        <p>Generate images with DALL-E 3 by sending a POST request to this endpoint with your prompt and configuration options.</p>
+                        <br>
+                        <p>Required parameters:</p>
+                        <ul>
+                            <li><strong>prompt</strong>: Text description of the image to generate</li>
+                            <li><strong>X-Token</strong>: Your API authentication token (header)</li>
+                        </ul>
+                        <p>Optional parameters:</p>
+                        <ul>
+                            <li><strong>deployment</strong>: Model deployment (dall-e-3 or dalle3-hd)</li>
+                            <li><strong>size</strong>: Image dimensions</li>
+                            <li><strong>quality</strong>: Image quality (standard or hd)</li>
+                            <li><strong>style</strong>: Image style (vivid or natural)</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <h3 style="font-size: 150%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">DALL-E 3 Examples</h3>
+                <br>
+                <div class="examples-tabs">
+                    <div class="example-tab dalle-tab active">Architectural Visualization</div>
+                    <div class="example-tab dalle-tab">Product Visualization</div>
+                    <div class="example-tab dalle-tab">Smart City Illustration</div>
+                    <div class="example-tab dalle-tab">Business Team Portrait</div>
+                    <div class="example-tab dalle-tab">Medical Illustration</div>
+                </div>
+                
+                <!-- Example 1 - Architectural Visualization -->
+                <div class="example-content active">
+                    <div class="example-grid">
+                        <div class="example-settings dalle-settings">
+                            <h3 class="settings-title">Model Settings</h3>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Prompt</span>
+                                <div class="setting-value">
+                                    An architectural visualization of a modern sustainable office building with solar panels and green spaces, realistic rendering style
+                                </div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Model</span>
+                                <div class="setting-value">dall-e-3</div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Size</span>
+                                <div class="setting-value">1024x1024</div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Quality</span>
+                                <div class="setting-value">standard</div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Style</span>
+                                <div class="setting-value">vivid</div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">API Endpoint</span>
+                                <div class="setting-value">POST /image-generation/dalle3</div>
+                            </div>
+                        </div>
+                        
+                        <div class="example-image">
+                            <div class="image-header">
+                                <h4>Architectural Visualization</h4>
+                            </div>
+                            <div class="image-container">
+                                <div class="image-placeholder">
+                                    <img src="/static/images/image-gen-models/dalle3/dalle3_sample1.png" alt="Architectural Visualization Sample" style="max-width: 100%; border-radius: 4px;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Example 2 - Product Visualization -->
+                <div class="example-content">
+                    <div class="example-grid">
+                        <div class="example-settings dalle-settings">
+                            <h3 class="settings-title">Model Settings</h3>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Prompt</span>
+                                <div class="setting-value">
+                                    A detailed 3D product visualization of a sleek electric vehicle charging station in an urban setting
+                                </div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Model</span>
+                                <div class="setting-value">dall-e-3</div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Size</span>
+                                <div class="setting-value">1024x1024</div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Quality</span>
+                                <div class="setting-value">hd</div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Style</span>
+                                <div class="setting-value">natural</div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">API Endpoint</span>
+                                <div class="setting-value">POST /image-generation/dalle3</div>
+                            </div>
+                        </div>
+                        
+                        <div class="example-image">
+                            <div class="image-header">
+                                <h4>Product Visualization</h4>
+                            </div>
+                            <div class="image-container">
+                                <div class="image-placeholder">
+                                    <img src="/static/images/image-gen-models/dalle3/dalle3_sample2.png" alt="Product Visualization Sample" style="max-width: 100%; border-radius: 4px;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Example 3 - Smart City Illustration -->
+                <div class="example-content">
+                    <div class="example-grid">
+                        <div class="example-settings dalle-settings">
+                            <h3 class="settings-title">Model Settings</h3>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Prompt</span>
+                                <div class="setting-value">
+                                    An isometric illustration of a smart city infrastructure showing connected devices and data flow, with a clean, professional style
+                                </div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Model</span>
+                                <div class="setting-value">dall-e-3</div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Size</span>
+                                <div class="setting-value">1792x1024</div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Quality</span>
+                                <div class="setting-value">standard</div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Style</span>
+                                <div class="setting-value">vivid</div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">API Endpoint</span>
+                                <div class="setting-value">POST /image-generation/dalle3</div>
+                            </div>
+                        </div>
+                        
+                        <div class="example-image">
+                            <div class="image-header">
+                                <h4>Smart City Illustration</h4>
+                            </div>
+                            <div class="image-container">
+                                <div class="image-placeholder">
+                                    <img src="/static/images/image-gen-models/dalle3/dalle3_sample3.png" alt="Smart City Illustration Sample" style="max-width: 100%; border-radius: 4px;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Example 4 - Business Team Portrait -->
+                <div class="example-content">
+                    <div class="example-grid">
+                        <div class="example-settings dalle-settings">
+                            <h3 class="settings-title">Model Settings</h3>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Prompt</span>
+                                <div class="setting-value">
+                                    A professional portrait photograph of a diverse business team collaborating in a modern conference room, corporate photography style
+                                </div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Model</span>
+                                <div class="setting-value">dall-e-3</div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Size</span>
+                                <div class="setting-value">1024x1024</div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Quality</span>
+                                <div class="setting-value">hd</div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Style</span>
+                                <div class="setting-value">natural</div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">API Endpoint</span>
+                                <div class="setting-value">POST /image-generation/dalle3</div>
+                            </div>
+                        </div>
+                        
+                        <div class="example-image">
+                            <div class="image-header">
+                                <h4>Business Team Portrait</h4>
+                            </div>
+                            <div class="image-container">
+                                <div class="image-placeholder">
+                                    <img src="/static/images/image-gen-models/dalle3/dalle3_sample4.png" alt="Business Team Portrait Sample" style="max-width: 100%; border-radius: 4px;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Example 5 - Medical Illustration -->
+                <div class="example-content">
+                    <div class="example-grid">
+                        <div class="example-settings dalle-settings">
+                            <h3 class="settings-title">Model Settings</h3>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Prompt</span>
+                                <div class="setting-value">
+                                    A medical illustration showing the detailed cross-section of a human heart with labeled components, medical textbook style
+                                </div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Model</span>
+                                <div class="setting-value">dall-e-3</div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Size</span>
+                                <div class="setting-value">1024x1792</div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Quality</span>
+                                <div class="setting-value">standard</div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Style</span>
+                                <div class="setting-value">vivid</div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">API Endpoint</span>
+                                <div class="setting-value">POST /image-generation/dalle3</div>
+                            </div>
+                        </div>
+                        
+                        <div class="example-image">
+                            <div class="image-header">
+                                <h4>Medical Illustration</h4>
+                            </div>
+                            <div class="image-container">
+                                <div class="image-placeholder">
+                                    <img src="/static/images/image-gen-models/dalle3/dalle3_sample5.png" alt="Medical Illustration Sample" style="max-width: 100%; border-radius: 4px;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Stable Diffusion Ultra section -->
+        <section class="model-section alternate">
+            <div class="model-container">
+                <div class="model-header">
+                    <div class="model-info">
+                        <h2 style="display: flex; justify-content: space-between; align-items: center;">
+                            STABLE DIFFUSION - ULTRA
+                        </h2>
+                        <br>
+                        <p>A powerful diffusion-based image generation model capable of creating highly detailed images with exceptional quality and creative flexibility.</p>
+                    </div>
+                </div>
+                
+                <div class="model-details">
+                    <div class="model-detail-card stable-diffusion-card">
+                        <h3><i class="fas fa-cogs"></i> Features</h3>
+                        <ul>
+                            <li>High-fidelity image generation</li>
+                            <li>Negative prompt support for fine-tuned control</li>
+                            <li>Multiple size options (1024x1024, 768x768, 512x512)</li>
+                            <li>Format selection (PNG or JPEG)</li>
+                            <li>Seed control for reproducible results</li>
+                            <li>Fast generation times</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="model-detail-card stable-diffusion-card">
+                        <h3><i class="fas fa-code"></i> API Endpoint</h3>
+                        <div class="endpoint-box">
+                            POST /image-generation/stable-diffusion-ultra
+                        </div>
+                        <p>Generate images with Stable Diffusion Ultra by sending a POST request to this endpoint with your prompt and configuration options.</p>
+                        <br>
+                        <p>Required parameters:</p>
+                        <ul>
+                            <li><strong>prompt</strong>: Text description of the image to generate</li>
+                            <li><strong>X-Token</strong>: Your API authentication token (header)</li>
+                        </ul>
+                        <p>Optional parameters:</p>
+                        <ul>
+                            <li><strong>negative_prompt</strong>: Text describing what to avoid in the image</li>
+                            <li><strong>size</strong>: Image dimensions</li>
+                            <li><strong>output_format</strong>: Image format (png or jpeg)</li>
+                            <li><strong>seed</strong>: Numerical seed for reproducible generation</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <h3 style="font-size: 150%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">STABLE DIFFUSION ULTRA Examples</h3>
+                <br>
+                <div class="examples-tabs">
+                    <div class="example-tab stable-diffusion-tab active">Data Center</div>
+                    <div class="example-tab stable-diffusion-tab">Sustainable Urban Development</div>
+                    <div class="example-tab stable-diffusion-tab">Car Insurance</div>
+                    <div class="example-tab stable-diffusion-tab">Smartphone Concept</div>
+                    <div class="example-tab stable-diffusion-tab">Vehicle Generation</div>
+                    <div class="example-tab stable-diffusion-tab">Biochemistry Lab</div>
+                </div>
+
+                <!-- Example 1 - Data Center -->
+                <div class="example-content active">
+                    <div class="example-grid">
+                        <div class="example-settings stable-diffusion-settings">
+                            <h3 class="settings-title">Model Settings</h3>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Prompt</span>
+                                <div class="setting-value">
+                                    Image of a modern data center with rows of servers, high-tech equipment, and a futuristic design, architectural visualization style
+                                </div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Negative Prompt</span>
+                                <div class="setting-value">
+                                    blurry, low quality, unrealistic, outdated equipment
+                                </div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Size</span>
+                                <div class="setting-value">1024x1024</div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Output Format</span>
+                                <div class="setting-value">png</div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Seed</span>
+                                <div class="setting-value">42</div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">API Endpoint</span>
+                                <div class="setting-value">POST /image-generation/stable-diffusion-ultra</div>
+                            </div>
+                        </div>
+                        
+                        <div class="example-image">
+                            <div class="image-header">
+                                <h4>Data Center Visualization</h4>
+                            </div>
+                            <div class="image-container">
+                                <img src="/static/images/image-gen-models/stable-diffusion-ultra/sfultra-sample1.png" alt="Data Center Visualization Sample" style="max-width: 100%; border-radius: 4px;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Example 2 - Sustainable Urban Development -->
+                <div class="example-content">
+                    <div class="example-grid">
+                        <div class="example-settings stable-diffusion-settings">
+                            <h3 class="settings-title">Model Settings</h3>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Prompt</span>
+                                <div class="setting-value">
+                                    An aerial view of a sustainable urban development with renewable energy infrastructure, architectural visualization style
+                                </div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Negative Prompt</span>
+                                <div class="setting-value">
+                                    industrial pollution, fossil fuels, poor planning, congestion
+                                </div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Size</span>
+                                <div class="setting-value">1024x1024</div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Output Format</span>
+                                <div class="setting-value">png</div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Seed</span>
+                                <div class="setting-value">5</div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">API Endpoint</span>
+                                <div class="setting-value">POST /image-generation/stable-diffusion-ultra</div>
+                            </div>
+                        </div>
+                        
+                        <div class="example-image">
+                            <div class="image-header">
+                                <h4>Sustainable Urban Development</h4>
+                            </div>
+                            <div class="image-container">
+                                <img src="/static/images/image-gen-models/stable-diffusion-ultra/sfultra-sample2.png" alt="Sustainable Urban Development Sample" style="max-width: 100%; border-radius: 4px;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Example 3 - Car Insurance -->
+                <div class="example-content">
+                    <div class="example-grid">
+                        <div class="example-settings stable-diffusion-settings">
+                            <h3 class="settings-title">Model Settings</h3>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Prompt</span>
+                                <div class="setting-value">
+                                    A picture of a woman driving her car happily with focus on driver from a front angle. Hands on steering with fingers wrapped around the steering wheel.
+                                </div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Negative Prompt</span>
+                                <div class="setting-value">
+                                    cartoon style, low detail, obscured views, overlapping image components
+                                </div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Size</span>
+                                <div class="setting-value">1024x1024</div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Output Format</span>
+                                <div class="setting-value">png</div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Seed</span>
+                                <div class="setting-value">3</div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">API Endpoint</span>
+                                <div class="setting-value">POST /image-generation/stable-diffusion-ultra</div>
+                            </div>
+                        </div>
+                        
+                        <div class="example-image">
+                            <div class="image-header">
+                                <h4>Car Insurance Visualization</h4>
+                            </div>
+                            <div class="image-container">
+                                <img src="/static/images/image-gen-models/stable-diffusion-ultra/sfultra-sample3.png" alt="Car Insurance Sample" style="max-width: 100%; border-radius: 4px;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Example 4 - Smartphone Concept -->
+                <div class="example-content">
+                    <div class="example-grid">
+                        <div class="example-settings stable-diffusion-settings">
+                            <h3 class="settings-title">Model Settings</h3>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Prompt</span>
+                                <div class="setting-value">
+                                    A professional product visualization of a next-generation smartphone with holographic display on a minimal background
+                                </div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Negative Prompt</span>
+                                <div class="setting-value">
+                                    outdated design, bulky, visible bezels, low quality image
+                                </div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Size</span>
+                                <div class="setting-value">1024x1024</div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Output Format</span>
+                                <div class="setting-value">png</div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Seed</span>
+                                <div class="setting-value">8675</div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">API Endpoint</span>
+                                <div class="setting-value">POST /image-generation/stable-diffusion-ultra</div>
+                            </div>
+                        </div>
+                        
+                        <div class="example-image">
+                            <div class="image-header">
+                                <h4>Smartphone Concept Visualization</h4>
+                            </div>
+                            <div class="image-container">
+                                <img src="/static/images/image-gen-models/stable-diffusion-ultra/sfultra-sample4.png" alt="Smartphone Concept Sample" style="max-width: 100%; border-radius: 4px;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Example 5 - Vehicle Generation -->
+                <div class="example-content">
+                    <div class="example-grid">
+                        <div class="example-settings stable-diffusion-settings">
+                            <h3 class="settings-title">Model Settings</h3>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Prompt</span>
+                                <div class="setting-value">
+                                    A picture of a high-performance vehicle driving along the freeway. The vehicle has BMW-like features and is very similar to a BMW.
+                                </div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Negative Prompt</span>
+                                <div class="setting-value">
+                                    outdated design, cartoonish, text, humans, low quality image
+                                </div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Size</span>
+                                <div class="setting-value">1024x1024</div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Output Format</span>
+                                <div class="setting-value">png</div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Seed</span>
+                                <div class="setting-value">2096</div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">API Endpoint</span>
+                                <div class="setting-value">POST /image-generation/stable-diffusion-ultra</div>
+                            </div>
+                        </div>
+                        
+                        <div class="example-image">
+                            <div class="image-header">
+                                <h4>Vehicle Generation Visualization</h4>
+                            </div>
+                            <div class="image-container">
+                                <img src="/static/images/image-gen-models/stable-diffusion-ultra/sfultra-sample5.png" alt="Vehicle Generation Sample" style="max-width: 100%; border-radius: 4px;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Example 6 - Biochemistry Lab -->
+                <div class="example-content">
+                    <div class="example-grid">
+                        <div class="example-settings stable-diffusion-settings">
+                            <h3 class="settings-title">Model Settings</h3>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Prompt</span>
+                                <div class="setting-value">
+                                    A realistic visualization of a biochemistry laboratory with scientists working on vaccine research, clinical environment
+                                </div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Negative Prompt</span>
+                                <div class="setting-value">
+                                    cartoon, messy lab, unsafe practices, outdated equipment
+                                </div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Size</span>
+                                <div class="setting-value">1024x1024</div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Output Format</span>
+                                <div class="setting-value">png</div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">Seed</span>
+                                <div class="setting-value">9999</div>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <span class="setting-label">API Endpoint</span>
+                                <div class="setting-value">POST /image-generation/stable-diffusion-ultra</div>
+                            </div>
+                        </div>
+                        
+                        <div class="example-image">
+                            <div class="image-header">
+                                <h4>Biochemistry Laboratory</h4>
+                            </div>
+                            <div class="image-container">
+                                <img src="/static/images/image-gen-models/stable-diffusion-ultra/sfultra-sample6.png" alt="Biochemistry Lab Sample" style="max-width: 100%; border-radius: 4px;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- CTA Section -->
+        <section class="cta-section">
+            <div class="cta-container">
+                <img src="/static/GAIA6.png" alt="GAIA Logo" style="height: 100px; margin-right: 0.5rem;">
+                <h2>Start Generating Amazing Images Today</h2>
+                <p>Integrate GAIA's powerful Image Generation APIs into your applications and unlock countless creative possibilities.</p>
+                <div class="cta-buttons" style="justify-content: center;">
+                    <a href="/static/resources/AIAPIS.postman_collection" class="cta-btn" style="background-color: var(--accent-color); color: var(--dark-color);" download>
+                        <i class="fas fa-download"></i> Download Postman Collection
+                    </a>
+                    <a href="/apidocs/#/Image%20Generation" class="cta-btn cta-btn-secondary">
+                        <i class="fas fa-book"></i> Swagger API Docs
+                    </a>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    {% include 'footer.html' %}
+    
+    <script>
+        // Toggle sidebar on mobile
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuToggle = document.getElementById('menu-toggle');
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            
+            menuToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('active');
+                overlay.classList.toggle('active');
+            });
+            
+            overlay.addEventListener('click', function() {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            });
+            
+            // Highlight current page in sidebar
+            const currentPage = window.location.pathname;
+            const sidebarLinks = document.querySelectorAll('.sidebar-link');
+            
+            sidebarLinks.forEach(link => {
+                if (link.getAttribute('href') === currentPage) {
+                    link.classList.add('active');
+                }
+            });
+            
+            // DALL-E 3 Example tabs functionality
+            const dalleTabs = document.querySelectorAll('.dalle-tab');
+            const dalleExamples = document.querySelectorAll('.model-section:not(.alternate) .example-content');
+            
+            dalleTabs.forEach((tab, index) => {
+                tab.addEventListener('click', function() {
+                    // Remove active class from all tabs and examples
+                    dalleTabs.forEach(t => t.classList.remove('active'));
+                    dalleExamples.forEach(e => e.classList.remove('active'));
+                    
+                    // Add active class to clicked tab and corresponding example
+                    tab.classList.add('active');
+                    dalleExamples[index].classList.add('active');
+                });
+            });
+            
+            // Stable Diffusion Example tabs functionality
+            const sdTabs = document.querySelectorAll('.stable-diffusion-tab');
+            const sdExamples = document.querySelectorAll('.model-section.alternate .example-content');
+            
+            sdTabs.forEach((tab, index) => {
+                tab.addEventListener('click', function() {
+                    // Remove active class from all tabs and examples
+                    sdTabs.forEach(t => t.classList.remove('active'));
+                    sdExamples.forEach(e => e.classList.remove('active'));
+                    
+                    // Add active class to clicked tab and corresponding example
+                    tab.classList.add('active');
+                    sdExamples[index].classList.add('active');
+                });
+            });
+            
+            // Add scroll animation for elements
+            const animateOnScroll = function() {
+                const elements = document.querySelectorAll('.feature-card, .model-detail-card, .example-image, .section-header');
+                
+                elements.forEach(element => {
+                    const elementPosition = element.getBoundingClientRect().top;
+                    const screenPosition = window.innerHeight / 1.2;
+                    
+                    if (elementPosition < screenPosition) {
+                        element.style.animation = 'fadeInUp 0.6s ease-out forwards';
+                    }
+                });
+            };
+            
+            // Run on load
+            animateOnScroll();
+            
+            // Run on scroll
+            window.addEventListener('scroll', animateOnScroll);
+        });
+    </script>
+</body>
+</html>

@@ -10,17 +10,15 @@ import json
 import requests
 import base64
 import os
-from apis.utils.config import IMAGE_GENERATION_CONTAINER, STORAGE_ACCOUNT
+from apis.utils.config import STORAGE_ACCOUNT
 from apis.utils.logMiddleware import api_logger
 from apis.utils.balanceMiddleware import check_balance
+from apis.utils.fileService import FileService, FILE_UPLOAD_CONTAINER
 
 # CONFIGURE LOGGING
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Azure Blob Storage container for images
-BLOB_CONTAINER_NAME = IMAGE_GENERATION_CONTAINER
-BASE_BLOB_URL = f"https://{STORAGE_ACCOUNT}.blob.core.windows.net/{BLOB_CONTAINER_NAME}"
 
 # Stable Diffusion Ultra API configuration
 STABLE_DIFFUSION_API_URL = 'https://StableDiffusion-Image-Ultra.eastus.models.ai.azure.com/images/generations'
@@ -78,7 +76,7 @@ def stable_diffusion_ultra_route():
     consumes:
       - application/json
     security:
-      - ApiKeyHeader: []
+      - ApiKeyAuth: []
     responses:
       200:
         description: Successful image generation
@@ -318,39 +316,38 @@ def stable_diffusion_ultra_route():
         # Generate a unique name for the image
         image_name = f"sd-ultra-{uuid.uuid4()}.{output_format}"
         
-        # Create a files dictionary for the upload-file endpoint
-        # Explicitly set the content type to image/png or image/jpeg to ensure proper file type recognition
+        # Set the content type for the file
         content_type = f"image/{output_format}"
-        files = {'files': (image_name, io.BytesIO(image_data), content_type)}
         
-        # Create a new request to the upload-file endpoint
-        upload_url = f"{request.url_root.rstrip('/')}/upload-file"
-        
-        # Make the POST request to upload-file endpoint
-        upload_response = requests.post(
-            upload_url,
-            headers={'X-Token': token},
-            files=files
-        )
-        
-        # Check if the upload was successful
-        if upload_response.status_code != 200:
-            logger.error(f"Failed to upload image: {upload_response.json()}")
-            return create_api_response({
-                "response": "500",
-                "message": f"Failed to upload generated image: {upload_response.json().get('message', 'Unknown error')}"
-            }, 500)
-        
-        # Extract the file_id from the upload response
-        upload_data = upload_response.json()
-        if 'uploaded_files' not in upload_data or not upload_data['uploaded_files']:
-            logger.error(f"No file information in upload response: {upload_data}")
-            return create_api_response({
-                "response": "500",
-                "message": "Failed to upload generated image: No file information returned"
-            }, 500)
+        # Create a custom file-like object that mimics Flask's file object
+        class MockFileObj:
+            def __init__(self, data, filename, content_type):
+                self._io = io.BytesIO(data)
+                self.filename = filename
+                self.content_type = content_type
             
-        file_id = upload_data['uploaded_files'][0]['file_id']
+            def read(self):
+                return self._io.getvalue()
+
+        # Create the file object and upload using FileService
+        file_obj = MockFileObj(image_data, image_name, content_type)
+        file_info, error = FileService.upload_file(file_obj, g.user_id, FILE_UPLOAD_CONTAINER)
+
+        if error:
+            logger.error(f"Failed to upload generated image: {error}")
+            return create_api_response({
+                "response": "500",
+                "message": f"Failed to upload generated image: {error}"
+            }, 500)
+
+        file_id = file_info["file_id"]
+        
+        if not file_id:
+            logger.error("Failed to upload generated image")
+            return create_api_response({
+                "response": "500",
+                "message": "Failed to upload generated image"
+            }, 500)
         
         # Prepare successful response with user details
         return create_api_response({
@@ -375,5 +372,7 @@ def register_stable_diffusion_ultra_routes(app):
     """Register routes with the Flask app"""
     from apis.utils.logMiddleware import api_logger
     from apis.utils.balanceMiddleware import check_balance
+    from apis.utils.usageMiddleware import track_usage
+    from apis.utils.rbacMiddleware import check_endpoint_access
     
-    app.route('/image-generation/stable-diffusion-ultra', methods=['POST'])(api_logger(check_balance(stable_diffusion_ultra_route)))
+    app.route('/image-generation/stable-diffusion-ultra', methods=['POST'])(track_usage(api_logger(check_endpoint_access(check_balance(stable_diffusion_ultra_route)))))

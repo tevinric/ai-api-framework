@@ -10,11 +10,7 @@ from datetime import datetime
 # CONFIGURE LOGGING
 logger = logging.getLogger(__name__)
 
-def create_api_response(data, status_code=200):
-    """Helper function to create consistent API responses"""
-    response = make_response(jsonify(data))
-    response.status_code = status_code
-    return response
+from apis.utils.config import create_api_response
 
 def admin_add_endpoint_route():
     """
@@ -28,6 +24,11 @@ def admin_add_endpoint_route():
         type: string
         required: true
         description: "Admin API Key for authentication"
+      - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems
       - name: token
         in: query
         type: string
@@ -55,8 +56,9 @@ def admin_add_endpoint_route():
               type: boolean
               description: "Whether the endpoint is active (default: true)"
             cost:
-              type: integer
-              description: "Cost in balance units for each call to this endpoint (default: 1)"
+              type: number
+              format: float
+              description: "Cost in balance units for each call to this endpoint (default: 1.0, can be 0 or fractional values like 0.5)"
     produces:
       - application/json
     responses:
@@ -155,16 +157,16 @@ def admin_add_endpoint_route():
     
     # Validate cost is a positive integer
     try:
-        cost = int(cost)
-        if cost <= 0:
+        cost = float(cost)
+        if cost < 0:  # Allow zero as a valid cost
             return create_api_response({
-                "error": "Bad Request",
-                "message": "Cost must be a positive integer"
+                "error": "Bad Request", 
+                "message": "Cost must be a non-negative number"
             }, 400)
     except (ValueError, TypeError):
         return create_api_response({
             "error": "Bad Request",
-            "message": "Cost must be a valid integer"
+            "message": "Cost must be a valid number"
         }, 400)
     
     # Ensure endpoint_path starts with /
@@ -220,6 +222,11 @@ def admin_get_endpoints_route():
         type: string
         required: true
         description: "Admin API Key for authentication"
+      - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems
       - name: token
         in: query
         type: string
@@ -331,6 +338,11 @@ def admin_update_endpoint_route():
         type: string
         required: true
         description: "Admin API Key for authentication"
+      - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems
       - name: token
         in: query
         type: string
@@ -491,17 +503,17 @@ def admin_update_endpoint_route():
         if 'cost' in data:
             # Validate cost is a positive integer
             try:
-                cost = int(data['cost'])
-                if cost <= 0:
+                cost = float(data['cost'])
+                if cost < 0:  # Allow zero as a valid cost
                     return create_api_response({
                         "error": "Bad Request",
-                        "message": "Cost must be a positive integer"
+                        "message": "Cost must be a non-negative number"
                     }, 400)
                 update_data['cost'] = cost
             except (ValueError, TypeError):
                 return create_api_response({
                     "error": "Bad Request",
-                    "message": "Cost must be a valid integer"
+                    "message": "Cost must be a valid number"
                 }, 400)
         
         # Only proceed if there are fields to update
@@ -730,5 +742,5 @@ def update_endpoint(endpoint_id, update_data):
 def register_admin_endpoint_routes(app):
     """Register admin endpoint management routes with the Flask app"""
     app.route('/admin/endpoints', methods=['GET'])(api_logger(admin_get_endpoints_route))
-    app.route('/admin/add-endpoint', methods=['POST'])(api_logger(admin_add_endpoint_route))
-    app.route('/admin/update-endpoint', methods=['PUT'])(api_logger(admin_update_endpoint_route))
+    app.route('/admin/endpoint', methods=['POST'])(api_logger(admin_add_endpoint_route))
+    app.route('/admin/endpoint', methods=['PUT'])(api_logger(admin_update_endpoint_route))

@@ -1,0 +1,1857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Management Portal - AI API Platform</title>
+    <link rel="icon" href="/static/images/Telesure-logo.png" type="image/png">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/pdfjs-dist/3.4.120/pdf_viewer.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfjs-dist/3.4.120/pdf.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #4a6fe3;
+            --secondary-color: #6c63ff;
+            --dark-color: #2a2c3b;
+            --light-color: #f5f6fa;
+            --text-color: #333;
+            --white-color: #ffffff;
+            --accent-color: #00d4ff;
+            --magenta-dark: #3B0138;
+            --sidebar-width: 280px;
+            --header-height: 60px;
+            --file-sidebar-width: 300px;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --info-color: #17a2b8;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--light-color);
+            color: var(--text-color);
+            position: relative;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%234a6fe3' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        .header {
+            background-color: #03001A;
+            color: var(--white-color);
+            padding: 0 2rem;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: var(--header-height);
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo i {
+            font-size: 1.8rem;
+            margin-right: 0.5rem;
+            color: var(--accent-color);
+        }
+        
+        .logo h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+        
+        .nav {
+            display: flex;
+            align-items: center;
+        }
+        
+        .nav-item {
+            margin-left: 1.5rem;
+            color: var(--white-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+            display: flex;
+            align-items: center;
+        }
+        
+        .nav-item:hover {
+            color: var(--accent-color);
+        }
+        
+        .nav-item i {
+            margin-right: 0.5rem;
+        }
+        
+        .swagger-btn {
+            background-color: var(--accent-color);
+            color: var(--dark-color);
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-weight: 600;
+            transition: all 0.3s;
+            box-shadow: 0 4px 10px rgba(0, 212, 255, 0.3);
+        }
+        
+        .swagger-btn:hover {
+            background-color: #00b8e6;
+            transform: translateY(-2px);
+            color: var(--dark-color);
+            box-shadow: 0 6px 15px rgba(0, 212, 255, 0.4);
+        }
+        
+        /* Mobile menu toggle */
+        .menu-toggle {
+            display: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            top: var(--header-height);
+            left: 0;
+            height: calc(100vh - var(--header-height));
+            width: var(--sidebar-width);
+            background-color: var(--white-color);
+            border-right: 1px solid rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+            z-index: 900;
+            padding: 1.5rem 0;
+            transition: transform 0.3s ease-in-out;
+        }
+        
+        .sidebar-category {
+            padding: 0.5rem 1.5rem;
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar-link {
+            display: block;
+            padding: 0.7rem 1.5rem;
+            padding-left: 2.5rem;
+            color: var(--text-color);
+            text-decoration: none;
+            transition: background-color 0.2s, color 0.2s;
+            font-size: 0.95rem;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar-link:hover {
+            background-color: rgba(106, 100, 255, 0.05);
+            color: var(--primary-color);
+        }
+        
+        .sidebar-link.active {
+            color: var(--primary-color);
+            background-color: rgba(106, 100, 255, 0.08);
+            border-left: 3px solid var(--primary-color);
+        }
+        
+        .sidebar-link i {
+            margin-right: 0.5rem;
+            width: 20px;
+            text-align: center;
+        }
+        
+        /* Main content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            margin-top: var(--header-height);
+            padding: 0;
+            min-height: calc(100vh - var(--header-height));
+            display: flex;
+        }
+        
+        /* Auth Form */
+        .auth-container {
+            background-color: var(--white-color);
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            max-width: 500px;
+            margin: 2rem auto;
+        }
+        
+        .auth-container h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: var(--dark-color);
+            text-align: center;
+        }
+        
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        
+        .input-group input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        
+        .input-group input:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(74, 111, 227, 0.1);
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            background-color: var(--primary-color);
+            color: var(--white-color);
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s;
+            text-align: center;
+            width: 100%;
+        }
+        
+        .btn:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(74, 111, 227, 0.2);
+        }
+        
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+        
+        .btn-danger {
+            background-color: var(--danger-color);
+        }
+        
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+        
+        /* Files Layout */
+        .files-container {
+            display: flex;
+            width: 100%;
+            height: calc(100vh - var(--header-height));
+        }
+        
+        /* File sidebar */
+        .file-sidebar {
+            width: var(--file-sidebar-width);
+            background-color: var(--white-color);
+            border-right: 1px solid rgba(0, 0, 0, 0.1);
+            height: 100%;
+            overflow-y: auto;
+            padding: 1rem 0;
+            flex-shrink: 0;
+        }
+        
+        .file-sidebar-header {
+            padding: 0.5rem 1rem;
+            font-weight: 600;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .file-sidebar-header h3 {
+            font-size: 1rem;
+            color: var(--dark-color);
+        }
+        
+        .file-count {
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 10px;
+            padding: 0.1rem 0.5rem;
+            font-size: 0.7rem;
+        }
+        
+        .file-list {
+            padding: 0 0.5rem;
+        }
+        
+        .file-item {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-bottom: 0.2rem;
+            border-left: 3px solid transparent;
+        }
+        
+        .file-item:hover {
+            background-color: rgba(74, 111, 227, 0.05);
+        }
+        
+        .file-item.active {
+            background-color: rgba(74, 111, 227, 0.1);
+            border-left: 3px solid var(--primary-color);
+        }
+        
+        .file-icon {
+            margin-right: 0.75rem;
+            color: var(--primary-color);
+            font-size: 1.2rem;
+            width: 1.5rem;
+            text-align: center;
+        }
+        
+        .file-info {
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        .file-name {
+            font-size: 0.9rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .file-date {
+            font-size: 0.75rem;
+            color: #777;
+        }
+        
+        /* File content area */
+        .file-content {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .file-content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .file-title {
+            font-size: 1.5rem;
+            color: var(--dark-color);
+        }
+        
+        .file-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+        
+        .file-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+        
+        .file-btn i {
+            font-size: 1rem;
+        }
+        
+        .file-btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .file-btn-primary:hover {
+            background-color: var(--secondary-color);
+        }
+        
+        .file-btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+        }
+        
+        .file-btn-danger:hover {
+            background-color: #c82333;
+        }
+        
+        /* File viewer */
+        .file-viewer {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f5f5f5;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+            min-height: 500px; /* Ensure minimum height for viewers */
+        }
+        
+        .file-viewer-placeholder {
+            text-align: center;
+            color: #777;
+        }
+        
+        .file-viewer-placeholder i {
+            font-size: 5rem;
+            color: #ddd;
+            margin-bottom: 1rem;
+        }
+        
+        .file-viewer-placeholder p {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .file-viewer-placeholder span {
+            font-size: 0.9rem;
+        }
+        
+        .file-preview {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        
+        /* PDF viewer */
+        .pdf-container {
+            width: 100%;
+            height: 100%;
+            min-height: 700px; /* Increased height for PDF viewer */
+            overflow: auto;
+        }
+        
+        /* Image viewer */
+        .image-container {
+            max-width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .image-container img {
+            max-width: 100%;
+            max-height: 90%;
+            object-fit: contain;
+        }
+        
+        /* Audio/Video player */
+        .media-container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .media-container audio,
+        .media-container video {
+            width: 100%;
+        }
+        
+        /* Text file viewer */
+        .text-container {
+            width: 100%;
+            height: 100%;
+            padding: 1rem;
+            background-color: white;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            overflow: auto;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+        
+        /* PowerPoint/Office viewer */
+        .office-container {
+            width: 100%;
+            height: 100%;
+            min-height: 700px; /* Increased height for Office documents */
+            overflow: auto;
+        }
+        
+        /* Not viewable file */
+        .not-viewable {
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        .not-viewable i {
+            font-size: 5rem;
+            color: #ddd;
+            margin-bottom: 1rem;
+        }
+        
+        /* User profile section */
+        .user-profile {
+            background-color: var(--white-color);
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 1.5rem;
+        }
+        
+        .user-profile h3 {
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            color: var(--dark-color);
+            border-bottom: 1px solid #eee;
+            padding-bottom: 0.5rem;
+        }
+        
+        .user-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        
+        .user-detail {
+            margin-bottom: 0.5rem;
+        }
+        
+        .user-detail-label {
+            font-weight: 500;
+            color: #777;
+            font-size: 0.85rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .user-detail-value {
+            font-size: 1rem;
+        }
+        
+        /* Search bar */
+        .search-container {
+            background-color: var(--white-color);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        
+        .search-form {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .search-input {
+            flex: 1;
+            padding: 0.6rem 1rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        
+        .search-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 0.6rem 1.2rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .search-btn:hover {
+            background-color: var(--secondary-color);
+        }
+        
+        /* Alert messages */
+        .alert {
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .alert i {
+            margin-right: 0.75rem;
+            font-size: 1.2rem;
+        }
+        
+        .alert-success {
+            background-color: rgba(40, 167, 69, 0.1);
+            border-left: 4px solid var(--success-color);
+            color: var(--success-color);
+        }
+        
+        .alert-warning {
+            background-color: rgba(255, 193, 7, 0.1);
+            border-left: 4px solid var(--warning-color);
+            color: var(--warning-color);
+        }
+        
+        .alert-danger {
+            background-color: rgba(220, 53, 69, 0.1);
+            border-left: 4px solid var(--danger-color);
+            color: var(--danger-color);
+        }
+        
+        .alert-info {
+            background-color: rgba(23, 162, 184, 0.1);
+            border-left: 4px solid var(--info-color);
+            color: var(--info-color);
+        }
+        
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        
+        .modal-container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            width: 90%;
+            max-width: 500px;
+            overflow: hidden;
+        }
+        
+        .modal-header {
+            padding: 1.25rem;
+            background-color: var(--primary-color);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-header h3 {
+            font-size: 1.3rem;
+            margin: 0;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        .modal-body {
+            padding: 1.5rem;
+        }
+        
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+        }
+        
+        /* Loading spinner */
+        .spinner-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Responsive styles */
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+                box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+                z-index: 1001;
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .menu-toggle {
+                display: block;
+            }
+            
+            .files-container {
+                flex-direction: column;
+            }
+            
+            .file-sidebar {
+                width: 100%;
+                height: auto;
+                max-height: 30vh;
+                border-right: none;
+                border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            }
+            
+            .user-details {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .header {
+                padding: 0 1rem;
+            }
+            
+            .nav-item:not(.swagger-btn) {
+                display: none;
+            }
+            
+            .file-content-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            
+            .file-actions {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
+        
+        /* Dark overlay when sidebar is active on mobile */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        
+        @media (max-width: 992px) {
+            .sidebar-overlay.active {
+                display: block;
+            }
+        }
+
+        /* File metadata styling */
+        .file-metadata {
+            background-color: var(--white-color);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        
+        .metadata-item {
+            display: flex;
+            margin-bottom: 0.5rem;
+            border-bottom: 1px solid #f0f0f0;
+            padding-bottom: 0.5rem;
+        }
+        
+        .metadata-label {
+            font-weight: 600;
+            width: 150px;
+            color: #666;
+        }
+        
+        .metadata-value {
+            flex: 1;
+        }
+
+        /* Logout button */
+        .logout-btn {
+            margin-top: 1rem;
+            background-color: #f8f9fa;
+            color: #666;
+            border: 1px solid #ddd;
+        }
+        
+        .logout-btn:hover {
+            background-color: #e2e6ea;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <!-- RENDER THE HEADER TEMPLATE-->
+    {% include 'header.html' %}
+    
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    
+    <!-- Main sidebar -->
+    <!-- RENDER THE SIDEBAR TEMPLATE-->
+    <aside class="sidebar">
+        {% include 'sidebar.html' %}
+    </aside>
+
+    <main class="main-content">
+        <!-- Authentication Form Container -->
+        <div id="auth-container" class="auth-container">
+            <h2>File Management Portal</h2>
+            <div id="authAlert" style="display: none;" class="alert"></div>
+            
+            <div class="input-group">
+                <label for="apiKey">Enter your API Key</label>
+                <input type="password" id="apiKey" placeholder="Your API Key" autocomplete="off">
+            </div>
+            
+            <button id="loginBtn" class="btn">Authenticate</button>
+        </div>
+        
+        <!-- Files Container (visible after authentication) -->
+        <div id="files-container" class="files-container" style="display: none;">
+            <!-- File Sidebar -->
+            <div class="file-sidebar">
+                <!-- Search Container -->
+                <div class="search-container">
+                    <form id="searchForm" class="search-form">
+                        <input type="text" id="searchInput" class="search-input" placeholder="Search by file name">
+                        <button type="submit" class="search-btn">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </form>
+                </div>
+                
+                <!-- User Profile -->
+                <div class="user-profile">
+                    <h3>User Profile</h3>
+                    <div class="user-details">
+                        <div class="user-detail">
+                            <div class="user-detail-label">Name</div>
+                            <div id="userName" class="user-detail-value">-</div>
+                        </div>
+                        <div class="user-detail">
+                            <div class="user-detail-label">Email</div>
+                            <div id="userEmail" class="user-detail-value">-</div>
+                        </div>
+                        <div class="user-detail">
+                            <div class="user-detail-label">Department</div>
+                            <div id="userDepartment" class="user-detail-value">-</div>
+                        </div>
+                        <div class="user-detail">
+                            <div class="user-detail-label">Company</div>
+                            <div id="userCompany" class="user-detail-value">-</div>
+                        </div>
+                        <div class="user-detail">
+                            <div class="user-detail-label">Files</div>
+                            <div id="filesUploaded" class="user-detail-value">0</div>
+                        </div>
+                    </div>
+                    <button id="logoutBtn" class="btn logout-btn">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+                
+                <!-- Uploaded Files Section -->
+                <div class="file-sidebar-header">
+                    <h3>Your Files</h3>
+                    <span id="uploadedFilesCount" class="file-count">0</span>
+                </div>
+                <div id="uploadedFilesList" class="file-list">
+                    <!-- Files will be added here dynamically -->
+                    <div class="file-item-placeholder">No files found</div>
+                </div>
+            </div>
+            
+            <!-- File Content -->
+            <div class="file-content">
+                <div id="fileAlert" style="display: none;" class="alert"></div>
+                
+                <div id="fileContentPlaceholder" class="file-viewer-placeholder">
+                    <i class="fas fa-file-alt"></i>
+                    <p>No file selected</p>
+                    <span>Select a file from the sidebar to view its contents</span>
+                </div>
+                
+                <div id="fileContentView" style="display: none;">
+                    <div class="file-content-header">
+                        <h2 id="fileTitle" class="file-title">File Name</h2>
+                        <div class="file-actions">
+                            <button id="downloadBtn" class="file-btn file-btn-primary">
+                                <i class="fas fa-download"></i> Download
+                            </button>
+                            <button id="deleteBtn" class="file-btn file-btn-danger">
+                                <i class="fas fa-trash-alt"></i> Delete
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- File Metadata Section -->
+                    <div id="fileMetadata" class="file-metadata">
+                        <!-- Metadata will be added here dynamically -->
+                    </div>
+                    
+                    <div id="fileViewer" class="file-viewer">
+                        <!-- Different file viewers will be rendered here based on file type -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal-overlay">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3>Confirm Delete</h3>
+                <button class="modal-close" id="closeModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this file?</p>
+                <p id="deleteFileName" style="font-weight: 600; margin-top: 0.5rem;"></p>
+                <p style="color: #dc3545; margin-top: 1rem;">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button id="cancelDelete" class="file-btn btn-secondary">Cancel</button>
+                <button id="confirmDelete" class="file-btn file-btn-danger">Delete</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Loading Spinner -->
+    <div id="loadingSpinner" class="spinner-overlay">
+        <div class="spinner"></div>
+    </div>
+    
+    <!-- Footer -->
+    {% include 'footer.html' %}
+    
+    <script>
+        // Global variables
+        let currentUser = null;
+        let activeToken = null;
+        let selectedFile = null;
+        let uploadedFiles = [];
+        let fileIds = []; // Temporary list to store file IDs
+        
+        // DOM elements
+        const authContainer = document.getElementById('auth-container');
+        const filesContainer = document.getElementById('files-container');
+        const apiKeyInput = document.getElementById('apiKey');
+        const loginBtn = document.getElementById('loginBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const authAlert = document.getElementById('authAlert');
+        const fileAlert = document.getElementById('fileAlert');
+        const uploadedFilesList = document.getElementById('uploadedFilesList');
+        const uploadedFilesCount = document.getElementById('uploadedFilesCount');
+        const fileContentPlaceholder = document.getElementById('fileContentPlaceholder');
+        const fileContentView = document.getElementById('fileContentView');
+        const fileTitle = document.getElementById('fileTitle');
+        const fileMetadata = document.getElementById('fileMetadata');
+        const fileViewer = document.getElementById('fileViewer');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const deleteBtn = document.getElementById('deleteBtn');
+        const deleteModal = document.getElementById('deleteModal');
+        const closeModal = document.getElementById('closeModal');
+        const cancelDelete = document.getElementById('cancelDelete');
+        const confirmDelete = document.getElementById('confirmDelete');
+        const deleteFileName = document.getElementById('deleteFileName');
+        const searchForm = document.getElementById('searchForm');
+        const searchInput = document.getElementById('searchInput');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        
+        // User profile elements
+        const userName = document.getElementById('userName');
+        const userEmail = document.getElementById('userEmail');
+        const userDepartment = document.getElementById('userDepartment');
+        const userCompany = document.getElementById('userCompany');
+        const filesUploaded = document.getElementById('filesUploaded');
+        
+        // File type icons mapping
+        const fileIcons = {
+            // Documents
+            'pdf': 'fa-file-pdf',
+            'doc': 'fa-file-word',
+            'docx': 'fa-file-word',
+            'xls': 'fa-file-excel',
+            'xlsx': 'fa-file-excel',
+            'ppt': 'fa-file-powerpoint',
+            'pptx': 'fa-file-powerpoint',
+            'txt': 'fa-file-alt',
+            // Images
+            'jpg': 'fa-file-image',
+            'jpeg': 'fa-file-image',
+            'png': 'fa-file-image',
+            'gif': 'fa-file-image',
+            'bmp': 'fa-file-image',
+            'svg': 'fa-file-image',
+            // Audio
+            'mp3': 'fa-file-audio',
+            'wav': 'fa-file-audio',
+            'ogg': 'fa-file-audio',
+            'm4a': 'fa-file-audio',
+            'flac': 'fa-file-audio',
+            // Video
+            'mp4': 'fa-file-video',
+            'avi': 'fa-file-video',
+            'mov': 'fa-file-video',
+            'wmv': 'fa-file-video',
+            // Archives
+            'zip': 'fa-file-archive',
+            'rar': 'fa-file-archive',
+            '7z': 'fa-file-archive',
+            // Code
+            'html': 'fa-file-code',
+            'css': 'fa-file-code',
+            'js': 'fa-file-code',
+            'json': 'fa-file-code',
+            'py': 'fa-file-code',
+            'java': 'fa-file-code',
+            'php': 'fa-file-code',
+            // Default
+            'default': 'fa-file'
+        };
+        
+        // File viewers by MIME type
+        const fileViewers = {
+            // Images
+            'image/jpeg': showImageViewer,
+            'image/png': showImageViewer,
+            'image/gif': showImageViewer,
+            'image/bmp': showImageViewer,
+            'image/svg+xml': showImageViewer,
+            // PDFs
+            'application/pdf': showPdfViewer,
+            // Office Documents
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation': showOfficeViewer,
+            'application/vnd.ms-powerpoint': showOfficeViewer,
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document': showOfficeViewer,
+            'application/msword': showOfficeViewer,
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': showOfficeViewer,
+            'application/vnd.ms-excel': showOfficeViewer,
+            // Plain text
+            'text/plain': showTextViewer,
+            // HTML
+            'text/html': showTextViewer,
+            // JSON
+            'application/json': showTextViewer,
+            // XML
+            'application/xml': showTextViewer,
+            'text/xml': showTextViewer,
+            // CSS
+            'text/css': showTextViewer,
+            // JavaScript
+            'application/javascript': showTextViewer,
+            'text/javascript': showTextViewer,
+            // Audio
+            'audio/mpeg': showAudioViewer,
+            'audio/wav': showAudioViewer,
+            'audio/ogg': showAudioViewer,
+            'audio/mp4': showAudioViewer,
+            // Video
+            'video/mp4': showVideoViewer,
+            'video/quicktime': showVideoViewer,
+            'video/x-msvideo': showVideoViewer,
+            'video/x-ms-wmv': showVideoViewer,
+            // Default
+            'default': showNotViewable
+        };
+        
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Toggle sidebar on mobile
+            const menuToggle = document.getElementById('menu-toggle');
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            
+            menuToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('active');
+                overlay.classList.toggle('active');
+            });
+            
+            overlay.addEventListener('click', function() {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            });
+            
+            // Auth form submission
+            loginBtn.addEventListener('click', handleLogin);
+            apiKeyInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    handleLogin();
+                }
+            });
+            
+            // Logout button
+            logoutBtn.addEventListener('click', handleLogout);
+            
+            // Search form submission
+            searchForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const searchText = searchInput.value.trim().toLowerCase();
+                if (searchText) {
+                    filterFiles(searchText);
+                } else {
+                    // If search is cleared, show all files
+                    updateFilesList(uploadedFilesList, uploadedFiles, uploadedFilesCount);
+                }
+            });
+            
+            // File deletion modal
+            deleteBtn.addEventListener('click', () => {
+                if (selectedFile) {
+                    deleteFileName.textContent = selectedFile.file_name;
+                    deleteModal.style.display = 'flex';
+                }
+            });
+            
+            closeModal.addEventListener('click', () => {
+                deleteModal.style.display = 'none';
+            });
+            
+            cancelDelete.addEventListener('click', () => {
+                deleteModal.style.display = 'none';
+            });
+            
+            confirmDelete.addEventListener('click', () => {
+                deleteModal.style.display = 'none';
+                deleteFile(selectedFile.file_id);
+            });
+            
+            downloadBtn.addEventListener('click', () => {
+                if (selectedFile) {
+                    downloadFile(selectedFile.file_id);
+                }
+            });
+        });
+        
+        // Handle login with API key
+        async function handleLogin() {
+            const apiKey = apiKeyInput.value.trim();
+            
+            if (!apiKey) {
+                showAlert(authAlert, 'Please enter your API key', 'alert-warning');
+                return;
+            }
+            
+            showLoading(true);
+            
+            try {
+                // Get user details from the database using API key
+                const userDetails = await getUserDetails(apiKey);
+                if (!userDetails) {
+                    throw new Error('Failed to get user information');
+                }
+                
+                // Get token using API key
+                const tokenResponse = await getToken(apiKey);
+                if (!tokenResponse || !tokenResponse.access_token) {
+                    throw new Error('Failed to get authentication token');
+                }
+                
+                activeToken = tokenResponse.access_token;
+                currentUser = userDetails;
+                console.log('User authenticated:', currentUser);
+                
+                // Show authenticated UI
+                showAuthenticatedUI();
+                
+                // Load user files
+                await loadUserFiles();
+                
+            } catch (error) {
+                console.error('Authentication error:', error);
+                showAlert(authAlert, error.message || 'Authentication failed. Please check your API key and try again.', 'alert-danger');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        // Handle logout
+        function handleLogout() {
+            // Reset all state
+            currentUser = null;
+            activeToken = null;
+            selectedFile = null;
+            uploadedFiles = [];
+            fileIds = [];
+            
+            // Clear form inputs
+            apiKeyInput.value = '';
+            
+            // Hide files container, show auth container
+            filesContainer.style.display = 'none';
+            authContainer.style.display = 'block';
+            
+            // Hide any alerts
+            authAlert.style.display = 'none';
+            fileAlert.style.display = 'none';
+            
+            console.log('Logged out successfully');
+        }
+        
+        // Get token with API key
+        async function getToken(apiKey) {
+            try {
+                console.log('Requesting token with API key...');
+                
+                const response = await fetch('/token', {
+                    method: 'GET',
+                    headers: {
+                        'API-Key': apiKey
+                    }
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Token request failed:', errorText);
+                    throw new Error('Failed to get token: ' + (response.statusText || 'Unknown error'));
+                }
+                
+                const data = await response.json();
+                console.log('Token received successfully');
+                return data;
+            } catch (error) {
+                console.error('Token acquisition error:', error);
+                throw error;
+            }
+        }
+        
+        // Get user details using API key
+        async function getUserDetails(apiKey) {
+            try {
+                console.log('Fetching user details...');
+                
+                // Using the balance endpoint to get user details
+                const response = await fetch('/usage/balance', {
+                    method: 'GET',
+                    headers: {
+                        'API-Key': apiKey
+                    }
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('User details request failed:', errorText);
+                    throw new Error('Failed to get user details: ' + (response.statusText || 'Unknown error'));
+                }
+                
+                // Parse user data from response
+                const data = await response.json();
+                
+                // Extract user information
+                const userInfo = {
+                    id: data.user_id,
+                    user_name: data.user_name || 'User',
+                    user_email: data.user_email || 'user@example.com',
+                    common_name: data.common_name || data.user_name || 'User',
+                    department: data.department || 'Not specified',
+                    company: data.company || 'TIH',
+                    scope: data.scope || 1,
+                    created_at: data.created_at || new Date().toISOString()
+                };
+                
+                console.log('User details retrieved', userInfo);
+                return userInfo;
+            } catch (error) {
+                console.error('Error fetching user details:', error);
+                throw error;
+            }
+        }
+        
+        // Load user files
+        async function loadUserFiles() {
+            try {
+                console.log('Loading user files...');
+                
+                if (!currentUser || !currentUser.id || !activeToken) {
+                    throw new Error('User information or token missing');
+                }
+                
+                // Call the list files endpoint
+                const files = await listUserFiles();
+                
+                if (files && files.length > 0) {
+                    uploadedFiles = files;
+                    
+                    // Store file IDs in temporary list
+                    fileIds = files.map(file => file.file_id);
+                    
+                    updateFilesList(uploadedFilesList, uploadedFiles, uploadedFilesCount);
+                    updateUserStats();
+                    console.log('Files loaded successfully:', files.length);
+                } else {
+                    console.log('No files found for user');
+                    uploadedFiles = [];
+                    fileIds = [];
+                    updateFilesList(uploadedFilesList, [], uploadedFilesCount);
+                    updateUserStats();
+                }
+                
+            } catch (error) {
+                console.error('Error loading files:', error);
+                showAlert(fileAlert, 'Error loading files: ' + error.message, 'alert-danger');
+                
+                // Reset UI
+                uploadedFiles = [];
+                fileIds = [];
+                updateFilesList(uploadedFilesList, [], uploadedFilesCount);
+                updateUserStats();
+            }
+        }
+        
+        // List user files using API
+        async function listUserFiles() {
+            try {
+                console.log('Fetching user files...');
+                
+                // First try with X-Token header
+                const response = await fetch('/file/list', {
+                    method: 'GET',
+                    headers: {
+                        'X-Token': activeToken
+                    }
+                });
+                
+                if (!response.ok) {
+                    // If that fails, try with API-Key header
+                    if (response.status === 401) {
+                        const apiKeyResponse = await fetch('/file/list', {
+                            method: 'GET',
+                            headers: {
+                                'API-Key': apiKeyInput.value.trim()
+                            }
+                        });
+                        
+                        if (!apiKeyResponse.ok) {
+                            throw new Error('Failed to fetch files: ' + apiKeyResponse.statusText);
+                        }
+                        
+                        const data = await apiKeyResponse.json();
+                        return data.files || [];
+                    } else {
+                        throw new Error('Failed to fetch files: ' + response.statusText);
+                    }
+                }
+                
+                const data = await response.json();
+                return data.files || [];
+            } catch (error) {
+                console.error('Error listing files:', error);
+                throw error;
+            }
+        }
+        
+        // Get file details using file_id
+        async function getFileDetails(fileId) {
+            try {
+                console.log('Fetching file details for:', fileId);
+                
+                const response = await fetch(`/file/url?file_id=${fileId}`, {
+                    method: 'GET',
+                    headers: {
+                        'X-Token': activeToken
+                    }
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('File details request failed:', errorText);
+                    throw new Error('Failed to get file details: ' + (response.statusText || 'Unknown error'));
+                }
+                
+                const data = await response.json();
+                console.log('File details retrieved:', data);
+                return data;
+                
+            } catch (error) {
+                console.error('Error fetching file details:', error);
+                throw error;
+            }
+        }
+        
+        // Get uploader info (user name) based on user_id from file
+        async function getUploaderInfo(userId) {
+            // If it's the current user, we already have the info
+            if (userId === currentUser.id) {
+                return {
+                    name: currentUser.common_name || currentUser.user_name,
+                    email: currentUser.user_email
+                };
+            }
+            
+            try {
+                // In a real implementation, you would have an API endpoint to get user details by ID
+                // For now, return a placeholder
+                return {
+                    name: "Unknown User",
+                    email: "unknown@example.com"
+                };
+            } catch (error) {
+                console.error('Error fetching uploader info:', error);
+                return {
+                    name: "Unknown User",
+                    email: "unknown@example.com"
+                };
+            }
+        }
+        
+        // Delete file
+        async function deleteFile(fileId) {
+            showLoading(true);
+            
+            try {
+                console.log('Deleting file:', fileId);
+                
+                const response = await fetch(`/file?file_id=${fileId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-Token': activeToken
+                    }
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('File deletion failed:', errorText);
+                    throw new Error('Failed to delete file: ' + (response.statusText || 'Unknown error'));
+                }
+                
+                const data = await response.json();
+                console.log('File deleted successfully:', data);
+                
+                // Remove the file from our lists
+                uploadedFiles = uploadedFiles.filter(file => file.file_id !== fileId);
+                fileIds = fileIds.filter(id => id !== fileId);
+                
+                // Update the UI
+                updateFilesList(uploadedFilesList, uploadedFiles, uploadedFilesCount);
+                updateUserStats();
+                
+                // Show success message
+                showAlert(fileAlert, 'File deleted successfully', 'alert-success');
+                
+                // Reset the view if the deleted file was selected
+                if (selectedFile && selectedFile.file_id === fileId) {
+                    selectedFile = null;
+                    fileContentPlaceholder.style.display = 'flex';
+                    fileContentView.style.display = 'none';
+                }
+                
+            } catch (error) {
+                console.error('File deletion error:', error);
+                showAlert(fileAlert, error.message || 'Error deleting file. Please try again.', 'alert-danger');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        // Download file
+        async function downloadFile(fileId) {
+            try {
+                console.log('Downloading file:', fileId);
+                
+                // Get file details including the URL
+                const fileDetails = await getFileDetails(fileId);
+                
+                if (!fileDetails || !fileDetails.file_url) {
+                    throw new Error('Failed to get file download URL');
+                }
+                
+                // Create a temporary link and trigger download
+                const link = document.createElement('a');
+                link.href = fileDetails.file_url;
+                link.download = fileDetails.file_name;
+                link.target = '_blank';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                console.log('File download initiated');
+                
+            } catch (error) {
+                console.error('File download error:', error);
+                showAlert(fileAlert, 'Error downloading file: ' + error.message, 'alert-danger');
+            }
+        }
+        
+        // Filter files based on search text
+        function filterFiles(searchText) {
+            const filteredFiles = uploadedFiles.filter(file => 
+                file.file_name.toLowerCase().includes(searchText)
+            );
+            
+            updateFilesList(uploadedFilesList, filteredFiles, uploadedFilesCount);
+        }
+        
+        // Update file list in the sidebar
+        function updateFilesList(container, files, countElement) {
+            container.innerHTML = '';
+            
+            if (files.length === 0) {
+                const placeholder = document.createElement('div');
+                placeholder.className = 'file-item-placeholder';
+                placeholder.textContent = 'No files found';
+                container.appendChild(placeholder);
+                countElement.textContent = '0';
+                return;
+            }
+            
+            // Sort files by date (newest first)
+            files.sort((a, b) => new Date(b.upload_date) - new Date(a.upload_date));
+            
+            files.forEach(file => {
+                const fileItem = createFileItem(file);
+                container.appendChild(fileItem);
+            });
+            
+            countElement.textContent = files.length;
+        }
+        
+        // Create a file item for the sidebar
+        function createFileItem(file) {
+            const fileItem = document.createElement('div');
+            fileItem.className = 'file-item';
+            fileItem.dataset.fileId = file.file_id;
+            
+            const fileExtension = getFileExtension(file.file_name);
+            const iconClass = fileIcons[fileExtension] || fileIcons['default'];
+            
+            fileItem.innerHTML = `
+                <div class="file-icon">
+                    <i class="fas ${iconClass}"></i>
+                </div>
+                <div class="file-info">
+                    <div class="file-name" title="${file.file_name}">${file.file_name}</div>
+                    <div class="file-date">${formatDate(file.upload_date)}</div>
+                </div>
+            `;
+            
+            fileItem.addEventListener('click', () => {
+                // Remove active class from all file items
+                document.querySelectorAll('.file-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                
+                // Add active class to clicked item
+                fileItem.classList.add('active');
+                
+                // Show file content
+                displayFile(file);
+            });
+            
+            return fileItem;
+        }
+        
+        // Display file content in the main container
+        async function displayFile(file) {
+            try {
+                selectedFile = file;
+                
+                // Show loading spinner
+                showLoading(true);
+                
+                // Update file title
+                fileTitle.textContent = file.file_name;
+                
+                // Show file content view, hide placeholder
+                fileContentPlaceholder.style.display = 'none';
+                fileContentView.style.display = 'block';
+                
+                // Get detailed file information
+                const fileDetails = await getFileDetails(file.file_id);
+                
+                // Update selected file with URL info
+                selectedFile = { ...selectedFile, ...fileDetails };
+                
+                // Get uploader information
+                const uploaderInfo = await getUploaderInfo(file.user_id);
+                
+                // Display file metadata with uploader info
+                displayFileMetadata(selectedFile, uploaderInfo);
+                
+                // Determine and show appropriate viewer based on file type
+                const contentType = file.content_type;
+                const viewer = fileViewers[contentType] || fileViewers['default'];
+                viewer(selectedFile);
+                
+            } catch (error) {
+                console.error('Error displaying file:', error);
+                showAlert(fileAlert, 'Error loading file: ' + error.message, 'alert-danger');
+                
+                // Show not viewable as fallback
+                fileViewers['default'](file);
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        // Display file metadata
+        function displayFileMetadata(file, uploaderInfo) {
+            fileMetadata.innerHTML = '';
+            
+            // Create metadata items
+            const metadata = [
+                { label: 'File Name', value: file.file_name },
+                { label: 'File Type', value: file.content_type },
+                { label: 'File Size', value: formatFileSize(file.file_size) },
+                { label: 'Upload Date', value: formatDate(file.upload_date) },
+                { label: 'File ID', value: file.file_id },
+                { label: 'Uploader ID', value: file.user_id },
+                { label: 'Uploader Name', value: uploaderInfo ? uploaderInfo.name : 'Unknown' }
+            ];
+            
+            metadata.forEach(item => {
+                if (item.value) {
+                    const metadataItem = document.createElement('div');
+                    metadataItem.className = 'metadata-item';
+                    metadataItem.innerHTML = `
+                        <div class="metadata-label">${item.label}:</div>
+                        <div class="metadata-value">${item.value}</div>
+                    `;
+                    fileMetadata.appendChild(metadataItem);
+                }
+            });
+        }
+        
+        // Image viewer
+        function showImageViewer(file) {
+            fileViewer.innerHTML = `
+                <div class="image-container">
+                    <img src="${file.file_url}" alt="${file.file_name}" class="file-preview">
+                </div>
+            `;
+        }
+        
+        // PDF viewer
+        function showPdfViewer(file) {
+            fileViewer.innerHTML = `
+                <div class="pdf-container">
+                    <iframe src="${file.file_url}" width="100%" height="100%" frameborder="0"></iframe>
+                </div>
+            `;
+        }
+        
+        // Office file viewer (PowerPoint, Word, Excel)
+        function showOfficeViewer(file) {
+            fileViewer.innerHTML = `
+                <div class="office-container">
+                    <iframe src="https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(file.file_url)}" 
+                            width="100%" height="100%" frameborder="0"></iframe>
+                </div>
+            `;
+        }
+        
+        // Text file viewer
+        function showTextViewer(file) {
+            // Create container
+            fileViewer.innerHTML = `
+                <div class="text-container" id="textContent">Loading text content...</div>
+            `;
+            
+            // Fetch text content
+            fetch(file.file_url)
+                .then(response => response.text())
+                .then(text => {
+                    document.getElementById('textContent').textContent = text;
+                })
+                .catch(error => {
+                    document.getElementById('textContent').textContent = 'Error loading text content: ' + error.message;
+                });
+        }
+        
+        // Audio viewer
+        function showAudioViewer(file) {
+            fileViewer.innerHTML = `
+                <div class="media-container">
+                    <audio controls>
+                        <source src="${file.file_url}" type="${file.content_type}">
+                        Your browser does not support the audio element.
+                    </audio>
+                </div>
+            `;
+        }
+        
+        // Video viewer
+        function showVideoViewer(file) {
+            fileViewer.innerHTML = `
+                <div class="media-container">
+                    <video controls>
+                        <source src="${file.file_url}" type="${file.content_type}">
+                        Your browser does not support the video element.
+                    </video>
+                </div>
+            `;
+        }
+        
+        // Not viewable file fallback
+        function showNotViewable(file) {
+            const fileExtension = getFileExtension(file.file_name);
+            const iconClass = fileIcons[fileExtension] || fileIcons['default'];
+            
+            fileViewer.innerHTML = `
+                <div class="not-viewable">
+                    <i class="fas ${iconClass}"></i>
+                    <p>This file type cannot be previewed</p>
+                    <p>You can still download the file using the button above</p>
+                </div>
+            `;
+        }
+        
+        // Show authenticated UI
+        function showAuthenticatedUI() {
+            // Hide auth container, show files container
+            authContainer.style.display = 'none';
+            filesContainer.style.display = 'flex';
+            
+            // Update user profile information
+            updateUserProfile();
+        }
+        
+        // Update user profile information
+        function updateUserProfile() {
+            if (!currentUser) return;
+            
+            // Display name (use common_name if available, otherwise user_name)
+            userName.textContent = currentUser.common_name || currentUser.user_name || 'User';
+            
+            // Email
+            userEmail.textContent = currentUser.user_email || 'No email provided';
+            
+            // Department
+            userDepartment.textContent = currentUser.department || 'Not specified';
+            
+            // Company
+            userCompany.textContent = currentUser.company || 'Not specified';
+        }
+        
+        // Update user statistics
+        function updateUserStats() {
+            filesUploaded.textContent = uploadedFiles.length;
+        }
+        
+        // Helper functions
+        
+        // Show loading spinner
+        function showLoading(show) {
+            loadingSpinner.style.display = show ? 'flex' : 'none';
+        }
+        
+        // Show alert message
+        function showAlert(element, message, className) {
+            element.className = `alert ${className}`;
+            
+            // Add appropriate icon based on alert type
+            let icon = 'fa-info-circle';
+            if (className === 'alert-success') icon = 'fa-check-circle';
+            if (className === 'alert-warning') icon = 'fa-exclamation-triangle';
+            if (className === 'alert-danger') icon = 'fa-exclamation-circle';
+            
+            element.innerHTML = `<i class="fas ${icon}"></i> ${message}`;
+            element.style.display = 'flex';
+            
+            // Auto-hide success alerts after 5 seconds
+            if (className === 'alert-success') {
+                setTimeout(() => {
+                    element.style.display = 'none';
+                }, 5000);
+            }
+        }
+        
+        // Get file extension from filename
+        function getFileExtension(filename) {
+            return filename.split('.').pop().toLowerCase();
+        }
+        
+        // Format date for display
+        function formatDate(dateString) {
+            if (!dateString) return 'Unknown';
+            
+            const date = new Date(dateString);
+            const now = new Date();
+            const diff = (now - date) / 1000; // Difference in seconds
+            
+            if (diff < 60) return 'Just now';
+            if (diff < 3600) return `${Math.floor(diff / 60)} minutes ago`;
+            if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
+            if (diff < 604800) return `${Math.floor(diff / 86400)} days ago`;
+            
+            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        }
+        
+        // Format file size
+        function formatFileSize(bytes) {
+            if (!bytes || bytes === 0) return 'Unknown';
+            
+            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(1024));
+            return `${(bytes / Math.pow(1024, i)).toFixed(2)} ${sizes[i]}`;
+        }
+    </script>
+</body>
+</html>

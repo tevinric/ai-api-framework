@@ -1,0 +1,1404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Token Services - AI API Platform</title>
+    <link rel="icon" href="/static/images/Telesure-logo.png" type="image/png">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: rgb(1, 96, 136);
+            --secondary-color: rgb(0, 10, 120);
+            --dark-color: rgb(0, 8, 66);
+            --light-color: #f5f6fa;
+            --text-color: #333;
+            --white-color: #ffffff;
+            --accent-color: #00d4ff;
+            --accent-gradient: linear-gradient(90deg, #00d4ff 0%, #6c63ff 100%);
+            --magenta-dark: #3B0138; /* Updated dark magenta color */
+            --magenta-gradient: linear-gradient(90deg, #3B0138 0%, #4a6fe3 100%);
+            --sidebar-width: 280px;
+            --header-height: 60px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--light-color);
+            color: var(--text-color);
+            position: relative;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%234a6fe3' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        .header {
+            background-color: #03001A;
+            color: var(--white-color);
+            padding: 0 2rem;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: var(--header-height);
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo i {
+            font-size: 1.8rem;
+            margin-right: 0.5rem;
+            color: var(--accent-color);
+        }
+        
+        .logo h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+        
+        .nav {
+            display: flex;
+            align-items: center;
+        }
+        
+        .nav-item {
+            margin-left: 1.5rem;
+            color: var(--white-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+            display: flex;
+            align-items: center;
+        }
+        
+        .nav-item:hover {
+            color: var(--accent-color);
+        }
+        
+        .nav-item i {
+            margin-right: 0.5rem;
+        }
+        
+        .swagger-btn {
+            background-color: var(--accent-color);
+            color: var(--dark-color);
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-weight: 600;
+            transition: all 0.3s;
+            box-shadow: 0 4px 10px rgba(0, 212, 255, 0.3);
+        }
+        
+        .swagger-btn:hover {
+            background-color: #00b8e6;
+            transform: translateY(-2px);
+            color: var(--dark-color);
+            box-shadow: 0 6px 15px rgba(0, 212, 255, 0.4);
+        }
+        
+        /* Mobile menu toggle */
+        .menu-toggle {
+            display: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            top: var(--header-height);
+            left: 0;
+            height: calc(100vh - var(--header-height));
+            width: var(--sidebar-width);
+            background-color: var(--white-color);
+            border-right: 1px solid rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+            z-index: 900;
+            padding: 1.5rem 0;
+            transition: transform 0.3s ease-in-out;
+        }
+        
+        .sidebar-category {
+            padding: 0.5rem 1.5rem;
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar-link {
+            display: block;
+            padding: 0.7rem 1.5rem;
+            padding-left: 2.5rem;
+            color: var(--text-color);
+            text-decoration: none;
+            transition: background-color 0.2s, color 0.2s;
+            font-size: 0.95rem;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar-link:hover {
+            background-color: rgba(106, 100, 255, 0.05);
+            color: var(--primary-color);
+        }
+        
+        .sidebar-link.active {
+            color: var(--primary-color);
+            background-color: rgba(106, 100, 255, 0.08);
+            border-left: 3px solid var(--primary-color);
+        }
+        
+        .sidebar-link i {
+            margin-right: 0.5rem;
+            width: 20px;
+            text-align: center;
+        }
+        
+        .sidebar-submenu {
+            margin-left: 1rem;
+        }
+        
+        .sidebar-submenu .sidebar-link {
+            padding-left: 3rem;
+            font-size: 0.9rem;
+        }
+        
+        /* Main content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            margin-top: var(--header-height);
+            padding: 0;
+            min-height: calc(100vh - var(--header-height));
+        }
+        
+        /* Hero */
+        .hero {
+            background: url('/static/GAIA _splash3.gif') center/cover no-repeat;
+            color: var(--white-color);
+            padding: 5rem 3rem;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            height: 400px; /* Fixed height for consistency */
+            display: flex;
+            align-items: center;
+        }
+        
+        .hero::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background: linear-gradient(to right, rgba(1, 0, 15, 0.85) 0%, rgba(1, 0, 15, 0.5) 40%, transparent 80%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        @keyframes zoomDots {
+            0% {
+                transform: scale(1.2);
+                opacity: 0.15;
+            }
+            50% {
+                transform: scale(1.5);
+                opacity: 0.2;
+            }
+            100% {
+                transform: scale(1.2);
+                opacity: 0.15;
+            }
+        }
+        
+        .hero-container {
+            max-width: 1440px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+            width: 100%;
+        }
+        
+        .hero h2 {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+            max-width: 840px;
+            background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: fadeInUp 0.8s ease-out;
+        }
+        
+        .hero p {
+            font-size: 1.2rem;
+            max-width: 700px;
+            margin-bottom: 2rem;
+            line-height: 1.7;
+            color: rgba(255, 255, 255, 0.9);
+            animation: fadeInUp 1s ease-out;
+        }
+        
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            animation: fadeInUp 1.2s ease-out;
+        }
+        
+        .cta-btn {
+            display: inline-flex;
+            align-items: center;
+            background-color: var(--accent-color);
+            color: var(--dark-color);
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
+        }
+        
+        .cta-btn:hover {
+            background-color: #00b8e6;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 212, 255, 0.4);
+        }
+        
+        .cta-btn-secondary {
+            background-color: transparent;
+            color: var(--white-color);
+            border: 2px solid var(--white-color);
+            box-shadow: none;
+        }
+        
+        .cta-btn-secondary:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--white-color);
+            box-shadow: 0 4px 15px rgba(255, 255, 255, 0.2);
+        }
+        
+        .cta-btn i {
+            margin-right: 0.5rem;
+        }
+        
+        /* Features highlights */
+        .features-highlight {
+            padding: 2rem 3rem;
+            background-color: var(--white-color);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .features-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .highlight-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .highlight-icon {
+            font-size: 1.5rem;
+            width: 3.5rem;
+            height: 3.5rem;
+            border-radius: 50%;
+            background: var(--accent-gradient);
+            color: var(--white-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .highlight-text h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.2rem;
+            color: var(--dark-color);
+        }
+        
+        .highlight-text p {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        /* Content sections */
+        .content-section {
+            padding: 5rem 3rem;
+            position: relative;
+        }
+        
+        .content-section.alt-bg {
+            background-color: #f8faff;
+        }
+        
+        .section-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        .section-header h2 {
+            font-size: 2.5rem;
+            color: var(--dark-color);
+            margin-bottom: 1rem;
+            position: relative;
+            display: inline-block;
+            background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .section-header h2::after {
+            content: "";
+            position: absolute;
+            left: 50%;
+            bottom: -10px;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: var(--accent-gradient);
+            border-radius: 2px;
+        }
+        
+        .section-header p {
+            color: #666;
+            font-size: 1.1rem;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        
+        /* API Endpoints Cards */
+        .endpoints-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2rem;
+            margin-bottom: 4rem;
+        }
+        
+        .endpoint-card {
+            background-color: var(--white-color);
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            z-index: 1;
+        }
+        
+        .endpoint-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to right, rgba(138, 43, 226, 0.05), rgba(74, 111, 227, 0.05));
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .endpoint-card::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                linear-gradient(90deg, var(--magenta-dark) 50%, transparent 50%) 0 0,
+                linear-gradient(180deg, var(--magenta-dark) 50%, transparent 50%) 100% 0,
+                linear-gradient(270deg, var(--magenta-dark) 50%, transparent 50%) 100% 100%,
+                linear-gradient(0deg, var(--magenta-dark) 50%, transparent 50%) 0 100%;
+            background-repeat: no-repeat;
+            background-size: 0% 2px, 2px 0%, 0% 2px, 2px 0%;
+            border-radius: 8px;
+            animation: none;
+            transition: all 0.3s ease;
+        }
+        
+        .endpoint-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(59, 1, 56, 0.15);
+        }
+        
+        .endpoint-card:hover::before {
+            opacity: 1;
+        }
+        
+        .endpoint-card:hover::after {
+            animation: borderRotate 2s linear infinite;
+            background-size: 100% 2px, 2px 100%, 100% 2px, 2px 100%;
+        }
+        
+        @keyframes borderRotate {
+            0% {
+                background-position: 0 0, 100% 0, 100% 100%, 0 100%;
+                opacity: 1;
+            }
+            25% {
+                background-position: 100% 0, 100% 0, 100% 100%, 0 100%;
+                opacity: 0.8;
+            }
+            50% {
+                background-position: 100% 0, 100% 100%, 100% 100%, 0 100%;
+                opacity: 1;
+            }
+            75% {
+                background-position: 100% 0, 100% 100%, 0 100%, 0 100%;
+                opacity: 0.8;
+            }
+            100% {
+                background-position: 0 0, 100% 0, 100% 100%, 0 100%;
+                opacity: 1;
+            }
+        }
+        
+        .endpoint-method {
+            display: inline-block;
+            padding: 0.4rem 0.8rem;
+            border-radius: 4px;
+            font-family: monospace;
+            font-weight: bold;
+            margin-right: 0.5rem;
+            min-width: 60px;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+        
+        .method-get {
+            background-color: #e7f5ff;
+            color: #1971c2;
+        }
+        
+        .method-post {
+            background-color: #e3fafc;
+            color: #0c8599;
+        }
+        
+        .endpoint-path {
+            display: inline-block;
+            background-color: var(--dark-color);
+            color: var(--white-color);
+            padding: 0.4rem 0.8rem;
+            border-radius: 4px;
+            font-family: monospace;
+            margin-bottom: 1.5rem;
+        }
+        
+        .endpoint-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--dark-color);
+        }
+        
+        .endpoint-card p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+            flex-grow: 1;
+        }
+        
+        .endpoint-params {
+            margin-bottom: 1.5rem;
+        }
+        
+        .endpoint-params h4 {
+            color: var(--dark-color);
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+        
+        .param-list {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        
+        .param-list li {
+            position: relative;
+            padding-left: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: #666;
+        }
+        
+        .param-list li::before {
+            content: "\f054";
+            font-family: "Font Awesome 5 Free";
+            font-weight: 900;
+            position: absolute;
+            left: 0;
+            color: var(--primary-color);
+            font-size: 0.8rem;
+        }
+        
+        .param-name {
+            font-family: monospace;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+        
+        /* Code block */
+        .code-block {
+            background-color: #2d2d2d;
+            color: #fff;
+            padding: 1.5rem;
+            border-radius: 6px;
+            font-family: monospace;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            line-height: 1.5;
+            position: relative;
+        }
+        
+        .code-label {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: var(--accent-gradient);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.8rem;
+            border-radius: 0 6px 0 6px;
+        }
+        
+        .code-keyword {
+            color: #f92672;
+        }
+        
+        .code-string {
+            color: #a6e22e;
+        }
+        
+        .code-comment {
+            color: #75715e;
+        }
+        
+        .token-response {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #444;
+        }
+        
+        /* Auth flow section */
+        .auth-flow {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 3rem 0;
+        }
+        
+        .auth-flow-step {
+            display: flex;
+            align-items: flex-start;
+            width: 100%;
+            max-width: 800px;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+        
+        .auth-flow-step:not(:last-child)::after {
+            content: "";
+            position: absolute;
+            top: 3.5rem;
+            left: 1.75rem;
+            height: calc(100% + 1rem);
+            width: 2px;
+            background: var(--accent-gradient);
+        }
+        
+        .step-number {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 3.5rem;
+            height: 3.5rem;
+            background: var(--accent-gradient);
+            color: white;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-right: 1.5rem;
+            flex-shrink: 0;
+            z-index: 1;
+        }
+        
+        .step-content {
+            flex: 1;
+        }
+        
+        .step-content h3 {
+            color: var(--dark-color);
+            margin-bottom: 0.5rem;
+            font-size: 1.3rem;
+        }
+        
+        .step-content p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Info box */
+        .info-box {
+            background-color: #e7f5ff;
+            border-left: 4px solid var(--primary-color);
+            padding: 1.5rem;
+            border-radius: 6px;
+            margin: 2rem 0;
+            position: relative;
+        }
+        
+        .info-box-icon {
+            color: var(--primary-color);
+            font-size: 1.5rem;
+            position: absolute;
+            top: 1.5rem;
+            left: 1.5rem;
+        }
+        
+        .info-box-content {
+            padding-left: 2.5rem;
+        }
+        
+        .info-box-content h4 {
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+            font-size: 1.2rem;
+        }
+        
+        .info-box-content p {
+            color: #495057;
+            margin-bottom: 0.5rem;
+        }
+        
+        .info-box-content ul, .info-box-content ol {
+            color: #495057;
+            margin-left: 1.5rem;
+            margin-bottom: 0;
+        }
+        
+        .info-box-content li {
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Footer */
+        .footer {
+            background-color: #03001A;
+            color: var(--white-color);
+            text-align: center;
+            padding: 3rem;
+            margin-top: 0;
+            margin-left: var(--sidebar-width);
+            position: relative;
+        }
+        
+        .footer::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%234a6fe3' fill-opacity='0.05' fill-rule='evenodd'%3E%3Ccircle cx='3' cy='3' r='3'/%3E%3Ccircle cx='13' cy='13' r='3'/%3E%3C/g%3E%3C/svg%3E");
+            opacity: 0.1;
+            pointer-events: none;
+        }
+        
+        .footer p {
+            margin-bottom: 1rem;
+            position: relative;
+        }
+        
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            position: relative;
+        }
+        
+        .social-link {
+            color: var(--white-color);
+            font-size: 1.5rem;
+            transition: all 0.3s;
+        }
+        
+        .social-link:hover {
+            color: var(--accent-color);
+            transform: translateY(-3px);
+        }
+        
+        /* Animation keyframes */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        /* Responsive styles */
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+                box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+                z-index: 1001;
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .footer {
+                margin-left: 0;
+            }
+            
+            .menu-toggle {
+                display: block;
+            }
+            
+            .features-container {
+                flex-direction: column;
+            }
+            
+            .endpoints-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .header {
+                padding: 0 1rem;
+            }
+            
+            .nav-item:not(.swagger-btn) {
+                display: none;
+            }
+            
+            .hero {
+                padding: 3rem 1.5rem;
+                height: 350px; /* Slightly reduced height for mobile */
+            }
+            
+            .hero h2 {
+                font-size: 2rem;
+            }
+            
+            .content-section {
+                padding: 3rem 1.5rem;
+            }
+            
+            .section-header h2 {
+                font-size: 2rem;
+            }
+            
+            .features-highlight {
+                padding: 1.5rem;
+            }
+            
+            .cta-buttons {
+                flex-direction: column;
+            }
+            
+            .auth-flow-step {
+                flex-direction: column;
+            }
+            
+            .step-number {
+                margin-bottom: 1rem;
+            }
+            
+            .auth-flow-step:not(:last-child)::after {
+                left: 1.75rem;
+                top: 3.5rem;
+                height: 2rem;
+            }
+        }
+        
+        /* Dark overlay when sidebar is active on mobile */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        
+        @media (max-width: 992px) {
+            .sidebar-overlay.active {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- RENDER THE HEADER TEMPLATE-->
+    {% include 'header.html' %}
+    
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    
+    <!-- RENDER THE SIDEBAR TEMPLATE-->
+    <aside class="sidebar">
+        {% include 'sidebar.html' %}
+    </aside>
+    
+    <main class="main-content">
+        <section class="hero" style="height: 550px;">
+            <div class="hero-container">
+                <h2 style="font-size: 220%;">Token Services</h2>
+                <p>GAIA's Token Service endpoints allow you to generate, refresh, and manage authentication tokens for API access. Valid tokens are required for all AI API calls. Follow this guide to understand our token-based authentication system.</p>
+                <div class="cta-buttons">
+                    <a href="/static/resources/AIAPIS.postman_collection" class="cta-btn" style="background-color: var(--accent-color); color: var(--dark-color);" download>
+                        <i class="fas fa-download"></i> Download Postman Collection
+                    </a>
+                    <a href="/apidocs/" class="cta-btn cta-btn-secondary">
+                        <i class="fas fa-book"></i> API Documentation
+                    </a>
+                </div>
+            </div>
+        </section>
+        
+        <section class="features-highlight">
+            <div class="features-container">
+                <div class="highlight-item">
+                    <div class="highlight-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <div class="highlight-text">
+                        <h3>Secure Authentication</h3>
+                        <p>Two-step authentication with API key and token</p>
+                    </div>
+                </div>
+                <div class="highlight-item">
+                    <div class="highlight-icon">
+                        <i class="fas fa-sync-alt"></i>
+                    </div>
+                    <div class="highlight-text">
+                        <h3>Token Refreshing</h3>
+                        <p>Extend token validity without generating new ones</p>
+                    </div>
+                </div>
+                <div class="highlight-item">
+                    <div class="highlight-icon">
+                        <i class="fas fa-hourglass-half"></i>
+                    </div>
+                    <div class="highlight-text">
+                        <h3>1-Hour Validity</h3>
+                        <p>Tokens expire after 3599 seconds (1 hour)</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <div class="section-container">
+                <div class="section-header">
+                    <h2>Authentication Flow</h2>
+                    <p>Understanding the two-step authentication process</p>
+                </div>
+                
+                <div class="auth-flow">
+                    <div class="auth-flow-step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h3>Generate a Token with Your API Key</h3>
+                            <p>Use your unique API key to generate an authentication token by calling the <code>/token</code> endpoint. Your API key is passed in the request header.</p>
+                            <div class="code-block">
+                                <span class="code-label">Token Generation</span>
+                                <span class="code-keyword">GET</span> /token<br>
+                                <span class="code-comment">// Include API key in header</span><br>
+                                Headers: {<br>
+                                  "API-Key": <span class="code-string">"your_api_key_here"</span><br>
+                                }
+                                
+                                <div class="token-response">
+                                <span class="code-comment">// Example response</span><br>
+                                {<br>
+                                  <span class="code-string">"access_token"</span>: <span class="code-string">"eyJhbGciOiJIUzI1NiIsInR5..."</span>,<br>
+                                  <span class="code-string">"token_type"</span>: <span class="code-string">"Bearer"</span>,<br>
+                                  <span class="code-string">"expires_in"</span>: 3599,<br>
+                                  <span class="code-string">"expires_on"</span>: <span class="code-string">"2025-03-31 15:30:45 +0200"</span><br>
+                                }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="auth-flow-step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h3>Use Token for API Requests</h3>
+                            <p>Include the generated token in the <code>X-Token</code> header for all subsequent API calls. This token authenticates your requests to our AI services.</p>
+                            <div class="code-block">
+                                <span class="code-label">API Request with Token</span>
+                                <span class="code-keyword">POST</span> /llm/gpt-4o-mini<br>
+                                <span class="code-comment">// Include token in header</span><br>
+                                Headers: {<br>
+                                  "X-Token": <span class="code-string">"eyJhbGciOiJIUzI1NiIsInR5..."</span>,<br>
+                                  "Content-Type": <span class="code-string">"application/json"</span><br>
+                                }<br>
+                                <br>
+                                <span class="code-comment">// Request body with your data</span><br>
+                                Body: {<br>
+                                  <span class="code-string">"user_input"</span>: <span class="code-string">"Tell me about AI APIs"</span><br>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="auth-flow-step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h3>Refresh Token Before Expiration (Optional)</h3>
+                            <p>Tokens expire after 1 hour (3599 seconds). You can refresh a token before it expires to extend its validity period without generating a new one.</p>
+                            <div class="code-block">
+                                <span class="code-label">Token Refresh</span>
+                                <span class="code-keyword">GET</span> /token/refresh<br>
+                                <span class="code-comment">// Include API key and token</span><br>
+                                Headers: {<br>
+                                  "API-Key": <span class="code-string">"your_api_key_here"</span><br>
+                                }<br>
+                                <br>
+                                Query Parameters: {<br>
+                                  "token": <span class="code-string">"eyJhbGciOiJIUzI1NiIsInR5..."</span><br>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="info-box">
+                    <div class="info-box-icon"><i class="fas fa-info-circle"></i></div>
+                    <div class="info-box-content">
+                        <h4>Authentication Flow</h4>
+                        <p>GAIA uses a two-step authentication process:</p>
+                        <br>
+                        <ol>
+                            <li>First, you authenticate with your unique API key to generate a token</li>
+                            <li>Then, you use this token for subsequent API calls</li>
+                        </ol>
+                        <br>
+                        <p>Tokens expire after 1 hour (3599 seconds) and can be refreshed before and after expiration.</p>
+                        <p>You can use the same token to call multiple AI endpoints in your application flow as long as your process remains within the token validity period.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section class="content-section alt-bg">
+            <div class="section-container">
+                <div class="section-header">
+                    <h2>Available Endpoints</h2>
+                    <p>Detailed information about each Token Service endpoint</p>
+                </div>
+                
+                <div class="endpoint-table-container" style="overflow-x: auto; margin: 2rem 0;">
+                    <table style="width: 100%; border-collapse: collapse; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);">
+                        <thead>
+                            <tr style="background: linear-gradient(90deg, #3B0138, #4a6fe3); color: white;">
+                                <th style="padding: 1.2rem; text-align: left; font-size: 1.1rem;">Endpoint</th>
+                                <th style="padding: 1.2rem; text-align: left; font-size: 1.1rem;">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Generate Token -->
+                            <tr style="background-color: white;">
+                                <td style="padding: 1.5rem; border-bottom: 1px solid #f0f0f0; width: 30%;">
+                                    <div style="margin-bottom: 0.5rem;">
+                                        <span class="endpoint-method method-get" style="font-size: 0.9rem;">GET</span>
+                                    </div>
+                                    <div class="endpoint-path" style="margin-top: 0.5rem; display: inline-block;">/token</div>
+                                </td>
+                                <td style="padding: 1.5rem; border-bottom: 1px solid #f0f0f0;">
+                                    <h3 style="color: var(--dark-color); margin-bottom: 1rem; font-size: 1.3rem;">Generate Token</h3>
+                                    <p style="margin-bottom: 1.5rem; color: #444; line-height: 1.6;">Generate a new authentication token using your API key. This token will be valid for 1 hour and is required for all API calls.</p>
+                                    
+                                    <div style="display: flex; flex-wrap: wrap; gap: 2rem; margin-top: 1.5rem;">
+                                        <div style="flex: 1; min-width: 250px;">
+                                            <h4 style="color: var(--primary-color); margin-bottom: 0.8rem; font-size: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">Request Headers</h4>
+                                            <div style="display: flex; margin-bottom: 0.5rem;">
+                                                <span style="font-family: monospace; color: var(--primary-color); font-weight: 600; min-width: 100px;">API-Key</span>
+                                                <span style="color: #666;">Your unique API key (required)</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div style="flex: 1; min-width: 250px;">
+                                            <h4 style="color: var(--primary-color); margin-bottom: 0.8rem; font-size: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">Response</h4>
+                                            <div style="display: flex; margin-bottom: 0.5rem;">
+                                                <span style="font-family: monospace; color: var(--primary-color); font-weight: 600; min-width: 140px;">access_token</span>
+                                                <span style="color: #666;">The generated token to use for API calls</span>
+                                            </div>
+                                            <div style="display: flex; margin-bottom: 0.5rem;">
+                                                <span style="font-family: monospace; color: var(--primary-color); font-weight: 600; min-width: 140px;">token_type</span>
+                                                <span style="color: #666;">Type of token (always "Bearer")</span>
+                                            </div>
+                                            <div style="display: flex; margin-bottom: 0.5rem;">
+                                                <span style="font-family: monospace; color: var(--primary-color); font-weight: 600; min-width: 140px;">expires_in</span>
+                                                <span style="color: #666;">Time in seconds until token expiration (3599)</span>
+                                            </div>
+                                            <div style="display: flex; margin-bottom: 0.5rem;">
+                                                <span style="font-family: monospace; color: var(--primary-color); font-weight: 600; min-width: 140px;">expires_on</span>
+                                                <span style="color: #666;">Timestamp of token expiration</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            
+                            <!-- Get Token Details -->
+                            <tr style="background-color: #f9fafc;">
+                                <td style="padding: 1.5rem; border-bottom: 1px solid #f0f0f0; width: 30%;">
+                                    <div style="margin-bottom: 0.5rem;">
+                                        <span class="endpoint-method method-get" style="font-size: 0.9rem;">GET</span>
+                                    </div>
+                                    <div class="endpoint-path" style="margin-top: 0.5rem; display: inline-block;">/token/details</div>
+                                </td>
+                                <td style="padding: 1.5rem; border-bottom: 1px solid #f0f0f0;">
+                                    <h3 style="color: var(--dark-color); margin-bottom: 1rem; font-size: 1.3rem;">Get Token Details</h3>
+                                    <p style="margin-bottom: 1.5rem; color: #444; line-height: 1.6;">Retrieve details about a specific token, including its status (valid, invalid, or expired), user ID, scope, and expiration time.</p>
+                                    
+                                    <div style="display: flex; flex-wrap: wrap; gap: 2rem; margin-top: 1.5rem;">
+                                        <div style="flex: 1; min-width: 250px;">
+                                            <h4 style="color: var(--primary-color); margin-bottom: 0.8rem; font-size: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">Request Headers</h4>
+                                            <div style="display: flex; margin-bottom: 0.5rem;">
+                                                <span style="font-family: monospace; color: var(--primary-color); font-weight: 600; min-width: 100px;">API-Key</span>
+                                                <span style="color: #666;">Your unique API key (required)</span>
+                                            </div>
+                                            
+                                            <h4 style="color: var(--primary-color); margin: 1.5rem 0 0.8rem; font-size: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">Query Parameters</h4>
+                                            <div style="display: flex; margin-bottom: 0.5rem;">
+                                                <span style="font-family: monospace; color: var(--primary-color); font-weight: 600; min-width: 100px;">token</span>
+                                                <span style="color: #666;">The token to get details for (required)</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div style="flex: 1; min-width: 250px;">
+                                            <h4 style="color: var(--primary-color); margin-bottom: 0.8rem; font-size: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">Response</h4>
+                                            <div style="display: flex; margin-bottom: 0.5rem;">
+                                                <span style="font-family: monospace; color: var(--primary-color); font-weight: 600; min-width: 140px;">token_status</span>
+                                                <span style="color: #666;">Current status: "valid", "invalid", or "expired"</span>
+                                            </div>
+                                            <div style="display: flex; margin-bottom: 0.5rem;">
+                                                <span style="font-family: monospace; color: var(--primary-color); font-weight: 600; min-width: 140px;">user_id</span>
+                                                <span style="color: #666;">ID of the user who issued the token</span>
+                                            </div>
+                                            <div style="display: flex; margin-bottom: 0.5rem;">
+                                                <span style="font-family: monospace; color: var(--primary-color); font-weight: 600; min-width: 140px;">token_scope</span>
+                                                <span style="color: #666;">Scope of the token</span>
+                                            </div>
+                                            <div style="display: flex; margin-bottom: 0.5rem;">
+                                                <span style="font-family: monospace; color: var(--primary-color); font-weight: 600; min-width: 140px;">token_expiration_time</span>
+                                                <span style="color: #666;">Token expiration timestamp</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            
+                            <!-- Refresh Token -->
+                            <tr style="background-color: white;">
+                                <td style="padding: 1.5rem; border-bottom: 1px solid #f0f0f0; width: 30%;">
+                                    <div style="margin-bottom: 0.5rem;">
+                                        <span class="endpoint-method method-get" style="font-size: 0.9rem;">GET</span>
+                                    </div>
+                                    <div class="endpoint-path" style="margin-top: 0.5rem; display: inline-block;">/token/refresh</div>
+                                </td>
+                                <td style="padding: 1.5rem; border-bottom: 1px solid #f0f0f0;">
+                                    <h3 style="color: var(--dark-color); margin-bottom: 1rem; font-size: 1.3rem;">Refresh Token</h3>
+                                    <p style="margin-bottom: 1.5rem; color: #444; line-height: 1.6;">Refresh an existing token to extend its validity period. This generates a new token while keeping the same permissions and user context.</p>
+                                    
+                                    <div style="display: flex; flex-wrap: wrap; gap: 2rem; margin-top: 1.5rem;">
+                                        <div style="flex: 1; min-width: 250px;">
+                                            <h4 style="color: var(--primary-color); margin-bottom: 0.8rem; font-size: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">Request Headers</h4>
+                                            <div style="display: flex; margin-bottom: 0.5rem;">
+                                                <span style="font-family: monospace; color: var(--primary-color); font-weight: 600; min-width: 100px;">API-Key</span>
+                                                <span style="color: #666;">Your unique API key (required)</span>
+                                            </div>
+                                            
+                                            <h4 style="color: var(--primary-color); margin: 1.5rem 0 0.8rem; font-size: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">Query Parameters</h4>
+                                            <div style="display: flex; margin-bottom: 0.5rem;">
+                                                <span style="font-family: monospace; color: var(--primary-color); font-weight: 600; min-width: 100px;">token</span>
+                                                <span style="color: #666;">The token to refresh (required)</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div style="flex: 1; min-width: 250px;">
+                                            <h4 style="color: var(--primary-color); margin-bottom: 0.8rem; font-size: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">Response</h4>
+                                            <div style="display: flex; margin-bottom: 0.5rem;">
+                                                <span style="font-family: monospace; color: var(--primary-color); font-weight: 600; min-width: 140px;">access_token</span>
+                                                <span style="color: #666;">The new refreshed token</span>
+                                            </div>
+                                            <div style="display: flex; margin-bottom: 0.5rem;">
+                                                <span style="font-family: monospace; color: var(--primary-color); font-weight: 600; min-width: 140px;">token_type</span>
+                                                <span style="color: #666;">Type of token (always "Bearer")</span>
+                                            </div>
+                                            <div style="display: flex; margin-bottom: 0.5rem;">
+                                                <span style="font-family: monospace; color: var(--primary-color); font-weight: 600; min-width: 140px;">expires_in</span>
+                                                <span style="color: #666;">Time in seconds until token expiration (3599)</span>
+                                            </div>
+                                            <div style="display: flex; margin-bottom: 0.5rem;">
+                                                <span style="font-family: monospace; color: var(--primary-color); font-weight: 600; min-width: 140px;">expires_on</span>
+                                                <span style="color: #666;">Timestamp of token expiration</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <div class="section-container">
+                <div class="section-header">
+                    <h2>Best Practices</h2>
+                    <p>Recommendations for efficient token management</p>
+                </div>
+                
+                <div style="display: flex; flex-wrap: wrap; gap: 2rem; margin: 3rem 0;">
+                    <!-- Token Management Tips Card -->
+                    <div style="flex: 1; min-width: 300px; background-color: white; border-radius: 10px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.07); padding: 2rem; transition: transform 0.3s ease;">
+                        <div style="display: flex; align-items: center; margin-bottom: 1.5rem;">
+                            <div style="width: 50px; height: 50px; border-radius: 50%; background: var(--accent-gradient); display: flex; justify-content: center; align-items: center; margin-right: 1rem;">
+                                <i class="fas fa-lightbulb" style="color: white; font-size: 1.3rem;"></i>
+                            </div>
+                            <h3 style="font-size: 1.5rem; color: var(--dark-color); margin: 0;">Token Management Tips</h3>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr; gap: 1.2rem; margin-top: 1.5rem;">
+                            <div style="display: flex; align-items: flex-start;">
+                                <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--primary-color); color: white; display: flex; justify-content: center; align-items: center; margin-right: 1rem; flex-shrink: 0; font-size: 0.8rem;">1</div>
+                                <div>
+                                    <h4 style="margin: 0 0 0.3rem 0; color: var(--dark-color);">Reuse tokens</h4>
+                                    <p style="margin: 0; color: #666; line-height: 1.5;">Use the same token for multiple API calls within the same workflow or process stream (until it expires)</p>
+                                </div>
+                            </div>
+                            
+                            <div style="display: flex; align-items: flex-start;">
+                                <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--primary-color); color: white; display: flex; justify-content: center; align-items: center; margin-right: 1rem; flex-shrink: 0; font-size: 0.8rem;">2</div>
+                                <div>
+                                    <h4 style="margin: 0 0 0.3rem 0; color: var(--dark-color);">Use token refreshing</h4>
+                                    <p style="margin: 0; color: #666; line-height: 1.5;">Instead of generating new tokens, refresh existing ones when possible (only if required)</p>
+                                </div>
+                            </div>
+                            
+                            <div style="display: flex; align-items: flex-start;">
+                                <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--primary-color); color: white; display: flex; justify-content: center; align-items: center; margin-right: 1rem; flex-shrink: 0; font-size: 0.8rem;">3</div>
+                                <div>
+                                    <h4 style="margin: 0 0 0.3rem 0; color: var(--dark-color);">Track expiration</h4>
+                                    <p style="margin: 0; color: #666; line-height: 1.5;">Monitor the expiration time and refresh before tokens expire</p>
+                                </div>
+                            </div>
+                            
+                            <div style="display: flex; align-items: flex-start;">
+                                <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--primary-color); color: white; display: flex; justify-content: center; align-items: center; margin-right: 1rem; flex-shrink: 0; font-size: 0.8rem;">4</div>
+                                <div>
+                                    <h4 style="margin: 0 0 0.3rem 0; color: var(--dark-color);">Keep tokens secure</h4>
+                                    <p style="margin: 0; color: #666; line-height: 1.5;">Store tokens securely and never share them in client-side code</p>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; align-items: flex-start;">
+                                <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--primary-color); color: white; display: flex; justify-content: center; align-items: center; margin-right: 1rem; flex-shrink: 0; font-size: 0.8rem;">5</div>
+                                <div>
+                                    <h4 style="margin: 0 0 0.3rem 0; color: var(--dark-color);">Token Generation</h4>
+                                    <p style="margin: 0; color: #666; line-height: 1.5;">Generated new tokens for each new session or process work stream</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Token Lifecycle Card -->
+                    <div style="flex: 1; min-width: 300px; background-color: white; border-radius: 10px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.07); padding: 2rem; transition: transform 0.3s ease;">
+                        <div style="display: flex; align-items: center; margin-bottom: 1.5rem;">
+                            <div style="width: 50px; height: 50px; border-radius: 50%; background: var(--accent-gradient); display: flex; justify-content: center; align-items: center; margin-right: 1rem;">
+                                <i class="fas fa-sync-alt" style="color: white; font-size: 1.3rem;"></i>
+                            </div>
+                            <h3 style="font-size: 1.5rem; color: var(--dark-color); margin: 0;">Token Lifecycle</h3>
+                        </div>
+                        
+                        <p style="color: #666; line-height: 1.6; margin-bottom: 1.5rem;">Understanding the token lifecycle can help you implement authentication more efficiently:</p>
+                        
+                        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                            <div style="display: flex; align-items: center; background-color: #f8f9fc; padding: 1rem; border-radius: 8px;">
+                                <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--magenta-gradient); color: white; display: flex; justify-content: center; align-items: center; margin-right: 1rem; flex-shrink: 0;">1</div>
+                                <div>
+                                    <h4 style="margin: 0; color: var(--dark-color);">Generation</h4>
+                                    <p style="margin: 0.3rem 0 0 0; color: #666;">A token is generated using your API key</p>
+                                </div>
+                            </div>
+                            
+                            <div style="display: flex; align-items: center; background-color: #f8f9fc; padding: 1rem; border-radius: 8px;">
+                                <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--magenta-gradient); color: white; display: flex; justify-content: center; align-items: center; margin-right: 1rem; flex-shrink: 0;">2</div>
+                                <div>
+                                    <h4 style="margin: 0; color: var(--dark-color);">Usage</h4>
+                                    <p style="margin: 0.3rem 0 0 0; color: #666;">The token is used for API calls for up to 1 hour</p>
+                                </div>
+                            </div>
+                            
+                            <div style="display: flex; align-items: center; background-color: #f8f9fc; padding: 1rem; border-radius: 8px;">
+                                <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--magenta-gradient); color: white; display: flex; justify-content: center; align-items: center; margin-right: 1rem; flex-shrink: 0;">3</div>
+                                <div>
+                                    <h4 style="margin: 0; color: var(--dark-color);">Refreshing</h4>
+                                    <p style="margin: 0.3rem 0 0 0; color: #666;">Before expiration, the token can be refreshed for a new 1-hour period</p>
+                                </div>
+                            </div>
+                            
+                            <div style="display: flex; align-items: center; background-color: #f8f9fc; padding: 1rem; border-radius: 8px;">
+                                <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--magenta-gradient); color: white; display: flex; justify-content: center; align-items: center; margin-right: 1rem; flex-shrink: 0;">4</div>
+                                <div>
+                                    <h4 style="margin: 0; color: var(--dark-color);">Expiration</h4>
+                                    <p style="margin: 0.3rem 0 0 0; color: #666;">After 1 hour, if not refreshed, the token expires and becomes invalid</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Error Handling Section -->
+                <div style="margin-top: 4rem;">
+                    <h3 style="font-size: 1.8rem; color: var(--dark-color); margin-bottom: 1.5rem; text-align: center; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Error Handling</h3>
+                    <p style="margin-bottom: 2rem; text-align: center; max-width: 800px; margin-left: auto; margin-right: auto; color: #666; line-height: 1.6;">Common authentication errors and how to handle them:</p>
+                    
+                    <div style="display: flex; flex-wrap: wrap; gap: 1.5rem; justify-content: center; margin-bottom: 3rem;">
+                        <div style="flex: 1; min-width: 260px; max-width: 300px; background-color: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06); border-top: 4px solid #e74c3c;">
+                            <h4 style="color: #e74c3c; margin-bottom: 0.8rem; font-size: 1.2rem;">401 Unauthorized</h4>
+                            <p style="color: #666; margin: 0; line-height: 1.5;">Token is missing, invalid, or expired. Generate a new token to resolve.</p>
+                        </div>
+                        
+                        <div style="flex: 1; min-width: 260px; max-width: 300px; background-color: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06); border-top: 4px solid #f39c12;">
+                            <h4 style="color: #f39c12; margin-bottom: 0.8rem; font-size: 1.2rem;">400 Bad Request</h4>
+                            <p style="color: #666; margin: 0; line-height: 1.5;">Missing required parameters or invalid format. Check your request body.</p>
+                        </div>
+                        
+                        <div style="flex: 1; min-width: 260px; max-width: 300px; background-color: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06); border-top: 4px solid #8e44ad;">
+                            <h4 style="color: #8e44ad; margin-bottom: 0.8rem; font-size: 1.2rem;">403 Forbidden</h4>
+                            <p style="color: #666; margin: 0; line-height: 1.5;">Token doesn't have sufficient permissions. Check user scope.</p>
+                        </div>
+                        
+                        <div style="flex: 1; min-width: 260px; max-width: 300px; background-color: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06); border-top: 4px solid #34495e;">
+                            <h4 style="color: #34495e; margin-bottom: 0.8rem; font-size: 1.2rem;">500 Server Error</h4>
+                            <p style="color: #666; margin: 0; line-height: 1.5;">Unexpected server error. Retry the request or contact support.</p>
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    {% include 'footer.html' %}
+    
+    <script>
+        // Toggle sidebar on mobile
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuToggle = document.getElementById('menu-toggle');
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            
+            menuToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('active');
+                overlay.classList.toggle('active');
+            });
+            
+            overlay.addEventListener('click', function() {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            });
+            
+            // Highlight current page in sidebar
+            const currentPage = window.location.pathname;
+            const sidebarLinks = document.querySelectorAll('.sidebar-link');
+            
+            sidebarLinks.forEach(link => {
+                if (link.getAttribute('href') === currentPage) {
+                    link.classList.add('active');
+                }
+            });
+            
+            // Add scroll animation for elements
+            const animateOnScroll = function() {
+                const elements = document.querySelectorAll('.endpoint-card, .section-header, .info-box, .auth-flow-step');
+                
+                elements.forEach(element => {
+                    const elementPosition = element.getBoundingClientRect().top;
+                    const screenPosition = window.innerHeight / 1.2;
+                    
+                    if (elementPosition < screenPosition) {
+                        element.style.animation = 'fadeInUp 0.6s ease-out forwards';
+                    }
+                });
+            };
+            
+            // Run on load
+            animateOnScroll();
+            
+            // Run on scroll
+            window.addEventListener('scroll', animateOnScroll);
+        });
+    </script>
+</body>
+</html>

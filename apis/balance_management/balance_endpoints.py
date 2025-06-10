@@ -9,10 +9,7 @@ import pytz
 
 logger = logging.getLogger(__name__)
 
-def create_api_response(data, status_code=200):
-    response = make_response(jsonify(data))
-    response.status_code = status_code
-    return response
+from apis.utils.config import create_api_response
 
 def check_balance_route():
     """
@@ -26,6 +23,11 @@ def check_balance_route():
         type: string
         required: true
         description: API Key for authentication
+      - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems
     produces:
       - application/json
     responses:
@@ -78,7 +80,9 @@ def check_balance_route():
 
 def admin_update_balance_route():
     """
-    Update user's API call balance (Admin only)
+    Update user's API call balance for the current Calendar Period (Admin only). 
+    
+    The endpoint will update the user balance for the current Calendar Period only. If the user balance needs to updated permanently then it is recommended to update the user's balance via the admin PUT user endpoint.
     ---
     tags:
       - Admin Functions
@@ -88,6 +92,11 @@ def admin_update_balance_route():
         type: string
         required: true
         description: Admin API Key for authentication
+      - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems
       - name: token
         in: query
         type: string
@@ -226,5 +235,5 @@ def admin_update_balance_route():
 
 def register_balance_routes(app):
     """Register balance-related routes with the Flask app"""
-    app.route('/check-balance', methods=['GET'])(api_logger(check_balance_route))
-    app.route('/admin/update-balance', methods=['POST'])(api_logger(admin_update_balance_route))
+    app.route('/usage/balance', methods=['GET'])(api_logger(check_balance_route))
+    app.route('/admin/balance', methods=['PUT'])(api_logger(admin_update_balance_route))

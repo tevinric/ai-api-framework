@@ -56,12 +56,27 @@ def api_logger(f):
         method = request.method
         headers = dict(request.headers)
         
-        # Remove sensitive info from headers
+        # Extract correlation ID from header - check multiple case variations
+        correlation_id = (
+            request.headers.get('X-Correlation-ID') or 
+            request.headers.get('x-correlation-id') or 
+            request.headers.get('X-CORRELATION-ID') or
+            str(uuid.uuid4())  # Generate a new one if not provided
+        )
+        
+        # Store correlation ID in Flask g object for other middleware to access
+        g.correlation_id = correlation_id
+        
+        # Log the correlation ID for debugging
+        logger.info(f"Request to {endpoint} with Correlation ID: {correlation_id}")
+        
+        # Remove sensitive info from headers for logging
+        headers_for_logging = headers.copy()
         sensitive_headers = ['Authorization', 'API-Key', 'X-Token', 'Api-Key', 'api_key']
         for header in sensitive_headers:
-            if header in headers:
-                headers[header] = '[REDACTED]'
-            
+            if header in headers_for_logging:
+                headers_for_logging[header] = '[REDACTED]'
+        
         # Get request body if it's JSON
         body = None
         if request.is_json:
@@ -86,6 +101,10 @@ def api_logger(f):
         try:
             response = f(*args, **kwargs)
             
+            # Add correlation ID to response headers for tracking
+            if hasattr(response, 'headers'):
+                response.headers['X-Correlation-ID'] = correlation_id
+            
             # Calculate response time
             response_time = int((time.time() - start_time) * 1000)
             
@@ -105,20 +124,31 @@ def api_logger(f):
             except:
                 response_data = None
                 
-            # Log successful request
-            DatabaseService.log_api_call(
+            # Log successful request - IMPORTANT: Store the returned log_id
+            log_id = DatabaseService.log_api_call(
                 endpoint_id=endpoint_id,
                 user_id=user_id,
                 token_id=token_id,
                 request_method=method,
-                request_headers=json.dumps(headers),
+                request_headers=json.dumps(headers_for_logging),
                 request_body=json.dumps(body) if body else None,
                 response_status=response_status,
                 response_time_ms=response_time,
                 user_agent=user_agent,
                 ip_address=ip_address,
-                response_body=json.dumps(response_data) if response_data else None
+                response_body=json.dumps(response_data) if response_data else None,
+                correlation_id=correlation_id  # Pass the correlation ID
             )
+            
+            # Store the log ID in g for usageMiddleware to access
+            if log_id:
+                # Set in Flask g object
+                g.current_api_log_id = log_id
+                # Also set directly on request object as a backup
+                setattr(request, '_api_log_id', log_id)
+                logger.info(f"API Log ID set: {log_id}, Correlation ID: {correlation_id}")
+            else:
+                logger.warning("Failed to get API Log ID from DatabaseService")
             
             return response
             
@@ -133,19 +163,26 @@ def api_logger(f):
             user_id = get_user_id_from_request()
             
             # Log failed request
-            DatabaseService.log_api_call(
+            error_log_id = DatabaseService.log_api_call(
                 endpoint_id=endpoint_id,
                 user_id=user_id,
                 token_id=token_id,
                 request_method=method,
-                request_headers=json.dumps(headers),
+                request_headers=json.dumps(headers_for_logging),
                 request_body=json.dumps(body) if body else None,
                 response_status=500,
                 response_time_ms=response_time,
                 user_agent=user_agent,
                 ip_address=ip_address,
-                error_message=str(e)
+                error_message=str(e),
+                correlation_id=correlation_id  # Pass the correlation ID
             )
+            
+            # Store the error log ID in g
+            if error_log_id:
+                g.current_api_log_id = error_log_id
+                setattr(request, '_api_log_id', error_log_id)
+                logger.info(f"Error API Log ID set: {error_log_id}, Correlation ID: {correlation_id}")
             
             # Re-raise the exception
             raise

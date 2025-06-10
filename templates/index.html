@@ -1,0 +1,1440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TIH AI API Portal</title>
+    <link rel="icon" href="static/images/Telesure-logo.png" type="image/x-icon">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color:rgb(1, 96, 136);
+            --secondary-color:rgb(0, 10, 120);
+            --dark-color:rgb(0, 8, 66);
+            --light-color: #f5f6fa;
+            --text-color: #333;
+            --white-color: #ffffff;
+            --accent-color: #00d4ff;
+            --accent-gradient: linear-gradient(90deg, #00d4ff 0%, #6c63ff 100%);
+            --magenta-dark: #3B0138; /* Updated dark magenta color */
+            --magenta-gradient: linear-gradient(90deg, #3B0138 0%, #4a6fe3 100%);
+            --sidebar-width: 280px;
+            --header-height: 60px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--light-color);
+            color: var(--text-color);
+            position: relative;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%234a6fe3' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        .header {
+            background-color: #03001A;
+            color: var(--white-color);
+            padding: 0 2rem;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: var(--header-height);
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo i {
+            font-size: 1.8rem;
+            margin-right: 0.5rem;
+            color: var(--accent-color);
+        }
+        
+        .logo h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+        
+        .nav {
+            display: flex;
+            align-items: center;
+        }
+        
+        .nav-item {
+            margin-left: 1.5rem;
+            color: var(--white-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+            display: flex;
+            align-items: center;
+        }
+        
+        .nav-item:hover {
+            color: var(--accent-color);
+        }
+        
+        .nav-item i {
+            margin-right: 0.5rem;
+        }
+        
+        .swagger-btn {
+            background-color: var(--accent-color);
+            color: var(--dark-color);
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-weight: 600;
+            transition: all 0.3s;
+            box-shadow: 0 4px 10px rgba(0, 212, 255, 0.3);
+        }
+        
+        .swagger-btn:hover {
+            background-color: #00b8e6;
+            transform: translateY(-2px);
+            color: var(--dark-color);
+            box-shadow: 0 6px 15px rgba(0, 212, 255, 0.4);
+        }
+        
+        /* Mobile menu toggle */
+        .menu-toggle {
+            display: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            top: var(--header-height);
+            left: 0;
+            height: calc(100vh - var(--header-height));
+            width: var(--sidebar-width);
+            background-color: var(--white-color);
+            border-right: 1px solid rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+            z-index: 900;
+            padding: 1.5rem 0;
+            transition: transform 0.3s ease-in-out;
+        }
+        
+        .sidebar-category {
+            padding: 0.5rem 1.5rem;
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar-link {
+            display: block;
+            padding: 0.7rem 1.5rem;
+            padding-left: 2.5rem;
+            color: var(--text-color);
+            text-decoration: none;
+            transition: background-color 0.2s, color 0.2s;
+            font-size: 0.95rem;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar-link:hover {
+            background-color: rgba(106, 100, 255, 0.05);
+            color: var(--primary-color);
+        }
+        
+        .sidebar-link.active {
+            color: var(--primary-color);
+            background-color: rgba(106, 100, 255, 0.08);
+            border-left: 3px solid var(--primary-color);
+        }
+        
+        .sidebar-link i {
+            margin-right: 0.5rem;
+            width: 20px;
+            text-align: center;
+        }
+        
+        .sidebar-submenu {
+            margin-left: 1rem;
+        }
+        
+        .sidebar-submenu .sidebar-link {
+            padding-left: 3rem;
+            font-size: 0.9rem;
+        }
+        
+        /* Main content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            margin-top: var(--header-height);
+            padding: 0;
+            min-height: calc(100vh - var(--header-height));
+        }
+        
+        /* Hero */
+        .hero {
+            background: url('/static/GAIA _splash3.gif') center/cover no-repeat;
+            color: var(--white-color);
+            padding: 5rem 3rem;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        .hero::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background: linear-gradient(to right, rgba(1, 0, 15, 0.85) 0%, rgba(1, 0, 15, 0.5) 40%, transparent 80%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        @keyframes zoomDots {
+            0% {
+                transform: scale(1.2);
+                opacity: 0.15;
+            }
+            50% {
+                transform: scale(1.5);
+                opacity: 0.2;
+            }
+            100% {
+                transform: scale(1.2);
+                opacity: 0.15;
+            }
+        }
+        
+        .hero-container {
+            max-width: 1440px; /* Increased by 20% from 1200px */
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .hero h2 {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+            max-width: 840px; /* Increased by 20% from 700px */
+            background: linear-gradient(to left, var(--white-color), var(--accent-color)); /* Changed direction to right-to-left */
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: fadeInUp 0.8s ease-out;
+        }
+        
+        .hero p {
+            font-size: 1.2rem;
+            max-width: 700px;
+            margin-bottom: 2rem;
+            line-height: 1.7;
+            color: rgba(255, 255, 255, 0.9);
+            animation: fadeInUp 1s ease-out;
+        }
+        
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            animation: fadeInUp 1.2s ease-out;
+        }
+        
+        .cta-btn {
+            display: inline-flex;
+            align-items: center;
+            background-color: var(--accent-color);
+            color: var(--dark-color);
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
+        }
+        
+        .cta-btn:hover {
+            background-color: #00b8e6;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 212, 255, 0.4);
+        }
+        
+        .cta-btn-secondary {
+            background-color: transparent;
+            color: var(--white-color);
+            border: 2px solid var(--white-color);
+            box-shadow: none;
+        }
+        
+        .cta-btn-secondary:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--white-color);
+            box-shadow: 0 4px 15px rgba(255, 255, 255, 0.2);
+        }
+        
+        .cta-btn i {
+            margin-right: 0.5rem;
+        }
+        
+        /* Features highlights */
+        .features-highlight {
+            padding: 2rem 3rem;
+            background-color: var(--white-color);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .features-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .highlight-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .highlight-icon {
+            font-size: 1.5rem;
+            width: 3.5rem;
+            height: 3.5rem;
+            border-radius: 50%;
+            background: var(--accent-gradient);
+            color: var(--white-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .highlight-text h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.2rem;
+            color: var(--dark-color);
+        }
+        
+        .highlight-text p {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        /* Services section */
+        .services-section {
+            padding: 5rem 3rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .services-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        .section-header h2 {
+            font-size: 2.5rem;
+            color: var(--dark-color);
+            margin-bottom: 1rem;
+            position: relative;
+            display: inline-block;
+        }
+        
+        .section-header h2::after {
+            content: "";
+            position: absolute;
+            left: 50%;
+            bottom: -10px;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: var(--accent-gradient);
+            border-radius: 2px;
+        }
+        
+        .section-header p {
+            color: #666;
+            font-size: 1.1rem;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        
+        /* Features grid */
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 4rem;
+        }
+        
+        .feature-card {
+            background-color: var(--white-color);
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .feature-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to right, rgba(138, 43, 226, 0.05), rgba(74, 111, 227, 0.05));
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .feature-card::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                linear-gradient(90deg, var(--magenta-dark) 50%, transparent 50%) 0 0,
+                linear-gradient(180deg, var(--magenta-dark) 50%, transparent 50%) 100% 0,
+                linear-gradient(270deg, var(--magenta-dark) 50%, transparent 50%) 100% 100%,
+                linear-gradient(0deg, var(--magenta-dark) 50%, transparent 50%) 0 100%;
+            background-repeat: no-repeat;
+            background-size: 0% 2px, 2px 0%, 0% 2px, 2px 0%;
+            border-radius: 8px;
+            animation: none;
+            transition: all 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(59, 1, 56, 0.15);
+        }
+        
+        .feature-card:hover::before {
+            opacity: 1;
+        }
+        
+        .feature-card:hover::after {
+            animation: borderRotate 2s linear infinite;
+            background-size: 100% 2px, 2px 100%, 100% 2px, 2px 100%;
+        }
+        
+        @keyframes borderRotate {
+            0% {
+                background-position: 0 0, 100% 0, 100% 100%, 0 100%;
+                opacity: 1;
+            }
+            25% {
+                background-position: 100% 0, 100% 0, 100% 100%, 0 100%;
+                opacity: 0.8;
+            }
+            50% {
+                background-position: 100% 0, 100% 100%, 100% 100%, 0 100%;
+                opacity: 1;
+            }
+            75% {
+                background-position: 100% 0, 100% 100%, 0 100%, 0 100%;
+                opacity: 0.8;
+            }
+            100% {
+                background-position: 0 0, 100% 0, 100% 100%, 0 100%;
+                opacity: 1;
+            }
+        }
+        
+        .feature-icon {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .feature-card:hover .feature-icon {
+            color: var(--secondary-color);
+            transform: scale(1.1);
+        }
+        
+        .feature-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--dark-color);
+        }
+        
+        .feature-card p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 1rem;
+            flex-grow: 1;
+        }
+        
+        .feature-link {
+            display: inline-flex;
+            align-items: center;
+            color: var(--primary-color);
+            font-weight: 600;
+            text-decoration: none;
+            margin-top: auto;
+            transition: all 0.3s ease;
+        }
+        
+        .feature-link i {
+            margin-left: 0.5rem;
+            transition: transform 0.3s ease;
+        }
+        
+        .feature-link:hover {
+            color: var(--secondary-color);
+        }
+        
+        .feature-link:hover i {
+            transform: translateX(5px);
+        }
+        
+        /* Getting started section */
+        .getting-started-section {
+            padding: 5rem 3rem;
+            background-color: #f8faff;
+            position: relative;
+        }
+        
+        .getting-started-section::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%233B0138' fill-opacity='0.2' fill-rule='evenodd'/%3E%3C/svg%3E");
+            opacity: 0.15;
+        }
+        
+        .steps-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+        }
+        
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+        
+        .step-card {
+            background-color: var(--white-color);
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease;
+            position: relative;
+        }
+        
+        .step-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .step-number {
+            position: absolute;
+            top: -20px;
+            left: 20px;
+            width: 40px;
+            height: 40px;
+            background: var(--accent-gradient);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(106, 100, 255, 0.3);
+        }
+        
+        .step-card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            color: var(--dark-color);
+            padding-top: 0.5rem;
+        }
+        
+        .step-card p {
+            color: #666;
+            margin-bottom: 1rem;
+        }
+        
+        .step-card .step-icon {
+            color: var(--primary-color);
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        /* Code sample */
+        .code-sample {
+            background-color: #2d2d2d;
+            color: #fff;
+            padding: 1.5rem;
+            border-radius: 6px;
+            font-family: monospace;
+            overflow-x: auto;
+            margin-top: 1rem;
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+        
+        .code-comment {
+            color: #75715e;
+        }
+        
+        .code-keyword {
+            color: #f92672;
+        }
+        
+        .code-string {
+            color: #a6e22e;
+        }
+        
+        /* API metrics section */
+        .api-metrics {
+            padding: 3rem;
+            background-color: #03001A;
+            color: var(--white-color);
+        }
+        
+        .metrics-container {
+            display: flex;
+            justify-content: space-around;
+            max-width: 1200px;
+            margin: 0 auto;
+            flex-wrap: wrap;
+            gap: 2rem;
+        }
+        
+        .metric-item {
+            text-align: center;
+            flex: 1;
+            min-width: 150px;
+        }
+        
+        .metric-number {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(to right, var(--white-color), var(--magenta-dark));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .metric-label {
+            font-size: 1rem;
+            opacity: 0.8;
+        }
+        
+        /* CTA section */
+        .cta-section {
+            padding: 5rem 3rem;
+            text-align: center;
+            background: linear-gradient(135deg, rgba(1, 0, 15, 1) 0%, rgba(35, 0, 33, 1) 100%);
+            color: var(--white-color);
+        }
+        
+        .cta-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .cta-section h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+            color: var(--dark-color);
+        }
+        
+        .cta-section p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            color: #666;
+        }
+        
+        /* Content sections */
+        .content-section {
+            background-color: var(--white-color);
+            border-radius: 8px;
+            padding: 2rem;
+            margin: 2rem 3rem;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        /* Download button */
+        .download-btn-container {
+            display: flex;
+            justify-content: center;
+            margin: 2rem 0;
+        }
+        
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            background: linear-gradient(to right, var(--magenta-dark), #03001A);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(138, 43, 226, 0.3);
+            position: relative;
+            z-index: 1;
+            animation: pulse 2s infinite;
+        }
+        
+        .download-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to right, #03001A, var(--magenta-dark));
+            border-radius: 4px;
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .download-btn i {
+            margin-right: 0.5rem;
+        }
+        
+        .download-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(138, 43, 226, 0.5);
+        }
+        
+        .download-btn:hover::before {
+            opacity: 1;
+        }
+        
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(59, 1, 56, 0.4);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(59, 1, 56, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(59, 1, 56, 0);
+            }
+        }
+        
+        /* Footer */
+        .footer {
+            background-color: #03001A;
+            color: var(--white-color);
+            text-align: center;
+            padding: 3rem;
+            margin-top: 3rem;
+            margin-left: var(--sidebar-width);
+            position: relative;
+        }
+        
+        .footer::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%234a6fe3' fill-opacity='0.05' fill-rule='evenodd'%3E%3Ccircle cx='3' cy='3' r='3'/%3E%3Ccircle cx='13' cy='13' r='3'/%3E%3C/g%3E%3C/svg%3E");
+            opacity: 0.1;
+            pointer-events: none;
+        }
+        
+        .footer p {
+            margin-bottom: 1rem;
+            position: relative;
+        }
+        
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            position: relative;
+        }
+        
+        .social-link {
+            color: var(--white-color);
+            font-size: 1.5rem;
+            transition: all 0.3s;
+        }
+        
+        .social-link:hover {
+            color: var(--accent-color);
+            transform: translateY(-3px);
+        }
+        
+        /* Animation keyframes */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+        
+        /* Responsive styles */
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+                box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+                z-index: 1001;
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .footer {
+                margin-left: 0;
+            }
+            
+            .menu-toggle {
+                display: block;
+            }
+            
+            .features {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            }
+            
+            .features-container {
+                flex-direction: column;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .header {
+                padding: 0 1rem;
+            }
+            
+            .nav-item:not(.swagger-btn) {
+                display: none;
+            }
+            
+            .hero {
+                padding: 3rem 1.5rem;
+            }
+            
+            .hero h2 {
+                font-size: 2rem;
+            }
+            
+            .services-section,
+            .getting-started-section {
+                padding: 3rem 1.5rem;
+            }
+            
+            .section-header h2 {
+                font-size: 2rem;
+            }
+            
+            .features-highlight {
+                padding: 1.5rem;
+            }
+            
+            .metrics-container {
+                flex-direction: column;
+                gap: 2rem;
+            }
+            
+            .metric-item {
+                flex: auto;
+            }
+        }
+        
+        /* Dark overlay when sidebar is active on mobile */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        
+        @media (max-width: 992px) {
+            .sidebar-overlay.active {
+                display: block;
+            }
+        }
+        
+        /* GAIA Introduction Section Styles */
+        .gaia-intro {
+            background: linear-gradient(135deg, #03001A 0%, #230021 100%);
+            padding: 4rem 3rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .gaia-intro::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%234a6fe3' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            opacity: 0.1;
+            z-index: 0;
+        }
+        
+        .gaia-container {
+            max-width: 1440px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 3rem;
+        }
+        
+        .gaia-content {
+            flex: 1;
+            min-width: 300px;
+            animation: fadeInUp 0.8s ease-out;
+        }
+        
+        .gaia-intro h2 {
+            font-size: 2.8rem;
+            color: var(--white-color);
+            margin-bottom: 0.5rem;
+        }
+        
+        .gaia-divider {
+            width: 80px;
+            height: 4px;
+            background: var(--accent-gradient);
+            margin: 1.5rem 0;
+            border-radius: 2px;
+        }
+        
+        .gaia-description {
+            font-size: 1.3rem;
+            color: rgba(255, 255, 255, 0.9);
+            line-height: 1.7;
+            margin-bottom: 2rem;
+            max-width: 700px;
+        }
+        
+        .gaia-features {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+            margin-top: 2rem;
+        }
+        
+        .gaia-feature {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .gaia-feature i {
+            font-size: 1.2rem;
+            color: var(--accent-color);
+            width: 30px;
+        }
+        
+        .gaia-feature p {
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 1.1rem;
+        }
+        
+        .gaia-quote {
+            flex: 1;
+            min-width: 300px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .gaia-quote blockquote {
+            font-size: 1.8rem;
+            font-style: italic;
+            color: var(--white-color);
+            text-align: center;
+            max-width: 400px;
+            line-height: 1.5;
+            position: relative;
+            padding: 2rem;
+            border-left: none;
+            animation: fadeIn 1.2s ease-out;
+        }
+        
+        .gaia-quote blockquote::before,
+        .gaia-quote blockquote::after {
+            content: '"';
+            font-size: 4rem;
+            color: var(--accent-color);
+            opacity: 0.3;
+            position: absolute;
+        }
+        
+        .gaia-quote blockquote::before {
+            top: -10px;
+            left: 0;
+        }
+        
+        .gaia-quote blockquote::after {
+            bottom: -40px;
+            right: 0;
+        }
+        
+        @media (max-width: 992px) {
+            .gaia-container {
+                flex-direction: column;
+            }
+            
+            .gaia-quote {
+                margin-top: 1rem;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .gaia-intro {
+                padding: 3rem 1.5rem;
+            }
+            
+            .gaia-intro h2 {
+                font-size: 2.2rem;
+            }
+            
+            .gaia-description {
+                font-size: 1.1rem;
+            }
+            
+            .gaia-quote blockquote {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- RENDER THE HEADER TEMPLATE-->
+    {% include 'header.html' %}
+    
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    
+    <!-- RENDER THE SIDEBAR TEMPLATE-->
+    <aside class="sidebar">
+        {% include 'sidebar.html' %}
+    </aside>
+    
+    <main class="main-content">
+        <section class="hero" style="height: 550px;">
+            <div class="hero-container">
+                <h2 style="font-size: 220%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Supercharge Your Applications with GAIA today!</h2>
+                <p>The GAIA Platform provides a comprehensive suite of AI services designed to add intelligence to your applications. From advanced language models to image generation, speech processing, document intelligence, and more, GAIA's AI services are all accessible through simple, powerful APIs designed for developers at all levels.</p>
+                <div class="cta-buttons">
+                    <a href="{{ url_for('getting_started') }}" class="cta-btn">
+                        <i class="fas fa-rocket"></i> Get Started
+                    </a>
+                    <a href="/apidocs/" class="cta-btn cta-btn-secondary">
+                        <i class="fas fa-book"></i> Swagger API Docs
+                    </a>
+                </div>
+            </div>
+        </section>
+        
+        <section class="features-highlight">
+            <div class="features-container">
+                <div class="highlight-item">
+                    <div class="highlight-icon">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <div class="highlight-text">
+                        <h3>Fast Integration</h3>
+                        <p>Simple API calls with consistent response formats</p>
+                    </div>
+                </div>
+                <div class="highlight-item">
+                    <div class="highlight-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <div class="highlight-text">
+                        <h3>Secure Access</h3>
+                        <p>Token-based authentication with robust security</p>
+                    </div>
+                </div>
+                <div class="highlight-item">
+                    <div class="highlight-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="highlight-text">
+                        <h3>Usage Monitoring</h3>
+                        <p>Track API consumption and balance management</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section class="gaia-intro" style="background: url('/static/GAIA_eye.png') center/cover no-repeat;">
+            <div class="gaia-container">
+            <div class="gaia-content">
+                
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <h2 style="font-size: 220%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Meet</h2>
+                    <img src="/static/GAIA6.png" alt="GAIA Logo" style="height: 80px; position: relative; top: -5px;">
+                </div>
+
+                <div class="gaia-divider"></div>
+                <p class="gaia-description">Just as GAIA, the primordial Greek Earth Goddess, gave life to all creation, the TIH <strong>Global Artificial Intelligence Access</strong> (GAIA) platform breathes intelligence into your applications.</p>
+                
+                <div class="gaia-features">
+                <div class="gaia-feature">
+                    <i class="fas fa-seedling"></i>
+                    <p>GAIA provides the <strong>roots</strong> to ground your applications with AI capabilities</p>
+                </div>
+                <div class="gaia-feature">
+                    <i class="fas fa-magic"></i>
+                    <p>A unified gateway to access all AI models and services through one consistent interface</p>
+                </div>
+                <div class="gaia-feature">
+                    <i class="fas fa-plug"></i>
+                    <p>Simple integration that brings complex AI capabilities into any application</p>
+                </div>
+                </div>
+            </div>
+            <div class="gaia-quote">
+                <blockquote style="font-size: 180%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"><strong>"From TIH springs innovation; from GAIA springs intelligence."</strong></blockquote>
+            </div>
+            </div>
+        </section>
+        
+        <section class="services-section">
+            <div class="services-container">
+                <div class="section-header">
+                    <h2 style="font-size: 220%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">GAIA AI Services</h2>
+                    <br><br>
+                    <p>Explore GAIA's comprehensive suite of AI APIs designed to power the next generation of intelligent applications</p>
+                </div>
+                
+                <div class="features">
+                    <div class="feature-card">
+                        <div class="feature-icon" style="display: flex; justify-content: center; align-items: center;">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <h3 style="display: flex; justify-content: center; align-items: center;">Language Models</h3>
+                        <p style="text-align: justify;">Access cutting-edge language models including GPT-4o, GPT-4o-mini, Deepseek-R1, Llama, and O1-mini for text generation, content creation, summarization, and complex reasoning tasks.</p>
+                        <a href="{{ url_for('llm') }}" class="feature-link">Learn more <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon" style="display: flex; justify-content: center; align-items: center;">
+                            <i class="fas fa-comments"></i>
+                        </div>
+                        <h3 style="display: flex; justify-content: center; align-items: center;">Conversational AI</h3>
+                        <p style="text-align: justify;">Build sophisticated AI chat applications with multi-turn conversations that maintain context. Choose from different assistant types optimized for coding, creative tasks, research, and business use cases.</p>
+                        <a href="{{ url_for('llm_conversation') }}" class="feature-link">Learn more <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon" style="display: flex; justify-content: center; align-items: center;">
+                            <i class="fas fa-image"></i>
+                        </div>
+                        <h3 style="display: flex; justify-content: center; align-items: center;">Image Generation</h3>
+                        <p style="text-align: justify;">Create stunning AI-generated images with DALL-E 3 and Stable Diffusion Ultra. Convert text descriptions into high-quality visuals for creative content, design projects, and marketing materials.</p>
+                        <a href="{{ url_for('image_generation') }}" class="feature-link">Learn more <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon" style="display: flex; justify-content: center; align-items: center;">
+                            <i class="fas fa-microphone"></i>
+                        </div>
+                        <h3 style="display: flex; justify-content: center; align-items: center;">Speech Services</h3>
+                        <p style="text-align: justify;">Convert speech to text with advanced features like speaker diarization for multi-speaker recordings. Perfect for transcription, meeting notes, and voice-enabled applications.</p>
+                        <a href="{{ url_for('speech_services') }}" class="feature-link">Learn more <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon" style="display: flex; justify-content: center; align-items: center;">
+                            <i class="fas fa-book"></i>
+                        </div>
+                        <h3 style="display: flex; justify-content: center; align-items: center;">Document Intelligence</h3>
+                        <p style="text-align: justify;">Extract insights from documents with layout analysis, intelligent reading, and summarization capabilities. Process PDFs, Word documents, and more with high-precision content extraction.</p>
+                        <a href="{{ url_for('document_intelligence') }}" class="feature-link">Learn more <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon" style="display: flex; justify-content: center; align-items: center;">
+                            <i class="fas fa-eye"></i>
+                        </div>
+                        <h3 style="display: flex; justify-content: center; align-items: center;">OCR Services</h3>
+                        <p style="text-align: justify;">Specialized document extraction for South African ID documents and vehicle license discs. Extract structured data from document images with high accuracy and reliability.</p>
+                        <a href="{{ url_for('ocr_services') }}" class="feature-link">Learn more <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon" style="display: flex; justify-content: center; align-items: center;">
+                            <i class="fas fa-language"></i>
+                        </div>
+                        <h3 style="display: flex; justify-content: center; align-items: center;">NLP Services</h3>
+                        <p style="text-align: justify;">Powerful text analysis including classification and sentiment analysis. Categorize content, detect emotions, and extract meaningful insights from text data with confidence scores.</p>
+                        <a href="{{ url_for('nlp') }}" class="feature-link">Learn more <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon" style="display: flex; justify-content: center; align-items: center;">
+                            <i class="fas fa-search"></i>
+                        </div>
+                        <h3 style="display: flex; justify-content: center; align-items: center;">RAG Query</h3>
+                        <p style="text-align: justify;">Build AI applications that can answer questions based on your specific documents and content. Combine vector search with language models for accurate, context-aware responses grounded in your data.</p>
+                        <a href="{{ url_for('rag') }}" class="feature-link">Learn more <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon" style="display: flex; justify-content: center; align-items: center;">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                        <h3 style="display: flex; justify-content: center; align-items: center;">File Management</h3>
+                        <p style="text-align: justify;">Upload, access, and manage files for use with AI services. Securely handle documents, images, audio files, and other content for processing by our AI endpoints.</p>
+                        <a href="{{ url_for('file_management') }}" class="feature-link">Learn more <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section class="api-metrics">
+            <div class="metrics-container">
+                <div class="metric-item">
+                    <div class="metric-number">9+</div>
+                    <div class="metric-label">AI Services</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-number">25+</div>
+                    <div class="metric-label">API Endpoints</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-number">5</div>
+                    <div class="metric-label">LLM Models</div>
+                </div>
+            </div>
+        </section>
+        
+        <section class="getting-started-section">
+            <div class="steps-container">
+                <div class="section-header">
+                    <h2 style="font-size: 220%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Getting Started</h2>
+                    <br><br>
+                    <p>Follow these simple steps to start building with our AI API Platform</p>
+                    <br>
+                </div>
+                
+                <div class="steps-grid">
+                    <div class="step-card">
+                        <div class="step-number">1</div>
+                        <div class="step-icon"><i class="fas fa-key"></i></div>
+                        <h3>Register for an API Key</h3>
+                        <p>Request your unique API key through our registration form to gain access to all services.</p>
+                    </div>
+                    
+                    <div class="step-card">
+                        <div class="step-number">2</div>
+                        <div class="step-icon"><i class="fas fa-lock"></i></div>
+                        <h3>Generate a Token</h3>
+                        <p>Use your API key to generate an authentication token for secure API access.</p>
+                        <div class="code-sample">
+                            <span class="code-comment">// Example token generation</span><br>
+                            <span class="code-keyword">POST</span> /token<br>
+                            Headers: {<br>
+                              X-API-Key: <span class="code-string">your_api_key</span><br>
+                            }
+                        </div>
+                    </div>
+                    
+                    <div class="step-card">
+                        <div class="step-number">3</div>
+                        <div class="step-icon"><i class="fas fa-code"></i></div>
+                        <h3>Make Your First API Call</h3>
+                        <p>Start with a simple request to one of our language models or other services.</p>
+                        <div class="code-sample">
+                            <span class="code-comment">// Example LLM API call</span><br>
+                            <span class="code-keyword">POST</span> /llm/gpt-4o-mini<br>
+                            Headers: {<br>
+                              X-Token: <span class="code-string">your_token</span><br>
+                            }<br>
+                            Body: {<br>
+                              <span class="code-string">"system_prompt"</span>: <span class="code-string">"You are a helpful assistant."</span>,<br>
+                              <span class="code-string">"user_input"</span>: <span class="code-string">"Tell me about AI APIs."</span><br>
+                            }
+                        </div>
+                    </div>
+                    
+                    <div class="step-card">
+                        <div class="step-number">4</div>
+                        <div class="step-icon"><i class="fas fa-chart-bar"></i></div>
+                        <h3>Monitor Your Usage</h3>
+                        <p>Track your API credit consumption and balance through our monitoring endpoints.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section class="cta-section">
+            <div class="cta-container">
+                <img src="/static/GAIA6.png" alt="GAIA Logo" style="height: 100px; margin-right: 0.5rem;">
+                <h2 style="font-size: 220%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Ready for GAIA to transform your applications?</h2>
+                <p style="color: white;">Download GAIA's Postman Collection for quick integration or explore our Swagger API documentation.</p>
+                <div style="display: flex; justify-content: center; flex-wrap: wrap; margin: 2rem 0; gap: 1.5rem;">
+                    <a href="/static/resources/AIAPIS.postman_collection" class="cta-btn" style="background-color: var(--accent-color); color: var(--dark-color);" download>
+                        <i class="fas fa-download"></i> Download Postman Collection
+                    </a>
+                    <a href="/apidocs/" class="nav-item swagger-btn">
+                        <i class="fas fa-book"></i>Swagger API Docs
+                    </a>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <!-- RENDER THE FOOTER TEMPLATE-->
+    {% include 'footer.html' %}
+
+    <script>
+        // Toggle sidebar on mobile
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuToggle = document.getElementById('menu-toggle');
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            
+            menuToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('active');
+                overlay.classList.toggle('active');
+            });
+            
+            overlay.addEventListener('click', function() {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            });
+            
+            // Highlight current page in sidebar
+            const currentPage = window.location.pathname;
+            const sidebarLinks = document.querySelectorAll('.sidebar-link');
+            
+            sidebarLinks.forEach(link => {
+                if (link.getAttribute('href') === currentPage) {
+                    link.classList.add('active');
+                }
+            });
+            
+            // Add scroll animation for elements
+            const animateOnScroll = function() {
+                const elements = document.querySelectorAll('.feature-card, .step-card, .section-header');
+                
+                elements.forEach(element => {
+                    const elementPosition = element.getBoundingClientRect().top;
+                    const screenPosition = window.innerHeight / 1.2;
+                    
+                    if (elementPosition < screenPosition) {
+                        element.style.animation = 'fadeInUp 0.6s ease-out forwards';
+                    }
+                });
+            };
+            
+            // Run on load
+            animateOnScroll();
+            
+            // Run on scroll
+            window.addEventListener('scroll', animateOnScroll);
+            
+            // Make feature cards clickable
+            document.querySelectorAll('.feature-card').forEach(card => {
+                const link = card.querySelector('.feature-link');
+                if (link) {
+                    card.style.cursor = 'pointer';
+                    card.addEventListener('click', function(e) {
+                        // Only trigger if the click wasn't directly on the link or its children
+                        if (!e.target.closest('.feature-link')) {
+                            window.location.href = link.getAttribute('href');
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

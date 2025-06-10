@@ -1,0 +1,1588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conversational AI - AI API Platform</title>
+    <link rel="icon" href="/static/images/Telesure-logo.png" type="image/png">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: rgb(1, 96, 136);
+            --secondary-color: rgb(0, 10, 120);
+            --dark-color: rgb(0, 8, 66);
+            --light-color: #f5f6fa;
+            --text-color: #333;
+            --white-color: #ffffff;
+            --accent-color: #00d4ff;
+            --accent-gradient: linear-gradient(90deg, #00d4ff 0%, #6c63ff 100%);
+            --magenta-dark: #3B0138;
+            --magenta-gradient: linear-gradient(90deg, #3B0138 0%, #4a6fe3 100%);
+            --sidebar-width: 280px;
+            --header-height: 60px;
+            --openai-color: #10a37f;
+            --openai-gradient: linear-gradient(90deg, #10a37f 0%, #0f9675 100%);
+            --deepseek-color: #8036e7;
+            --deepseek-gradient: linear-gradient(90deg, #8036e7 0%, #6b21d3 100%);
+            --meta-color: #0668e1;
+            --meta-gradient: linear-gradient(90deg, #0668e1 0%, #0552b5 100%);
+            --general-color: #4a6fe3;
+            --coding-color: #339AF0;
+            --creative-color: #845EF7;
+            --research-color: #FF6B6B;
+            --business-color: #20C997;
+            --gold-gradient: linear-gradient(to right, rgb(224, 146, 0), rgb(215, 162, 3));
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--light-color);
+            color: var(--text-color);
+            position: relative;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%234a6fe3' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        .header {
+            background-color: #03001A;
+            color: var(--white-color);
+            padding: 0 2rem;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: var(--header-height);
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo i {
+            font-size: 1.8rem;
+            margin-right: 0.5rem;
+            color: var(--accent-color);
+        }
+        
+        .logo h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+        
+        .nav {
+            display: flex;
+            align-items: center;
+        }
+        
+        .nav-item {
+            margin-left: 1.5rem;
+            color: var(--white-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+            display: flex;
+            align-items: center;
+        }
+        
+        .nav-item:hover {
+            color: var(--accent-color);
+        }
+        
+        .nav-item i {
+            margin-right: 0.5rem;
+        }
+        
+        .swagger-btn {
+            background-color: var(--accent-color);
+            color: var(--dark-color);
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-weight: 600;
+            transition: all 0.3s;
+            box-shadow: 0 4px 10px rgba(0, 212, 255, 0.3);
+        }
+        
+        .swagger-btn:hover {
+            background-color: #00b8e6;
+            transform: translateY(-2px);
+            color: var(--dark-color);
+            box-shadow: 0 6px 15px rgba(0, 212, 255, 0.4);
+        }
+        
+        /* Mobile menu toggle */
+        .menu-toggle {
+            display: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            top: var(--header-height);
+            left: 0;
+            height: calc(100vh - var(--header-height));
+            width: var(--sidebar-width);
+            background-color: var(--white-color);
+            border-right: 1px solid rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+            z-index: 900;
+            padding: 1.5rem 0;
+            transition: transform 0.3s ease-in-out;
+        }
+        
+        .sidebar-category {
+            padding: 0.5rem 1.5rem;
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar-link {
+            display: block;
+            padding: 0.7rem 1.5rem;
+            padding-left: 2.5rem;
+            color: var(--text-color);
+            text-decoration: none;
+            transition: background-color 0.2s, color 0.2s;
+            font-size: 0.95rem;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar-link:hover {
+            background-color: rgba(106, 100, 255, 0.05);
+            color: var(--primary-color);
+        }
+        
+        .sidebar-link.active {
+            color: var(--primary-color);
+            background-color: rgba(106, 100, 255, 0.08);
+            border-left: 3px solid var(--primary-color);
+        }
+        
+        .sidebar-link i {
+            margin-right: 0.5rem;
+            width: 20px;
+            text-align: center;
+        }
+        
+        /* Main content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            margin-top: var(--header-height);
+            padding: 0;
+            min-height: calc(100vh - var(--header-height));
+        }
+        
+        /* Hero */
+        .hero {
+            background: url('/static/GAIA _splash3.gif') center/cover no-repeat;
+            color: var(--white-color);
+            padding: 5rem 3rem;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        
+        .hero::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background: linear-gradient(to right, rgba(1, 0, 15, 0.85) 0%, rgba(1, 0, 15, 0.5) 40%, transparent 80%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        @keyframes zoomDots {
+            0% {
+                transform: scale(0.3);
+                opacity: 0.1;
+            }
+            50% {
+                transform: scale(0.7);
+                opacity: 0.15;
+            }
+            100% {
+                transform: scale(0.3);
+                opacity: 0.1;
+            }
+        }
+        
+        .hero-container {
+            max-width: 1440px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .hero h2 {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+            max-width: 840px;
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: fadeInUp 0.8s ease-out;
+            font-size: 220%;
+        }
+        
+        .hero p {
+            font-size: 1.2rem;
+            max-width: 700px;
+            margin-bottom: 2rem;
+            line-height: 1.7;
+            color: rgba(255, 255, 255, 0.9);
+            animation: fadeInUp 1s ease-out;
+        }
+        
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            animation: fadeInUp 1.2s ease-out;
+        }
+        
+        .cta-btn {
+            display: inline-flex;
+            align-items: center;
+            background-color: var(--accent-color);
+            color: var(--dark-color);
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
+        }
+        
+        .cta-btn:hover {
+            background-color: #00b8e6;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 212, 255, 0.4);
+        }
+        
+        .cta-btn-secondary {
+            background-color: transparent;
+            color: var(--white-color);
+            border: 2px solid var(--white-color);
+            box-shadow: none;
+        }
+        
+        .cta-btn-secondary:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--white-color);
+            box-shadow: 0 4px 15px rgba(255, 255, 255, 0.2);
+        }
+        
+        .cta-btn i {
+            margin-right: 0.5rem;
+        }
+        
+        /* Overview section */
+        .overview-section {
+            padding: 4rem 3rem;
+            position: relative;
+        }
+        
+        .overview-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .section-header {
+            text-align: left;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid var(--light-color);
+            padding-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-icon {
+            width: 40px;
+            height: 40px;
+            margin-right: 1rem;
+            border-radius: 8px;
+            background-color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .section-icon i {
+            color: white;
+            font-size: 20px;
+        }
+        
+        .section-header h2 {
+            font-size: 2rem;
+            color: var(--dark-color);
+            margin: 0;
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 220%;
+        }
+
+        .chat-flow {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 3rem;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .flow-step {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            flex: 1;
+            min-width: 220px;
+            text-align: center;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .flow-step:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .flow-step::after {
+            content: "\f054";
+            font-family: "Font Awesome 5 Free";
+            font-weight: 900;
+            position: absolute;
+            right: -12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--primary-color);
+            font-size: 1.5rem;
+            z-index: 2;
+        }
+        
+        .flow-step:last-child::after {
+            display: none;
+        }
+        
+        .step-number {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 50%;
+            line-height: 40px;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+        
+        .flow-step h3 {
+            margin-bottom: 1rem;
+            color: var(--dark-color);
+        }
+        
+        .flow-step p {
+            color: #666;
+            font-size: 0.95rem;
+        }
+        
+        .key-features {
+            background-color: #f8faff;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        }
+        
+        .key-features h3 {
+            margin-bottom: 1.5rem;
+            color: var(--dark-color);
+            font-size: 1.5rem;
+        }
+        
+        .key-features ul {
+            list-style-type: none;
+            padding-left: 0.5rem;
+        }
+        
+        .key-features li {
+            position: relative;
+            padding-left: 1.5rem;
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+        
+        .key-features li:before {
+            content: "\f00c";
+            font-family: "Font Awesome 5 Free";
+            font-weight: 900;
+            position: absolute;
+            left: 0;
+            color: var(--primary-color);
+        }
+
+        /* Assistant types section */
+        .assistant-section {
+            padding: 4rem 3rem;
+            background-color: #f8faff;
+            position: relative;
+        }
+        
+        .assistant-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .assistant-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+        
+        .assistant-card {
+            background-color: var(--white-color);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 1;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            min-height: 380px;
+        }
+        
+        .assistant-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .assistant-header {
+            padding: 1.5rem;
+            color: white;
+            position: relative;
+            height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .general-card .assistant-header {
+            background: linear-gradient(90deg, #4a6fe3 0%, #6c63ff 100%);
+        }
+        
+        .coding-card .assistant-header {
+            background: linear-gradient(90deg, #339AF0 0%, #1c7ed6 100%);
+        }
+        
+        .creative-card .assistant-header {
+            background: linear-gradient(90deg, #845EF7 0%, #7048e8 100%);
+        }
+        
+        .research-card .assistant-header {
+            background: linear-gradient(90deg, #FF6B6B 0%, #f03e3e 100%);
+        }
+        
+        .business-card .assistant-header {
+            background: linear-gradient(90deg, #20C997 0%, #12b886 100%);
+        }
+        
+        .assistant-name {
+            font-size: 1.6rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .assistant-description {
+            font-size: 0.95rem;
+            opacity: 0.9;
+        }
+        
+        .assistant-body {
+            padding: 1.5rem;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .assistant-details {
+            margin-bottom: 1.5rem;
+            flex-grow: 1;
+        }
+        
+        .capability-list {
+            list-style-type: none;
+            padding-left: 0;
+            margin-bottom: 1.5rem;
+        }
+        
+        .capability-list li {
+            position: relative;
+            padding-left: 1.5rem;
+            margin-bottom: 0.6rem;
+            line-height: 1.4;
+        }
+        
+        .capability-list li::before {
+            content: "\f00c";
+            font-family: "Font Awesome 5 Free";
+            font-weight: 900;
+            position: absolute;
+            left: 0;
+            color: var(--primary-color);
+        }
+        
+        .general-card .capability-list li::before {
+            color: var(--general-color);
+        }
+        
+        .coding-card .capability-list li::before {
+            color: var(--coding-color);
+        }
+        
+        .creative-card .capability-list li::before {
+            color: var(--creative-color);
+        }
+        
+        .research-card .capability-list li::before {
+            color: var(--research-color);
+        }
+        
+        .business-card .capability-list li::before {
+            color: var(--business-color);
+        }
+        
+        .best-for {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--dark-color);
+        }
+        
+        .sample-prompt {
+            background-color: #f5f7fa;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            color: var(--dark-color);
+            border-left: 3px solid var(--primary-color);
+        }
+        
+        .general-card .sample-prompt {
+            border-left-color: var(--general-color);
+        }
+        
+        .coding-card .sample-prompt {
+            border-left-color: var(--coding-color);
+        }
+        
+        .creative-card .sample-prompt {
+            border-left-color: var(--creative-color);
+        }
+        
+        .research-card .sample-prompt {
+            border-left-color: var(--research-color);
+        }
+        
+        .business-card .sample-prompt {
+            border-left-color: var(--business-color);
+        }
+
+        /* API example section */
+        .api-section {
+            padding: 4rem 3rem;
+            position: relative;
+        }
+        
+        .api-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .api-tabs {
+            display: flex;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid #ddd;
+            overflow-x: auto;
+            padding-bottom: 1px;
+            scrollbar-width: thin;
+        }
+        
+        .api-tabs::-webkit-scrollbar {
+            height: 4px;
+        }
+        
+        .api-tabs::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        
+        .api-tabs::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 10px;
+        }
+        
+        .api-tab {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            color: #666;
+            font-weight: 600;
+            transition: all 0.3s;
+            white-space: nowrap;
+            border-bottom: 2px solid transparent;
+        }
+        
+        .api-tab.active {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--primary-color);
+        }
+        
+        .code-example {
+            display: none;
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        .code-example.active {
+            display: block;
+        }
+        
+        .code-block {
+            background-color: var(--dark-color);
+            color: #f8f8f2;
+            padding: 1.5rem;
+            border-radius: 8px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            line-height: 1.5;
+            overflow-x: auto;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+        
+        .code-block pre {
+            margin: 0;
+            white-space: pre-wrap;
+        }
+        
+        .keyword {
+            color: #ff79c6;
+        }
+        
+        .string {
+            color: #f1fa8c;
+        }
+        
+        .comment {
+            color: #6272a4;
+        }
+        
+        .number {
+            color: #bd93f9;
+        }
+        
+        .property {
+            color: #8be9fd;
+        }
+        
+        .response-example {
+            background-color: #f5f7fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            font-family: 'Consolas', 'Monaco', monospace;
+            line-height: 1.5;
+            overflow-x: auto;
+            margin-bottom: 2rem;
+            border-left: 3px solid var(--primary-color);
+        }
+
+        /* Conversation simulator */
+        .simulator-section {
+            padding: 4rem 3rem;
+            background-color: #f8faff;
+            position: relative;
+        }
+        
+        .simulator-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .conversation-window {
+            background-color: var(--white-color);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+        
+        .conversation-header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .conversation-header h3 {
+            margin: 0;
+            font-size: 1.2rem;
+        }
+        
+        .model-badge {
+            background-color: rgba(255, 255, 255, 0.2);
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .conversation-body {
+            padding: 1.5rem;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .message {
+            display: flex;
+            margin-bottom: 1.5rem;
+        }
+        
+        .message:last-child {
+            margin-bottom: 0;
+        }
+        
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 1rem;
+            background-color: #eee;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .user-avatar {
+            background-color: var(--primary-color);
+        }
+        
+        .assistant-avatar {
+            background-color: var(--secondary-color);
+        }
+        
+        .message-content {
+            background-color: #f5f7fa;
+            padding: 1rem;
+            border-radius: 8px;
+            max-width: 80%;
+        }
+        
+        .user-message .message-content {
+            background-color: #e3f2fd;
+        }
+        
+        .typing-indicator {
+            display: flex;
+            padding: 1rem;
+        }
+        
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #999;
+            border-radius: 50%;
+            margin-right: 4px;
+            animation: typingAnimation 1.5s infinite ease-in-out;
+        }
+        
+        .typing-dot:nth-child(1) {
+            animation-delay: 0s;
+        }
+        
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.3s;
+        }
+        
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.6s;
+            margin-right: 0;
+        }
+        
+        @keyframes typingAnimation {
+            0% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-5px);
+            }
+            100% {
+                transform: translateY(0);
+            }
+        }
+        
+        .conversation-footer {
+            border-top: 1px solid #eee;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .message-input {
+            flex-grow: 1;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 0.8rem 1rem;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        
+        .message-input:focus {
+            border-color: var(--primary-color);
+        }
+        
+        .send-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 0.8rem 1.2rem;
+            margin-left: 1rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .send-btn:hover {
+            background-color: #3d5cca;
+            transform: translateY(-2px);
+        }
+        
+        /* CTA section */
+        .cta-section {
+            padding: 5rem 3rem;
+            text-align: center;
+            background: linear-gradient(135deg, rgba(1, 0, 15, 1) 0%, rgba(35, 0, 33, 1) 100%);
+            color: var(--white-color);
+        }
+        
+        
+        .cta-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .cta-section h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 220%;
+        }
+        
+        .cta-section p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+        
+        /* Footer */
+        .footer {
+            background-color: #03001A;
+            color: var(--white-color);
+            text-align: center;
+            padding: 3rem;
+            margin-top: 3rem;
+            margin-left: var(--sidebar-width);
+            position: relative;
+        }
+        
+        .footer p {
+            margin-bottom: 1rem;
+            position: relative;
+        }
+        
+        /* Animation keyframes */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* Credit badge */
+        .credit-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.35rem 0.35rem; 
+            border-radius: 4px;
+            font-weight: 400;
+            font-size: 1.5rem; 
+            color: white;
+            background: linear-gradient(135deg, rgba(1, 0, 15, 1) 0%, rgba(74, 111, 227, 1) 100%);
+            animation: pulse 3s infinite ease-in-out;
+            margin-left: 10px;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(74, 111, 227, 0.4);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(74, 111, 227, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(74, 111, 227, 0);
+            }
+        }
+        
+        /* Responsive styles */
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+                box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+                z-index: 1001;
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .footer {
+                margin-left: 0;
+            }
+            
+            .menu-toggle {
+                display: block;
+            }
+            
+            .assistant-cards {
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            }
+            
+            .flow-step {
+                width: 48%;
+                margin-bottom: 1rem;
+            }
+            
+            .flow-step::after {
+                display: none;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .header {
+                padding: 0 1rem;
+            }
+            
+            .nav-item:not(.swagger-btn) {
+                display: none;
+            }
+            
+            .hero {
+                padding: 3rem 1.5rem;
+            }
+            
+            .hero h2 {
+                font-size: 2rem;
+            }
+            
+            .overview-section, .assistant-section, .api-section, .simulator-section {
+                padding: 3rem 1.5rem;
+            }
+            
+            .assistant-cards {
+                grid-template-columns: 1fr;
+            }
+            
+            .flow-step {
+                width: 100%;
+                margin-bottom: 1.5rem;
+            }
+        }
+        
+        /* Dark overlay when sidebar is active on mobile */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        
+        @media (max-width: 992px) {
+            .sidebar-overlay.active {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- RENDER THE HEADER TEMPLATE-->
+    {% include 'header.html' %}
+    
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    
+    <!-- RENDER THE SIDEBAR TEMPLATE-->
+    <aside class="sidebar">
+        {% include 'sidebar.html' %}
+    </aside>
+    
+    <main class="main-content">
+        <section class="hero" style="height: 550px;">
+            <div class="hero-container">
+                <br><br>
+                <h2 style="font-size: 220%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Conversational AI</h2>
+                <p>Build powerful, persistent conversational experiences with GAIA's Conversational API. Create, continue, and manage conversations across multiple LLM models and specialized assistant types.</p>
+                <div class="cta-buttons">
+                    <a href="/static/resources/AIAPIS.postman_collection" class="cta-btn" style="background-color: var(--accent-color); color: var(--dark-color);" download>
+                        <i class="fas fa-download"></i> Download Postman Collection
+                    </a>
+                    <a href="/apidocs/#/LLM%20Conversational" class="cta-btn cta-btn-secondary">
+                        <i class="fas fa-book"></i> API Documentation
+                    </a>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Overview section -->
+        <section class="overview-section">
+            <div class="overview-container">
+                <div class="section-header">
+                    <div class="section-icon">
+                        <i class="fas fa-comments"></i>
+                    </div>
+                    <h2>How It Works</h2>
+                </div>
+                
+                <div class="chat-flow">
+                    <div class="flow-step">
+                        <div class="step-number">1</div>
+                        <h3>Create a conversation</h3>
+                        <p>Initialize a new conversation with your preferred LLM model and assistant type</p>
+                    </div>
+                    
+                    <div class="flow-step">
+                        <div class="step-number">2</div>
+                        <h3>Get a response</h3>
+                        <p>Receive a contextual response from the AI assistant which includes a unique conversation ID for perpetuating the conversation.</p>
+                    </div>
+                    
+                    <div class="flow-step">
+                        <div class="step-number">3</div>
+                        <h3>Continue a chat</h3>
+                        <p>Send follow-up messages using the received conversation ID in subsequent messages withing the same conversation.</p>
+                    </div>
+                    
+                    <div class="flow-step">
+                        <div class="step-number">4</div>
+                        <h3>Manage History</h3>
+                        <p>Access or delete conversation history as needed</p>
+                    </div>
+                </div>
+                
+                <div class="key-features">
+                    <h3>Key Features</h3>
+                    <ul>
+                        <li>
+                            <strong>Multiple LLM Support</strong> - Choose from a variety of models including GPT-4o, GPT-4o-mini, O1-mini, DeepSeek-R1, and Llama models (more to come)
+                        </li>
+                        <li>
+                            <strong>Persistent Conversations</strong> - Conversations are stored securely and can be continued at any time
+                        </li>
+                        <li>
+                            <strong>Context Management</strong> - GAIA automatically manages context between messages for coherent conversations
+                        </li>
+                        <li>
+                            <strong>Token Usage Tracking</strong> - Monitor input and output tokens for each conversation
+                        </li>
+                        <li>
+                            <strong>Specialized Assistants</strong> - Choose from general, coding, creative, research, and business assistant types
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Assistant types section -->
+        <section class="assistant-section">
+            <div class="assistant-container">
+                <div class="section-header">
+                    <div class="section-icon">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <h2>Assistant Types</h2>
+                </div>
+                
+                <div class="assistant-cards">
+                    <!-- General Assistant Card -->
+                    <div class="assistant-card general-card">
+                        <div class="assistant-header">
+                            <h3 class="assistant-name">
+                                General Assistant
+                            </h3>
+                            <p class="assistant-description">All-purpose AI assistant for a wide range of tasks</p>
+                        </div>
+                        <div class="assistant-body">
+                            <div class="assistant-details">
+                                <ul class="capability-list">
+                                    <li>Answers questions across many domains</li>
+                                    <li>Helps with daily tasks and problem-solving</li>
+                                    <li>Provides information and explanations</li>
+                                    <li>Offers helpful suggestions and ideas</li>
+                                </ul>
+                                <div class="best-for">Best for:</div>
+                                <p>General questions, everyday assistance, and diverse information needs</p>
+                                <div class="sample-prompt">
+                                    "Can you explain how solar panels work and what factors affect their efficiency?"
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Coding Assistant Card -->
+                    <div class="assistant-card coding-card">
+                        <div class="assistant-header">
+                            <h3 class="assistant-name">
+                                Coding Assistant
+                            </h3>
+                            <p class="assistant-description">Specialized in programming and development tasks</p>
+                        </div>
+                        <div class="assistant-body">
+                            <div class="assistant-details">
+                                <ul class="capability-list">
+                                    <li>Writes, explains, and debugs code</li>
+                                    <li>Supports multiple programming languages</li>
+                                    <li>Helps with algorithm design</li>
+                                    <li>Offers best practices and optimization tips</li>
+                                </ul>
+                                <div class="best-for">Best for:</div>
+                                <p>Developers, programmers, and anyone working with code</p>
+                                <div class="sample-prompt">
+                                    "Write a Python function that checks if a string is a palindrome, with comments explaining the logic."
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Creative Assistant Card -->
+                    <div class="assistant-card creative-card">
+                        <div class="assistant-header">
+                            <h3 class="assistant-name">
+                                Creative Assistant
+                            </h3>
+                            <p class="assistant-description">Focused on creative writing and content generation</p>
+                        </div>
+                        <div class="assistant-body">
+                            <div class="assistant-details">
+                                <ul class="capability-list">
+                                    <li>Helps with writing stories, poems, and scripts</li>
+                                    <li>Generates creative content ideas</li>
+                                    <li>Assists with brainstorming and ideation</li>
+                                    <li>Offers feedback on creative work</li>
+                                </ul>
+                                <div class="best-for">Best for:</div>
+                                <p>Writers, content creators, marketers, and creative professionals</p>
+                                <div class="sample-prompt">
+                                    "Write a short story about a time traveler who accidentally changes history in a small but significant way."
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Research Assistant Card -->
+                    <div class="assistant-card research-card">
+                        <div class="assistant-header">
+                            <h3 class="assistant-name">
+                                Research Assistant
+                            </h3>
+                            <p class="assistant-description">Specialized in in-depth analysis and information</p>
+                        </div>
+                        <div class="assistant-body">
+                            <div class="assistant-details">
+                                <ul class="capability-list">
+                                    <li>Provides thorough, well-structured information</li>
+                                    <li>Helps with data analysis and interpretation</li>
+                                    <li>Explains complex concepts in detail</li>
+                                    <li>Presents balanced perspectives on topics</li>
+                                </ul>
+                                <div class="best-for">Best for:</div>
+                                <p>Researchers, students, analysts, and in-depth learning</p>
+                                <div class="sample-prompt">
+                                    "Provide a comprehensive analysis of the environmental impacts of electric vehicles compared to traditional combustion engines."
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Business Assistant Card -->
+                    <div class="assistant-card business-card">
+                        <div class="assistant-header">
+                            <h3 class="assistant-name">
+                                Business Assistant
+                            </h3>
+                            <p class="assistant-description">Specialized in professional communication and business topics</p>
+                        </div>
+                        <div class="assistant-body">
+                            <div class="assistant-details">
+                                <ul class="capability-list">
+                                    <li>Helps with professional emails and communications</li>
+                                    <li>Assists with business strategy and planning</li>
+                                    <li>Provides market and industry insights</li>
+                                    <li>Offers formal and professional content</li>
+                                </ul>
+                                <div class="best-for">Best for:</div>
+                                <p>Business professionals, executives, and corporate communications</p>
+                                <div class="sample-prompt">
+                                    "Draft a professional email to a client explaining a project delay and proposing a new timeline."
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- API examples section -->
+        <section class="api-section">
+            <div class="api-container">
+                <div class="section-header">
+                    <div class="section-icon">
+                        <i class="fas fa-code"></i>
+                    </div>
+                    <h2>API Examples</h2>
+                </div>
+                
+                <div class="api-tabs">
+                    <div class="api-tab active">Create Conversation</div>
+                    <div class="api-tab">Continue Conversation</div>
+                    <div class="api-tab">Delete Conversation</div>
+                </div>
+                
+                <!-- Create Conversation Example -->
+                <div class="code-example active">
+                    <h3>Create a New Conversation</h3>
+                    <p>Start a new conversation with your chosen LLM model and assistant type.</p>
+                    
+                    <div class="response-example">
+                        <pre><span class="comment"># Create a new conversation</span>
+<span class="keyword">curl</span> -X POST 'https://tihaiapis.tihsa.co.za/llm/conversation/chat' \
+  -H 'Content-Type: application/json' \
+  -H 'X-Token: YOUR_API_TOKEN' \
+  -d '{
+    "llm": "gpt-4o",
+    "assistant_type": "coding",
+    "user_message": "Write a function to calculate the Fibonacci sequence in Python",
+    "temperature": 0.7
+  }'</pre>
+                    </div>
+                    
+                    <h3>Response</h3>
+                    <div class="response-example">
+                        <pre>{
+  "conversation_id": "a1b2c3d4-5678-90ab-cdef-ghijklmnopqr",
+  "assistant_message": "Here's a Python function to calculate the Fibonacci sequence:\n\n```python\ndef fibonacci(n):\n    \"\"\"Calculate the Fibonacci sequence up to the nth term.\"\"\"\n    # Initialize the sequence with the first two Fibonacci numbers\n    fib_sequence = [0, 1]\n    \n    # Generate the sequence up to the nth term\n    for i in range(2, n):\n        # The next number is the sum of the two previous numbers\n        next_num = fib_sequence[i-1] + fib_sequence[i-2]\n        fib_sequence.append(next_num)\n    \n    return fib_sequence[:n]  # Return sequence up to n terms\n\n# Example usage\nprint(fibonacci(10))  # Output: [0, 1, 1, 2, 3, 5, 8, 13, 21, 34]\n```\n\nThis function creates a list starting with the first two Fibonacci numbers (0 and 1), then iteratively calculates each subsequent number by adding the two previous numbers. The function returns the sequence up to n terms.\n\nIs there anything specific about this implementation you'd like me to explain or modify?",
+  "model_used": "gpt-4o",
+  "assistant_used": "coding",
+  "input_tokens": 76,
+  "completion_tokens": 358,
+  "output_tokens": 434
+}</pre>
+                    </div>
+                </div>
+                
+                <!-- Continue Conversation Example -->
+                <div class="code-example">
+                    <h3>Continue an Existing Conversation</h3>
+                    <p>Send a follow-up message to an ongoing conversation using the conversation ID.</p>
+                    
+                    <div class="response-example">
+                        <pre><span class="comment"># Continue an existing conversation</span>
+<span class="keyword">curl</span> -X POST 'https://tihaiapis.tihsa.co.za/llm/conversation/continue' \
+  -H 'Content-Type: application/json' \
+  -H 'X-Token: YOUR_API_TOKEN' \
+  -d '{
+    "conversation_id": "a1b2c3d4-5678-90ab-cdef-ghijklmnopqr",
+    "user_message": "Can you modify the function to use recursion instead?"
+  }'</pre>
+                    </div>
+                    
+                    <h3>Response</h3>
+                    <div class="response-example">
+                        <pre>{
+  "conversation_id": "a1b2c3d4-5678-90ab-cdef-ghijklmnopqr",
+  "assistant_message": "Certainly! Here's a recursive implementation of the Fibonacci sequence function:\n\n```python\ndef fibonacci_recursive(n):\n    \"\"\"Calculate the Fibonacci sequence up to the nth term using recursion.\"\"\"\n    \n    def fib(n):\n        \"\"\"Recursive helper function to calculate the nth Fibonacci number.\"\"\"\n        # Base cases\n        if n <= 0:\n            return 0\n        elif n == 1:\n            return 1\n        \n        # Recursive case: fib(n) = fib(n-1) + fib(n-2)\n        return fib(n-1) + fib(n-2)\n    \n    # Generate the sequence\n    return [fib(i) for i in range(n)]\n\n# Example usage\nprint(fibonacci_recursive(10))  # Output: [0, 1, 1, 2, 3, 5, 8, 13, 21, 34]\n```\n\nThis recursive implementation has a helper function `fib(n)` that calculates the nth Fibonacci number using the recursive definition. Then, we use a list comprehension to generate the full sequence.\n\nNote that while this implementation is more elegant and closer to the mathematical definition, it's less efficient than the iterative approach for larger values of n due to repeated calculations. For production use with larger sequences, you might want to use memoization to improve performance:\n\n```python\ndef fibonacci_recursive_memo(n):\n    \"\"\"Calculate the Fibonacci sequence up to the nth term using memoized recursion.\"\"\"\n    # Cache to store already computed Fibonacci numbers\n    memo = {}\n    \n    def fib(n):\n        # Check if already computed\n        if n in memo:\n            return memo[n]\n        \n        # Base cases\n        if n <= 0:\n            result = 0\n        elif n == 1:\n            result = 1\n        else:\n            # Recursive case with memoization\n            result = fib(n-1) + fib(n-2)\n        \n        # Store result in cache\n        memo[n] = result\n        return result\n    \n    # Generate the sequence\n    return [fib(i) for i in range(n)]\n```\n\nThis memoized version will be much more efficient for larger values of n.",
+  "model_used": "gpt-4o",
+  "assistant_used": "coding",
+  "input_tokens": 512,
+  "completion_tokens": 687,
+  "output_tokens": 1199
+}</pre>
+                    </div>
+                </div>
+                
+                <!-- Delete Conversation Example -->
+                <div class="code-example">
+                    <h3>Delete a Conversation</h3>
+                    <p>Remove a conversation and its history when no longer needed.</p>
+                    
+                    <div class="response-example">
+                        <pre><span class="comment"># Delete a conversation</span>
+<span class="keyword">curl</span> -X DELETE 'https://tihaiapis.tihsa.co.za/llm/conversation?conversation_id=a1b2c3d4-5678-90ab-cdef-ghijklmnopqr' \
+  -H 'X-Token: YOUR_API_TOKEN'</pre>
+                    </div>
+                    
+                    <h3>Response</h3>
+                    <div class="response-example">
+                        <pre>{
+  "message": "Conversation deleted successfully",
+  "conversation_id": "a1b2c3d4-5678-90ab-cdef-ghijklmnopqr"
+}</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Conversation simulator section -->
+        <section class="simulator-section">
+            <div class="simulator-container">
+                <div class="section-header">
+                    <div class="section-icon">
+                        <i class="fas fa-comment-dots"></i>
+                    </div>
+                    <h2>Conversation Example</h2>
+                </div>
+                
+                <div class="conversation-window">
+                    <div class="conversation-header">
+                        <h3>Business Assistant</h3>
+                        <span class="model-badge">GPT-4o</span>
+                    </div>
+                    <div class="conversation-body">
+                        <div class="message">
+                            <div class="message-avatar user-avatar">U</div>
+                            <div class="message-content">
+                                I need help drafting a summary of our Q3 financial performance for the board meeting next week. We've seen a 12% revenue increase, but also a 5% increase in operational costs.
+                            </div>
+                        </div>
+                        
+                        <div class="message">
+                            <div class="message-avatar assistant-avatar">A</div>
+                            <div class="message-content">
+                                <p>Here's a draft summary for your Q3 financial performance:</p>
+                                <p><strong>Q3 Financial Performance Summary</strong></p>
+                                <p>During the third quarter, our company demonstrated robust revenue growth, achieving a 12% increase compared to the same period last year. This positive momentum reflects the successful implementation of our strategic initiatives and strong market demand for our core products and services.</p>
+                                <p>While we've experienced substantial top-line growth, we also observed a 5% increase in operational costs. This uptick in expenses is primarily attributed to:</p>
+                                <ul>
+                                    <li>Investments in new technology infrastructure</li>
+                                    <li>Strategic hiring in key departments</li>
+                                    <li>Rising supply chain costs affecting the industry</li>
+                                </ul>
+                                <p>Despite these increased costs, our operating margin remains healthy at [specific percentage], demonstrating our commitment to efficient operations while investing in future growth.</p>
+                                <p>Key highlights include:</p>
+                                <ul>
+                                    <li>Revenue: +12% YoY</li>
+                                    <li>Operational costs: +5% YoY</li>
+                                    <li>Net profit: [specific percentage change]</li>
+                                    <li>Cash reserves: [specific amount/change]</li>
+                                </ul>
+                                <p>Looking ahead, we're implementing targeted cost optimization initiatives while maintaining our growth trajectory. We remain well-positioned to achieve our annual financial targets.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="message">
+                            <div class="message-avatar user-avatar">U</div>
+                            <div class="message-content">
+                                This looks good, but can you add a section about our new product launch that contributed to 30% of the new revenue growth?
+                            </div>
+                        </div>
+                        
+                        <div class="message">
+                            <div class="message-avatar assistant-avatar">A</div>
+                            <div class="message-content">
+                                <p>I've added a section about the new product launch:</p>
+                                <p><strong>Q3 Financial Performance Summary</strong></p>
+                                <p>During the third quarter, our company demonstrated robust revenue growth, achieving a 12% increase compared to the same period last year. This positive momentum reflects the successful implementation of our strategic initiatives and strong market demand for our core products and services.</p>
+                                <p><strong>New Product Performance</strong></p>
+                                <p>A significant driver of our Q3 success was the launch of [Product Name], which exceeded initial projections and contributed to 30% of our overall revenue growth. The strong market reception validates our R&D investments and positions this new offering as a key pillar in our product portfolio. Customer adoption rates have surpassed forecasts by 25%, and initial feedback indicates high satisfaction scores of 4.8/5.0.</p>
+                                <p>While we've experienced substantial top-line growth, we also observed a 5% increase in operational costs. This uptick in expenses is primarily attributed to:</p>
+                                <ul>
+                                    <li>Investments in new technology infrastructure</li>
+                                    <li>Strategic hiring in key departments</li>
+                                    <li>Rising supply chain costs affecting the industry</li>
+                                    <li>Marketing and launch expenses for the new product line</li>
+                                </ul>
+                                <p>Despite these increased costs, our operating margin remains healthy at [specific percentage], demonstrating our commitment to efficient operations while investing in future growth.</p>
+                                <p>Key highlights include:</p>
+                                <ul>
+                                    <li>Revenue: +12% YoY</li>
+                                    <li>Operational costs: +5% YoY</li>
+                                    <li>Net profit: [specific percentage change]</li>
+                                    <li>Cash reserves: [specific amount/change]</li>
+                                    <li>New product revenue contribution: 30% of growth</li>
+                                </ul>
+                                <p>Looking ahead, we're implementing targeted cost optimization initiatives while maintaining our growth trajectory. We're also planning to expand the new product line with additional features in Q4. We remain well-positioned to achieve our annual financial targets.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="conversation-footer">
+                        <input type="text" class="message-input" placeholder="Type your message...">
+                        <button class="send-btn">
+                            <i class="fas fa-paper-plane"></i> Send
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- CTA Section -->
+        <section class="cta-section">
+            <div class="cta-container">
+                <img src="/static/GAIA6.png" alt="GAIA Logo" style="height: 100px; margin-right: 0.5rem;">
+                <h2>Ready to Build Conversational Experiences with GAIA?</h2>
+                <p>Start creating intelligent, context-aware conversations with our powerful LLM Conversational API.</p>
+                <div class="cta-buttons" style="justify-content: center;">
+                    <a href="/static/resources/AIAPIS.postman_collection" class="cta-btn" style="background-color: var(--accent-color); color: var(--dark-color);" download>
+                        <i class="fas fa-download"></i> Download Postman Collection
+                    </a>
+                    <a href="{{ url_for('getting_started') }}" class="cta-btn cta-btn-secondary">
+                        <i class="fas fa-rocket"></i> Get Started
+                    </a>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    {% include 'footer.html' %}
+    
+    <script>
+        // Toggle sidebar on mobile
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuToggle = document.getElementById('menu-toggle');
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            
+            menuToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('active');
+                overlay.classList.toggle('active');
+            });
+            
+            overlay.addEventListener('click', function() {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            });
+            
+            // Highlight current page in sidebar
+            const currentPage = window.location.pathname;
+            const sidebarLinks = document.querySelectorAll('.sidebar-link');
+            
+            sidebarLinks.forEach(link => {
+                if (link.getAttribute('href') === currentPage) {
+                    link.classList.add('active');
+                }
+            });
+            
+            // API tabs functionality
+            const apiTabs = document.querySelectorAll('.api-tab');
+            const codeExamples = document.querySelectorAll('.code-example');
+            
+            apiTabs.forEach((tab, index) => {
+                tab.addEventListener('click', function() {
+                    // Remove active class from all tabs and examples
+                    apiTabs.forEach(t => t.classList.remove('active'));
+                    codeExamples.forEach(e => e.style.display = 'none');
+                    
+                    // Add active class to clicked tab and show corresponding example
+                    tab.classList.add('active');
+                    codeExamples[index].style.display = 'block';
+                });
+            });
+            
+            // Add scroll animation for elements
+            const animateOnScroll = function() {
+                const elements = document.querySelectorAll('.flow-step, .assistant-card, .conversation-window, .section-header');
+                
+                elements.forEach(element => {
+                    const elementPosition = element.getBoundingClientRect().top;
+                    const screenPosition = window.innerHeight / 1.2;
+                    
+                    if (elementPosition < screenPosition) {
+                        element.style.animation = 'fadeInUp 0.6s ease-out forwards';
+                    }
+                });
+            };
+            
+            // Run on load
+            animateOnScroll();
+            
+            // Run on scroll
+            window.addEventListener('scroll', animateOnScroll);
+        });
+    </script>
+</body>
+</html>

@@ -7,15 +7,12 @@ import pytz
 from datetime import datetime
 import calendar
 import re
+import json
 
 # CONFIGURE LOGGING
 logger = logging.getLogger(__name__)
 
-def create_api_response(data, status_code=200):
-    """Helper function to create consistent API responses"""
-    response = make_response(jsonify(data))
-    response.status_code = status_code
-    return response
+from apis.utils.config import create_api_response
 
 def usage_by_user_route():
     """
@@ -29,22 +26,21 @@ def usage_by_user_route():
         type: string
         required: true
         description: Valid token for authentication
-      - name: body
-        in: body
+      - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems
+      - name: user_id
+        in: query
+        type: string
         required: true
-        schema:
-          type: object
-          required:
-            - user_id
-            - time_period
-          properties:
-            user_id:
-              type: string
-              description: ID of the user to get statistics for
-            time_period:
-              type: string
-              description: Time period for statistics, either "all" or in format "YYYY-MM"
-              example: "2024-03"
+        description: ID of the user to get statistics for
+      - name: time_period
+        in: query
+        type: string
+        required: true
+        description: Time period for statistics, either "all" or in format "YYYY-MM" (e.g. "2024-03")
     produces:
       - application/json
     responses:
@@ -93,10 +89,12 @@ def usage_by_user_route():
                     format: float
                     description: Average response time in milliseconds
                   credits_consumed:
-                    type: integer
+                    type: number
+                    format: float
                     description: Credits consumed by this endpoint
             credits_consumed:
-              type: integer
+              type: number
+              format: float
               description: Total credits consumed
       400:
         description: Bad request
@@ -181,25 +179,22 @@ def usage_by_user_route():
     # Get user ID of authenticated user
     authenticated_user_id = token_details["user_id"]
     
-    # Get request data
-    data = request.get_json()
-    if not data:
+    # Get parameters from query string instead of request body
+    user_id = request.args.get('user_id')
+    time_period = request.args.get('time_period')
+    
+    # Validate required parameters
+    if not user_id or not time_period:
+        missing_params = []
+        if not user_id:
+            missing_params.append('user_id')
+        if not time_period:
+            missing_params.append('time_period')
+            
         return create_api_response({
             "error": "Bad Request",
-            "message": "Request body is required"
+            "message": f"Missing required parameters: {', '.join(missing_params)}"
         }, 400)
-    
-    # Validate required fields
-    required_fields = ['user_id', 'time_period']
-    missing_fields = [field for field in required_fields if field not in data]
-    if missing_fields:
-        return create_api_response({
-            "error": "Bad Request",
-            "message": f"Missing required fields: {', '.join(missing_fields)}"
-        }, 400)
-    
-    user_id = data.get('user_id')
-    time_period = data.get('time_period')
     
     # Check if user_id matches authenticated user, or user is an admin
     if user_id != authenticated_user_id:
@@ -262,22 +257,21 @@ def usage_by_department_route():
         type: string
         required: true
         description: Valid token for authentication
-      - name: body
-        in: body
+      - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems
+      - name: department
+        in: query
+        type: string
         required: true
-        schema:
-          type: object
-          required:
-            - department
-            - time_period
-          properties:
-            department:
-              type: string
-              description: Department to get statistics for
-            time_period:
-              type: string
-              description: Time period for statistics, either "all" or in format "YYYY-MM"
-              example: "2024-03"
+        description: Department to get statistics for
+      - name: time_period
+        in: query
+        type: string
+        required: true
+        description: Time period for statistics, either "all" or in format "YYYY-MM" (e.g. "2024-03")
     produces:
       - application/json
     responses:
@@ -338,10 +332,12 @@ def usage_by_department_route():
                           format: float
                           description: Average response time in milliseconds
                         credits_consumed:
-                          type: integer
+                          type: number
+                          format: float
                           description: Credits consumed by this endpoint
                   credits_consumed:
-                    type: integer
+                    type: number
+                    format: float
                     description: Credits consumed by this user
       400:
         description: Bad request
@@ -447,25 +443,22 @@ def usage_by_department_route():
     
     user_department = authenticated_user.get("department")
     
-    # Get request data
-    data = request.get_json()
-    if not data:
+    # Get parameters from query string instead of request body
+    requested_department = request.args.get('department')
+    time_period = request.args.get('time_period')
+    
+    # Validate required parameters
+    if not requested_department or not time_period:
+        missing_params = []
+        if not requested_department:
+            missing_params.append('department')
+        if not time_period:
+            missing_params.append('time_period')
+            
         return create_api_response({
             "error": "Bad Request",
-            "message": "Request body is required"
+            "message": f"Missing required parameters: {', '.join(missing_params)}"
         }, 400)
-    
-    # Validate required fields
-    required_fields = ['department', 'time_period']
-    missing_fields = [field for field in required_fields if field not in data]
-    if missing_fields:
-        return create_api_response({
-            "error": "Bad Request",
-            "message": f"Missing required fields: {', '.join(missing_fields)}"
-        }, 400)
-    
-    requested_department = data.get('department')
-    time_period = data.get('time_period')
     
     # Check if user is requesting their own department or is an admin
     if requested_department != user_department:
@@ -718,5 +711,5 @@ def get_department_statistics(department, time_period):
 
 def register_usage_stats_routes(app):
     """Register usage statistics routes with the Flask app"""
-    app.route('/usage-by-user', methods=['POST'])(api_logger(usage_by_user_route))
-    app.route('/usage-by-department', methods=['POST'])(api_logger(usage_by_department_route))
+    app.route('/usage/user', methods=['GET'])(api_logger(usage_by_user_route))
+    app.route('/usage/department', methods=['GET'])(api_logger(usage_by_department_route))
