@@ -4,6 +4,8 @@ from apis.utils.fileService import FileService
 from apis.speech_services.stt import transcribe_audio, calculate_audio_duration
 from apis.speech_services.stt_diarize import process_transcript_with_llm, split_transcript_into_chunks, count_tokens
 import requests
+import uuid
+from apis.utils.databaseService import DatabaseService
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -15,6 +17,127 @@ class JobProcessor:
     This class contains methods to process different types of async jobs
     like speech-to-text and speech-to-text with diarization.
     """
+    
+    @staticmethod
+    def update_usage_metrics(user_id, job_type, metrics):
+        """Update or create usage metrics in the user_usage table
+        
+        This method will check if a usage record already exists for the job's API call
+        and update it rather than creating a duplicate record.
+        
+        Args:
+            user_id (str): ID of the user who submitted the job
+            job_type (str): Type of job (e.g., 'stt', 'stt_diarize')
+            metrics (dict): Dictionary containing usage metrics
+            
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        try:
+            # Get endpoint ID based on job type
+            endpoint_path = f"/speech/{job_type}"
+            endpoint_id = DatabaseService.get_endpoint_id_by_path(endpoint_path)
+            
+            if not endpoint_id:
+                logger.error(f"Endpoint ID not found for path: {endpoint_path}")
+                return False
+                
+            # Connect to database
+            conn = DatabaseService.get_connection()
+            cursor = conn.cursor()
+            
+            # First check if we already have a usage record for this user and endpoint
+            # (created within the last hour to avoid updating very old records)
+            query = """
+            SELECT id 
+            FROM user_usage 
+            WHERE user_id = ? 
+            AND endpoint_id = ? 
+            AND DATEDIFF(hour, timestamp, DATEADD(HOUR, 2, GETUTCDATE())) < 1
+            ORDER BY timestamp DESC
+            """
+            
+            cursor.execute(query, [user_id, endpoint_id])
+            existing_record = cursor.fetchone()
+            
+            if existing_record:
+                # Update existing record
+                usage_id = existing_record[0]
+                logger.info(f"Updating existing usage record {usage_id} for {job_type}")
+                
+                update_query = """
+                UPDATE user_usage
+                SET audio_seconds_processed = ?,
+                    model_used = ?,
+                    prompt_tokens = ?,
+                    completion_tokens = ?,
+                    total_tokens = ?,
+                    cached_tokens = ?
+                WHERE id = ?
+                """
+                
+                cursor.execute(update_query, [
+                    metrics.get("audio_seconds_processed", 0),
+                    metrics.get("model_used"),
+                    metrics.get("prompt_tokens", 0),
+                    metrics.get("completion_tokens", 0),
+                    metrics.get("total_tokens", 0),
+                    metrics.get("cached_tokens", 0),
+                    usage_id
+                ])
+                
+                conn.commit()
+                cursor.close()
+                conn.close()
+                
+                logger.info(f"Successfully updated usage metrics for {job_type} job, usage_id: {usage_id}")
+                return True
+                
+            else:
+                # If no existing record found (which shouldn't happen with middleware),
+                # create a new one as fallback
+                usage_id = str(uuid.uuid4())
+                logger.warning(f"No existing usage record found for {job_type}. Creating new record {usage_id}")
+                
+                insert_query = """
+                INSERT INTO user_usage (
+                    id, user_id, endpoint_id, timestamp,
+                    images_generated, audio_seconds_processed, pages_processed,
+                    documents_processed, model_used, prompt_tokens,
+                    completion_tokens, total_tokens, cached_tokens, files_uploaded
+                )
+                VALUES (
+                    ?, ?, ?, DATEADD(HOUR, 2, GETUTCDATE()),
+                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                )
+                """
+                
+                cursor.execute(insert_query, [
+                    usage_id,
+                    user_id,
+                    endpoint_id,
+                    metrics.get("images_generated", 0),
+                    metrics.get("audio_seconds_processed", 0),
+                    metrics.get("pages_processed", 0),
+                    metrics.get("documents_processed", 0),
+                    metrics.get("model_used"),
+                    metrics.get("prompt_tokens", 0),
+                    metrics.get("completion_tokens", 0),
+                    metrics.get("total_tokens", 0),
+                    metrics.get("cached_tokens", 0),
+                    metrics.get("files_uploaded", 0)
+                ])
+                
+                conn.commit()
+                cursor.close()
+                conn.close()
+                
+                logger.info(f"Created new usage record {usage_id} for {job_type} as fallback")
+                return True
+            
+        except Exception as e:
+            logger.error(f"Error updating usage metrics for async job: {str(e)}")
+            return False
     
     @staticmethod
     def process_stt_job(job_id, user_id, file_id):
@@ -100,6 +223,12 @@ class JobProcessor:
                 "transcription_details": transcription_result,
                 "seconds_processed": seconds_processed
             }
+            
+            # Update existing usage metrics
+            metrics = {
+                "audio_seconds_processed": seconds_processed
+            }
+            JobProcessor.update_usage_metrics(user_id, "stt", metrics)
             
             # Update job status to completed with results
             JobService.update_job_status(job_id, 'completed', result_data=result_data)
@@ -277,6 +406,17 @@ class JobProcessor:
                 "embedded_tokens": total_embedded_tokens,
                 "model_used": model_deplopyment
             }
+            
+            # Update existing usage metrics
+            metrics = {
+                "audio_seconds_processed": seconds_processed,
+                "model_used": model_deplopyment,
+                "prompt_tokens": total_prompt_tokens,
+                "completion_tokens": total_completion_tokens,
+                "total_tokens": total_tokens,
+                "cached_tokens": total_cached_tokens
+            }
+            JobProcessor.update_usage_metrics(user_id, "stt_diarize", metrics)
             
             # Update job status to completed with results
             JobService.update_job_status(job_id, 'completed', result_data=result_data)

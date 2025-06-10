@@ -23,7 +23,8 @@ def extract_usage_metrics(response):
         "completion_tokens": 0,
         "total_tokens": 0,
         "cached_tokens": 0,
-        "files_uploaded": 0
+        "files_uploaded": 0,
+        "embedded_tokens": 0  # Added embedded_tokens field
     }
     
     try:
@@ -49,6 +50,10 @@ def extract_usage_metrics(response):
         if "cached_tokens" in response_data:
             metrics["cached_tokens"] = response_data["cached_tokens"]
         
+        # Add extraction of embedded_tokens
+        if "embedded_tokens" in response_data:
+            metrics["embedded_tokens"] = response_data["embedded_tokens"]
+        
         # Token usage metrics - nested in 'usage' field
         if "usage" in response_data and isinstance(response_data["usage"], dict):
             usage = response_data["usage"]
@@ -60,6 +65,8 @@ def extract_usage_metrics(response):
                 metrics["total_tokens"] = usage["total_tokens"]
             if "cached_tokens" in usage:
                 metrics["cached_tokens"] = usage["cached_tokens"]
+            if "embedded_tokens" in usage:
+                metrics["embedded_tokens"] = usage["embedded_tokens"]
         
         # Image generation metrics
         if "images_generated" in response_data:
@@ -121,12 +128,12 @@ def log_usage_metrics_and_update_api_log(metrics, api_log_id, usage_id):
             images_generated, audio_seconds_processed, pages_processed,
             documents_processed, model_used, prompt_tokens,
             completion_tokens, total_tokens, cached_tokens, files_uploaded,
-            api_log_id
+            api_log_id, embedded_tokens
         )
         VALUES (
             ?, ?, ?, DATEADD(HOUR, 2, GETUTCDATE()),
             ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-            ?
+            ?, ?
         )
         """
         
@@ -144,7 +151,8 @@ def log_usage_metrics_and_update_api_log(metrics, api_log_id, usage_id):
             metrics["total_tokens"],
             metrics["cached_tokens"],
             metrics["files_uploaded"],
-            api_log_id  # Add api_log_id parameter
+            api_log_id,  # Add api_log_id parameter
+            metrics["embedded_tokens"]  # Add embedded_tokens parameter
         ])
         
         # 2. Update the api_logs table with the user_usage_id
@@ -182,27 +190,30 @@ def create_api_log_and_get_id(user_id, endpoint_id, request_method, response_sta
         
         log_id = str(uuid.uuid4())
         
+        # Get correlation ID from Flask g object if available
+        correlation_id = getattr(g, 'correlation_id', None)
+        
         query = """
         INSERT INTO api_logs (
             id, endpoint_id, user_id, timestamp, request_method, 
-            response_status, response_time_ms
+            response_status, response_time_ms, correlation_id
         )
         VALUES (
             ?, ?, ?, DATEADD(HOUR, 2, GETUTCDATE()), ?, 
-            ?, ?
+            ?, ?, ?
         )
         """
         
         cursor.execute(query, [
             log_id, endpoint_id, user_id, request_method,
-            response_status, response_time_ms
+            response_status, response_time_ms, correlation_id
         ])
         
         conn.commit()
         cursor.close()
         conn.close()
         
-        logger.info(f"Created API log with ID {log_id} for usage tracking")
+        logger.info(f"Created API log with ID {log_id} for usage tracking, Correlation ID: {correlation_id}")
         return log_id
         
     except Exception as e:

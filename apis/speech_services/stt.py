@@ -19,11 +19,7 @@ logger = logging.getLogger(__name__)
 STT_API_KEY = os.environ.get("MS_STT_API_KEY")
 STT_ENDPOINT = os.environ.get("MS_STT_ENDPOINT")
 
-def create_api_response(data, status_code=200):
-    """Helper function to create consistent API responses"""
-    response = make_response(jsonify(data))
-    response.status_code = status_code
-    return response
+from apis.utils.config import create_api_response
 
 def transcribe_audio(file_url):
     """Transcribe audio using Microsoft Speech to Text API"""
@@ -99,6 +95,11 @@ def speech_to_text_route():
         type: string
         required: true
         description: Valid token for authentication
+      - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems
       - name: body
         in: body
         required: true

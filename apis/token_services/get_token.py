@@ -10,12 +10,7 @@ logger = logging.getLogger(__name__)
 # INITIALIZE THE TOKEN SERVICE
 token_service = TokenService()
 
-def create_api_response(data, status_code=200):
-  """Helper function to create consistent API responses"""
-  response = make_response(jsonify(data))
-  response.status_code = status_code
-  return response
-  
+from apis.utils.config import create_api_response
 
 def get_token_route():
     """
@@ -29,6 +24,11 @@ def get_token_route():
         type: string
         required: true
         description: API Key for authentication
+      - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems
     responses:
       200:
         description: Token generated successfully

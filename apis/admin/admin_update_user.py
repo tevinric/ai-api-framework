@@ -10,11 +10,7 @@ from datetime import datetime
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def create_api_response(data, status_code=200):
-    """Helper function to create consistent API responses"""
-    response = make_response(jsonify(data))
-    response.status_code = status_code
-    return response
+from apis.utils.config import create_api_response
 
 def admin_update_user_route():
     """
@@ -30,6 +26,11 @@ parameters:
     type: string
     required: true
     description: Admin API Key for authentication
+  - name: X-Correlation-ID
+    in: header
+    type: string
+    required: false
+    description: Unique identifier for tracking requests across multiple systems
   - name: token
     in: query
     type: string
@@ -61,6 +62,24 @@ parameters:
         department:
           type: string
           description: Updated department name (optional)
+        phone_ext:
+          type: string
+          description: Updated phone extension (optional)
+        division:
+          type: string
+          description: Updated division name (optional)
+        sub_department:
+          type: string
+          description: Updated sub-division name (optional)
+        cost_center:
+          type: string
+          description: Updated cost center (optional)
+        manager_full_name:
+          type: string
+          description: Updated manager's full name (optional)
+        manager_email:
+          type: string
+          description: Updated manager's email address (optional)
         scope:
           type: integer
           description: Updated permission scope (optional, 1-5)
@@ -244,7 +263,10 @@ responses:
     
     # Prepare update data (only include fields that are provided AND different from current values)
     update_data = {}
-    valid_fields = ['user_name', 'user_email', 'common_name', 'company', 'department', 'scope', 'active', 'comment','aic_balance']
+    valid_fields = ['user_name', 'user_email', 'common_name', 'company', 'department', 
+                    'phone_ext', 'division', 'sub_department', 'cost_center', 
+                    'manager_full_name', 'manager_email', 
+                    'scope', 'active', 'comment', 'aic_balance']
     
     for field in valid_fields:
         if field in data and data[field] is not None:

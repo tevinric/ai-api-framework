@@ -33,11 +33,32 @@ VECTORSTORE_CONTAINER = "vectorstores"
 STORAGE_ACCOUNT = os.environ.get("AZURE_STORAGE_ACCOUNT")
 BASE_BLOB_URL = f"https://{STORAGE_ACCOUNT}.blob.core.windows.net/{VECTORSTORE_CONTAINER}"
 
-def create_api_response(data, status_code=200):
-    """Helper function to create consistent API responses"""
-    response = make_response(jsonify(data))
-    response.status_code = status_code
-    return response
+from apis.utils.config import create_api_response
+
+def count_embedding_tokens(text):
+    """
+    Count tokens for the embedding model using tiktoken
+    
+    Args:
+        text (str): The text to count tokens for
+        
+    Returns:
+        int: Token count
+    """
+    try:
+        # Import the tokenizer from tiktoken
+        import tiktoken
+        
+        # Use cl100k_base tokenizer for text-embedding-3-large
+        encoding = tiktoken.get_encoding("cl100k_base")
+        
+        # Count tokens
+        token_count = len(encoding.encode(text))
+        return token_count
+    except Exception as e:
+        # Fallback for any issues
+        logger.warning(f"Error using tiktoken: {str(e)}. Using approximate count.")
+        return max(1, len(text) // 4)
 
 def update_vectorstore_access_timestamp(vectorstore_id):
     """Update the last_accessed timestamp for a vectorstore"""
@@ -110,6 +131,11 @@ def create_vectorstore_route():
         type: string
         required: true
         description: Authentication token
+      - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems        
       - name: body
         in: body
         required: true
@@ -384,11 +410,10 @@ def create_vectorstore_route():
             azure_endpoint=os.environ.get("OPENAI_API_ENDPOINT")
         )
         
-        # Estimate token count (approximately 4 tokens per word)
+        # Count tokens using tiktoken
         total_text = " ".join([chunk.page_content for chunk in chunks])
-        words = total_text.split()
-        estimated_tokens = len(words) * 4  # Rough estimation
-        
+        estimated_tokens = count_embedding_tokens(total_text)
+                
         # Create FAISS index
         vectorstore = FAISS.from_documents(chunks, embeddings)
         
@@ -499,6 +524,11 @@ def delete_vectorstore_route():
         type: string
         required: true
         description: Authentication token
+      - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems
       - name: vectorstore_id
         in: query
         type: string
@@ -739,6 +769,11 @@ def load_vectorstore_route():
         type: string
         required: true
         description: Authentication token
+      - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems
       - name: body
         in: body
         required: true
@@ -1075,6 +1110,11 @@ def list_vectorstores_route():
         type: string
         required: true
         description: Authentication token
+      - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems
     produces:
       - application/json
     responses:
@@ -1272,6 +1312,11 @@ def create_vectorstore_from_string_route():
         type: string
         required: true
         description: Authentication token
+      - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems
       - name: body
         in: body
         required: true
@@ -1487,9 +1532,8 @@ def create_vectorstore_from_string_route():
         vectorstore_id = str(uuid.uuid4())
         vectorstore_path = f"{user_id}-{vectorstore_id}"
         
-        # Estimate token count (approximately 4 tokens per word)
-        words = content.split()
-        estimated_tokens = len(words) * 4  # Rough estimation
+        # Count tokens using tiktoken
+        estimated_tokens = count_embedding_tokens(content)
         
         # Initialize embeddings
         embedding_model = os.environ.get("AZURE_OPENAI_EMBEDDING_DEPLOYMENT", "text-embedding-3-large")

@@ -10,11 +10,7 @@ from apis.utils.llmServices import deepseek_v3_service  # Import the service fun
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def create_api_response(data, status_code=200):
-    """Helper function to create consistent API responses"""
-    response = make_response(jsonify(data))
-    response.status_code = status_code
-    return response
+from apis.utils.config import create_api_response
 
 def deepseek_v3_route():
     """
@@ -31,6 +27,11 @@ def deepseek_v3_route():
         type: string
         required: true
         description: Authentication token
+      - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems
       - name: body
         in: body
         required: true

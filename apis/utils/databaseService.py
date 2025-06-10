@@ -259,6 +259,12 @@ class DatabaseService:
             common_name = user_data.get('common_name')
             company = user_data.get('company')
             department = user_data.get('department')
+            phone_ext = user_data.get('phone_ext')
+            division = user_data.get('division')
+            sub_department = user_data.get('sub_department')
+            cost_center = user_data.get('cost_center')
+            manager_full_name = user_data.get('manager_full_name')
+            manager_email = user_data.get('manager_email')
             scope = user_data.get('scope', 1)
             active = user_data.get('active', True)
             comment = user_data.get('comment')
@@ -281,6 +287,12 @@ class DatabaseService:
                 common_name,
                 company,
                 department,
+                phone_ext,
+                division,
+                sub_department,
+                cost_center,
+                manager_full_name,
+                manager_email,
                 api_key, 
                 scope, 
                 active, 
@@ -290,7 +302,7 @@ class DatabaseService:
                 aic_balance
             )
             VALUES (
-                ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                 DATEADD(HOUR, 2, GETUTCDATE()),
                 DATEADD(HOUR, 2, GETUTCDATE()),
                 ?,
@@ -306,6 +318,12 @@ class DatabaseService:
                 common_name,
                 company,
                 department,
+                phone_ext,
+                division,
+                sub_department,
+                cost_center,
+                manager_full_name,
+                manager_email,
                 api_key,
                 scope,
                 1 if active else 0,  # Convert boolean to bit
@@ -546,7 +564,7 @@ class DatabaseService:
     def log_api_call(endpoint_id, user_id=None, token_id=None, request_method=None, 
                     request_headers=None, request_body=None, response_status=None, 
                     response_time_ms=None, user_agent=None, ip_address=None, 
-                    error_message=None, response_body=None):
+                    error_message=None, response_body=None, correlation_id=None):
         """Log API call to database"""
         try:
             conn = DatabaseService.get_connection()
@@ -558,12 +576,12 @@ class DatabaseService:
             INSERT INTO api_logs (
                 id, endpoint_id, user_id, timestamp, request_method, 
                 request_headers, request_body, response_status, response_time_ms,
-                user_agent, ip_address, token_id, error_message, response_body
+                user_agent, ip_address, token_id, error_message, response_body, correlation_id
             )
             VALUES (
                 ?, ?, ?, DATEADD(HOUR, 2, GETUTCDATE()), ?, 
                 ?, ?, ?, ?,
-                ?, ?, ?, ?, ?
+                ?, ?, ?, ?, ?, ?
             )
             """
             
@@ -580,7 +598,7 @@ class DatabaseService:
             cursor.execute(query, [
                 log_id, endpoint_id, user_id, request_method,
                 request_headers, request_body, response_status, response_time_ms,
-                user_agent, ip_address, token_id, error_message, response_body
+                user_agent, ip_address, token_id, error_message, response_body, correlation_id
             ])
             
             conn.commit()

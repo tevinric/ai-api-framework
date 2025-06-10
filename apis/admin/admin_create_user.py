@@ -10,11 +10,7 @@ from datetime import datetime
 # CONFIGURE LOGGING
 logger = logging.getLogger(__name__)
 
-def create_api_response(data, status_code=200):
-    """Helper function to create consistent API responses"""
-    response = make_response(jsonify(data))
-    response.status_code = status_code
-    return response
+from apis.utils.config import create_api_response
 
 def create_user_route():
     """
@@ -28,6 +24,11 @@ def create_user_route():
         type: string
         required: true
         description: Admin API Key for authentication
+      - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems
       - name: token
         in: query
         type: string
@@ -57,6 +58,24 @@ def create_user_route():
             department:
               type: string
               description: Department name for the new user (optional)
+            phone_ext:
+              type: string
+              description: Phone extension for the new user (optional)
+            division:
+              type: string
+              description: Division name for the new user (optional)
+            sub_department:
+              type: string
+              description: Sub-division name for the new user (optional)
+            cost_center:
+              type: string
+              description: Cost center for the new user (optional)
+            manager_full_name:
+              type: string
+              description: Manager's full name for the new user (optional)
+            manager_email:
+              type: string
+              description: Manager's email address for the new user (optional)
             scope:
               type: integer
               description: Permission scope for the new user (1-5)
@@ -218,8 +237,14 @@ def create_user_route():
         'scope': data.get('scope', 1),  # Default scope is 1
         'active': data.get('active', True),  # Default active is True
         'comment': data.get('comment', None),
-        'company': data.get('company', None),  # New field
-        'department': data.get('department', None)  # New field
+        'company': data.get('company', None),  # Company field
+        'department': data.get('department', None),  # Department field
+        'phone_ext': data.get('phone_ext', None),  # New fields
+        'division': data.get('division', None),
+        'sub_department': data.get('sub_department', None),
+        'cost_center': data.get('cost_center', None),
+        'manager_full_name': data.get('manager_full_name', None),
+        'manager_email': data.get('manager_email', None)
     }
     
     # Validate scope is within allowed range (1-5)
@@ -236,7 +261,7 @@ def create_user_route():
         if not user_id:
             return create_api_response({
                 "error": "Server Error",
-                "message": "Failed to create user"
+                "message": "Failed to create user "
             }, 500)
         
         return create_api_response({

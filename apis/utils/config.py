@@ -1,5 +1,6 @@
 import os 
 from openai import AzureOpenAI
+from flask import jsonify, request, g, make_response
 
 # MICROSOFT ENTRA CONFIGURATION 
 class Config:
@@ -220,3 +221,16 @@ def get_document_intelligence_config():
         'endpoint': os.environ.get("AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT"),
         'api_key': os.environ.get("AZURE_DOCUMENT_INTELLIGENCE_KEY")
     }
+
+
+def create_api_response(data, status_code=200):
+    """Helper function to create consistent API responses"""
+    response = make_response(jsonify(data))
+    response.status_code = status_code
+    
+    # Add correlation ID to response if available in g context
+    correlation_id = getattr(g, 'correlation_id', None)
+    if correlation_id:
+        response.headers['X-Correlation-ID'] = correlation_id
+        
+    return response

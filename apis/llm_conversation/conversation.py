@@ -67,11 +67,7 @@ ASSISTANT_TYPES = {
     "business": "You are a business assistant. Help with professional communication, strategy, and analysis."
 }
 
-def create_api_response(data, status_code=200):
-    """Helper function to create consistent API responses"""
-    response = make_response(jsonify(data))
-    response.status_code = status_code
-    return response
+from apis.utils.config import create_api_response
 
 def get_conversation_history(conversation_id):
     """Get conversation history from blob storage"""
@@ -173,6 +169,11 @@ def create_chat_route():
         type: string
         required: true
         description: Authentication token
+      - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems
       - name: body
         in: body
         required: true
@@ -475,6 +476,11 @@ def continue_conversation_route():
         type: string
         required: true
         description: Authentication token
+      - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems
       - name: body
         in: body
         required: true
@@ -734,6 +740,11 @@ def delete_conversation_route():
         type: string
         required: true
         description: Authentication token
+      - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems
       - name: conversation_id
         in: query
         type: string

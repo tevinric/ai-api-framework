@@ -1,27 +1,35 @@
+# apis/llm/gpt_4o.py
 from flask import jsonify, request, g, make_response
 from apis.utils.tokenService import TokenService
 from apis.utils.databaseService import DatabaseService
 import logging
 import pytz
 from datetime import datetime
-from apis.utils.llmServices import gpt4o_service  # Import the service function
+from apis.utils.llmServices import gpt4o_service, gpt4o_multimodal_service  # Import the multimodal service function
+from apis.utils.fileService import FileService
+import os
+import tempfile
+import base64
 
 # CONFIGURE LOGGING
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def create_api_response(data, status_code=200):
-    """Helper function to create consistent API responses"""
-    response = make_response(jsonify(data))
-    response.status_code = status_code
-    return response
+# Allowed image file extensions and MIME types
+ALLOWED_IMAGE_EXTENSIONS = {
+    'png': 'image/png',
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg'
+}
 
+from apis.utils.config import create_api_response
 # Remove the balance check decorator from here - we'll apply it in the registration
 def gpt4o_route():
     """
     Consumes 2 AI credits per call
     
-    OpenAI GPT-4o LLM model for text completion and content generation. 
+    OpenAI GPT-4o LLM model for text completion and content generation.
+    Supports multimodal input with image file references for enhanced visual analysis.
     
     ---
     tags:
@@ -32,6 +40,11 @@ def gpt4o_route():
         type: string
         required: true
         description: Authentication token
+      - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems
       - name: body
         in: body
         required: true
@@ -58,6 +71,14 @@ def gpt4o_route():
               type: boolean
               default: false
               description: When true, the model will return a structured JSON response
+            file_ids:
+              type: array
+              items:
+                type: string
+              description: Array of image file IDs to process with the model (supports PNG, JPG, JPEG only)
+            context_id:
+              type: string
+              description: ID of a context file to use as an enhanced system prompt (optional)
     produces:
       - application/json
     responses:
@@ -100,7 +121,16 @@ def gpt4o_route():
               type: integer
               example: 0
               description: Number of cached tokens (if supported by model)  
-
+            files_processed:
+              type: integer
+              example: 1
+              description: Number of image files processed in the request
+            file_processing_details:
+              type: object
+              properties:
+                images_processed:
+                  type: integer
+                  example: 1
       400:
         description: Bad request
         schema:
@@ -209,6 +239,8 @@ def gpt4o_route():
     user_input = data.get('user_input', '')
     temperature = float(data.get('temperature', 0.5))
     json_output = data.get('json_output', False)
+    file_ids = data.get('file_ids', [])
+    context_id = data.get('context_id')  # New parameter for context_id
     
     # Validate temperature range
     if not (0 <= temperature <= 1):
@@ -221,13 +253,45 @@ def gpt4o_route():
         # Log API usage
         logger.info(f"GPT-4o API called by user: {user_id}")
         
-        # Use the service function instead of direct API call
-        service_response = gpt4o_service(
-            system_prompt=system_prompt,
-            user_input=user_input,
-            temperature=temperature,
-            json_output=json_output
-        )
+        # Apply context if provided
+        if context_id:
+            from apis.llm.context_integration import apply_context_to_system_prompt
+            enhanced_system_prompt, error = apply_context_to_system_prompt(system_prompt, context_id, g.user_id)
+            if error:
+                logger.warning(f"Error applying context {context_id}: {error}")
+                # Continue with original system prompt but log the issue
+                enhanced_system_prompt = system_prompt
+        else:
+            enhanced_system_prompt = system_prompt
+        
+        # Check if this is a multimodal request with file_ids
+        if file_ids and isinstance(file_ids, list) and len(file_ids) > 0:
+            logger.info(f"Multimodal request with {len(file_ids)} files")
+            
+            # Check for too many files to prevent context overflow
+            if len(file_ids) > 20:  # Reasonable limit for GPT-4o
+                return create_api_response({
+                    "response": "400",
+                    "message": "Too many files. GPT-4o can process a maximum of 20 image files per request."
+                }, 400)
+            
+            # Use the multimodal service function with enhanced system prompt
+            service_response = gpt4o_multimodal_service(
+                system_prompt=enhanced_system_prompt,  # Use enhanced prompt with context
+                user_input=user_input,
+                temperature=temperature,
+                json_output=json_output,
+                file_ids=file_ids,
+                user_id=user_id
+            )
+        else:
+            # Use the standard service function for text-only requests with enhanced system prompt
+            service_response = gpt4o_service(
+                system_prompt=enhanced_system_prompt,  # Use enhanced prompt with context
+                user_input=user_input,
+                temperature=temperature,
+                json_output=json_output
+            )
         
         if not service_response["success"]:
             logger.error(f"GPT-4o API error: {service_response['error']}")
@@ -238,7 +302,7 @@ def gpt4o_route():
             }, status_code)
         
         # Prepare successful response with user details
-        return create_api_response({
+        response_data = {
             "response": "200",
             "message": service_response["result"],
             "user_id": user_details["id"],
@@ -249,7 +313,20 @@ def gpt4o_route():
             "completion_tokens": service_response["completion_tokens"],
             "total_tokens": service_response["total_tokens"],
             "cached_tokens": service_response.get("cached_tokens", 0)
-        }, 200)
+        }
+        
+        # Include file processing details if present
+        if "files_processed" in service_response:
+            response_data["files_processed"] = service_response["files_processed"]
+        
+        if "file_processing_details" in service_response:
+            response_data["file_processing_details"] = service_response["file_processing_details"]
+        
+        # Include context usage info if context was used
+        if context_id:
+            response_data["context_used"] = context_id
+        
+        return create_api_response(response_data, 200)
         
     except Exception as e:
         logger.error(f"GPT-4o API error: {str(e)}")
