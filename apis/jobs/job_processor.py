@@ -6,16 +6,24 @@ from apis.speech_services.stt_diarize import process_transcript_with_llm, split_
 import requests
 import uuid
 from apis.utils.databaseService import DatabaseService
+import azure.cognitiveservices.speech as speechsdk
+import os
+import io
+import tempfile
 
 # Configure logging
 logger = logging.getLogger(__name__)
+
+# Azure Speech Service configuration for TTS
+TTS_SPEECH_KEY = os.environ.get("AZURE_SPEECH_KEY")
+TTS_SERVICE_REGION = os.environ.get("AZURE_SPEECH_REGION", "southafricanorth")
 
 class JobProcessor:
     """
     Class for processing asynchronous jobs
     
     This class contains methods to process different types of async jobs
-    like speech-to-text and speech-to-text with diarization.
+    like speech-to-text, speech-to-text with diarization, and text-to-speech.
     """
     
     @staticmethod
@@ -27,7 +35,7 @@ class JobProcessor:
         
         Args:
             user_id (str): ID of the user who submitted the job
-            job_type (str): Type of job (e.g., 'stt', 'stt_diarize')
+            job_type (str): Type of job (e.g., 'stt', 'stt_diarize', 'tts')
             metrics (dict): Dictionary containing usage metrics
             
         Returns:
@@ -72,7 +80,8 @@ class JobProcessor:
                     prompt_tokens = ?,
                     completion_tokens = ?,
                     total_tokens = ?,
-                    cached_tokens = ?
+                    cached_tokens = ?,
+                    files_uploaded = ?
                 WHERE id = ?
                 """
                 
@@ -83,6 +92,7 @@ class JobProcessor:
                     metrics.get("completion_tokens", 0),
                     metrics.get("total_tokens", 0),
                     metrics.get("cached_tokens", 0),
+                    metrics.get("files_uploaded", 0),
                     usage_id
                 ])
                 
@@ -426,6 +436,173 @@ class JobProcessor:
             
         except Exception as e:
             error_msg = f"Error processing STT diarize job: {str(e)}"
+            logger.error(error_msg)
+            JobService.update_job_status(job_id, 'failed', error_msg)
+            return False
+    
+    @staticmethod
+    def process_tts_job(job_id, user_id, job_parameters):
+        """
+        Process a text-to-speech job
+        
+        Args:
+            job_id (str): ID of the job to process
+            user_id (str): ID of the user who submitted the job
+            job_parameters (dict): Job parameters containing text, voice_name, output_format
+            
+        Returns:
+            bool: True if successful, False otherwise
+            
+        Response format (stored in job result):
+            {
+                "message": "Text converted to speech successfully",
+                "file_id": "12345678-1234-1234-1234-123456789012",
+                "voice_used": "en-US-JennyNeural",
+                "output_format": "audio-16khz-32kbitrate-mono-mp3",
+                "text_length": 45,
+                "audio_duration_seconds": 3.2,
+                "files_uploaded": 1
+            }
+            
+        Error handling:
+            - Updates job status to 'failed' with error message if:
+                - Text synthesis fails
+                - File upload fails
+                - Any other exception occurs
+        """
+        try:
+            # Update job status to processing
+            JobService.update_job_status(job_id, 'processing')
+            
+            # Extract parameters
+            text = job_parameters.get('text')
+            voice_name = job_parameters.get('voice_name', 'en-US-JennyNeural')
+            output_format = job_parameters.get('output_format', 'audio-16khz-32kbitrate-mono-mp3')
+            
+            if not text:
+                error_msg = "No text provided for synthesis"
+                logger.error(error_msg)
+                JobService.update_job_status(job_id, 'failed', error_msg)
+                return False
+            
+            # Check if Azure Speech Service credentials are configured
+            if not TTS_SPEECH_KEY or not TTS_SERVICE_REGION:
+                error_msg = "Azure Speech Service credentials not configured"
+                logger.error(error_msg)
+                JobService.update_job_status(job_id, 'failed', error_msg)
+                return False
+            
+            # Configure Azure Speech Service
+            speech_config = speechsdk.SpeechConfig(subscription=TTS_SPEECH_KEY, region=TTS_SERVICE_REGION)
+            speech_config.speech_synthesis_voice_name = voice_name
+            speech_config.set_speech_synthesis_output_format(
+                getattr(speechsdk.SpeechSynthesisOutputFormat, output_format.replace('-', '_'), 
+                       speechsdk.SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3)
+            )
+            
+            # Create synthesizer with null output (we'll get the audio data directly)
+            synthesizer = speechsdk.SpeechSynthesizer(speech_config=speech_config, audio_config=None)
+            
+            # Synthesize speech
+            logger.info(f"Starting TTS synthesis for job {job_id}")
+            result = synthesizer.speak_text_async(text).get()
+            
+            # Check synthesis result
+            if result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted:
+                logger.info(f"Speech synthesized successfully for job {job_id}")
+                
+                # Get the audio data
+                audio_data = result.audio_data
+                audio_duration = len(audio_data) / (16000 * 2)  # Estimate duration based on sample rate and bit depth
+                
+                # Create a file-like object from the audio data
+                audio_file = io.BytesIO(audio_data)
+                
+                # Determine file extension based on output format
+                if 'mp3' in output_format:
+                    file_extension = '.mp3'
+                    content_type = 'audio/mpeg'
+                else:
+                    file_extension = '.wav'
+                    content_type = 'audio/wav'
+                
+                # Create a temporary file-like object with the required attributes
+                class AudioFileObj:
+                    def __init__(self, data, filename, content_type):
+                        self.data = data
+                        self.filename = filename
+                        self.content_type = content_type
+                        self._position = 0
+                    
+                    def read(self, size=-1):
+                        if size == -1:
+                            chunk = self.data[self._position:]
+                            self._position = len(self.data)
+                        else:
+                            chunk = self.data[self._position:self._position + size]
+                            self._position += len(chunk)
+                        return chunk
+                    
+                    def seek(self, position):
+                        self._position = position
+                    
+                    def tell(self):
+                        return self._position
+                
+                # Create filename for the generated audio
+                filename = f"tts_output_{job_id[:8]}{file_extension}"
+                audio_file_obj = AudioFileObj(audio_data, filename, content_type)
+                
+                # Upload the audio file to blob storage
+                file_info, upload_error = FileService.upload_file(audio_file_obj, user_id)
+                
+                if upload_error:
+                    error_msg = f"Error uploading generated audio file: {upload_error}"
+                    logger.error(error_msg)
+                    JobService.update_job_status(job_id, 'failed', error_msg)
+                    return False
+                
+                # Prepare the response
+                result_data = {
+                    "message": "Text converted to speech successfully",
+                    "file_id": file_info["file_id"],
+                    "voice_used": voice_name,
+                    "output_format": output_format,
+                    "text_length": len(text),
+                    "audio_duration_seconds": round(audio_duration, 2),
+                    "files_uploaded": 1
+                }
+                
+                # Update existing usage metrics
+                metrics = {
+                    "files_uploaded": 1,
+                    "audio_seconds_processed": round(audio_duration, 2)
+                }
+                JobProcessor.update_usage_metrics(user_id, "tts", metrics)
+                
+                # Update job status to completed with results
+                JobService.update_job_status(job_id, 'completed', result_data=result_data)
+                
+                logger.info(f"TTS job {job_id} processed successfully, file_id: {file_info['file_id']}")
+                return True
+                
+            elif result.reason == speechsdk.ResultReason.Canceled:
+                cancellation_details = result.cancellation_details
+                error_msg = f"Speech synthesis canceled: {cancellation_details.reason}"
+                if cancellation_details.reason == speechsdk.CancellationReason.Error:
+                    error_msg += f". Error details: {cancellation_details.error_details}"
+                
+                logger.error(error_msg)
+                JobService.update_job_status(job_id, 'failed', error_msg)
+                return False
+            else:
+                error_msg = f"Speech synthesis failed with reason: {result.reason}"
+                logger.error(error_msg)
+                JobService.update_job_status(job_id, 'failed', error_msg)
+                return False
+            
+        except Exception as e:
+            error_msg = f"Error processing TTS job: {str(e)}"
             logger.error(error_msg)
             JobService.update_job_status(job_id, 'failed', error_msg)
             return False
