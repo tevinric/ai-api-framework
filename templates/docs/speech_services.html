@@ -874,36 +874,14 @@
     </style>
 </head>
 <body>
-    <!-- Header -->
-    <header class="header">
-        <div class="logo">
-            <i class="fas fa-robot"></i>
-            <h1>GAIA API Platform</h1>
-        </div>
-        <nav class="nav">
-            <a href="/docs" class="nav-item"><i class="fas fa-book"></i> Documentation</a>
-            <a href="/dashboard" class="nav-item"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-            <a href="/apidocs" class="nav-item swagger-btn"><i class="fas fa-code"></i> API Docs</a>
-            <div class="menu-toggle" id="menu-toggle">
-                <i class="fas fa-bars"></i>
-            </div>
-        </nav>
-    </header>
+    <!-- RENDER THE HEADER TEMPLATE-->
+    {% include 'header.html' %}
     
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
     
-    <!-- Sidebar -->
+    <!-- RENDER THE SIDEBAR TEMPLATE-->
     <aside class="sidebar">
-        <div class="sidebar-category">Services</div>
-        <a href="/docs/speech_services" class="sidebar-link active">
-            <i class="fas fa-microphone"></i> Speech Services
-        </a>
-        <a href="/docs/llm_services" class="sidebar-link">
-            <i class="fas fa-brain"></i> LLM Services
-        </a>
-        <a href="/docs/image_generation" class="sidebar-link">
-            <i class="fas fa-image"></i> Image Generation
-        </a>
+        {% include 'sidebar.html' %}
     </aside>
     
     <main class="main-content">
@@ -1156,7 +1134,7 @@
                             <button class="play-button" onclick="playVoice('luke', this)">
                                 <i class="fas fa-play"></i>
                             </button>
-                            <div class="sample-text">"Welcome to GAIA's speech services - transforming the way you work with audio."</div>
+                            <div class="sample-text">"Hi there, I am Luke. Welcome to GAIA's speech services that will transform the way you work with audio."</div>
                         </div>
                         <audio id="luke-audio" preload="none">
                             <source src="/static/audio/samples/luke-sample.mp3" type="audio/mpeg">
@@ -1175,7 +1153,7 @@
                             <button class="play-button" onclick="playVoice('leah', this)">
                                 <i class="fas fa-play"></i>
                             </button>
-                            <div class="sample-text">"Welcome to GAIA's speech services - transforming the way you work with audio."</div>
+                            <div class="sample-text">"Hi there, I am Leah. Welcome to GAIA's speech services that will transform the way you work with audio."</div>
                         </div>
                         <audio id="leah-audio" preload="none">
                             <source src="/static/audio/samples/leah-sample.mp3" type="audio/mpeg">
