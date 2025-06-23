@@ -8,7 +8,7 @@ import uuid
 import io
 import requests
 from openai import AzureOpenAI
-from apis.utils.config import get_openai_client, get_azure_blob_client, IMAGE_GENERATION_CONTAINER, STORAGE_ACCOUNT
+from apis.utils.config import get_openai_client, get_azure_blob_client, IMAGE_GENERATION_CONTAINER, STORAGE_ACCOUNT, create_api_response
 from apis.utils.logMiddleware import api_logger
 from apis.utils.balanceMiddleware import check_balance
 from azure.storage.blob import BlobServiceClient, ContentSettings
@@ -28,12 +28,6 @@ DEFAULT_IMAGE_DEPLOYMENT = 'dall-e-3'  # Options: 'dalle3', 'dalle3-hd'
 BLOB_CONTAINER_NAME = IMAGE_GENERATION_CONTAINER
 BASE_BLOB_URL = f"https://{STORAGE_ACCOUNT}.blob.core.windows.net/{BLOB_CONTAINER_NAME}"
 
-def create_api_response(data, status_code=200):
-    """Helper function to create consistent API responses"""
-    response = make_response(jsonify(data))
-    response.status_code = status_code
-    return response
-
 def custom_image_generation_route():
     """
     Generate images using Azure OpenAI DALLE-3
@@ -46,6 +40,11 @@ def custom_image_generation_route():
         type: string
         required: true
         description: Authentication token
+      - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems
       - name: body
         in: body
         required: true
@@ -88,6 +87,7 @@ def custom_image_generation_route():
         source: |-
           curl -X POST "https://your-api-domain.com/image/generate" \\
           -H "X-Token: your-api-token-here" \\
+          -H "X-Correlation-ID: your-correlation-id" \\
           -H "Content-Type: application/json" \\
           -d '{
             "prompt": "A futuristic city with flying cars and tall glass buildings",
@@ -98,6 +98,7 @@ def custom_image_generation_route():
           }'
     x-sample-header:
       X-Token: your-api-token-here
+      X-Correlation-ID: your-correlation-id
       Content-Type: application/json
     responses:
       200:
