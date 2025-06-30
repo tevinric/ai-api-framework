@@ -150,6 +150,18 @@ spec:
                 name: tihaiapi-credentials
                 key: AZURE_DOCUMENT_INTELLIGENCE_KEY   
 
+          - name: AZURE_SPEECH_KEY
+            valueFrom:
+              secretKeyRef:
+                name: tihaiapi-credentials
+                key: AZURE_SPEECH_KEY 
+
+          - name: AZURE_SPEECH_REGION
+            valueFrom:
+              secretKeyRef:
+                name: tihaiapi-credentials
+                key: AZURE_SPEECH_REGION 
+
           securityContext:
             allowPrivilegeEscalation: false
             privileged: false

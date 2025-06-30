@@ -25,6 +25,11 @@ def get_context_route():
         type: string
         required: true
         description: Authentication token
+      - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems
       - name: context_id
         in: query
         type: string
@@ -222,6 +227,11 @@ def list_contexts_route():
         type: string
         required: true
         description: Authentication token
+      - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems
       - name: name_filter
         in: query
         type: string

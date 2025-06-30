@@ -10,7 +10,7 @@ import json
 import requests
 import base64
 import os
-from apis.utils.config import STORAGE_ACCOUNT
+from apis.utils.config import STORAGE_ACCOUNT, create_api_response
 from apis.utils.logMiddleware import api_logger
 from apis.utils.balanceMiddleware import check_balance
 from apis.utils.fileService import FileService, FILE_UPLOAD_CONTAINER
@@ -24,12 +24,6 @@ logger = logging.getLogger(__name__)
 STABLE_DIFFUSION_API_URL = 'https://StableDiffusion-Image-Ultra.eastus.models.ai.azure.com/images/generations'
 STABLE_DIFFUSION_API_KEY = os.environ.get('STABLE_DIFFUSION_API_KEY')
 
-def create_api_response(data, status_code=200):
-    """Helper function to create consistent API responses"""
-    response = make_response(jsonify(data))
-    response.status_code = status_code
-    return response
-
 def stable_diffusion_ultra_route():
     """
     Generate images using Azure Stable Diffusion Ultra
@@ -42,6 +36,11 @@ def stable_diffusion_ultra_route():
         type: string
         required: true
         description: Authentication token
+      - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems
       - name: body
         in: body
         required: true

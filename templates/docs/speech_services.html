@@ -20,10 +20,12 @@
             --magenta-gradient: linear-gradient(90deg, #3B0138 0%, #4a6fe3 100%);
             --sidebar-width: 280px;
             --header-height: 60px;
-            --basic-speech-color: #1971c2;
-            --basic-speech-gradient: linear-gradient(90deg, #1971c2 0%, #4a6fe3 100%);
-            --enhanced-speech-color: #7209b7;
-            --enhanced-speech-gradient: linear-gradient(90deg, #7209b7 0%, #5231af 100%);
+            --stt-color: #1971c2;
+            --stt-gradient: linear-gradient(90deg, #1971c2 0%, #4a6fe3 100%);
+            --diarize-color: #7209b7;
+            --diarize-gradient: linear-gradient(90deg, #7209b7 0%, #5231af 100%);
+            --tts-color: #e67700;
+            --tts-gradient: linear-gradient(90deg, #e67700 0%, #fd7e14 100%);
         }
         
         * {
@@ -125,14 +127,12 @@
             box-shadow: 0 6px 15px rgba(0, 212, 255, 0.4);
         }
         
-        /* Mobile menu toggle */
         .menu-toggle {
             display: none;
             font-size: 1.5rem;
             cursor: pointer;
         }
         
-        /* Sidebar */
         .sidebar {
             position: fixed;
             top: var(--header-height);
@@ -186,7 +186,6 @@
             text-align: center;
         }
         
-        /* Main content */
         .main-content {
             margin-left: var(--sidebar-width);
             margin-top: var(--header-height);
@@ -194,7 +193,6 @@
             min-height: calc(100vh - var(--header-height));
         }
         
-        /* Hero */
         .hero {
             background: url('/static/GAIA _splash3.gif') center/cover no-repeat;
             color: var(--white-color);
@@ -214,21 +212,6 @@
             background: linear-gradient(to right, rgba(1, 0, 15, 0.85) 0%, rgba(1, 0, 15, 0.5) 40%, transparent 80%);
             pointer-events: none;
             z-index: 0;
-        }
-        
-        @keyframes zoomDots {
-            0% {
-                transform: scale(0.3);
-                opacity: 0.1;
-            }
-            50% {
-                transform: scale(0.7);
-                opacity: 0.15;
-            }
-            100% {
-                transform: scale(0.3);
-                opacity: 0.1;
-            }
         }
         
         .hero-container {
@@ -301,32 +284,35 @@
             margin-right: 0.5rem;
         }
         
-        /* Overview section */
-        .overview-section {
+        .section {
             padding: 4rem 3rem;
             position: relative;
         }
         
-        .overview-container {
+        .section.alternate {
+            background-color: #f8faff;
+        }
+        
+        .container {
             max-width: 1200px;
             margin: 0 auto;
         }
         
         .section-header {
             text-align: left;
-            margin-bottom: 2rem;
+            margin-bottom: 3rem;
             border-bottom: 2px solid var(--light-color);
-            padding-bottom: 0.5rem;
+            padding-bottom: 1rem;
             display: flex;
             align-items: center;
         }
         
         .section-icon {
-            width: 40px;
-            height: 40px;
+            width: 50px;
+            height: 50px;
             margin-right: 1rem;
-            border-radius: 8px;
-            background-color: var(--primary-color);
+            border-radius: 10px;
+            background: var(--accent-gradient);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -335,170 +321,130 @@
         
         .section-icon i {
             color: white;
-            font-size: 20px;
+            font-size: 24px;
         }
         
         .section-header h2 {
-            font-size: 2rem;
+            font-size: 2.5rem;
             color: var(--dark-color);
             margin: 0;
+            background: linear-gradient(to right, rgb(224, 146, 0), rgb(215, 162, 3));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
         
-        .features-grid {
+        .services-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
             gap: 2rem;
             margin-bottom: 3rem;
         }
         
-        .feature-card {
+        .service-card {
             background-color: var(--white-color);
-            border-radius: 12px;
+            border-radius: 16px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-            padding: 1.5rem;
+            padding: 2rem;
             transition: all 0.3s ease;
+            border-top: 4px solid;
+            position: relative;
+            overflow: hidden;
         }
         
-        .feature-card:hover {
+        .service-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--gradient);
+        }
+        
+        .service-card.stt::before {
+            background: var(--stt-gradient);
+        }
+        
+        .service-card.diarize::before {
+            background: var(--diarize-gradient);
+        }
+        
+        .service-card.tts::before {
+            background: var(--tts-gradient);
+        }
+        
+        .service-card:hover {
             transform: translateY(-10px);
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
         }
         
-        .feature-icon {
+        .service-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .service-icon {
             width: 60px;
             height: 60px;
-            margin-bottom: 1rem;
             border-radius: 12px;
-            background: var(--accent-gradient);
             display: flex;
             align-items: center;
             justify-content: center;
-        }
-        
-        .feature-icon i {
-            color: white;
-            font-size: 24px;
-        }
-        
-        .feature-card h3 {
-            margin-bottom: 0.75rem;
-            color: var(--dark-color);
-        }
-        
-        .feature-card p {
-            color: #666;
-            font-size: 0.95rem;
-            line-height: 1.6;
-        }
-        
-        /* Model sections */
-        .model-section {
-            padding: 4rem 3rem;
-            position: relative;
-        }
-        
-        .model-section.alternate {
-            background-color: #f8faff;
-        }
-        
-        .model-container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        
-        .model-header {
-            display: flex;
-            align-items: center;
-            margin-bottom: 2rem;
-        }
-        
-        .model-icon {
-            width: 50px;
-            height: 50px;
             margin-right: 1rem;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             flex-shrink: 0;
         }
         
-        .basic-speech-icon {
-            background: var(--basic-speech-gradient);
+        .service-icon.stt {
+            background: var(--stt-gradient);
         }
         
-        .basic-speech-icon i {
+        .service-icon.diarize {
+            background: var(--diarize-gradient);
+        }
+        
+        .service-icon.tts {
+            background: var(--tts-gradient);
+        }
+        
+        .service-icon i {
             color: white;
             font-size: 24px;
         }
         
-        .enhanced-speech-icon {
-            background: var(--enhanced-speech-gradient);
-        }
-        
-        .enhanced-speech-icon i {
-            color: white;
-            font-size: 24px;
-        }
-        
-        .model-info {
-            flex-grow: 1;
-        }
-        
-        .model-info h2 {
-            font-size: 2rem;
+        .service-title {
+            font-size: 1.4rem;
+            font-weight: 600;
             color: var(--dark-color);
             margin-bottom: 0.5rem;
         }
         
-        .model-info p {
+        .service-subtitle {
             color: #666;
-            font-size: 1rem;
+            font-size: 0.9rem;
+        }
+        
+        .service-description {
+            color: #666;
             line-height: 1.6;
+            margin-bottom: 1.5rem;
         }
         
-        .model-details {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 2rem;
-            margin-bottom: 3rem;
-        }
-        
-        .model-detail-card {
-            background-color: var(--white-color);
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-            padding: 1.5rem;
-            transition: all 0.3s ease;
-            flex: 1;
-            min-width: 280px;
-        }
-        
-        .model-detail-card h3 {
-            margin-bottom: 1rem;
-            color: var(--dark-color);
-            display: flex;
-            align-items: center;
-        }
-        
-        .model-detail-card h3 i {
-            margin-right: 0.5rem;
-            color: var(--primary-color);
-        }
-        
-        .model-detail-card ul {
-            list-style-type: none;
+        .service-features {
+            list-style: none;
             padding: 0;
+            margin-bottom: 2rem;
         }
         
-        .model-detail-card li {
+        .service-features li {
             position: relative;
             padding-left: 1.5rem;
             margin-bottom: 0.5rem;
-            line-height: 1.5;
+            color: #555;
+            font-size: 0.9rem;
         }
         
-        .model-detail-card li:before {
+        .service-features li:before {
             content: "\f00c";
             font-family: "Font Awesome 5 Free";
             font-weight: 900;
@@ -507,30 +453,234 @@
             color: var(--primary-color);
         }
         
-        .basic-speech-card li:before {
-            color: var(--basic-speech-color);
-        }
-        
-        .enhanced-speech-card li:before {
-            color: var(--enhanced-speech-color);
-        }
-        
-        .endpoint-box {
-            background-color: #f5f7fa;
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1.5rem;
+        .endpoint-badge {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 0.5rem 0.75rem;
             font-family: monospace;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             color: var(--dark-color);
+            margin-bottom: 1rem;
+            display: inline-block;
         }
         
-        .basic-speech-card .endpoint-box {
-            border-left: 3px solid var(--basic-speech-color);
+        .workflow-section {
+            padding: 4rem 3rem;
+            background: linear-gradient(135deg, #f8faff 0%, #e3f2fd 100%);
         }
         
-        .enhanced-speech-card .endpoint-box {
-            border-left: 3px solid var(--enhanced-speech-color);
+        .workflow-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .workflow-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 3rem;
+            margin-top: 3rem;
+        }
+        
+        .workflow-card {
+            background-color: var(--white-color);
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .workflow-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .workflow-header {
+            padding: 2rem 2rem 1rem;
+            text-align: center;
+        }
+        
+        .workflow-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            font-size: 32px;
+            color: white;
+        }
+        
+        .workflow-icon.audio-to-text {
+            background: var(--stt-gradient);
+        }
+        
+        .workflow-icon.text-to-audio {
+            background: var(--tts-gradient);
+        }
+        
+        .workflow-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-bottom: 0.5rem;
+        }
+        
+        .workflow-subtitle {
+            color: #666;
+            font-size: 0.95rem;
+        }
+        
+        .workflow-steps {
+            padding: 0 2rem 2rem;
+        }
+        
+        .workflow-step {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+        
+        .workflow-step:not(:last-child)::after {
+            content: "";
+            position: absolute;
+            left: 15px;
+            top: 40px;
+            bottom: -15px;
+            width: 2px;
+            background: linear-gradient(to bottom, var(--accent-color), rgba(0, 212, 255, 0.3));
+        }
+        
+        .step-number {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: var(--accent-gradient);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.85rem;
+            margin-right: 1rem;
+            flex-shrink: 0;
+            z-index: 1;
+            position: relative;
+        }
+        
+        .step-content h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-bottom: 0.25rem;
+        }
+        
+        .step-content p {
+            color: #666;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        
+        .step-endpoint {
+            font-family: monospace;
+            background-color: #f8f9fa;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            color: var(--primary-color);
+        }
+        
+        .voice-preview-section {
+            padding: 4rem 3rem;
+            background-color: var(--white-color);
+        }
+        
+        .voice-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        
+        .voice-card {
+            background-color: #f8faff;
+            border-radius: 12px;
+            border: 1px solid #e3f2fd;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .voice-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .voice-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .voice-name {
+            font-weight: 600;
+            color: var(--dark-color);
+            font-size: 1.1rem;
+        }
+        
+        .voice-region {
+            background-color: var(--tts-color);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .voice-description {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            line-height: 1.5;
+        }
+        
+        .voice-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .play-button {
+            background: var(--tts-gradient);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+        
+        .play-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 15px rgba(230, 119, 0, 0.3);
+        }
+        
+        .play-button.playing {
+            background: #dc3545;
+        }
+        
+        .sample-text {
+            font-size: 0.8rem;
+            color: #888;
+            font-style: italic;
+            flex-grow: 1;
         }
         
         .info-box {
@@ -539,7 +689,7 @@
             border-left: 4px solid #1971c2;
             padding: 1.5rem;
             border-radius: 6px;
-            margin-bottom: 2rem;
+            margin: 2rem 0;
         }
         
         .info-box-icon {
@@ -555,6 +705,7 @@
         
         .info-box-content p, .info-box-content li {
             color: #495057;
+            line-height: 1.6;
         }
         
         .info-box-content a {
@@ -566,344 +717,12 @@
             text-decoration: underline;
         }
         
-        /* Examples section */
-        .examples-tabs {
-            display: flex;
-            border-bottom: 1px solid #ddd;
-            margin-bottom: 2rem;
-            overflow-x: auto;
-            padding-bottom: 1px;
-            scrollbar-width: thin;
-        }
-        
-        .examples-tabs::-webkit-scrollbar {
-            height: 4px;
-        }
-        
-        .examples-tabs::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 10px;
-        }
-        
-        .examples-tabs::-webkit-scrollbar-thumb {
-            background: #ccc;
-            border-radius: 10px;
-        }
-        
-        .example-tab {
-            padding: 0.75rem 1.25rem;
-            cursor: pointer;
-            font-weight: 600;
-            color: #666;
-            transition: all 0.3s;
-            white-space: nowrap;
-            border-bottom: 2px solid transparent;
-        }
-        
-        .example-tab.active {
-            color: var(--primary-color);
-            border-bottom: 2px solid var(--primary-color);
-        }
-        
-        .basic-tab.active {
-            color: var(--basic-speech-color);
-            border-bottom: 2px solid var(--basic-speech-color);
-        }
-        
-        .enhanced-tab.active {
-            color: var(--enhanced-speech-color);
-            border-bottom: 2px solid var(--enhanced-speech-color);
-        }
-        
-        .example-content {
-            display: none;
-        }
-        
-        .example-content.active {
-            display: block;
-            animation: fadeIn 0.5s ease-out;
-        }
-        
-        .example-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 2rem;
-        }
-        
-        .example-settings {
-            background-color: var(--white-color);
-            border-radius: 8px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-            padding: 1.5rem;
-            height: 100%;
-        }
-        
-        .settings-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: var(--dark-color);
-            margin-bottom: 1.5rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 1px solid #eee;
-        }
-        
-        .setting-group {
-            margin-bottom: 1.25rem;
-        }
-        
-        .setting-label {
-            font-weight: 600;
-            color: var(--dark-color);
-            margin-bottom: 0.5rem;
-            display: block;
-        }
-        
-        .setting-value {
-            color: #666;
-            margin-bottom: 0.75rem;
-            line-height: 1.5;
-            background-color: #f9f9f9;
-            padding: 0.75rem;
-            border-radius: 6px;
-            border-left: 3px solid var(--primary-color);
-        }
-        
-        .basic-speech-settings .setting-value {
-            border-left-color: var(--basic-speech-color);
-        }
-        
-        .enhanced-speech-settings .setting-value {
-            border-left-color: var(--enhanced-speech-color);
-        }
-        
-        .example-result {
-            background-color: var(--white-color);
-            border-radius: 8px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
-        
-        .result-header {
-            padding: 1rem 1.5rem;
-            background-color: #f5f7fa;
-            border-bottom: 1px solid #eee;
-        }
-        
-        .result-header h4 {
-            margin: 0;
-            color: var(--dark-color);
-            font-size: 1.1rem;
-        }
-        
-        .result-container {
-            flex-grow: 1;
-            padding: 1.5rem;
-            background-color: #fafafa;
-            position: relative;
-            overflow: auto;
-            max-height: 300px;
-        }
-        
-        .result-code {
-            font-family: monospace;
-            white-space: pre-wrap;
-            font-size: 0.9rem;
-            line-height: 1.5;
-            color: #333;
-        }
-        
-        .code-block {
-            font-family: monospace;
-            background-color: #f5f7fa;
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1.5rem;
-            font-size: 0.9rem;
-            color: var(--dark-color);
-            white-space: pre-wrap;
-            border-left: 3px solid var(--primary-color);
-        }
-        
-        /* Flow diagram section */
-        .flow-diagram {
-            margin: 2rem 0;
-            padding: 2rem;
-            background-color: #fff;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-        }
-        
-        .flow-diagram-title {
-            text-align: center;
-            margin-bottom: 2rem;
-            font-size: 1.5rem;
-            color: var(--dark-color);
-        }
-        
-        .flow-steps {
-            display: flex;
-            justify-content: space-around;
-            flex-wrap: wrap;
-            gap: 1rem;
-            position: relative;
-        }
-        
-        .flow-steps::before {
-            content: "";
-            position: absolute;
-            top: 50px;
-            left: 10%;
-            right: 10%;
-            height: 2px;
-            background: var(--accent-gradient);
-            z-index: 0;
-        }
-        
-        .flow-step {
-            position: relative;
-            z-index: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 180px;
-        }
-        
-        .flow-step-number {
-            width: 40px;
-            height: 40px;
-            background: var(--accent-gradient);
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
-        }
-        
-        .flow-step-icon {
-            width: 60px;
-            height: 60px;
-            background-color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            color: var(--primary-color);
-            margin-bottom: 1rem;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        }
-        
-        .flow-step-title {
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            text-align: center;
-            color: var(--dark-color);
-        }
-        
-        .flow-step-desc {
-            text-align: center;
-            font-size: 0.85rem;
-            color: #666;
-        }
-        
-        /* Async job section */
-        .async-job-section {
-            padding: 3rem;
-            background-color: #f8faff;
-            margin: 2rem 0;
-            border-radius: 12px;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
-        }
-        
-        .async-container {
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-        
-        .async-header {
-            text-align: center;
-            margin-bottom: 2.5rem;
-        }
-        
-        .async-header h2 {
-            font-size: 2rem;
-            color: var(--dark-color);
-            margin-bottom: 1rem;
-        }
-        
-        .async-header p {
-            color: #666;
-            font-size: 1.1rem;
-            max-width: 700px;
-            margin: 0 auto;
-        }
-        
-        .job-endpoints {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 2rem;
-            margin-bottom: 2rem;
-        }
-        
-        .job-endpoint-card {
-            background-color: var(--white-color);
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-            padding: 1.5rem;
-            border-top: 4px solid var(--primary-color);
-            transition: all 0.3s ease;
-        }
-        
-        .job-endpoint-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
-        }
-        
-        .job-endpoint-card h3 {
-            display: flex;
-            align-items: center;
-            margin-bottom: 1rem;
-            color: var(--dark-color);
-        }
-        
-        .job-endpoint-card h3 i {
-            margin-right: 0.5rem;
-            color: var(--primary-color);
-            font-size: 1.2rem;
-        }
-        
-        .job-endpoint-code {
-            background-color: #f5f7fa;
-            padding: 0.75rem;
-            border-radius: 6px;
-            font-family: monospace;
-            font-size: 0.85rem;
-            margin-bottom: 1rem;
-            color: var(--dark-color);
-            border-left: 3px solid var(--primary-color);
-        }
-        
-        .job-endpoint-card p {
-            color: #666;
-            font-size: 0.95rem;
-            line-height: 1.6;
-        }
-        
-        /* CTA section */
         .cta-section {
             padding: 5rem 3rem;
             text-align: center;
             background: linear-gradient(135deg, rgba(1, 0, 15, 1) 0%, rgba(35, 0, 33, 1) 100%);
             color: var(--white-color);
         }
-        
-
         
         .cta-container {
             max-width: 800px;
@@ -923,7 +742,6 @@
             opacity: 0.9;
         }
         
-        /* Footer */
         .footer {
             background-color: #03001A;
             color: var(--white-color);
@@ -956,7 +774,6 @@
             color: var(--accent-color);
         }
         
-        /* Animation keyframes */
         @keyframes fadeInUp {
             from {
                 opacity: 0;
@@ -977,20 +794,17 @@
             }
         }
         
-        .credit-badge {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0.35rem 0.35rem; 
-            border-radius: 4px;
-            font-weight: 400;
-            font-size: 1.5rem; 
-            color: white;
-            background: linear-gradient(135deg, rgba(1, 0, 15, 1) 0%, rgba(74, 111, 227, 1) 100%);
-            animation: pulse 3s infinite ease-in-out;
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
         }
         
-        /* Responsive styles */
         @media (max-width: 992px) {
             .sidebar {
                 transform: translateX(-100%);
@@ -1014,21 +828,20 @@
                 display: block;
             }
             
-            .example-grid {
+            .sidebar-overlay.active {
+                display: block;
+            }
+            
+            .services-grid {
                 grid-template-columns: 1fr;
             }
             
-            .features-grid {
-                grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            .workflow-grid {
+                grid-template-columns: 1fr;
             }
             
-            .flow-steps::before {
-                display: none;
-            }
-            
-            .flow-steps {
-                flex-direction: column;
-                align-items: center;
+            .voice-grid {
+                grid-template-columns: 1fr;
             }
         }
         
@@ -1049,31 +862,13 @@
                 font-size: 2rem;
             }
             
-            .overview-section, .model-section {
+            .section {
                 padding: 3rem 1.5rem;
             }
             
-            .model-details {
+            .cta-buttons {
                 flex-direction: column;
-                gap: 1.5rem;
-            }
-        }
-        
-        /* Dark overlay when sidebar is active on mobile */
-        .sidebar-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-        }
-        
-        @media (max-width: 992px) {
-            .sidebar-overlay.active {
-                display: block;
+                align-items: center;
             }
         }
     </style>
@@ -1090,13 +885,16 @@
     </aside>
     
     <main class="main-content">
+        <!-- Hero Section -->
         <section class="hero" style="height: 550px;">
             <br><br>
             <div class="hero-container">
-                <h2 style="font-size: 220%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Speech Services</h2>
-                <p>Transform audio content into accurate text transcriptions with GAIA's powerful speech recognition services. From basic transcription to advanced speaker identification, unlock the potential of your audio data using GAIA's asynchronous processing architecture for small or large audio files.</p>
+                <h2 style="font-size: 220%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                    Speech Services
+                </h2>
+                <p>Transform audio into text and text into speech with GAIA's powerful async speech processing services. From basic transcription to advanced speaker identification and natural voice synthesis - all powered by Microsoft's cutting-edge technology.</p>
                 <div class="cta-buttons">
-                    <a href="/static/resources/AIAPIS.postman_collection" class="cta-btn" style="background-color: var(--accent-color); color: var(--dark-color);" download>
+                    <a href="/static/resources/AIAPIS.postman_collection" class="cta-btn" download>
                         <i class="fas fa-download"></i> Download Postman Collection
                     </a>
                     <a href="/apidocs/#/Speech%20Services" class="cta-btn cta-btn-secondary">
@@ -1106,784 +904,466 @@
             </div>
         </section>
         
-        <!-- Overview section -->
-        <section class="overview-section">
-            <div class="overview-container">
+        <!-- Services Overview -->
+        <section class="section">
+            <div class="container">
                 <div class="section-header">
                     <div class="section-icon">
                         <i class="fas fa-microphone"></i>
                     </div>
-                    <h2  style="font-size: 220%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Overview</h2>
+                    <h2>Available Services</h2>
                 </div>
-                
-                <p class="section-intro">GAIA's Speech Services APIs provides powerful speech-to-text conversion services using Microsoft's advanced speech recognition technology. These services utilize an asynchronous job processing architecture, making them more efficient and capable of handling larger audio files with improved reliability.</p>
-                <br><br>
                 
                 <div class="info-box">
                     <div class="info-box-icon"><i class="fas fa-info-circle"></i></div>
                     <div class="info-box-content">
-                        <h4>Authentication Required</h4>
-                        <p>All speech services endpoints require authentication using a token. You must include your token in the <code>X-Token</code> header for all requests.</p>
-                        <p>See the <a href="/docs/token_services">Token Services</a> documentation for details on token generation.</p>
+                        <h4>Asynchronous Processing</h4>
+                        <p>All speech services use async job processing for reliability and scalability. Submit your request, receive a job ID, then poll for completion. Perfect for large files and high-volume processing.</p>
+                        <p>Authentication required: Include your token in the <code>X-Token</code> header for all requests.</p>
                     </div>
                 </div>
                 
-                <div class="features-grid">
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <i class="fas fa-file-audio"></i>
-                        </div>
-                        <h3>Multiple Audio Formats</h3>
-                        <p>Process a wide range of audio file formats including WAV, MP3, M4A, FLAC, and OGG for maximum flexibility.</p>
-                    </div>
-                    
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <i class="fas fa-users"></i>
-                        </div>
-                        <h3>Speaker Identification</h3>
-                        <p>Identify different speakers in conversations with advanced diarization capabilities for meetings and interviews.</p>
-                    </div>
-                    
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <i class="fas fa-hourglass-half"></i>
-                        </div>
-                        <h3>Asynchronous Processing</h3>
-                        <p>Submit jobs and retrieve results when ready, perfect for long audio files and high-volume processing needs.</p>
-                    </div>
-                    
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <i class="fas fa-language"></i>
-                        </div>
-                        <h3>Language Support</h3>
-                        <p>Transcribe content in multiple languages with Microsoft's high-accuracy speech recognition technology.</p>
-                    </div>
-                </div>
-                
-                <h3  style="font-size: 150%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">How It Works - Asynchronous Processing</h3>
-                <br>
-                
-                <p>Our speech services use an asynchronous job-based architecture to efficiently process audio files of any size:</p>
-                
-                <div class="flow-diagram">
-                    <h3 class="flow-diagram-title">Speech-to-Text Workflow</h3>
-                    <div class="flow-steps">
-                        <div class="flow-step">
-                            <div class="flow-step-icon">
-                                <i class="fas fa-file-upload"></i>
+                <div class="services-grid">
+                    <!-- Speech-to-Text -->
+                    <div class="service-card stt">
+                        <div class="service-header">
+                            <div class="service-icon stt">
+                                <i class="fas fa-file-audio"></i>
                             </div>
-                            <div class="flow-step-title">Step 1</div>
-                            <div class="flow-step-desc">Upload your audio file using the <code>/file</code> endpoint</div>
-                        </div>
-                        
-                        <div class="flow-step">
-                            <div class="flow-step-icon">
-                                <i class="fas fa-tasks"></i>
+                            <div>
+                                <div class="service-title">Speech-to-Text</div>
+                                <div class="service-subtitle">Basic Transcription</div>
                             </div>
-                            <div class="flow-step-title">Step 2</div>
-                            <div class="flow-step-desc">Submit a job with the <code>file_id</code> to the speech service endpoint</div>
                         </div>
-                        
-                        <div class="flow-step">
-                            <div class="flow-step-icon">
-                                <i class="fas fa-sync"></i>
-                            </div>
-                            <div class="flow-step-title">Step 3</div>
-                            <div class="flow-step-desc">Poll the job status endpoint using the returned <code>job_id</code></div>
+                        <div class="service-description">
+                            Convert audio recordings to accurate text using Microsoft's advanced speech recognition technology. Perfect for quick transcription needs.
                         </div>
-                        
-                        <div class="flow-step">
-                            <div class="flow-step-icon">
-                                <i class="fas fa-file-alt"></i>
-                            </div>
-                            <div class="flow-step-title">Step 4</div>
-                            <div class="flow-step-desc">Retrieve the transcription results when job is completed</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <p>The key advantages of our asynchronous job processing system:</p>
-                
-                <ul style="line-height: 1.8; margin-left: 30px; margin-top: 20px; margin-bottom: 20px;">
-                    <li><strong>Improved reliability</strong>: Audio processing continues even if your client disconnects</li>
-                    <li><strong>Better scalability</strong>: Efficiently handles multiple requests and large audio files</li>
-                    <li><strong>No timeouts</strong>: Perfect for processing long audio files that would timeout with synchronous APIs</li>
-                    <li><strong>Progress tracking</strong>: Check status at any time through the job status endpoint</li>
-                </ul>
-                
-                <h3  style="font-size: 150%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">File Format Requirements</h3>
-                
-                <ul style="line-height: 1.8; margin-left: 30px; margin-top: 20px; margin-bottom: 20px;">
-                    <li><strong>Supported formats:</strong> WAV, MP3, M4A, FLAC, OGG</li>
-                    <li><strong>Maximum file size:</strong> 200MB</li>
-                    <li><strong>Maximum audio length:</strong> 2 hours per single audio file</li>
-                    <li><strong>Recommended sampling rate:</strong> 16kHz or higher</li>
-                    <li><strong>Channels:</strong> Mono or stereo (diarization works best with clear audio)</li>
-                </ul>
-            </div>
-        </section>
-        
-        <!-- Async Jobs section -->
-        <section class="async-job-section">
-            <div class="async-container">
-                <div class="async-header">
-                    <h2  style="font-size: 220%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Job Management API</h2>
-                    <p>Our speech services use an asynchronous job-based architecture. After submitting a job, use these endpoints to check status and retrieve results.</p>
-                </div>
-                
-                <div class="job-endpoints">
-                    <div class="job-endpoint-card">
-                        <h3><i class="fas fa-hourglass"></i> Check Job Status</h3>
-                        <div class="job-endpoint-code">GET /jobs/status?job_id={job_id}</div>
-                        <p>Check the current status of your job (pending, processing, completed, or failed). Use this to poll for completion.</p>
-                        <br>
-                        <p>Required headers:</p>
-                        <ul style="margin-bottom: 1rem; padding-left: 20px;">
-                            <li><code>X-Token</code>: Your authentication token</li>
-                        </ul>
-                        <p>Response includes status, timestamps, and error message (if any).</p>
-                    </div>
-                    
-                    <div class="job-endpoint-card">
-                        <h3><i class="fas fa-clipboard-check"></i> Retrieve Job Results</h3>
-                        <div class="job-endpoint-code">GET /jobs/result?job_id={job_id}</div>
-                        <p>Once your job status is "completed", use this endpoint to retrieve the full transcription results.</p>
-                        <br>
-                        <p>Required headers:</p>
-                        <ul style="margin-bottom: 1rem; padding-left: 20px;">
-                            <li><code>X-Token</code>: Your authentication token</li>
-                        </ul>
-                        <p>Returns the complete transcription data including timing information, speaker identification (if requested), and any other job-specific outputs.</p>
-                    </div>
-                    
-                    <div class="job-endpoint-card">
-                        <h3><i class="fas fa-list-ul"></i> List Jobs</h3>
-                        <div class="job-endpoint-code">GET /jobs</div>
-                        <p>View a list of your jobs with pagination and filtering options.</p>
-                        <br>
-                        <p>Optional query parameters:</p>
-                        <ul style="margin-bottom: 1rem; padding-left: 20px;">
-                            <li><code>limit</code>: Maximum number of jobs to return (default: 10)</li>
-                            <li><code>offset</code>: Offset for pagination (default: 0)</li>
-                            <li><code>status</code>: Filter by job status</li>
-                            <li><code>job_type</code>: Filter by job type (e.g., "stt", "stt_diarize")</li>
-                        </ul>
-                    </div>
-                </div>
-                
-                <div class="info-box">
-                    <div class="info-box-icon"><i class="fas fa-lightbulb"></i></div>
-                    <div class="info-box-content">
-                        <h4>Job Status Polling Best Practices</h4>
-                        <p>When polling for job completion, implement an exponential backoff strategy to avoid overwhelming the API:</p>
-                        <ul style="margin-top: 10px; padding-left: 20px;">
-                            <li>Start with a 2-3 second interval for short audio files</li>
-                            <li>For longer audio files (>1 minute), start with 5-10 seconds</li>
-                            <li>Double the interval after each check, up to a maximum of 60 seconds</li>
-                            <li>Include a reasonable timeout for very long processes (e.g., 30 minutes)</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </section>
-        
-        <!-- Basic STT section -->
-        <section class="model-section">
-            <div class="model-container">
-                <div class="model-header" style="display: flex; align-items: center;">
-                    <div class="model-info" style="flex-grow: 1; margin-left: 1rem;">
-                        <h2 style="font-size: 220%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-                            Basic Speech-to-Text
-                        </h2>
-                        <p>Convert audio recordings to text using Microsoft's high-accuracy speech recognition technology with support for multiple languages and formatting options.</p>
-                    </div>
-                </div>
-                
-                <div class="model-details">
-                    <div class="model-detail-card basic-speech-card">
-                        <h3><i class="fas fa-cogs"></i> Features</h3>
-                        <ul>
+                        <ul class="service-features">
                             <li>High-accuracy transcription</li>
+                            <li>Multiple audio formats (WAV, MP3, M4A, FLAC, OGG)</li>
                             <li>Multiple language support</li>
-                            <li>Profanity filtering options</li>
-                            <li>Fast processing for shorter audio files</li>
-                            <li>Clean, readable transcripts</li>
-                            <li>Asynchronous processing for reliable results</li>
+                            <li>Profanity filtering</li>
+                            <li>Fast async processing</li>
                         </ul>
+                        <div class="endpoint-badge">POST /speech/stt</div>
                     </div>
                     
-                    <div class="model-detail-card basic-speech-card" style="line-height: 1.8;">
-                        <h3><i class="fas fa-code"></i> API Endpoint</h3>
-                        <div class="endpoint-box">
-                            POST /speech/stt
-                        </div>
-                        <p>Submit an asynchronous speech-to-text job by sending a POST request to this endpoint with your file ID.</p>
-                        <br>
-                        <p>Required parameters:</p>
-                        <ul>
-                            <li><strong>file_id</strong>: ID of the uploaded audio file</li>
-                            <li><strong>X-Token</strong>: Your API authentication token (header)</li>
-                        </ul>
-                        <p>Response includes a job_id that you'll use to check status and retrieve results.</p>
-                    </div>
-                </div>
-                
-                <h3>Examples</h3>
-                <div class="examples-tabs">
-                    <div class="example-tab basic-tab active">Job Submission</div>
-                    <div class="example-tab basic-tab">Job Status Check</div>
-                    <div class="example-tab basic-tab">Results Retrieval</div>
-                </div>
-                
-                <!-- Example 1 - Job Submission -->
-                <div class="example-content active">
-                    <div class="example-grid">
-                        <div class="example-settings basic-speech-settings">
-                            <h3 class="settings-title">API Request</h3>
-                            
-                            <div class="setting-group">
-                                <span class="setting-label">Endpoint</span>
-                                <div class="setting-value">POST /speech/stt</div>
+                    <!-- Speech-to-Text with Diarization -->
+                    <div class="service-card diarize">
+                        <div class="service-header">
+                            <div class="service-icon diarize">
+                                <i class="fas fa-users"></i>
                             </div>
-                            
-                            <div class="setting-group">
-                                <span class="setting-label">Headers</span>
-                                <div class="setting-value">
-                                    X-Token: your_token_here<br>
-                                    Content-Type: application/json
-                                </div>
-                            </div>
-                            
-                            <div class="setting-group">
-                                <span class="setting-label">Request Body</span>
-                                <div class="setting-value">
-                                    {<br>
-                                    &nbsp;&nbsp;"file_id": "a1b2c3d4-5678-90ab-cdef-1234567890ab"<br>
-                                    }
-                                </div>
-                            </div>
-                            
-                            <div class="setting-group">
-                                <span class="setting-label">cURL Request</span>
-                                <div class="setting-value">
-                                    curl -X POST https://api.example.com/speech/stt <br>
-                                    &nbsp;&nbsp;-H "X-Token: your_token_here" <br>
-                                    &nbsp;&nbsp;-H "Content-Type: application/json" <br>
-                                    &nbsp;&nbsp;-d '{"file_id": "a1b2c3d4-5678-90ab-cdef-1234567890ab"}'
-                                </div>
+                            <div>
+                                <div class="service-title">Speech-to-Text with Diarization</div>
+                                <div class="service-subtitle">Speaker Identification</div>
                             </div>
                         </div>
-                        
-                        <div class="example-result">
-                            <div class="result-header">
-                                <h4>API Response</h4>
-                            </div>
-                            <div class="result-container">
-                                <div class="result-code">
-{
-  "message": "Speech-to-text job submitted successfully",
-  "job_id": "12345678-1234-1234-1234-123456789012"
-}
-                                </div>
-                            </div>
+                        <div class="service-description">
+                            Advanced transcription with speaker identification and timestamps. Ideal for meetings, interviews, and multi-speaker scenarios.
                         </div>
-                    </div>
-                </div>
-                
-                <!-- Example 2 - Job Status Check -->
-                <div class="example-content">
-                    <div class="example-grid">
-                        <div class="example-settings basic-speech-settings">
-                            <h3 class="settings-title">API Request</h3>
-                            
-                            <div class="setting-group">
-                                <span class="setting-label">Endpoint</span>
-                                <div class="setting-value">GET /jobs/status?job_id=12345678-1234-1234-1234-123456789012</div>
-                            </div>
-                            
-                            <div class="setting-group">
-                                <span class="setting-label">Headers</span>
-                                <div class="setting-value">
-                                    X-Token: your_token_here
-                                </div>
-                            </div>
-                            
-                            <div class="setting-group">
-                                <span class="setting-label">cURL Request</span>
-                                <div class="setting-value">
-                                    curl -X GET "https://api.example.com/jobs/status?job_id=12345678-1234-1234-1234-123456789012" <br>
-                                    &nbsp;&nbsp;-H "X-Token: your_token_here"
-                                </div>
-                            </div>
-                            
-                            <div class="setting-group">
-                                <span class="setting-label">Note</span>
-                                <div class="setting-value">
-                                    Poll this endpoint periodically to check when your job has completed. Status will progress from "pending" to "processing" to "completed" (or "failed").
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="example-result">
-                            <div class="result-header">
-                                <h4>API Response</h4>
-                            </div>
-                            <div class="result-container">
-                                <div class="result-code">
-{
-  "job_id": "12345678-1234-1234-1234-123456789012",
-  "user_id": "87654321-4321-4321-4321-210987654321",
-  "file_id": "a1b2c3d4-5678-90ab-cdef-1234567890ab",
-  "status": "processing",
-  "created_at": "2025-04-22T10:30:45+02:00",
-  "started_at": "2025-04-22T10:30:46+02:00",
-  "completed_at": null,
-  "error_message": null,
-  "job_type": "stt",
-  "has_results": false,
-  "parameters": null,
-  "endpoint_id": "61a34d5c-8c92-4e2f-b119-e96a7b2a4c5f"
-}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Example 3 - Results Retrieval -->
-                <div class="example-content">
-                    <div class="example-grid">
-                        <div class="example-settings basic-speech-settings">
-                            <h3 class="settings-title">API Request</h3>
-                            
-                            <div class="setting-group">
-                                <span class="setting-label">Endpoint</span>
-                                <div class="setting-value">GET /jobs/result?job_id=12345678-1234-1234-1234-123456789012</div>
-                            </div>
-                            
-                            <div class="setting-group">
-                                <span class="setting-label">Headers</span>
-                                <div class="setting-value">
-                                    X-Token: your_token_here
-                                </div>
-                            </div>
-                            
-                            <div class="setting-group">
-                                <span class="setting-label">cURL Request</span>
-                                <div class="setting-value">
-                                    curl -X GET "https://api.example.com/jobs/result?job_id=12345678-1234-1234-1234-123456789012" <br>
-                                    &nbsp;&nbsp;-H "X-Token: your_token_here"
-                                </div>
-                            </div>
-                            
-                            <div class="setting-group">
-                                <span class="setting-label">Note</span>
-                                <div class="setting-value">
-                                    Only call this endpoint after the job status is "completed". If the job is still processing, a 409 status code will be returned.
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="example-result">
-                            <div class="result-header">
-                                <h4>API Response</h4>
-                            </div>
-                            <div class="result-container">
-                                <div class="result-code">
-{
-  "message": "Job result retrieved successfully",
-  "job_id": "12345678-1234-1234-1234-123456789012",
-  "status": "completed",
-  "created_at": "2025-04-22T10:30:45+02:00",
-  "started_at": "2025-04-22T10:30:46+02:00",
-  "completed_at": "2025-04-22T10:31:15+02:00",
-  "job_type": "stt",
-  "result": {
-    "message": "Audio transcribed successfully",
-    "transcript": "I was walking home from the grocery store when I witnessed the incident. It was approximately 9:30 PM and the street was poorly lit. I saw a silver sedan, possibly a Toyota or Honda, moving at high speed before it collided with the parked vehicle.",
-    "transcription_details": {
-      "combinedPhrases": [
-        {
-          "text": "I was walking home from the grocery store when I witnessed the incident. It was approximately 9:30 PM and the street was poorly lit. I saw a silver sedan, possibly a Toyota or Honda, moving at high speed before it collided with the parked vehicle."
-        }
-      ],
-      "duration": 45600
-    },
-    "seconds_processed": 45.6
-  }
-}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-        
-        <!-- Enhanced STT section -->
-        <section class="model-section alternate">
-            <div class="model-container">
-                <div class="model-header">
-                    <div class="model-info">
-                        <h2 style="font-size: 220%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-                            Enhanced Speech-to-Text with Diarization
-                        </h2>
-                        <p>Advanced transcription with speaker identification and timestamps, perfect for meetings, interviews, and multi-speaker scenarios. Processed asynchronously for reliable results with even the longest recordings.</p>
-                    </div>
-                </div>
-                
-                <div class="model-details">
-                    <div class="model-detail-card enhanced-speech-card">
-                        <h3><i class="fas fa-cogs"></i> Features</h3>
-                        <ul>
+                        <ul class="service-features">
                             <li>Speaker identification (Speaker 1, Speaker 2, etc.)</li>
                             <li>Accurate timestamps for each speaker turn</li>
-                            <li>AI-enhanced formatting with natural paragraph breaks</li>
-                            <li>Handles long audio recordings with automatic chunking</li>
-                            <li>Improved accuracy for conversational context</li>
-                            <li>Multiple language support</li>
-                            <li>Asynchronous processing for reliability</li>
+                            <li>AI-enhanced formatting</li>
+                            <li>Natural paragraph breaks</li>
+                            <li>Handles long recordings with chunking</li>
                         </ul>
+                        <div class="endpoint-badge">POST /speech/stt_diarize</div>
                     </div>
                     
-                    <div class="model-detail-card enhanced-speech-card">
-                        <h3><i class="fas fa-code"></i> API Endpoint</h3>
-                        <div class="endpoint-box">
-                            POST /speech/stt_diarize
+                    <!-- Text-to-Speech -->
+                    <div class="service-card tts">
+                        <div class="service-header">
+                            <div class="service-icon tts">
+                                <i class="fas fa-volume-up"></i>
+                            </div>
+                            <div>
+                                <div class="service-title">Text-to-Speech</div>
+                                <div class="service-subtitle">Voice Synthesis</div>
+                            </div>
                         </div>
-                        <p>Submit an asynchronous multi-speaker transcription job by sending a POST request to this endpoint with your file ID.</p>
-                        <br>
-                        <p>Required parameters:</p>
-                        <ul>
-                            <li><strong>file_id</strong>: ID of the uploaded audio file</li>
-                            <li><strong>X-Token</strong>: Your API authentication token (header)</li>
+                        <div class="service-description">
+                            Convert text into natural-sounding speech with multiple voice options and output formats. Perfect for audio content creation and accessibility.
+                        </div>
+                        <ul class="service-features">
+                            <li>Multiple natural voice personas</li>
+                            <li>Various output formats (MP3, WAV)</li>
+                            <li>Regional voice options</li>
+                            <li>Quality audio synthesis</li>
+                            <li>Async processing for large texts</li>
                         </ul>
-                        <p>Response includes a job_id that you'll use to check status and retrieve results.</p>
-                    </div>
-                </div>
-                
-                <h3 style="font-size: 150%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Examples</h3>
-                <br>
-                <div class="examples-tabs">
-                    <div class="example-tab enhanced-tab active">Job Submission</div>
-                    <div class="example-tab enhanced-tab">Job Status Check</div>
-                    <div class="example-tab enhanced-tab">Results Retrieval</div>
-                </div>
-
-                <!-- Example 1 - Job Submission -->
-                <div class="example-content active">
-                    <div class="example-grid">
-                        <div class="example-settings enhanced-speech-settings">
-                            <h3 class="settings-title">API Request</h3>
-                            
-                            <div class="setting-group">
-                                <span class="setting-label">Endpoint</span>
-                                <div class="setting-value">POST /speech/stt_diarize</div>
-                            </div>
-                            
-                            <div class="setting-group">
-                                <span class="setting-label">Headers</span>
-                                <div class="setting-value">
-                                    X-Token: your_token_here<br>
-                                    Content-Type: application/json
-                                </div>
-                            </div>
-                            
-                            <div class="setting-group">
-                                <span class="setting-label">Request Body</span>
-                                <div class="setting-value">
-                                    {<br>
-                                    &nbsp;&nbsp;"file_id": "b2c3d4e5-6789-01ab-cdef-23456789abcd"<br>
-                                    }
-                                </div>
-                            </div>
-                            
-                            <div class="setting-group">
-                                <span class="setting-label">cURL Request</span>
-                                <div class="setting-value">
-                                    curl -X POST https://api.example.com/speech/stt_diarize <br>
-                                    &nbsp;&nbsp;-H "X-Token: your_token_here" <br>
-                                    &nbsp;&nbsp;-H "Content-Type: application/json" <br>
-                                    &nbsp;&nbsp;-d '{"file_id": "b2c3d4e5-6789-01ab-cdef-23456789abcd"}'
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="example-result">
-                            <div class="result-header">
-                                <h4>API Response</h4>
-                            </div>
-                            <div class="result-container">
-                                <div class="result-code">
-{
-  "message": "Speech-to-text diarization job submitted successfully",
-  "job_id": "23456789-2345-2345-2345-234567890123"
-}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Example 2 - Status Check -->
-                <div class="example-content">
-                    <div class="example-grid">
-                        <div class="example-settings enhanced-speech-settings">
-                            <h3 class="settings-title">API Request</h3>
-                            
-                            <div class="setting-group">
-                                <span class="setting-label">Endpoint</span>
-                                <div class="setting-value">GET /jobs/status?job_id=23456789-2345-2345-2345-234567890123</div>
-                            </div>
-                            
-                            <div class="setting-group">
-                                <span class="setting-label">Headers</span>
-                                <div class="setting-value">
-                                    X-Token: your_token_here
-                                </div>
-                            </div>
-                            
-                            <div class="setting-group">
-                                <span class="setting-label">cURL Request</span>
-                                <div class="setting-value">
-                                    curl -X GET "https://api.example.com/jobs/status?job_id=23456789-2345-2345-2345-234567890123" <br>
-                                    &nbsp;&nbsp;-H "X-Token: your_token_here"
-                                </div>
-                            </div>
-                            
-                            <div class="setting-group">
-                                <span class="setting-label">Note</span>
-                                <div class="setting-value">
-                                    Diarization jobs typically take longer to process than basic transcription. Implement appropriate polling intervals.
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="example-result">
-                            <div class="result-header">
-                                <h4>API Response</h4>
-                            </div>
-                            <div class="result-container">
-                                <div class="result-code">
-{
-  "job_id": "23456789-2345-2345-2345-234567890123",
-  "user_id": "87654321-4321-4321-4321-210987654321",
-  "file_id": "b2c3d4e5-6789-01ab-cdef-23456789abcd",
-  "status": "completed",
-  "created_at": "2025-04-22T10:45:12+02:00",
-  "started_at": "2025-04-22T10:45:13+02:00",
-  "completed_at": "2025-04-22T10:47:28+02:00",
-  "error_message": null,
-  "job_type": "stt_diarize",
-  "has_results": true,
-  "parameters": null,
-  "endpoint_id": "72b45e6d-9da3-5f3g-c220-f07b8c3b5d6e"
-}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Example 3 - Results Retrieval -->
-                <div class="example-content">
-                    <div class="example-grid">
-                        <div class="example-settings enhanced-speech-settings">
-                            <h3 class="settings-title">API Request</h3>
-                            
-                            <div class="setting-group">
-                                <span class="setting-label">Endpoint</span>
-                                <div class="setting-value">GET /jobs/result?job_id=23456789-2345-2345-2345-234567890123</div>
-                            </div>
-                            
-                            <div class="setting-group">
-                                <span class="setting-label">Headers</span>
-                                <div class="setting-value">
-                                    X-Token: your_token_here
-                                </div>
-                            </div>
-                            
-                            <div class="setting-group">
-                                <span class="setting-label">cURL Request</span>
-                                <div class="setting-value">
-                                    curl -X GET "https://api.example.com/jobs/result?job_id=23456789-2345-2345-2345-234567890123" <br>
-                                    &nbsp;&nbsp;-H "X-Token: your_token_here"
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="example-result">
-                            <div class="result-header">
-                                <h4>API Response</h4>
-                            </div>
-                            <div class="result-container">
-                                <div class="result-code">
-{
-  "message": "Job result retrieved successfully",
-  "job_id": "23456789-2345-2345-2345-234567890123",
-  "status": "completed",
-  "created_at": "2025-04-22T10:45:12+02:00",
-  "started_at": "2025-04-22T10:45:13+02:00",
-  "completed_at": "2025-04-22T10:47:28+02:00",
-  "job_type": "stt_diarize",
-  "result": {
-    "message": "Audio processed successfully",
-    "raw_transcript": "Thank you for coming in today to discuss what you witnessed. Could you please state your name and address for our records? My name is Sarah Johnson and I live at 742 Evergreen Terrace. Thank you Ms. Johnson. Now, can you tell me in your own words what you saw on the evening of March 15th?",
-    "enhanced_transcript": "[00:00:00] Speaker 1: Thank you for coming in today to discuss what you witnessed. Could you please state your name and address for our records?\n\n[00:00:11] Speaker 2: My name is Sarah Johnson and I live at 742 Evergreen Terrace.\n\n[00:00:20] Speaker 1: Thank you Ms. Johnson. Now, can you tell me in your own words what you saw on the evening of March 15th?",
-    "seconds_processed": 30.5,
-    "prompt_tokens": 628,
-    "completion_tokens": 217,
-    "total_tokens": 845,
-    "cached_tokens": 0,
-    "embedded_tokens": 0,
-    "model_used": "gpt-4o-mini"
-  }
-}
-                                </div>
-                            </div>
-                        </div>
+                        <div class="endpoint-badge">POST /speech/tts</div>
                     </div>
                 </div>
             </div>
         </section>
         
-        <!-- Pro Tips section -->
-        <section class="overview-section">
-            <div class="overview-container">
+        <!-- Workflow Section -->
+        <section class="workflow-section">
+            <div class="workflow-container">
                 <div class="section-header">
                     <div class="section-icon">
-                        <i class="fas fa-lightbulb"></i>
+                        <i class="fas fa-cogs"></i>
                     </div>
-                    <h2>Pro Tips</h2>
+                    <h2>How It Works</h2>
+                </div>
+                
+                <div class="workflow-grid">
+                    <!-- Audio to Text Workflow -->
+                    <div class="workflow-card">
+                        <div class="workflow-header">
+                            <div class="workflow-icon audio-to-text">
+                                <i class="fas fa-microphone-alt"></i>
+                            </div>
+                            <div class="workflow-title">Audio to Text</div>
+                            <div class="workflow-subtitle">Speech-to-Text & Diarization Workflow</div>
+                        </div>
+                        <div class="workflow-steps">
+                            <div class="workflow-step">
+                                <div class="step-number">1</div>
+                                <div class="step-content">
+                                    <h4>Upload Audio File</h4>
+                                    <p>Upload your audio file using <span class="step-endpoint">POST /file</span> and receive a file_id</p>
+                                </div>
+                            </div>
+                            <div class="workflow-step">
+                                <div class="step-number">2</div>
+                                <div class="step-content">
+                                    <h4>Submit Job</h4>
+                                    <p>Send file_id to <span class="step-endpoint">POST /speech/stt</span> or <span class="step-endpoint">POST /speech/stt_diarize</span></p>
+                                </div>
+                            </div>
+                            <div class="workflow-step">
+                                <div class="step-number">3</div>
+                                <div class="step-content">
+                                    <h4>Monitor Progress</h4>
+                                    <p>Poll <span class="step-endpoint">GET /jobs/status</span> with your job_id to check completion</p>
+                                </div>
+                            </div>
+                            <div class="workflow-step">
+                                <div class="step-number">4</div>
+                                <div class="step-content">
+                                    <h4>Retrieve Results</h4>
+                                    <p>Get transcription from <span class="step-endpoint">GET /jobs/result</span> when status is "completed"</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Text to Audio Workflow -->
+                    <div class="workflow-card">
+                        <div class="workflow-header">
+                            <div class="workflow-icon text-to-audio">
+                                <i class="fas fa-volume-up"></i>
+                            </div>
+                            <div class="workflow-title">Text to Audio</div>
+                            <div class="workflow-subtitle">Text-to-Speech Workflow</div>
+                        </div>
+                        <div class="workflow-steps">
+                            <div class="workflow-step">
+                                <div class="step-number">1</div>
+                                <div class="step-content">
+                                    <h4>Submit Text</h4>
+                                    <p>Send text, voice selection, and format to <span class="step-endpoint">POST /speech/tts</span></p>
+                                </div>
+                            </div>
+                            <div class="workflow-step">
+                                <div class="step-number">2</div>
+                                <div class="step-content">
+                                    <h4>Processing</h4>
+                                    <p>GAIA processes your text with Microsoft's neural voice synthesis</p>
+                                </div>
+                            </div>
+                            <div class="workflow-step">
+                                <div class="step-number">3</div>
+                                <div class="step-content">
+                                    <h4>Check Status</h4>
+                                    <p>Monitor job progress using <span class="step-endpoint">GET /jobs/status</span></p>
+                                </div>
+                            </div>
+                            <div class="workflow-step">
+                                <div class="step-number">4</div>
+                                <div class="step-content">
+                                    <h4>Download Audio</h4>
+                                    <p>Retrieve audio file_id from <span class="step-endpoint">GET /jobs/result</span> then download the audio</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="info-box">
-                    <div class="info-box-icon"><i class="fas fa-lightbulb"></i></div>
+                    <div class="info-box-icon"><i class="fas fa-clock"></i></div>
                     <div class="info-box-content">
-                        <h4>For Best Results with Speaker Diarization</h4>
-                        <ul style="line-height: 1.8; margin-top: 15px; margin-bottom: 15px; padding-left: 20px;">
-                            <li>Use high-quality audio recordings with minimal background noise</li>
-                            <li>Ensure speakers don't talk over each other frequently</li>
-                            <li>Try to have distinct voice differences between speakers for better identification</li>
-                            <li>When possible, use a separate microphone for each speaker</li>
-                        </ul>
+                        <h4>Processing Times & Best Practices</h4>
+                        <p><strong>Speech-to-Text:</strong> Typically 20-50% of audio length (e.g., 10-minute audio = 2-5 minutes processing)</p>
+                        <p><strong>Diarization:</strong> Additional 30-60 seconds for AI speaker identification</p>
+                        <p><strong>Text-to-Speech:</strong> Usually 10-30 seconds regardless of text length</p>
+                        <p><strong>Polling:</strong> Check status every 5-10 seconds for optimal balance between responsiveness and API efficiency</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Voice Preview Section -->
+        <section class="voice-preview-section">
+            <div class="container">
+                <div class="section-header">
+                    <div class="section-icon" style="background: var(--tts-gradient);">
+                        <i class="fas fa-play-circle"></i>
+                    </div>
+                    <h2>Voice Preview Gallery</h2>
+                </div>
+                
+                <p style="text-align: center; color: #666; font-size: 1.1rem; margin-bottom: 2rem;">
+                    Listen to sample audio from our available voice personas. Each voice has been generated from the same sample text to help you compare and choose the perfect voice for your project.
+                </p>
+                
+                <div class="voice-grid">
+                    <!-- South African Voices -->
+                    <div class="voice-card">
+                        <div class="voice-header">
+                            <div class="voice-name">Luke (South African Male)</div>
+                            <div class="voice-region">ZA</div>
+                        </div>
+                        <div class="voice-description">
+                            Warm, professional South African male voice with clear pronunciation. Perfect for business presentations and educational content.
+                        </div>
+                        <div class="voice-controls">
+                            <button class="play-button" onclick="playVoice('luke', this)">
+                                <i class="fas fa-play"></i>
+                            </button>
+                            <div class="sample-text">"Hi there, I am Luke. Welcome to GAIA's speech services that will transform the way you work with audio."</div>
+                        </div>
+                        <audio id="luke-audio" preload="none">
+                            <source src="/static/audio/samples/luke-sample.mp3" type="audio/mpeg">
+                        </audio>
+                    </div>
+                    
+                    <div class="voice-card">
+                        <div class="voice-header">
+                            <div class="voice-name">Leah (South African Female)</div>
+                            <div class="voice-region">ZA</div>
+                        </div>
+                        <div class="voice-description">
+                            Friendly, approachable South African female voice. Ideal for customer service applications and interactive content.
+                        </div>
+                        <div class="voice-controls">
+                            <button class="play-button" onclick="playVoice('leah', this)">
+                                <i class="fas fa-play"></i>
+                            </button>
+                            <div class="sample-text">"Hi there, I am Leah. Welcome to GAIA's speech services that will transform the way you work with audio."</div>
+                        </div>
+                        <audio id="leah-audio" preload="none">
+                            <source src="/static/audio/samples/leah-sample.mp3" type="audio/mpeg">
+                        </audio>
+                    </div>
+                    
+                    <!-- British Voices -->
+                    <div class="voice-card">
+                        <div class="voice-header">
+                            <div class="voice-name">Sonia (British Female)</div>
+                            <div class="voice-region">GB</div>
+                        </div>
+                        <div class="voice-description">
+                            Elegant British female voice with refined pronunciation. Perfect for premium brand communications and audiobooks.
+                        </div>
+                        <div class="voice-controls">
+                            <button class="play-button" onclick="playVoice('sonia', this)">
+                                <i class="fas fa-play"></i>
+                            </button>
+                            <div class="sample-text">"Hi there, I am Sonia. Welcome to GAIA's speech services that will transform the way you work with audio."</div>
+                        </div>
+                        <audio id="sonia-audio" preload="none">
+                            <source src="/static/audio/samples/sonia-sample.mp3" type="audio/mpeg">
+                        </audio>
+                    </div>
+                    
+                    <div class="voice-card">
+                        <div class="voice-header">
+                            <div class="voice-name">Ryan (British Male)</div>
+                            <div class="voice-region">GB</div>
+                        </div>
+                        <div class="voice-description">
+                            Distinguished British male voice with authoritative tone. Excellent for documentaries and formal presentations.
+                        </div>
+                        <div class="voice-controls">
+                            <button class="play-button" onclick="playVoice('ryan', this)">
+                                <i class="fas fa-play"></i>
+                            </button>
+                            <div class="sample-text">"Hi there, I am Ryan. Welcome to GAIA's speech services that will transform the way you work with audio."</div>
+                        </div>
+                        <audio id="ryan-audio" preload="none">
+                            <source src="/static/audio/samples/ryan-sample.mp3" type="audio/mpeg">
+                        </audio>
+                    </div>
+                    
+                    <!-- American Voices -->
+                    <div class="voice-card">
+                        <div class="voice-header">
+                            <div class="voice-name">Aria (American Female)</div>
+                            <div class="voice-region">US</div>
+                        </div>
+                        <div class="voice-description">
+                            Versatile American female voice with natural intonation. Great for conversational AI and e-learning platforms.
+                        </div>
+                        <div class="voice-controls">
+                            <button class="play-button" onclick="playVoice('aria', this)">
+                                <i class="fas fa-play"></i>
+                            </button>
+                            <div class="sample-text">"Hi there, I am Aria. Welcome to GAIA's speech services that will transform the way you work with audio."</div>
+                        </div>
+                        <audio id="aria-audio" preload="none">
+                            <source src="/static/audio/samples/aria-sample.mp3" type="audio/mpeg">
+                        </audio>
+                    </div>
+                    
+                    <div class="voice-card">
+                        <div class="voice-header">
+                            <div class="voice-name">Guy (American Male)</div>
+                            <div class="voice-region">US</div>
+                        </div>
+                        <div class="voice-description">
+                            Confident American male voice with clear articulation. Perfect for training materials and corporate communications.
+                        </div>
+                        <div class="voice-controls">
+                            <button class="play-button" onclick="playVoice('guy', this)">
+                                <i class="fas fa-play"></i>
+                            </button>
+                            <div class="sample-text">"Hi there, I am Guy. Welcome to GAIA's speech services that will transform the way you work with audio."</div>
+                        </div>
+                        <audio id="guy-audio" preload="none">
+                            <source src="/static/audio/samples/guy-sample.mp3" type="audio/mpeg">
+                        </audio>
+                    </div>
+                    
+                    <!-- Australian Voices -->
+                    <div class="voice-card">
+                        <div class="voice-header">
+                            <div class="voice-name">Natasha (Australian Female)</div>
+                            <div class="voice-region">AU</div>
+                        </div>
+                        <div class="voice-description">
+                            Bright Australian female voice with engaging delivery. Ideal for marketing content and interactive applications.
+                        </div>
+                        <div class="voice-controls">
+                            <button class="play-button" onclick="playVoice('natasha', this)">
+                                <i class="fas fa-play"></i>
+                            </button>
+                            <div class="sample-text">"Hi there, I am Natasha. Welcome to GAIA's speech services that will transform the way you work with audio."</div>
+                        </div>
+                        <audio id="natasha-audio" preload="none">
+                            <source src="/static/audio/samples/natasha-sample.mp3" type="audio/mpeg">
+                        </audio>
+                    </div>
+                    
+                    <div class="voice-card">
+                        <div class="voice-header">
+                            <div class="voice-name">William (Australian Male)</div>
+                            <div class="voice-region">AU</div>
+                        </div>
+                        <div class="voice-description">
+                            Friendly Australian male voice with approachable tone. Great for customer-facing applications and tutorials.
+                        </div>
+                        <div class="voice-controls">
+                            <button class="play-button" onclick="playVoice('william', this)">
+                                <i class="fas fa-play"></i>
+                            </button>
+                            <div class="sample-text">"Hi there, I am William. Welcome to GAIA's speech services that will transform the way you work with audio."</div>
+                        </div>
+                        <audio id="william-audio" preload="none">
+                            <source src="/static/audio/samples/william-sample.mp3" type="audio/mpeg">
+                        </audio>
                     </div>
                 </div>
                 
-                <div class="info-box" style="background-color: #FFF3E0; border-left-color: #FF9800;">
-                    <div class="info-box-icon" style="color: #FF9800;"><i class="fas fa-exclamation-triangle"></i></div>
+                <div class="info-box" style="background-color: #fff3cd; border-left-color: #ffc107;">
+                    <div class="info-box-icon" style="color: #ffc107;"><i class="fas fa-lightbulb"></i></div>
                     <div class="info-box-content">
-                        <h4 style="color: #FF9800;">Client Timeout Considerations</h4>
-                        <p>GAIA's asynchronous processing model eliminates client timeout issues that can occur with synchronous APIs. This is particularly important for:</p>
-                        <ul style="line-height: 1.8; margin-top: 15px; margin-bottom: 15px; padding-left: 20px;">
-                            <li>Long audio files (>15 minutes) that would timeout with synchronous processing</li>
-                            <li>Network environments with unstable connections</li>
-                            <li>Mobile applications where background processing is needed</li>
+                        <h4 style="color: #856404;">Voice Selection Tips</h4>
+                        <p>Choose voices based on your target audience and content type:</p>
+                        <ul style="margin-top: 10px; padding-left: 20px;">
+                            <li><strong>Regional preferences:</strong> Match voice region to your audience for better engagement</li>
+                            <li><strong>Content type:</strong> Professional voices for business, friendly voices for customer service</li>
+                            <li><strong>Gender considerations:</strong> Some studies suggest female voices for instructional content, male voices for authoritative content</li>
+                            <li><strong>Brand consistency:</strong> Choose a voice that aligns with your brand personality</li>
                         </ul>
-                        <p>The job continues processing even if your client disconnects, and you can retrieve results at any time.</p>
                     </div>
                 </div>
-                
-                <h3 style="font-size: 150%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Complete Integration Example</h3>
-                <br>
-                <p>Here's a complete workflow showing how to use GAIA's asynchronous speech services from file upload to results retrieval:</p>
-                <br>
-                <h4>Step 1: Upload Audio File</h4>
-                <div class="code-block">
-# cURL request
-curl -X POST https://api.example.com/file \
-  -H "X-Token: your_token_here" \
-  -H "Content-Type: multipart/form-data" \
-  -F "files=@witness_recording.mp3"
-
-# Response
-{
-  "message": "Files uploaded successfully",
-  "uploaded_files": [
-    {
-      "file_name": "witness_recording.mp3",
-      "file_id": "a1b2c3d4-5678-90ab-cdef-1234567890ab",
-      "content_type": "audio/mpeg"
-    }
-  ]
-}
+            </div>
+        </section>
+        
+        <!-- Technical Details -->
+        <section class="section alternate">
+            <div class="container">
+                <div class="section-header">
+                    <div class="section-icon">
+                        <i class="fas fa-cog"></i>
+                    </div>
+                    <h2>Technical Specifications</h2>
                 </div>
                 
-                <h4>Step 2: Submit Transcription Job</h4>
-                <div class="code-block">
-# cURL request
-curl -X POST https://api.example.com/speech/stt_diarize \
-  -H "X-Token: your_token_here" \
-  -H "Content-Type: application/json" \
-  -d '{"file_id": "a1b2c3d4-5678-90ab-cdef-1234567890ab"}'
-
-# Response
-{
-  "message": "Speech-to-text diarization job submitted successfully",
-  "job_id": "23456789-2345-2345-2345-234567890123"
-}
-                </div>
-                
-                <h4>Step 3: Poll for Job Completion</h4>
-                <div class="code-block">
-# Example pseudocode (JavaScript/Node.js)
-async function waitForJobCompletion(jobId, token) {
-  let backoffTime = 3000; // Start with 3 seconds
-  const maxBackoff = 60000; // Maximum 1 minute between checks
-  const timeout = 30 * 60 * 1000; // 30 minute timeout
-  const startTime = Date.now();
-  
-  while (Date.now() - startTime < timeout) {
-    // Check job status
-    const response = await fetch(`https://api.example.com/jobs/status?job_id=${jobId}`, {
-      headers: { 'X-Token': token }
-    });
-    
-    const jobStatus = await response.json();
-    
-    if (jobStatus.status === 'completed') {
-      return true; // Job is done
-    } else if (jobStatus.status === 'failed') {
-      throw new Error(`Job failed: ${jobStatus.error_message}`);
-    }
-    
-    // Wait with exponential backoff
-    await new Promise(resolve => setTimeout(resolve, backoffTime));
-    backoffTime = Math.min(backoffTime * 2, maxBackoff);
-  }
-  
-  throw new Error('Job processing timed out');
-}
-                </div>
-                
-                <h4>Step 4: Retrieve Results</h4>
-                <div class="code-block">
-# cURL request
-curl -X GET "https://api.example.com/jobs/result?job_id=23456789-2345-2345-2345-234567890123" \
-  -H "X-Token: your_token_here"
-
-# JavaScript example
-async function getJobResults(jobId, token) {
-  const response = await fetch(`https://api.example.com/jobs/result?job_id=${jobId}`, {
-    headers: { 'X-Token': token }
-  });
-  
-  if (response.status === 409) {
-    throw new Error('Job is still processing');
-  }
-  
-  const data = await response.json();
-  
-  if (data.status === 'completed') {
-    // Process the results
-    const transcript = data.result.enhanced_transcript || data.result.transcript;
-    return transcript;
-  } else {
-    throw new Error(`Job failed: ${data.error_message}`);
-  }
-}
+                <div class="services-grid">
+                    <div class="service-card">
+                        <div class="service-header">
+                            <div class="service-icon" style="background: var(--stt-gradient);">
+                                <i class="fas fa-file-audio"></i>
+                            </div>
+                            <div>
+                                <div class="service-title">Audio Input Requirements</div>
+                                <div class="service-subtitle">For Speech-to-Text Services</div>
+                            </div>
+                        </div>
+                        <ul class="service-features">
+                            <li><strong>Formats:</strong> WAV, MP3, M4A, FLAC, OGG</li>
+                            <li><strong>Max file size:</strong> 200MB</li>
+                            <li><strong>Max duration:</strong> 2 hours per file</li>
+                            <li><strong>Recommended sample rate:</strong> 16kHz or higher</li>
+                            <li><strong>Channels:</strong> Mono or stereo</li>
+                            <li><strong>Best results:</strong> Clear audio, minimal background noise</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="service-card">
+                        <div class="service-header">
+                            <div class="service-icon" style="background: var(--tts-gradient);">
+                                <i class="fas fa-file-text"></i>
+                            </div>
+                            <div>
+                                <div class="service-title">Text Input & Output</div>
+                                <div class="service-subtitle">For Text-to-Speech Service</div>
+                            </div>
+                        </div>
+                        <ul class="service-features">
+                            <li><strong>Max text length:</strong> 10,000 characters</li>
+                            <li><strong>Output formats:</strong> MP3 (16kHz, 32kbps/128kbps), WAV/PCM</li>
+                            <li><strong>Voice options:</strong> 8 regional voice personas</li>
+                            <li><strong>Languages:</strong> English (US, GB, AU, ZA)</li>
+                            <li><strong>Audio quality:</strong> Neural voice synthesis</li>
+                            <li><strong>Processing:</strong> Async for reliability</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="service-card">
+                        <div class="service-header">
+                            <div class="service-icon" style="background: var(--primary-color);">
+                                <i class="fas fa-tasks"></i>
+                            </div>
+                            <div>
+                                <div class="service-title">Job Management</div>
+                                <div class="service-subtitle">All Services</div>
+                            </div>
+                        </div>
+                        <ul class="service-features">
+                            <li><strong>Status tracking:</strong> pending → processing → completed/failed</li>
+                            <li><strong>Job retention:</strong> Results available for 24 hours</li>
+                            <li><strong>Polling frequency:</strong> Recommended 5-10 seconds</li>
+                            <li><strong>Timeout handling:</strong> No client timeouts with async</li>
+                            <li><strong>Error reporting:</strong> Detailed error messages</li>
+                            <li><strong>Retry logic:</strong> Built-in for transient failures</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </section>
@@ -1891,11 +1371,13 @@ async function getJobResults(jobId, token) {
         <!-- CTA Section -->
         <section class="cta-section">
             <div class="cta-container">
-                <img src="/static/GAIA6.png" alt="GAIA Logo" style="height: 100px; margin-right: 0.5rem;">
-                <h2 style="font-size: 220%; background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Start Transcribing Your Audio Today</h2>
-                <p>Integrate our powerful asynchronous Speech Services APIs into your applications and unlock valuable insights from your audio content.</p>
+                <img src="/static/GAIA6.png" alt="GAIA Logo" style="height: 100px; margin-bottom: 1rem;">
+                <h2 style="background: linear-gradient(to right,rgb(224, 146, 0),rgb(215, 162, 3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                    Ready to Transform Your Audio?
+                </h2>
+                <p>Start integrating GAIA's powerful speech services into your applications today. From simple transcription to advanced voice synthesis, we've got you covered.</p>
                 <div class="cta-buttons" style="justify-content: center;">
-                    <a href="/static/resources/AIAPIS.postman_collection" class="cta-btn" style="background-color: var(--accent-color); color: var(--dark-color);" download>
+                    <a href="/static/resources/AIAPIS.postman_collection" class="cta-btn" download>
                         <i class="fas fa-download"></i> Download Postman Collection
                     </a>
                     <a href="/apidocs/#/Speech%20Services" class="cta-btn cta-btn-secondary">
@@ -1906,10 +1388,66 @@ async function getJobResults(jobId, token) {
         </section>
     </main>
     
-    {% include 'footer.html' %}
+    <!-- Footer -->
+    <footer class="footer">
+        <p>&copy; 2025 GAIA API Platform. All rights reserved.</p>
+        <div class="social-links">
+            <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
+            <a href="#" class="social-link"><i class="fab fa-linkedin"></i></a>
+            <a href="#" class="social-link"><i class="fab fa-github"></i></a>
+        </div>
+    </footer>
     
     <script>
-        // Toggle sidebar on mobile
+        let currentAudio = null;
+        let currentButton = null;
+        
+        function playVoice(voiceId, button) {
+            // Stop any currently playing audio
+            if (currentAudio && !currentAudio.paused) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+                if (currentButton) {
+                    currentButton.classList.remove('playing');
+                    currentButton.innerHTML = '<i class="fas fa-play"></i>';
+                }
+            }
+            
+            const audio = document.getElementById(voiceId + '-audio');
+            
+            if (audio === currentAudio && button === currentButton) {
+                // Same audio clicked - stop it
+                currentAudio = null;
+                currentButton = null;
+                return;
+            }
+            
+            // Play new audio
+            currentAudio = audio;
+            currentButton = button;
+            
+            button.classList.add('playing');
+            button.innerHTML = '<i class="fas fa-pause"></i>';
+            
+            audio.play().catch(e => {
+                console.error('Error playing audio:', e);
+                // Reset button state on error
+                button.classList.remove('playing');
+                button.innerHTML = '<i class="fas fa-play"></i>';
+                currentAudio = null;
+                currentButton = null;
+            });
+            
+            // Reset button when audio ends
+            audio.onended = function() {
+                button.classList.remove('playing');
+                button.innerHTML = '<i class="fas fa-play"></i>';
+                currentAudio = null;
+                currentButton = null;
+            };
+        }
+        
+        // Mobile menu functionality
         document.addEventListener('DOMContentLoaded', function() {
             const menuToggle = document.getElementById('menu-toggle');
             const sidebar = document.querySelector('.sidebar');
@@ -1925,51 +1463,9 @@ async function getJobResults(jobId, token) {
                 overlay.classList.remove('active');
             });
             
-            // Highlight current page in sidebar
-            const currentPage = window.location.pathname;
-            const sidebarLinks = document.querySelectorAll('.sidebar-link');
-            
-            sidebarLinks.forEach(link => {
-                if (link.getAttribute('href') === currentPage) {
-                    link.classList.add('active');
-                }
-            });
-            
-            // Basic Speech Example tabs functionality
-            const basicTabs = document.querySelectorAll('.basic-tab');
-            const basicExamples = document.querySelectorAll('.model-section:not(.alternate) .example-content');
-            
-            basicTabs.forEach((tab, index) => {
-                tab.addEventListener('click', function() {
-                    // Remove active class from all tabs and examples
-                    basicTabs.forEach(t => t.classList.remove('active'));
-                    basicExamples.forEach(e => e.classList.remove('active'));
-                    
-                    // Add active class to clicked tab and corresponding example
-                    tab.classList.add('active');
-                    basicExamples[index].classList.add('active');
-                });
-            });
-            
-            // Enhanced Speech Example tabs functionality
-            const enhancedTabs = document.querySelectorAll('.enhanced-tab');
-            const enhancedExamples = document.querySelectorAll('.model-section.alternate .example-content');
-            
-            enhancedTabs.forEach((tab, index) => {
-                tab.addEventListener('click', function() {
-                    // Remove active class from all tabs and examples
-                    enhancedTabs.forEach(t => t.classList.remove('active'));
-                    enhancedExamples.forEach(e => e.classList.remove('active'));
-                    
-                    // Add active class to clicked tab and corresponding example
-                    tab.classList.add('active');
-                    enhancedExamples[index].classList.add('active');
-                });
-            });
-            
-            // Add scroll animation for elements
+            // Scroll animations
             const animateOnScroll = function() {
-                const elements = document.querySelectorAll('.feature-card, .model-detail-card, .example-result, .section-header, .job-endpoint-card, .flow-step');
+                const elements = document.querySelectorAll('.service-card, .workflow-card, .voice-card, .section-header');
                 
                 elements.forEach(element => {
                     const elementPosition = element.getBoundingClientRect().top;
@@ -1981,10 +1477,7 @@ async function getJobResults(jobId, token) {
                 });
             };
             
-            // Run on load
             animateOnScroll();
-            
-            // Run on scroll
             window.addEventListener('scroll', animateOnScroll);
         });
     </script>

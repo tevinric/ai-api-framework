@@ -72,6 +72,24 @@ def process_pending_jobs():
                 thread.daemon = True
                 thread.start()
                 logger.info(f"Started processing thread for STT diarize job {job['job_id']}")
+        
+        # Get pending TTS jobs
+        tts_jobs, error = JobService.get_pending_jobs('tts', limit=5)
+        if error:
+            logger.error(f"Error getting pending TTS jobs: {error}")
+        
+        if tts_jobs and len(tts_jobs) > 0:
+            logger.info(f"Found {len(tts_jobs)} pending TTS jobs")
+            
+            for job in tts_jobs:
+                # Process each job in a separate thread
+                thread = threading.Thread(
+                    target=JobProcessor.process_tts_job,
+                    args=(job['job_id'], job['user_id'], job['parameters'])
+                )
+                thread.daemon = True
+                thread.start()
+                logger.info(f"Started processing thread for TTS job {job['job_id']}")
                 
         # Process generic jobs for other endpoints - extensible for future needs
         generic_jobs, error = JobService.get_pending_jobs(limit=5)
@@ -80,7 +98,7 @@ def process_pending_jobs():
             
         if generic_jobs and len(generic_jobs) > 0:
             # Only look at jobs that aren't already covered by the specific handlers
-            other_jobs = [job for job in generic_jobs if job['job_type'] not in ['stt', 'stt_diarize']]
+            other_jobs = [job for job in generic_jobs if job['job_type'] not in ['stt', 'stt_diarize', 'tts']]
             
             if other_jobs:
                 logger.info(f"Found {len(other_jobs)} pending jobs of other types")
