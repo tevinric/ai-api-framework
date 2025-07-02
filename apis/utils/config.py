@@ -54,21 +54,63 @@ from azure.core.exceptions import ResourceExistsError, ResourceNotFoundError
 # Configure logging
 logger = logging.getLogger(__name__)
 
-# def get_openai_client():
-#     """Get Azure OpenAI client with appropriate configuration"""
-#     api_key = os.environ.get("AZURE_OPENAI_API_KEY")
-#     azure_endpoint = os.environ.get("AZURE_OPENAI_ENDPOINT")
-#     api_version = os.environ.get("AZURE_OPENAI_API_VERSION", "2023-07-01-preview")
+# Azure Blob Storage configuration
+FILE_UPLOADS_CONTAINER = os.environ.get("FILE_UPLOADS_CONTAINER")
+IMAGE_GENERATION_CONTAINER = os.environ.get("IMAGE_GENERATION_CONTAINER")
+STORAGE_ACCOUNT = os.environ.get("AZURE_STORAGE_ACCOUNT")
+
+# NEW: Alias domain configuration for security
+BLOB_ALIAS_DOMAIN = os.environ.get("BLOB_ALIAS_DOMAIN")  # e.g., "files.yourdomain.com"
+
+def get_aliased_blob_url(container_name, blob_name):
+    """
+    Generate aliased blob URL instead of direct Azure blob URL
     
-#     if not api_key or not azure_endpoint:
-#         logger.error("Azure OpenAI API key or endpoint not configured")
-#         raise ValueError("Azure OpenAI API key and endpoint must be set in environment variables")
+    Args:
+        container_name (str): The container name
+        blob_name (str): The blob name
+        
+    Returns:
+        str: Aliased URL if alias domain is configured, otherwise direct URL
+    """
+    if BLOB_ALIAS_DOMAIN:
+        # Use alias domain
+        return f"https://{BLOB_ALIAS_DOMAIN}/{container_name}/{blob_name}"
+    else:
+        # Fallback to direct URL if alias not configured
+        return f"https://{STORAGE_ACCOUNT}.blob.core.windows.net/{container_name}/{blob_name}"
+
+def convert_direct_url_to_aliased(direct_url):
+    """
+    Convert direct Azure blob URL to aliased URL
     
-#     return AzureOpenAI(
-#         api_key=api_key,  
-#         api_version=api_version,
-#         azure_endpoint=azure_endpoint
-#     )
+    Args:
+        direct_url (str): Direct Azure blob URL
+        
+    Returns:
+        str: Aliased URL if alias domain is configured, otherwise original URL
+    """
+    if not BLOB_ALIAS_DOMAIN or not direct_url:
+        return direct_url
+    
+    try:
+        # Extract container and blob name from direct URL
+        # Format: https://storageaccount.blob.core.windows.net/container/blob
+        if f"{STORAGE_ACCOUNT}.blob.core.windows.net" in direct_url:
+            # Split the URL to extract container and blob path
+            url_parts = direct_url.split(f"{STORAGE_ACCOUNT}.blob.core.windows.net/", 1)
+            if len(url_parts) == 2:
+                container_and_blob = url_parts[1]
+                # Split on first '/' to separate container from blob path
+                if '/' in container_and_blob:
+                    container_name, blob_path = container_and_blob.split('/', 1)
+                    return f"https://{BLOB_ALIAS_DOMAIN}/{container_name}/{blob_path}"
+        
+        # If we can't parse it, return original URL
+        return direct_url
+    except Exception as e:
+        logger.warning(f"Error converting URL to alias: {str(e)}")
+        return direct_url
 
 def get_azure_blob_client():
     """Get Azure Blob Storage client"""
@@ -78,11 +120,6 @@ def get_azure_blob_client():
         raise ValueError("Azure Storage connection string not found in environment variables")
     
     return BlobServiceClient.from_connection_string(connection_string)
-
-# Azure Blob Storage configuration
-FILE_UPLOADS_CONTAINER = os.environ.get("FILE_UPLOADS_CONTAINER")
-IMAGE_GENERATION_CONTAINER = os.environ.get("IMAGE_GENERATION_CONTAINER")
-STORAGE_ACCOUNT = os.environ.get("AZURE_STORAGE_ACCOUNT")
 
 def ensure_container_exists(container_name=IMAGE_GENERATION_CONTAINER):
     """
@@ -109,7 +146,7 @@ def ensure_container_exists(container_name=IMAGE_GENERATION_CONTAINER):
 
 def save_image_to_blob(image_data, image_name, container_name=IMAGE_GENERATION_CONTAINER):
     """
-    Save image data to Azure Blob Storage and return the URL
+    Save image data to Azure Blob Storage and return the aliased URL
     
     Args:
         image_data (bytes): The binary image data
@@ -117,7 +154,7 @@ def save_image_to_blob(image_data, image_name, container_name=IMAGE_GENERATION_C
         container_name (str): The container name to use
         
     Returns:
-        str: The public URL to access the image
+        str: The aliased URL to access the image
     """
     try:
         # Get blob service client
@@ -136,8 +173,8 @@ def save_image_to_blob(image_data, image_name, container_name=IMAGE_GENERATION_C
         blob_client = container_client.get_blob_client(image_name)
         blob_client.upload_blob(image_data, overwrite=True, content_settings=content_settings)
         
-        # Generate the public URL for the blob
-        blob_url = f"{BASE_BLOB_URL}/{image_name}"
+        # Generate the aliased URL for the blob
+        blob_url = get_aliased_blob_url(container_name, image_name)
         logger.info(f"Image saved successfully to {blob_url}")
         
         return blob_url
@@ -180,14 +217,14 @@ def delete_image_from_blob(image_name, container_name=IMAGE_GENERATION_CONTAINER
 
 def list_blob_images(container_name=IMAGE_GENERATION_CONTAINER, max_results=100):
     """
-    List all images in the blob container
+    List all images in the blob container with aliased URLs
     
     Args:
         container_name (str): The container name
         max_results (int): Maximum number of results to return
         
     Returns:
-        list: List of image names and URLs
+        list: List of image names and aliased URLs
     """
     try:
         # Get blob service client
@@ -199,12 +236,12 @@ def list_blob_images(container_name=IMAGE_GENERATION_CONTAINER, max_results=100)
         # List blobs
         blobs = container_client.list_blobs(max_results=max_results)
         
-        # Create a list of image details
+        # Create a list of image details with aliased URLs
         image_list = []
         for blob in blobs:
             image_list.append({
                 'name': blob.name,
-                'url': f"{BASE_BLOB_URL}/{blob.name}",
+                'url': get_aliased_blob_url(container_name, blob.name),
                 'created_on': blob.creation_time,
                 'size': blob.size
             })
