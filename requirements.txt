@@ -27,3 +27,4 @@ mutagen
 PyPDF2
 python-docx
 openpyxl
+asyncio
