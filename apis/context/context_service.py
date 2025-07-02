@@ -218,9 +218,17 @@ class ContextService:
                     logger.info("Processing as Excel file")
                     extracted_content = ContextService._extract_excel_content(temp_path)
                     
+                elif file_name.lower().endswith('.py'):
+                    logger.info("Processing as Python file")
+                    extracted_content = ContextService._extract_python_content(temp_path)
+                    
+                elif file_name.lower().endswith('.ipynb'):
+                    logger.info("Processing as Jupyter notebook")
+                    extracted_content = ContextService._extract_notebook_content(temp_path)
+                    
                 else:
                     logger.warning(f"Unsupported file type: {content_type} for file {file_name}")
-                    return None, f"Unsupported file type: {content_type}"
+                    return None, f"Unsupported file type: {content_type}. Supported types: .txt, .pdf, .docx, .doc, .csv, .xlsx, .xls, .py, .ipynb"
                 
                 if extracted_content and extracted_content.strip():
                     logger.info(f"Successfully extracted {len(extracted_content)} characters from {file_name}")
@@ -306,7 +314,7 @@ class ContextService:
     
     @staticmethod
     def _extract_csv_content(file_path):
-        """Extract content from CSV file"""
+        """Extract ALL content from CSV file"""
         try:
             import csv
             
@@ -315,7 +323,10 @@ class ContextService:
                 sample = file.read(1024)
                 file.seek(0)
                 sniffer = csv.Sniffer()
-                delimiter = sniffer.sniff(sample).delimiter
+                try:
+                    delimiter = sniffer.sniff(sample).delimiter
+                except:
+                    delimiter = ','  # Default to comma
                 
                 reader = csv.reader(file, delimiter=delimiter)
                 rows = list(reader)
@@ -323,20 +334,17 @@ class ContextService:
                 if not rows:
                     return "Empty CSV file"
                 
-                # Convert to readable format
+                # Convert ALL data to readable format
                 text_content = f"CSV Data with {len(rows)} rows:\n\n"
                 
-                # Add header if present
-                if rows:
-                    text_content += "Headers: " + ", ".join(rows[0]) + "\n\n"
-                
-                # Add first few rows as sample
-                sample_rows = min(10, len(rows))
-                for i, row in enumerate(rows[:sample_rows]):
-                    text_content += f"Row {i+1}: " + ", ".join(str(cell) for cell in row) + "\n"
-                
-                if len(rows) > sample_rows:
-                    text_content += f"\n... and {len(rows) - sample_rows} more rows"
+                # Add all rows
+                for i, row in enumerate(rows):
+                    # Clean and format row data
+                    cleaned_row = [str(cell).strip() if cell is not None else "" for cell in row]
+                    if i == 0:
+                        text_content += f"Headers: {', '.join(cleaned_row)}\n"
+                    else:
+                        text_content += f"Row {i}: {', '.join(cleaned_row)}\n"
                 
                 return text_content
                 
@@ -346,7 +354,7 @@ class ContextService:
     
     @staticmethod
     def _extract_excel_content(file_path):
-        """Extract content from Excel file"""
+        """Extract ALL content from Excel file"""
         try:
             import openpyxl
             
@@ -355,25 +363,26 @@ class ContextService:
             
             for sheet_name in workbook.sheetnames:
                 sheet = workbook[sheet_name]
-                text_content += f"Sheet: {sheet_name}\n"
+                text_content += f"=== Sheet: {sheet_name} ===\n"
                 
-                # Get data from sheet
+                # Get ALL data from sheet
                 rows_with_data = []
                 for row in sheet.iter_rows(values_only=True):
-                    if any(cell is not None for cell in row):
+                    if any(cell is not None and str(cell).strip() for cell in row):
                         rows_with_data.append(row)
                 
                 if rows_with_data:
-                    # Add first few rows
-                    sample_rows = min(10, len(rows_with_data))
-                    for i, row in enumerate(rows_with_data[:sample_rows]):
-                        row_text = ", ".join(str(cell) if cell is not None else "" for cell in row)
-                        text_content += f"  Row {i+1}: {row_text}\n"
+                    text_content += f"Total rows with data: {len(rows_with_data)}\n\n"
                     
-                    if len(rows_with_data) > sample_rows:
-                        text_content += f"  ... and {len(rows_with_data) - sample_rows} more rows\n"
+                    # Add ALL rows
+                    for i, row in enumerate(rows_with_data):
+                        cleaned_row = [str(cell).strip() if cell is not None else "" for cell in row]
+                        if i == 0:
+                            text_content += f"Headers: {', '.join(cleaned_row)}\n"
+                        else:
+                            text_content += f"Row {i}: {', '.join(cleaned_row)}\n"
                 else:
-                    text_content += "  (Empty sheet)\n"
+                    text_content += "(Empty sheet)\n"
                 
                 text_content += "\n"
             
@@ -384,6 +393,82 @@ class ContextService:
             return None
         except Exception as e:
             logger.error(f"Error extracting Excel content: {str(e)}")
+            return None
+    
+    @staticmethod
+    def _extract_python_content(file_path):
+        """Extract content from Python file"""
+        try:
+            with open(file_path, 'r', encoding='utf-8', errors='ignore') as file:
+                content = file.read()
+                
+                # Add header to identify it as Python code
+                text_content = "=== Python Source Code ===\n\n"
+                text_content += content
+                
+                return text_content
+                
+        except Exception as e:
+            logger.error(f"Error extracting Python content: {str(e)}")
+            return None
+    
+    @staticmethod
+    def _extract_notebook_content(file_path):
+        """Extract content from Jupyter notebook file"""
+        try:
+            import json
+            
+            with open(file_path, 'r', encoding='utf-8') as file:
+                notebook = json.load(file)
+            
+            text_content = "=== Jupyter Notebook Content ===\n\n"
+            
+            if 'cells' in notebook:
+                for i, cell in enumerate(notebook['cells']):
+                    cell_type = cell.get('cell_type', 'unknown')
+                    source = cell.get('source', [])
+                    
+                    # Convert source to string if it's a list
+                    if isinstance(source, list):
+                        source_text = ''.join(source)
+                    else:
+                        source_text = str(source)
+                    
+                    if source_text.strip():
+                        text_content += f"--- Cell {i+1} ({cell_type}) ---\n"
+                        text_content += source_text
+                        text_content += "\n\n"
+                        
+                        # If it's a code cell, also include outputs if available
+                        if cell_type == 'code' and 'outputs' in cell:
+                            outputs = cell['outputs']
+                            if outputs:
+                                text_content += "Output:\n"
+                                for output in outputs:
+                                    if 'text' in output:
+                                        output_text = output['text']
+                                        if isinstance(output_text, list):
+                                            output_text = ''.join(output_text)
+                                        text_content += str(output_text) + "\n"
+                                    elif 'data' in output and 'text/plain' in output['data']:
+                                        output_text = output['data']['text/plain']
+                                        if isinstance(output_text, list):
+                                            output_text = ''.join(output_text)
+                                        text_content += str(output_text) + "\n"
+                                text_content += "\n"
+            else:
+                text_content += "No cells found in notebook\n"
+            
+            return text_content
+            
+        except ImportError:
+            logger.error("json module not available")
+            return None
+        except json.JSONDecodeError as e:
+            logger.error(f"Error parsing JSON notebook: {str(e)}")
+            return None
+        except Exception as e:
+            logger.error(f"Error extracting notebook content: {str(e)}")
             return None
     
     @staticmethod
