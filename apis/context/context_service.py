@@ -5,7 +5,7 @@ import logging
 from datetime import datetime
 import pytz
 from flask import g
-from apis.utils.config import get_azure_blob_client, ensure_container_exists
+from apis.utils.config import get_azure_blob_client, ensure_container_exists, get_aliased_blob_url
 from apis.utils.databaseService import DatabaseService
 from apis.utils.fileService import FileService
 
@@ -14,8 +14,6 @@ logger = logging.getLogger(__name__)
 
 # Define container for context files
 CONTEXT_CONTAINER = "context-files"
-STORAGE_ACCOUNT = os.environ.get("AZURE_STORAGE_ACCOUNT")
-BASE_BLOB_URL = f"https://{STORAGE_ACCOUNT}.blob.core.windows.net/{CONTEXT_CONTAINER}"
 
 class ContextService:
     @staticmethod
@@ -79,9 +77,6 @@ class ContextService:
             
             # Convert content to bytes and upload
             blob_client.upload_blob(context_content.encode('utf-8'), overwrite=True)
-            
-            # Generate URL to the blob
-            blob_url = f"{BASE_BLOB_URL}/{blob_name}"
             
             # Store context info in database
             db_conn = None
