@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 # Define container for vectorstores
 VECTORSTORE_CONTAINER = "vectorstores"
 STORAGE_ACCOUNT = os.environ.get("AZURE_STORAGE_ACCOUNT")
-BASE_BLOB_URL = f"https://{STORAGE_ACCOUNT}.blob.core.windows.net/{VECTORSTORE_CONTAINER}"
+#BASE_BLOB_URL = f"https://{STORAGE_ACCOUNT}.blob.core.windows.net/{VECTORSTORE_CONTAINER}"
 
 from apis.utils.config import create_api_response
 
