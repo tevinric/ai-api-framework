@@ -320,10 +320,11 @@ def agentic_llm_route():
         
         # Extract tools used and token usage with proper error handling
         tools_used = []
-        if hasattr(task_result, 'steps') and isinstance(task_result.steps, list):
-            for step in task_result.steps:
-                if isinstance(step, dict) and step.get('tool') and step['tool'] not in tools_used:
-                    tools_used.append(step['tool'])
+        if hasattr(task_result, 'context') and isinstance(task_result.context, dict):
+            # Get actually executed tools from context
+            tools_used = task_result.context.get('executed_tools', [])
+            if not isinstance(tools_used, list):
+                tools_used = []
         
         # Safely get token usage from task context
         token_usage = {}
