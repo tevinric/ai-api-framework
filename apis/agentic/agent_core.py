@@ -66,10 +66,17 @@ class Agent:
         self.total_cached_tokens = 0
         self.llm_call_count = 0
         
+        # Ensure context is a dictionary
+        if context is None:
+            context = {}
+        elif not isinstance(context, dict):
+            logger.warning(f"Context is not a dict, got: {type(context)}, converting to empty dict")
+            context = {}
+        
         task = AgentTask(
             task_id=task_id,
             user_input=user_input,
-            context=context or {},
+            context=context.copy(),  # Make a copy to avoid mutations
             status=AgentStatus.THINKING,
             steps=[],
             created_at=datetime.utcnow()
@@ -98,9 +105,14 @@ class Agent:
         except Exception as e:
             task.status = AgentStatus.ERROR
             task.error = str(e)
-            logger.error(f"Agent task failed: {str(e)}")
+            logger.error(f"Agent task failed: {str(e)}", exc_info=True)
             
         finally:
+            # Ensure task.context is still a dictionary
+            if not isinstance(task.context, dict):
+                logger.error(f"Task context is not a dict: {type(task.context)}, resetting to empty dict")
+                task.context = {}
+            
             # Add token usage to task context for later retrieval
             task.context.update({
                 'token_usage': {
@@ -146,13 +158,18 @@ Return your plan as a JSON array of steps:
 """
         
         # Get plan from LLM
-        response = await self._call_llm(planning_prompt, json_output=True)
-        
         try:
-            plan = json.loads(response)
-            task.steps = plan
-            logger.info(f"Created plan with {len(plan)} steps for task {task.task_id}")
-        except json.JSONDecodeError:
+            response = await self._call_llm(planning_prompt, json_output=True)
+            
+            if response:
+                plan = json.loads(response)
+                task.steps = plan
+                logger.info(f"Created plan with {len(plan)} steps for task {task.task_id}")
+            else:
+                raise Exception("Empty response from LLM")
+                
+        except (json.JSONDecodeError, Exception) as e:
+            logger.warning(f"Failed to parse plan JSON: {e}, using fallback plan")
             # Fallback to single step if JSON parsing fails
             task.steps = [{
                 "step": 1,
@@ -173,22 +190,23 @@ Return your plan as a JSON array of steps:
             # Determine next action
             next_action = await self._determine_next_action(task, iteration)
             
-            if next_action["action"] == "complete":
+            if next_action and next_action.get("action") == "complete":
                 break
                 
             # Execute the action
-            result = await self._execute_action(next_action)
-            
-            # Update memory with the action and result
-            self.memory.add_message("assistant", f"Action: {next_action['description']}")
-            self.memory.add_message("system", f"Result: {result}")
+            if next_action:
+                result = await self._execute_action(next_action)
+                
+                # Update memory with the action and result
+                self.memory.add_message("assistant", f"Action: {next_action.get('description', 'Unknown action')}")
+                self.memory.add_message("system", f"Result: {result}")
             
             # Check if task is complete
             is_complete = await self._check_completion(task)
             if is_complete:
                 break
     
-    async def _determine_next_action(self, task: AgentTask, iteration: int) -> Dict[str, Any]:
+    async def _determine_next_action(self, task: AgentTask) -> Dict[str, Any]:
         """Determine the next action to take"""
         conversation_history = self.memory.get_conversation_history()
         
@@ -197,7 +215,6 @@ You are an AI agent executing a task. Based on the conversation history and curr
 
 Original task: {task.user_input}
 Plan: {json.dumps(task.steps, indent=2)}
-Iteration: {iteration}
 
 Conversation history:
 {conversation_history}
@@ -213,11 +230,16 @@ Determine the next action. Return JSON:
 }}
 """
         
-        response = await self._call_llm(action_prompt, json_output=True)
-        
         try:
-            return json.loads(response)
-        except json.JSONDecodeError:
+            response = await self._call_llm(action_prompt, json_output=True)
+            
+            if response:
+                return json.loads(response)
+            else:
+                raise Exception("Empty response from LLM")
+                
+        except (json.JSONDecodeError, Exception) as e:
+            logger.warning(f"Failed to parse action JSON: {e}, using fallback action")
             return {
                 "action": "think",
                 "description": "Analyze the current situation",
@@ -227,6 +249,9 @@ Determine the next action. Return JSON:
     
     async def _execute_action(self, action: Dict[str, Any]) -> str:
         """Execute a specific action"""
+        if not action or not isinstance(action, dict):
+            return "Invalid action provided"
+            
         action_type = action.get("action")
         
         if action_type == "think":
@@ -246,11 +271,15 @@ Provide your thoughts and analysis.
         
         else:
             # Tool execution
-            return await self.tool_executor.execute_tool(
-                action_type,
-                action.get("parameters", {}),
-                self.user_id
-            )
+            try:
+                return await self.tool_executor.execute_tool(
+                    action_type,
+                    action.get("parameters", {}),
+                    self.user_id
+                )
+            except Exception as e:
+                logger.error(f"Tool execution failed: {e}")
+                return f"Tool execution failed: {str(e)}"
     
     async def _check_completion(self, task: AgentTask) -> bool:
         """Check if the task has been completed satisfactorily"""
@@ -266,8 +295,12 @@ Conversation history:
 Has the task been completed? Respond with just "YES" or "NO" and a brief explanation.
 """
         
-        response = await self._call_llm(completion_prompt)
-        return response.strip().upper().startswith("YES")
+        try:
+            response = await self._call_llm(completion_prompt)
+            return response and response.strip().upper().startswith("YES")
+        except Exception as e:
+            logger.error(f"Completion check failed: {e}")
+            return False
     
     async def _synthesize_result(self, task: AgentTask):
         """Create a final synthesized response"""
@@ -283,55 +316,81 @@ Conversation history:
 Provide a clear, helpful response that addresses the user's original request based on all the work done.
 """
         
-        task.result = await self._call_llm(synthesis_prompt)
-        
-        # Add final result to memory
-        self.memory.add_message("assistant", task.result)
+        try:
+            result = await self._call_llm(synthesis_prompt)
+            task.result = result or "Task completed successfully"
+            
+            # Add final result to memory
+            self.memory.add_message("assistant", task.result)
+            
+        except Exception as e:
+            logger.error(f"Synthesis failed: {e}")
+            task.result = "Task completed, but synthesis failed"
     
     async def _call_llm(self, prompt: str, json_output: bool = False) -> str:
         """Call the configured LLM and track token usage"""
         system_prompt = """You are a helpful AI agent capable of reasoning, planning, and using tools to complete complex tasks."""
         
-        if self.model == "gpt-4o":
-            response = gpt4o_service(
-                system_prompt=system_prompt,
-                user_input=prompt,
-                temperature=0.3,
-                json_output=json_output
-            )
-        elif self.model == "deepseek-v3":
-            response = deepseek_v3_service(
-                system_prompt=system_prompt,
-                user_input=prompt,
-                temperature=0.3,
-                json_output=json_output
-            )
-        else:
-            raise ValueError(f"Unsupported model: {self.model}")
-        
-        if not response["success"]:
-            raise Exception(f"LLM call failed: {response['error']}")
-        
-        # Track token usage
-        self.llm_call_count += 1
-        self.total_prompt_tokens += response.get("prompt_tokens", 0)
-        self.total_completion_tokens += response.get("completion_tokens", 0)
-        self.total_tokens += response.get("total_tokens", 0)
-        self.total_cached_tokens += response.get("cached_tokens", 0)
-        
-        logger.info(f"LLM call #{self.llm_call_count}: {response.get('total_tokens', 0)} tokens")
-        
-        return response["result"]
+        try:
+            if self.model == "gpt-4o":
+                response = gpt4o_service(
+                    system_prompt=system_prompt,
+                    user_input=prompt,
+                    temperature=0.3,
+                    json_output=json_output
+                )
+            elif self.model == "deepseek-v3":
+                response = deepseek_v3_service(
+                    system_prompt=system_prompt,
+                    user_input=prompt,
+                    temperature=0.3,
+                    json_output=json_output
+                )
+            else:
+                raise ValueError(f"Unsupported model: {self.model}")
+            
+            # Validate response structure
+            if not isinstance(response, dict):
+                raise Exception(f"LLM service returned unexpected type: {type(response)}")
+            
+            if not response.get("success"):
+                error_msg = response.get("error", "Unknown error")
+                raise Exception(f"LLM call failed: {error_msg}")
+            
+            # Track token usage
+            self.llm_call_count += 1
+            self.total_prompt_tokens += response.get("prompt_tokens", 0)
+            self.total_completion_tokens += response.get("completion_tokens", 0)
+            self.total_tokens += response.get("total_tokens", 0)
+            self.total_cached_tokens += response.get("cached_tokens", 0)
+            
+            logger.info(f"LLM call #{self.llm_call_count}: {response.get('total_tokens', 0)} tokens")
+            
+            result = response.get("result", "")
+            if not result:
+                logger.warning("LLM returned empty result")
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"LLM call failed: {e}")
+            raise
     
     def _get_available_tools_description(self) -> str:
         """Get description of available tools"""
-        tools = self.tool_registry.get_all_tools()
-        descriptions = []
-        
-        for tool_name, tool_info in tools.items():
-            descriptions.append(f"- {tool_name}: {tool_info['description']}")
-        
-        return "\n".join(descriptions)
+        try:
+            tools = self.tool_registry.get_all_tools()
+            descriptions = []
+            
+            for tool_name, tool_info in tools.items():
+                description = tool_info.get('description', 'No description available')
+                descriptions.append(f"- {tool_name}: {description}")
+            
+            return "\n".join(descriptions) if descriptions else "No tools available"
+            
+        except Exception as e:
+            logger.error(f"Error getting tools description: {e}")
+            return "Error retrieving available tools"
     
     async def _save_task(self, task: AgentTask):
         """Save task to database"""
@@ -339,8 +398,14 @@ Provide a clear, helpful response that addresses the user's original request bas
             conn = DatabaseService.get_connection()
             cursor = conn.cursor()
             
-            # Get token usage from context
-            token_usage = task.context.get('token_usage', {})
+            # Get token usage from context - with safe fallback
+            token_usage = {}
+            if isinstance(task.context, dict):
+                token_usage = task.context.get('token_usage', {})
+            
+            if not isinstance(token_usage, dict):
+                logger.warning(f"token_usage is not a dict: {type(token_usage)}")
+                token_usage = {}
             
             query = """
             INSERT INTO agent_tasks (
@@ -357,9 +422,9 @@ Provide a clear, helpful response that addresses the user's original request bas
                 self.agent_id,
                 self.user_id,
                 task.user_input,
-                json.dumps(task.context),
+                json.dumps(task.context) if isinstance(task.context, dict) else "{}",
                 task.status.value,
-                json.dumps(task.steps),
+                json.dumps(task.steps) if isinstance(task.steps, list) else "[]",
                 task.result,
                 task.error,
                 task.created_at,
@@ -376,8 +441,10 @@ Provide a clear, helpful response that addresses the user's original request bas
             cursor.close()
             conn.close()
             
+            logger.info(f"Successfully saved task {task.task_id} to database")
+            
         except Exception as e:
-            logger.error(f"Failed to save task: {str(e)}")
+            logger.error(f"Failed to save task: {str(e)}", exc_info=True)
 
 class AgentManager:
     """Manages multiple agent instances"""
@@ -401,8 +468,23 @@ class AgentManager:
     async def execute_agentic_task(self, user_id: str, user_input: str, 
                                  model: str = "gpt-4o", context: Dict[str, Any] = None) -> AgentTask:
         """Execute an agentic task for a user"""
-        agent = self.get_or_create_agent(user_id, model)
-        return await agent.execute_task(user_input, context)
+        try:
+            agent = self.get_or_create_agent(user_id, model)
+            return await agent.execute_task(user_input, context)
+        except Exception as e:
+            logger.error(f"Failed to execute agentic task: {e}", exc_info=True)
+            # Return a failed task instead of letting the exception bubble up
+            failed_task = AgentTask(
+                task_id=str(uuid.uuid4()),
+                user_input=user_input,
+                context=context or {},
+                status=AgentStatus.ERROR,
+                steps=[],
+                error=str(e),
+                created_at=datetime.utcnow(),
+                completed_at=datetime.utcnow()
+            )
+            return failed_task
 
 # Global agent manager instance
 agent_manager = AgentManager()
