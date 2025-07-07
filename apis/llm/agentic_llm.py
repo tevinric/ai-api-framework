@@ -326,15 +326,22 @@ def agentic_llm_route():
             if not isinstance(tools_used, list):
                 tools_used = []
         
-        # Safely get token usage from task context
+        # Safely get token usage and execution summary from task context
         token_usage = {}
+        execution_summary = {}
         if hasattr(task_result, 'context') and isinstance(task_result.context, dict):
             token_usage = task_result.context.get('token_usage', {})
+            execution_summary = task_result.context.get('execution_summary', {})
         
         # Ensure token_usage is a dictionary
         if not isinstance(token_usage, dict):
             logger.warning(f"token_usage is not a dict, got: {type(token_usage)}")
             token_usage = {}
+        
+        # Get execution steps count
+        steps_executed = len(getattr(task_result, 'steps', []))
+        successful_steps = execution_summary.get('successful_steps', 0)
+        failed_steps = execution_summary.get('failed_steps', 0)
         
         # Prepare successful response with token usage for track_usage middleware
         response_data = {
@@ -355,7 +362,9 @@ def agentic_llm_route():
             
             "execution_details": {
                 "status": getattr(task_result.status, 'value', 'unknown') if hasattr(task_result, 'status') else 'unknown',
-                "steps_executed": len(getattr(task_result, 'steps', [])),
+                "steps_executed": steps_executed,
+                "successful_steps": successful_steps,
+                "failed_steps": failed_steps,
                 "tools_used": tools_used,
                 "execution_time": execution_time,
                 "llm_calls": token_usage.get('llm_calls', 0) if isinstance(token_usage, dict) else 0
