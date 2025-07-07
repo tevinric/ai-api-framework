@@ -55,8 +55,9 @@ class Agent:
         self.total_cached_tokens = 0
         self.llm_call_count = 0
         
-        # Track actually executed tools
+        # Track actually executed tools and execution steps
         self.executed_tools = []
+        self.execution_steps = []  # Track actual execution steps
         
     async def execute_task(self, user_input: str, context: Dict[str, Any] = None) -> AgentTask:
         """Execute an agentic task with planning, tool use, and iteration"""
@@ -69,6 +70,7 @@ class Agent:
         self.total_cached_tokens = 0
         self.llm_call_count = 0
         self.executed_tools = []  # Reset executed tools list
+        self.execution_steps = []  # Reset execution steps
         
         # Ensure context is a dictionary
         if context is None:
@@ -132,6 +134,9 @@ class Agent:
                 logger.error(f"Task context is not a dict: {type(task.context)}, resetting to empty dict")
                 task.context = {}
             
+            # Store the actual execution steps in the task
+            task.steps = self.execution_steps.copy()
+            
             # Add token usage and executed tools to task context for later retrieval
             task.context.update({
                 'token_usage': {
@@ -142,7 +147,12 @@ class Agent:
                     'llm_calls': self.llm_call_count,
                     'model': self.model
                 },
-                'executed_tools': self.executed_tools.copy()  # Store actually executed tools
+                'executed_tools': self.executed_tools.copy(),  # Store actually executed tools
+                'execution_summary': {
+                    'total_iterations': len(self.execution_steps),
+                    'successful_steps': len([step for step in self.execution_steps if step.get('success', True)]),
+                    'failed_steps': len([step for step in self.execution_steps if not step.get('success', True)])
+                }
             })
             
             # Save task to database
@@ -177,13 +187,25 @@ Return your plan as a JSON array of steps:
 ]
 """
         
+        # Record planning step
+        planning_step = {
+            "iteration": 0,
+            "action": "planning",
+            "description": "Creating execution plan for the task",
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
         # Get plan from LLM
         try:
             response = await self._call_llm(planning_prompt, json_output=True)
             
             if response:
                 plan = json.loads(response)
-                task.steps = plan
+                # Store planned steps in context for reference
+                task.context['planned_steps'] = plan
+                planning_step["result"] = f"Created plan with {len(plan)} steps"
+                planning_step["success"] = True
+                planning_step["plan_details"] = plan
                 logger.info(f"Created plan with {len(plan)} steps for task {task.task_id}")
             else:
                 raise Exception("Empty response from LLM")
@@ -191,13 +213,20 @@ Return your plan as a JSON array of steps:
         except (json.JSONDecodeError, Exception) as e:
             logger.warning(f"Failed to parse plan JSON: {e}, using fallback plan")
             # Fallback to single step if JSON parsing fails
-            task.steps = [{
+            fallback_plan = [{
                 "step": 1,
                 "action": "Execute task directly",
                 "tool": None,
                 "parameters": {},
                 "expected_outcome": "Complete the user's request"
             }]
+            task.context['planned_steps'] = fallback_plan
+            planning_step["result"] = f"Planning failed, using fallback plan: {str(e)}"
+            planning_step["success"] = False
+            planning_step["plan_details"] = fallback_plan
+        
+        # Add planning step to execution steps
+        self.execution_steps.append(planning_step)
     
     async def _execute_plan(self, task: AgentTask):
         """Execute the planned steps iteratively"""
@@ -211,11 +240,36 @@ Return your plan as a JSON array of steps:
             next_action = await self._determine_next_action(task)
             
             if next_action and next_action.get("action") == "complete":
+                # Record completion step
+                completion_step = {
+                    "iteration": iteration,
+                    "action": "complete",
+                    "description": "Task marked as complete",
+                    "result": "Task completed successfully",
+                    "timestamp": datetime.utcnow().isoformat()
+                }
+                self.execution_steps.append(completion_step)
                 break
                 
             # Execute the action
             if next_action:
+                # Record the action being taken
+                execution_step = {
+                    "iteration": iteration,
+                    "action": next_action.get("action", "unknown"),
+                    "description": next_action.get("description", "No description"),
+                    "parameters": next_action.get("parameters", {}),
+                    "reasoning": next_action.get("reasoning", "No reasoning provided"),
+                    "timestamp": datetime.utcnow().isoformat()
+                }
+                
+                # Execute and record result
                 result = await self._execute_action(next_action)
+                execution_step["result"] = result
+                execution_step["success"] = not result.startswith("Error") and not result.startswith("Tool execution failed")
+                
+                # Add to execution steps
+                self.execution_steps.append(execution_step)
                 
                 # Update memory with the action and result
                 self.memory.add_message("assistant", f"Action: {next_action.get('description', 'Unknown action')}")
@@ -224,6 +278,16 @@ Return your plan as a JSON array of steps:
             # Check if task is complete
             is_complete = await self._check_completion(task)
             if is_complete:
+                # Record automatic completion
+                auto_completion_step = {
+                    "iteration": iteration + 1,
+                    "action": "auto_complete",
+                    "description": "Task automatically marked as complete based on evaluation",
+                    "result": "Task evaluation determined completion",
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "success": True
+                }
+                self.execution_steps.append(auto_completion_step)
                 break
     
     async def _determine_next_action(self, task: AgentTask) -> Dict[str, Any]:
@@ -350,9 +414,21 @@ Conversation history:
 Provide a clear, helpful response that addresses the user's original request based on all the work done.
 """
         
+        # Record synthesis step
+        synthesis_step = {
+            "iteration": len(self.execution_steps) + 1,
+            "action": "synthesis",
+            "description": "Creating final comprehensive response",
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
         try:
             result = await self._call_llm(synthesis_prompt)
             task.result = result or "Task completed successfully"
+            
+            synthesis_step["result"] = "Successfully created final response"
+            synthesis_step["success"] = True
+            synthesis_step["response_length"] = len(task.result)
             
             # Add final result to memory
             self.memory.add_message("assistant", task.result)
@@ -360,6 +436,11 @@ Provide a clear, helpful response that addresses the user's original request bas
         except Exception as e:
             logger.error(f"Synthesis failed: {e}")
             task.result = "Task completed, but synthesis failed"
+            synthesis_step["result"] = f"Synthesis failed: {str(e)}"
+            synthesis_step["success"] = False
+        
+        # Add synthesis step to execution steps
+        self.execution_steps.append(synthesis_step)
     
     async def _call_llm(self, prompt: str, json_output: bool = False) -> str:
         """Call the configured LLM and track token usage"""
