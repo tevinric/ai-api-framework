@@ -302,46 +302,62 @@ def agentic_llm_route():
         end_time = datetime.utcnow()
         execution_time = (end_time - start_time).total_seconds()
         
+        # Validate task_result is the expected type
+        if not hasattr(task_result, 'status') or not hasattr(task_result, 'context'):
+            logger.error(f"Invalid task_result type: {type(task_result)}")
+            return create_api_response({
+                "response": "500",
+                "message": f"Agent execution returned invalid result type: {type(task_result)}"
+            }, 500)
+        
         # Check if task completed successfully
-        if task_result.status.value == "error":
+        if hasattr(task_result.status, 'value') and task_result.status.value == "error":
             logger.error(f"Agentic task failed: {task_result.error}")
             return create_api_response({
                 "response": "500",
                 "message": f"Agent execution failed: {task_result.error}"
             }, 500)
         
-        # Extract tools used and token usage
+        # Extract tools used and token usage with proper error handling
         tools_used = []
-        for step in task_result.steps:
-            if step.get('tool') and step['tool'] not in tools_used:
-                tools_used.append(step['tool'])
+        if hasattr(task_result, 'steps') and isinstance(task_result.steps, list):
+            for step in task_result.steps:
+                if isinstance(step, dict) and step.get('tool') and step['tool'] not in tools_used:
+                    tools_used.append(step['tool'])
         
-        # Get token usage from task context
-        token_usage = task_result.context.get('token_usage', {})
+        # Safely get token usage from task context
+        token_usage = {}
+        if hasattr(task_result, 'context') and isinstance(task_result.context, dict):
+            token_usage = task_result.context.get('token_usage', {})
+        
+        # Ensure token_usage is a dictionary
+        if not isinstance(token_usage, dict):
+            logger.warning(f"token_usage is not a dict, got: {type(token_usage)}")
+            token_usage = {}
         
         # Prepare successful response with token usage for track_usage middleware
         response_data = {
             "response": "200",
-            "message": task_result.result or "Task completed successfully",
-            "task_id": task_result.task_id,
+            "message": getattr(task_result, 'result', None) or "Task completed successfully",
+            "task_id": getattr(task_result, 'task_id', 'unknown'),
             "agent_id": f"{user_id}_{model}",
             "user_id": user_details["id"],
             "user_name": user_details["user_name"],
             "user_email": user_details["user_email"],
-            "model": token_usage.get('model', model),
+            "model": token_usage.get('model', model) if isinstance(token_usage, dict) else model,
             
             # Token usage data for track_usage middleware
-            "prompt_tokens": token_usage.get('prompt_tokens', 0),
-            "completion_tokens": token_usage.get('completion_tokens', 0),
-            "total_tokens": token_usage.get('total_tokens', 0),
-            "cached_tokens": token_usage.get('cached_tokens', 0),
+            "prompt_tokens": token_usage.get('prompt_tokens', 0) if isinstance(token_usage, dict) else 0,
+            "completion_tokens": token_usage.get('completion_tokens', 0) if isinstance(token_usage, dict) else 0,
+            "total_tokens": token_usage.get('total_tokens', 0) if isinstance(token_usage, dict) else 0,
+            "cached_tokens": token_usage.get('cached_tokens', 0) if isinstance(token_usage, dict) else 0,
             
             "execution_details": {
-                "status": task_result.status.value,
-                "steps_executed": len(task_result.steps),
+                "status": getattr(task_result.status, 'value', 'unknown') if hasattr(task_result, 'status') else 'unknown',
+                "steps_executed": len(getattr(task_result, 'steps', [])),
                 "tools_used": tools_used,
                 "execution_time": execution_time,
-                "llm_calls": token_usage.get('llm_calls', 0)
+                "llm_calls": token_usage.get('llm_calls', 0) if isinstance(token_usage, dict) else 0
             }
         }
         
@@ -352,7 +368,7 @@ def agentic_llm_route():
         return create_api_response(response_data, 200)
         
     except Exception as e:
-        logger.error(f"Agentic LLM API error: {str(e)}")
+        logger.error(f"Agentic LLM API error: {str(e)}", exc_info=True)
         return create_api_response({
             "response": "500",
             "message": f"Internal server error: {str(e)}"
