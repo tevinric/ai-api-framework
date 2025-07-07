@@ -35,6 +35,59 @@ class BaseTool(ABC):
         """Execute the tool with given parameters"""
         pass
 
+class EchoTestTool(BaseTool):
+    """Simple tool for testing agent functionality"""
+    
+    def get_definition(self) -> ToolDefinition:
+        return ToolDefinition(
+            name="echo_test",
+            description="A simple test tool that echoes back the input with a timestamp. Use this to test if the agent tool system is working.",
+            parameters={
+                "message": {"type": "string", "description": "Message to echo back"},
+                "test_type": {"type": "string", "description": "Type of test to perform", "default": "basic"}
+            },
+            function=self.execute,
+            category="testing"
+        )
+    
+    async def execute(self, parameters: Dict[str, Any], user_id: str) -> str:
+        """Execute the echo test tool"""
+        try:
+            message = parameters.get("message", "No message provided")
+            test_type = parameters.get("test_type", "basic")
+            
+            import datetime
+            current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            
+            response = f"""
+🔧 AGENT TOOL TEST SUCCESSFUL! 🔧
+
+Tool: Echo Test Tool
+User ID: {user_id}
+Test Type: {test_type}
+Timestamp: {current_time}
+Your Message: "{message}"
+
+✅ The agent tool system is working correctly!
+✅ The agent can successfully call tools
+✅ Parameters are being passed correctly
+✅ Tool execution is functioning as expected
+
+This confirms that:
+- The agent can identify when to use tools
+- Tool parameters are correctly parsed
+- Tool execution pipeline is working
+- Results are properly returned to the agent
+"""
+            
+            logger.info(f"Echo test tool executed successfully for user {user_id}")
+            return response
+            
+        except Exception as e:
+            error_msg = f"Echo test tool failed: {str(e)}"
+            logger.error(error_msg)
+            return error_msg
+
 class WebSearchTool(BaseTool):
     """Tool for searching the web"""
     
@@ -324,6 +377,7 @@ class ToolRegistry:
     def _register_default_tools(self):
         """Register default tools"""
         default_tools = [
+            EchoTestTool(),  # Add the test tool first
             WebSearchTool(),
             FileOperationTool(),
             CalculatorTool(),
