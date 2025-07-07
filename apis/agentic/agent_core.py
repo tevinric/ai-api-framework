@@ -188,7 +188,7 @@ Return your plan as a JSON array of steps:
             logger.info(f"Agent iteration {iteration} for task {task.task_id}")
             
             # Determine next action
-            next_action = await self._determine_next_action(task, iteration)
+            next_action = await self._determine_next_action(task)
             
             if next_action and next_action.get("action") == "complete":
                 break
