@@ -55,16 +55,20 @@ class Agent:
         self.total_cached_tokens = 0
         self.llm_call_count = 0
         
+        # Track actually executed tools
+        self.executed_tools = []
+        
     async def execute_task(self, user_input: str, context: Dict[str, Any] = None) -> AgentTask:
         """Execute an agentic task with planning, tool use, and iteration"""
         task_id = str(uuid.uuid4())
         
-        # Reset token counters for this task
+        # Reset token counters and tool tracking for this task
         self.total_prompt_tokens = 0
         self.total_completion_tokens = 0
         self.total_tokens = 0
         self.total_cached_tokens = 0
         self.llm_call_count = 0
+        self.executed_tools = []  # Reset executed tools list
         
         # Ensure context is a dictionary
         if context is None:
@@ -72,6 +76,21 @@ class Agent:
         elif not isinstance(context, dict):
             logger.warning(f"Context is not a dict, got: {type(context)}, converting to empty dict")
             context = {}
+        
+        # Extract agent configuration for tool filtering
+        agent_config = context.get('agent_config', {})
+        tools_enabled = agent_config.get('tools_enabled', [])
+        
+        # If no tools specified or empty list, enable all tools
+        if not tools_enabled:
+            available_tools = list(self.tool_registry.get_all_tools().keys())
+            logger.info(f"No tools specified, enabling all available tools: {available_tools}")
+        else:
+            available_tools = tools_enabled
+            logger.info(f"Using specified tools: {available_tools}")
+        
+        # Store available tools in context for later reference
+        context['available_tools'] = available_tools
         
         task = AgentTask(
             task_id=task_id,
@@ -113,7 +132,7 @@ class Agent:
                 logger.error(f"Task context is not a dict: {type(task.context)}, resetting to empty dict")
                 task.context = {}
             
-            # Add token usage to task context for later retrieval
+            # Add token usage and executed tools to task context for later retrieval
             task.context.update({
                 'token_usage': {
                     'prompt_tokens': self.total_prompt_tokens,
@@ -122,7 +141,8 @@ class Agent:
                     'cached_tokens': self.total_cached_tokens,
                     'llm_calls': self.llm_call_count,
                     'model': self.model
-                }
+                },
+                'executed_tools': self.executed_tools.copy()  # Store actually executed tools
             })
             
             # Save task to database
@@ -270,13 +290,27 @@ Provide your thoughts and analysis.
             return "Task marked as complete"
         
         else:
-            # Tool execution
+            # Tool execution - check if tool is available
+            available_tools = self.current_task.context.get('available_tools', [])
+            
+            if available_tools and action_type not in available_tools:
+                return f"Tool '{action_type}' is not available. Available tools: {', '.join(available_tools)}"
+            
             try:
-                return await self.tool_executor.execute_tool(
+                # Execute the tool
+                result = await self.tool_executor.execute_tool(
                     action_type,
                     action.get("parameters", {}),
                     self.user_id
                 )
+                
+                # Track that this tool was actually used
+                if action_type not in self.executed_tools:
+                    self.executed_tools.append(action_type)
+                    logger.info(f"Tool '{action_type}' executed and tracked")
+                
+                return result
+                
             except Exception as e:
                 logger.error(f"Tool execution failed: {e}")
                 return f"Tool execution failed: {str(e)}"
@@ -379,10 +413,21 @@ Provide a clear, helpful response that addresses the user's original request bas
     def _get_available_tools_description(self) -> str:
         """Get description of available tools"""
         try:
-            tools = self.tool_registry.get_all_tools()
-            descriptions = []
+            all_tools = self.tool_registry.get_all_tools()
             
-            for tool_name, tool_info in tools.items():
+            # Filter tools based on available_tools if current task exists
+            if self.current_task and isinstance(self.current_task.context, dict):
+                available_tools = self.current_task.context.get('available_tools', [])
+                if available_tools:
+                    # Only include tools that are in the available list
+                    filtered_tools = {name: info for name, info in all_tools.items() if name in available_tools}
+                else:
+                    filtered_tools = all_tools
+            else:
+                filtered_tools = all_tools
+            
+            descriptions = []
+            for tool_name, tool_info in filtered_tools.items():
                 description = tool_info.get('description', 'No description available')
                 descriptions.append(f"- {tool_name}: {description}")
             
