@@ -1,0 +1,266 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0" version="28.0.3">
+  <diagram name="GAIA Overview" id="1JIi14eUNYYFfe48_Pwp">
+    <mxGraphModel dx="2058" dy="1146" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="3300" pageHeight="2339" background="light-dark(#FFFFFF,#FFFFFF)" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-12" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.25;entryDx=0;entryDy=0;strokeColor=light-dark(#000000,#000099);exitX=1;exitY=0.25;exitDx=0;exitDy=0;" edge="1" parent="1" source="GCWh2iS9gtE9UTOANhLP-2" target="GCWh2iS9gtE9UTOANhLP-3">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-2" value="Client Application" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1ba1e2;fontColor=#ffffff;strokeColor=#006EAF;" vertex="1" parent="1">
+          <mxGeometry x="80" y="355" width="120" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-13" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=1;entryY=0.75;entryDx=0;entryDy=0;" edge="1" parent="1" source="GCWh2iS9gtE9UTOANhLP-3" target="GCWh2iS9gtE9UTOANhLP-2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-14" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=1;entryY=0.75;entryDx=0;entryDy=0;strokeColor=light-dark(#000000,#CC0000);dashed=1;dashPattern=12 12;" edge="1" parent="1" source="GCWh2iS9gtE9UTOANhLP-3" target="GCWh2iS9gtE9UTOANhLP-2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-3" value="Flask API Gateway" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e51400;fontColor=#ffffff;strokeColor=#B20000;" vertex="1" parent="1">
+          <mxGeometry x="340" y="355" width="120" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-4" value="Middleware Stack&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;* Logging&lt;/div&gt;&lt;div&gt;* Authentication&lt;/div&gt;&lt;div&gt;* RBAC&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#008a00;fontColor=#ffffff;strokeColor=#005700;" vertex="1" parent="1">
+          <mxGeometry x="550" y="335" width="250" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-6" value="AI Service Layer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0a30a;fontColor=#000000;strokeColor=#BD7000;" vertex="1" parent="1">
+          <mxGeometry x="1010" y="345" width="120" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-23" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="GCWh2iS9gtE9UTOANhLP-8" target="GCWh2iS9gtE9UTOANhLP-21">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-8" value="&lt;div&gt;&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;ONPREM&lt;/font&gt;&lt;/div&gt;&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;SQL Server Database&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=light-dark(#0050EF,#142230);fontColor=#ffffff;strokeColor=#001DBC;" vertex="1" parent="1">
+          <mxGeometry x="600" y="565" width="120" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-10" value="&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;Azure Blob Storage&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=light-dark(#0050EF,#142230);fontColor=#ffffff;strokeColor=#001DBC;" vertex="1" parent="1">
+          <mxGeometry x="1010" y="565" width="120" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-11" value="&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;Microsoft Azure AI Foundry&amp;nbsp;&lt;/font&gt;&lt;div&gt;&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;(South Africa North)&lt;/font&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=light-dark(#D80073,#CC0066);fontColor=#ffffff;strokeColor=#A50040;" vertex="1" parent="1">
+          <mxGeometry x="1140" y="120" width="120" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-15" value="&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(51, 153, 255));&quot;&gt;API Request&lt;/font&gt;" style="text;strokeColor=none;align=center;fillColor=none;html=1;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="220" y="335" width="120" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-18" value="&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(51, 153, 255));&quot;&gt;Client Response&lt;/font&gt;" style="text;strokeColor=none;align=center;fillColor=none;html=1;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="220" y="425" width="120" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-19" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.25;entryDx=0;entryDy=0;strokeColor=light-dark(#000000,#000099);exitX=1;exitY=0.25;exitDx=0;exitDy=0;" edge="1" parent="1" target="GCWh2iS9gtE9UTOANhLP-4">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="460" y="375" as="sourcePoint" />
+            <mxPoint x="600" y="375" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-20" value="&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(51, 153, 255));&quot;&gt;Middleware Communication&lt;/font&gt;" style="text;strokeColor=none;align=center;fillColor=none;html=1;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="440" y="325" width="120" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-21" value="&lt;font color=&quot;#3399ff&quot;&gt;Logging&lt;/font&gt;" style="text;strokeColor=none;align=center;fillColor=none;html=1;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="580" y="465" width="120" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-22" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=light-dark(#000000,#000099);exitX=0.25;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="GCWh2iS9gtE9UTOANhLP-4" target="GCWh2iS9gtE9UTOANhLP-8">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="667" y="495" as="sourcePoint" />
+            <mxPoint x="757" y="485" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-24" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=light-dark(#000000,#000099);exitX=0.75;exitY=0;exitDx=0;exitDy=0;entryX=0.75;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="GCWh2iS9gtE9UTOANhLP-8" target="GCWh2iS9gtE9UTOANhLP-4">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="720" y="451" as="sourcePoint" />
+            <mxPoint x="721" y="565" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-27" value="&lt;font color=&quot;#3399ff&quot;&gt;Auth Validation and User lookup&lt;/font&gt;" style="text;strokeColor=none;align=center;fillColor=none;html=1;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="730" y="475" width="120" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-28" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=1;entryY=0.75;entryDx=0;entryDy=0;strokeColor=light-dark(#000000,#CC0000);dashed=1;dashPattern=12 12;" edge="1" parent="1" source="GCWh2iS9gtE9UTOANhLP-4" target="GCWh2iS9gtE9UTOANhLP-3">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="550" y="454" as="sourcePoint" />
+            <mxPoint x="410" y="454" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-29" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.25;entryDx=0;entryDy=0;strokeColor=light-dark(#000000,#000099);exitX=1;exitY=0.25;exitDx=0;exitDy=0;" edge="1" parent="1" source="GCWh2iS9gtE9UTOANhLP-4" target="GCWh2iS9gtE9UTOANhLP-6">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="840" y="305" as="sourcePoint" />
+            <mxPoint x="930" y="295" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-30" value="&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(51, 153, 255));&quot;&gt;Service Routing&amp;nbsp;&lt;/font&gt;" style="text;strokeColor=none;align=center;fillColor=none;html=1;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="800" y="325" width="120" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-31" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=1;entryY=0.75;entryDx=0;entryDy=0;strokeColor=light-dark(#000000,#CC0000);dashed=1;dashPattern=12 12;" edge="1" parent="1" source="GCWh2iS9gtE9UTOANhLP-6" target="GCWh2iS9gtE9UTOANhLP-4">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="930" y="454" as="sourcePoint" />
+            <mxPoint x="840" y="444" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="840" y="405" />
+              <mxPoint x="840" y="425" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-32" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.25;entryDx=0;entryDy=0;strokeColor=light-dark(#000000,#000099);" edge="1" parent="1" target="GCWh2iS9gtE9UTOANhLP-11">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1070" y="345" as="sourcePoint" />
+            <mxPoint x="1330" y="355" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="1070" y="160" />
+              <mxPoint x="1140" y="160" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-33" value="&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(51, 153, 255));&quot;&gt;AI API Call&lt;/font&gt;" style="text;strokeColor=none;align=center;fillColor=none;html=1;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="960" y="225" width="120" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-34" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=light-dark(#000000,#CC0000);dashed=1;dashPattern=12 12;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=0.75;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="GCWh2iS9gtE9UTOANhLP-11" target="GCWh2iS9gtE9UTOANhLP-6">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1330" y="395" as="sourcePoint" />
+            <mxPoint x="1110" y="425" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="1140" y="175" />
+              <mxPoint x="1100" y="175" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-35" value="&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(51, 153, 255));&quot;&gt;AI Service response&lt;/font&gt;" style="text;strokeColor=none;align=center;fillColor=none;html=1;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="1100" y="295" width="65" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-37" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.25;entryY=0;entryDx=0;entryDy=0;strokeColor=light-dark(#000000,#000099);exitX=0.328;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1" source="GCWh2iS9gtE9UTOANhLP-6" target="GCWh2iS9gtE9UTOANhLP-10">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="990" y="465" as="sourcePoint" />
+            <mxPoint x="1037" y="575" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-38" value="&lt;font color=&quot;#3399ff&quot;&gt;File uploads&lt;/font&gt;" style="text;strokeColor=none;align=center;fillColor=none;html=1;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="940" y="445" width="120" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-39" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=light-dark(#000000,#000099);exitX=0.75;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="GCWh2iS9gtE9UTOANhLP-10" target="GCWh2iS9gtE9UTOANhLP-6">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1110" y="595" as="sourcePoint" />
+            <mxPoint x="1158" y="485" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="1100" y="495" />
+              <mxPoint x="1070" y="495" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-40" value="&lt;font color=&quot;#3399ff&quot;&gt;File downloads/updates&lt;/font&gt;" style="text;strokeColor=none;align=center;fillColor=none;html=1;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="1150" y="525" width="30" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-41" value="&lt;div style=&quot;&quot;&gt;&lt;b style=&quot;background-color: transparent; color: light-dark(rgb(255, 255, 255), rgb(18, 18, 18));&quot;&gt;Authentication &amp;amp; Authorization:&amp;nbsp;&lt;/b&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;1. Extract API-Key from headers&lt;/div&gt;&lt;div&gt;2. Validate API key in users table&lt;/div&gt;&lt;div&gt;3. Check X-Token header for token auth&lt;/div&gt;&lt;div&gt;4. Validate Token with Microsoft Entra&lt;/div&gt;&lt;div&gt;5. Check Token Expiration&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=light-dark(#1BA1E2,#99CCFF);fontColor=#ffffff;strokeColor=light-dark(#006EAF,#0066CC);align=center;" vertex="1" parent="1">
+          <mxGeometry x="770" y="720" width="320" height="190" as="geometry" />
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-42" value="&lt;div style=&quot;&quot;&gt;&lt;font color=&quot;#121212&quot;&gt;&lt;b&gt;RBAC:&lt;/b&gt;&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;&lt;font color=&quot;#121212&quot;&gt;&lt;b&gt;&lt;br&gt;&lt;/b&gt;&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;&lt;font color=&quot;#121212&quot;&gt;1. Get endpoint_id from path&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;&lt;font color=&quot;#121212&quot;&gt;2. Check user_endpoint_access table&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;&lt;font color=&quot;#121212&quot;&gt;3. Verify user scope permissions&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;&lt;font color=&quot;#121212&quot;&gt;&lt;br&gt;&lt;/font&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0a30a;strokeColor=#BD7000;align=center;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="780" y="950" width="320" height="190" as="geometry" />
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-43" value="&lt;div style=&quot;&quot;&gt;&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&lt;b style=&quot;&quot;&gt;Service Processing:&amp;nbsp;&lt;/b&gt;&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&lt;b&gt;&lt;br&gt;&lt;/b&gt;&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;1. Route to appropriate service handler&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;2. Validate request parameters&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;3. Process files if required&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;4. Call External AI services&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;5. Format and return response&lt;/font&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=light-dark(#008A00,#006600);strokeColor=#005700;align=center;fontColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="1130" y="720" width="320" height="190" as="geometry" />
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-44" value="&lt;div style=&quot;&quot;&gt;&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&lt;b style=&quot;&quot;&gt;Logging &amp;amp; Analytics:&lt;/b&gt;&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;&lt;br&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;&lt;font color=&quot;#ffffff&quot;&gt;1. Log request details in api_logs&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;&lt;font color=&quot;#ffffff&quot;&gt;2. Track usage metrics in user_usage&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;&lt;font color=&quot;#ffffff&quot;&gt;3. Generate Correlation IDs or use provided&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;&lt;font color=&quot;#ffffff&quot;&gt;4. Monitor response times&lt;/font&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#a20025;strokeColor=#6F0000;align=center;fontColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="1130" y="950" width="320" height="190" as="geometry" />
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-45" value="&lt;b&gt;&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(204, 0, 0));&quot;&gt;NOTE 1&lt;/font&gt;&lt;/b&gt;" style="text;strokeColor=none;align=center;fillColor=none;html=1;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="530" y="575" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-47" value="&lt;div&gt;NOTE 1:&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;All middleware logs are written to an ONPREM SQL server:&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;DEV:&amp;nbsp;&lt;/div&gt;&lt;div&gt;Server:&amp;nbsp;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;GITAGPSQLDEV2&lt;/span&gt;&lt;/div&gt;&lt;div&gt;DB: AIAPISDEV&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;PROD: (Not yet in use)&lt;/div&gt;&lt;div&gt;Server: GITAGPNSQL01\SQL01&lt;/div&gt;&lt;div&gt;DB: GAIA&lt;/div&gt;&lt;div&gt;Tables: TBC&lt;/div&gt;" style="whiteSpace=wrap;html=1;strokeColor=light-dark(#000000,#FFFFFF);fillColor=light-dark(#FFFFFF,#B3B3B3);align=left;" vertex="1" parent="1">
+          <mxGeometry x="70" y="700" width="270" height="220" as="geometry" />
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-48" value="&lt;div&gt;NOTE 2:&amp;nbsp;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;Azure blob storage is used to store and process all files used by the platform.&amp;nbsp;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;DEV:&lt;/div&gt;&lt;div&gt;Subscription:&amp;nbsp;AI Centre of Excellence Dev/Test&lt;/div&gt;&lt;div&gt;Resource Group:&amp;nbsp;AIAPISTORAGE&lt;/div&gt;&lt;div&gt;StorageAccount:&amp;nbsp;apexaiautoresponddev&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;PROD: (Not yet created)&lt;/div&gt;" style="whiteSpace=wrap;html=1;strokeColor=light-dark(#000000,#FFFFFF);fillColor=light-dark(#FFFFFF,#B3B3B3);align=left;" vertex="1" parent="1">
+          <mxGeometry x="370" y="700" width="260" height="220" as="geometry" />
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-49" value="&lt;b&gt;&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(204, 0, 0));&quot;&gt;NOTE 2&lt;/font&gt;&lt;/b&gt;" style="text;strokeColor=none;align=center;fillColor=none;html=1;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="950" y="575" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-50" value="&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;Microsoft Azure AI Foundry&amp;nbsp;&lt;/font&gt;&lt;div&gt;&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;(West Europe)&lt;/font&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=light-dark(#D80073,#CC0066);fontColor=#ffffff;strokeColor=#A50040;" vertex="1" parent="1">
+          <mxGeometry x="1330" y="175" width="120" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-51" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=light-dark(#000000,#000099);exitX=1;exitY=0.25;exitDx=0;exitDy=0;" edge="1" parent="1" source="GCWh2iS9gtE9UTOANhLP-6" target="GCWh2iS9gtE9UTOANhLP-50">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1340" y="345" as="sourcePoint" />
+            <mxPoint x="1730" y="185" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="1180" y="365" />
+              <mxPoint x="1180" y="215" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-53" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=light-dark(#000000,#CC0000);dashed=1;dashPattern=12 12;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="GCWh2iS9gtE9UTOANhLP-50" target="GCWh2iS9gtE9UTOANhLP-6">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1750" y="235" as="sourcePoint" />
+            <mxPoint x="1390" y="355" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="1260" y="235" />
+              <mxPoint x="1260" y="385" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-54" value="&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(51, 153, 255));&quot;&gt;AI API Call&lt;/font&gt;" style="text;strokeColor=none;align=center;fillColor=none;html=1;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="1165" y="215" width="120" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-55" value="&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(51, 153, 255));&quot;&gt;AI Service response&lt;/font&gt;" style="text;strokeColor=none;align=center;fillColor=none;html=1;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="1265" y="295" width="65" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-56" value="&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;Microsoft Azure AI Foundry&amp;nbsp;&lt;/font&gt;&lt;div&gt;&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;(East US)&lt;/font&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=light-dark(#D80073,#CC0066);fontColor=#ffffff;strokeColor=#A50040;" vertex="1" parent="1">
+          <mxGeometry x="1350" y="355" width="120" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-57" value="&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;Microsoft Azure AI Foundry&amp;nbsp;&lt;/font&gt;&lt;div&gt;&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;(East US 2)&lt;/font&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=light-dark(#D80073,#CC0066);fontColor=#ffffff;strokeColor=#A50040;" vertex="1" parent="1">
+          <mxGeometry x="1350" y="485" width="120" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-58" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.25;entryDx=0;entryDy=0;strokeColor=light-dark(#000000,#000099);exitX=1;exitY=0.75;exitDx=0;exitDy=0;" edge="1" parent="1" source="GCWh2iS9gtE9UTOANhLP-6" target="GCWh2iS9gtE9UTOANhLP-56">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1190" y="525" as="sourcePoint" />
+            <mxPoint x="1390" y="375" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="1300" y="405" />
+              <mxPoint x="1300" y="375" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-59" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=light-dark(#000000,#CC0000);dashed=1;dashPattern=12 12;entryX=0.994;entryY=0.863;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="GCWh2iS9gtE9UTOANhLP-56" target="GCWh2iS9gtE9UTOANhLP-6">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1310" y="414" as="sourcePoint" />
+            <mxPoint x="1250" y="525" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="1230" y="425" />
+              <mxPoint x="1230" y="414" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-60" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=light-dark(#000000,#000099);exitX=0.828;exitY=1.005;exitDx=0;exitDy=0;entryX=0;entryY=0.25;entryDx=0;entryDy=0;exitPerimeter=0;" edge="1" parent="1" source="GCWh2iS9gtE9UTOANhLP-6" target="GCWh2iS9gtE9UTOANhLP-57">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1300" y="625" as="sourcePoint" />
+            <mxPoint x="1270" y="485" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="1109" y="445" />
+              <mxPoint x="1150" y="445" />
+              <mxPoint x="1150" y="505" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-61" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=light-dark(#000000,#CC0000);dashed=1;dashPattern=12 12;entryX=0.75;entryY=1;entryDx=0;entryDy=0;exitX=0;exitY=0.625;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1" source="GCWh2iS9gtE9UTOANhLP-57">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1340" y="525" as="sourcePoint" />
+            <mxPoint x="1090" y="425" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="1350" y="525" />
+              <mxPoint x="1220" y="525" />
+              <mxPoint x="1220" y="514" />
+              <mxPoint x="1120" y="514" />
+              <mxPoint x="1120" y="455" />
+              <mxPoint x="1090" y="455" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-63" value="&lt;b&gt;&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(204, 0, 0));&quot;&gt;NOTE 3&lt;/font&gt;&lt;/b&gt;" style="text;strokeColor=none;align=center;fillColor=none;html=1;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="1180" y="80" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="GCWh2iS9gtE9UTOANhLP-64" value="&lt;div&gt;NOTE 3:&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;GAIA uses South Africa North AI Foundry as the main deployment.&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;All models and services available in SA North region will be used first to fulfill an user API request.&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;If the deployment quota is exceeded in the primary region for the user request then the request is diverted to the next available region (West Europe)&lt;/div&gt;" style="whiteSpace=wrap;html=1;strokeColor=light-dark(#000000,#FFFFFF);fillColor=light-dark(#FFFFFF,#B3B3B3);align=left;" vertex="1" parent="1">
+          <mxGeometry x="70" y="950" width="270" height="220" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -164,16 +164,47 @@ def upload_file_route():
     # Define list of forbidden file extensions (executable files)
     forbidden_extensions = [
         '.exe', '.bat', '.cmd', '.sh', '.ps1', '.msi', '.dll', '.com', '.vbs', 
-        '.js', '.jse', '.wsf', '.wsh', '.msc', '.scr', '.reg', '.hta', '.pif'
+        '.js', '.jse', '.wsf', '.wsh', '.msc', '.scr', '.reg', '.hta', '.pif',
+        
+        # LIST 1 FROM RUAN
+        '.aaa', '.aac', '.accdb','.aacde', '.accdr', '.accdt', '.ace', '.acm', '.adn', '.adp',
+        '.aesir','.aif','.aiff','.application','.arc','.arj','.asc','.asf','.asx','.au',
+        '.bat','.bck','.bhx','.bkf','.bz2','.cab','.cgi','.cmd','.com','.cpl','.diablo6',
+        '.dib','.exx','.flac','.gadget','.grv','.gsa','.gta','.gz','.hpk','.hqx','.idx',
+        '.img','.inf','.jpe','.jse','.lha','.locky','.lukitus','.lzh','.lzx','.m3u',
+        '.mad','.maf','.mbox','.mbx','.mda','.mdb','.mde','.mdf','.mdm','.mdt','.mdw',
+        '.mdz','.mid','.midi','.mp1','.mp2','.mpa','.mpd','.mpt','.msc','.msh',
+        '.msh1','.msh1xml','.msh2','.msh2xml','.mshxml','.nmf','.obt','.ocx',
+        '.odb','.odin','.oft','.old','.onepkg','.osiris','.pab','.pak','.pcsc1',
+        '.pcx','.php3','.pif','.pit','.pl','.ppa','.ppsm','.ps','.ps2',
+        '.ps2xml','.psc2','.pwz','.qt','.qtw','.ram','.raw','.rif','.rm',
+        '.rmi','.rmvb','.rqy','.rwz','.scf','.scr','.sea','.shtml',
+        '.sit','.slk','.snd','.spiff','.sqz','.swf','.sys',
+        '.temp','.text','.tgz','.thmx','.thor','.uu','.uue','.vb',
+        '.vbe','.vbs','.vob','.vsl','.vst','.vsu','.vsw',
+        '.vsx','.vtx','.vxd','.wax','.wcry','.wncry','.wma','.wncry',
+        '.wncrpyt','.wnry','.wri','.ws','.wsc','.wsf','.wsh',
+        '.wvx','.xlb','.xlc','.xld','.xlk','.xlv','.xsf',
+        '.xsn','.z','.zepto','.zoo','.zzz','.zzzzz',
+        
+        # LIST 2 FROM RUAN
+        '.ace','.ani','.app','.docm','.exe','.jar','.reg','.scr','.vbe',
+        '.vbs','.bas','.bat','.chm','.cmd','.com','.cpl','.crt',
+        '.csh','.dll','.fxp','.gadget','.hlp','.hta','.inf',
+        '.ins','.isp','.js','.jse','.lnk','.msi',
+        '.msp','.mst','.pcd','.pif','.ps1','.ps1xml',
+        '.ps2','.ps2xml','.psc1','.psc2','.rar','.sct',
+        '.shb','.shs','.url','.vb','.vxd','.ws','.wsc','.wsf','wsh','shtml','.one','.onenote','rdp'
+
     ]
     
     # Check each file for forbidden extensions
     for file in files:
         _, file_extension = os.path.splitext(file.filename.lower())
-        if file_extension in forbidden_extensions:
+        if file_extension.lower() in forbidden_extensions:
             return create_api_response({
                 "error": "Bad Request",
-                "message": f"File type {file_extension} is not allowed for security reasons"
+                "message": f"File type {file_extension} is forbidden for security reasons"
             }, 400)
     
     try:

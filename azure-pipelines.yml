@@ -41,8 +41,8 @@ stages:
     parameters:
       ImageName: '${{variables.projectImage}}'
       ApplicationName: '${{variables.applicationName}}'
-      RunLintChecks : false
-      RunUnitTests : false
+      # RunLintChecks : false
+      # RunUnitTests : false
       AgentPool: $(DeployPool)
       Namespace: '${{variables.projectNamespace}}'
       K8sServiceConnectionDEV : $(K8s-ServiceConnection-Dev)
