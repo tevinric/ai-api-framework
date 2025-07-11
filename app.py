@@ -280,8 +280,9 @@ register_nlp_routes(app)
 from apis.context import register_context_routes
 register_context_routes(app)
 
-
-
+#Agentic 
+from apis.llm.agentic_llm import register_agentic_llm
+register_agentic_llm(app)
 
 if __name__ == '__main__':
     app.run(debug=True)
