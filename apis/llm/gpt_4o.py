@@ -349,8 +349,8 @@ def gpt4o_route():
             status_code = 500 if not str(service_response["error"]).startswith("4") else 400
             return create_api_response({
                 "response": str(status_code),
-                "message": service_response["error"],
-                "attempted_deployments": service_response.get("attempted_deployments", [])
+                "message": service_response["error"]
+                # Remove attempted_deployments from regular error responses
             }, status_code)
         
         # Prepare successful response with user details
@@ -382,8 +382,7 @@ def gpt4o_route():
         if "deployment_used" in service_response:
             response_data["deployment_used"] = service_response["deployment_used"]
         
-        if "attempted_deployments" in service_response:
-            response_data["attempted_deployments"] = service_response["attempted_deployments"]
+        # Remove attempted_deployments from API response - keep only deployment_used
         
         return create_api_response(response_data, 200)
         
