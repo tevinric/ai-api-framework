@@ -18,9 +18,6 @@ import requests
 # Configure logging
 logger = logging.getLogger(__name__)
 
-# Initialize OpenAI client
-openai_client = get_openai_client()
-
 # For GPT-4o and GPT-4o-mini, only allow image formats
 ALLOWED_IMAGE_EXTENSIONS = {
     'png': 'image/png',
@@ -28,16 +25,57 @@ ALLOWED_IMAGE_EXTENSIONS = {
     'jpeg': 'image/jpeg'
 }
 
-def deepseek_r1_service(system_prompt, user_input, temperature=0.5, json_output=False, max_tokens=2048):
-    """DeepSeek-R1 LLM service function for chain of thought and deep reasoning"""
+def get_azure_openai_client(deployment_config=None):
+    """
+    Get Azure OpenAI client with deployment configuration support.
+    
+    Args:
+        deployment_config (dict, optional): Deployment configuration with endpoint, api_key, etc.
+        
+    Returns:
+        AzureOpenAI: Configured client
+    """
+    if deployment_config:
+        return AzureOpenAI(
+            azure_endpoint=deployment_config.get("endpoint"),
+            api_key=deployment_config.get("api_key"),
+            api_version=deployment_config.get("api_version", "2024-02-01")
+        )
+    else:
+        # Fallback to default client
+        return get_openai_client()
+
+def get_azure_inference_client(deployment_config):
+    """
+    Get Azure AI Inference client with deployment configuration.
+    
+    Args:
+        deployment_config (dict): Deployment configuration with endpoint and api_key
+        
+    Returns:
+        ChatCompletionsClient: Configured client
+    """
+    return ChatCompletionsClient(
+        endpoint=deployment_config.get("endpoint"),
+        credential=AzureKeyCredential(deployment_config.get("api_key"))
+    )
+
+def deepseek_r1_service(system_prompt, user_input, temperature=0.5, json_output=False, max_tokens=2048, deployment_config=None):
+    """DeepSeek-R1 LLM service function for chain of thought and deep reasoning with failover support"""
     try:
-        # Fixed endpoint for DeepSeek R1
-        ENDPOINT = 'https://deepseek-r1-aiapi.eastus.models.ai.azure.com'
+        # Use deployment config if provided, otherwise use default
+        if deployment_config:
+            endpoint = deployment_config.get("endpoint")
+            api_key = deployment_config.get("api_key")
+        else:
+            # Fallback to original configuration
+            endpoint = 'https://deepseek-r1-aiapi.eastus.models.ai.azure.com'
+            api_key = DEEPSEEK_API_KEY
         
         # Initialize Azure Inference client
         client = ChatCompletionsClient(
-            endpoint=ENDPOINT,
-            credential=AzureKeyCredential(DEEPSEEK_API_KEY)
+            endpoint=endpoint,
+            credential=AzureKeyCredential(api_key)
         )
         
         # Prepare messages for the model
@@ -89,17 +127,24 @@ def deepseek_r1_service(system_prompt, user_input, temperature=0.5, json_output=
             "error": str(e)
         }
 
-def deepseek_v3_service(system_prompt, user_input, temperature=0.7, json_output=False, max_tokens=1000):
-    """DeepSeek-V3 LLM service function for general task completion"""
+def deepseek_v3_service(system_prompt, user_input, temperature=0.7, json_output=False, max_tokens=1000, deployment_config=None):
+    """DeepSeek-V3 LLM service function for general task completion with failover support"""
     try:
-        # Fixed deployment endpoint
-        ENDPOINT = 'https://ai-coe-services-dev.services.ai.azure.com/models'
-        MODEL_NAME = 'DeepSeek-V3'
+        # Use deployment config if provided, otherwise use default
+        if deployment_config:
+            endpoint = deployment_config.get("endpoint")
+            api_key = deployment_config.get("api_key")
+            model_name = deployment_config.get("model_name", "DeepSeek-V3")
+        else:
+            # Fallback to original configuration
+            endpoint = 'https://ai-coe-services-dev.services.ai.azure.com/models'
+            api_key = DEEPSEEK_V3_API_KEY
+            model_name = 'DeepSeek-V3'
         
         # Initialize Azure Inference client
         client = ChatCompletionsClient(
-            endpoint=ENDPOINT,
-            credential=AzureKeyCredential(DEEPSEEK_V3_API_KEY)
+            endpoint=endpoint,
+            credential=AzureKeyCredential(api_key)
         )
         
         # Prepare messages for the model
@@ -117,7 +162,7 @@ def deepseek_v3_service(system_prompt, user_input, temperature=0.7, json_output=
             "messages": messages,
             "max_tokens": max_tokens,
             "temperature": temperature,
-            "model": MODEL_NAME
+            "model": model_name
         }
         
         # Add response format if JSON output is requested
@@ -132,13 +177,13 @@ def deepseek_v3_service(system_prompt, user_input, temperature=0.7, json_output=
         prompt_tokens = response.usage.prompt_tokens
         completion_tokens = response.usage.completion_tokens
         total_tokens = response.usage.total_tokens
-        model_name = response.model if hasattr(response, 'model') else MODEL_NAME
+        model_name_response = response.model if hasattr(response, 'model') else model_name
         cached_tokens = 0  # Default to 0 as this model doesn't support cached tokens
         
         return {
             "success": True,
             "result": result,
-            "model": model_name,
+            "model": model_name_response,
             "prompt_tokens": prompt_tokens,
             "completion_tokens": completion_tokens,
             "total_tokens": total_tokens,
@@ -152,15 +197,21 @@ def deepseek_v3_service(system_prompt, user_input, temperature=0.7, json_output=
             "error": str(e)
         }
 
-def gpt4o_service(system_prompt, user_input, temperature=0.5, json_output=False):
-    """OpenAI GPT-4o LLM service function for text completion and content generation"""
+def gpt4o_service(system_prompt, user_input, temperature=0.5, json_output=False, deployment_config=None):
+    """OpenAI GPT-4o LLM service function for text completion and content generation with failover support"""
     try:
-        # Fixed deployment model
-        DEPLOYMENT = 'gpt-4o'
+        # Use deployment config if provided, otherwise use default
+        if deployment_config:
+            client = get_azure_openai_client(deployment_config)
+            deployment_name = deployment_config.get("deployment", "gpt-4o")
+        else:
+            # Fallback to original configuration
+            client = get_openai_client()
+            deployment_name = 'gpt-4o'
         
         # Make request to LLM
-        response = openai_client.chat.completions.create(
-            model=DEPLOYMENT,
+        response = client.chat.completions.create(
+            model=deployment_name,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": f"Provided text: {user_input}"}
@@ -179,7 +230,7 @@ def gpt4o_service(system_prompt, user_input, temperature=0.5, json_output=False)
         return {
             "success": True,
             "result": result,
-            "model": DEPLOYMENT,
+            "model": deployment_name,
             "prompt_tokens": prompt_tokens,
             "completion_tokens": completion_tokens,
             "total_tokens": total_tokens,
@@ -193,15 +244,21 @@ def gpt4o_service(system_prompt, user_input, temperature=0.5, json_output=False)
             "error": str(e)
         }
 
-def gpt4o_mini_service(system_prompt, user_input, temperature=0.5, json_output=False):
-    """OpenAI GPT-4o-mini LLM service function for everyday text completion tasks"""
+def gpt4o_mini_service(system_prompt, user_input, temperature=0.5, json_output=False, deployment_config=None):
+    """OpenAI GPT-4o-mini LLM service function for everyday text completion tasks with failover support"""
     try:
-        # Fixed deployment model
-        DEPLOYMENT = 'gpt-4o-mini'
+        # Use deployment config if provided, otherwise use default
+        if deployment_config:
+            client = get_azure_openai_client(deployment_config)
+            deployment_name = deployment_config.get("deployment", "gpt-4o-mini")
+        else:
+            # Fallback to original configuration
+            client = get_openai_client()
+            deployment_name = 'gpt-4o-mini'
         
         # Make request to LLM
-        response = openai_client.chat.completions.create(
-            model=DEPLOYMENT,
+        response = client.chat.completions.create(
+            model=deployment_name,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": f"Provided text: {user_input}"}
@@ -220,7 +277,7 @@ def gpt4o_mini_service(system_prompt, user_input, temperature=0.5, json_output=F
         return {
             "success": True,
             "result": result,
-            "model": DEPLOYMENT,
+            "model": deployment_name,
             "prompt_tokens": prompt_tokens,
             "completion_tokens": completion_tokens,
             "total_tokens": total_tokens,
@@ -234,18 +291,24 @@ def gpt4o_mini_service(system_prompt, user_input, temperature=0.5, json_output=F
             "error": str(e)
         }
 
-def o1_mini_service(system_prompt, user_input, temperature=0.5, json_output=False):
-    """OpenAI O1-mini LLM service function for complex tasks requiring reasoning"""
+def o1_mini_service(system_prompt, user_input, temperature=0.5, json_output=False, deployment_config=None):
+    """OpenAI O1-mini LLM service function for complex tasks requiring reasoning with failover support"""
     try:
-        # Fixed deployment model
-        DEPLOYMENT = 'o1-mini'
+        # Use deployment config if provided, otherwise use default
+        if deployment_config:
+            client = get_azure_openai_client(deployment_config)
+            deployment_name = deployment_config.get("deployment", "o1-mini")
+        else:
+            # Fallback to original configuration
+            client = get_openai_client()
+            deployment_name = 'o1-mini'
         
         # o1-mini doesn't support 'system' role, so include system prompt in user message
         combined_input = f"{system_prompt}\n\nProvided text: {user_input}"
         
         # Make request to LLM
-        response = openai_client.chat.completions.create(
-            model=DEPLOYMENT,
+        response = client.chat.completions.create(
+            model=deployment_name,
             messages=[
                 {"role": "user", "content": combined_input}
             ],
@@ -262,7 +325,7 @@ def o1_mini_service(system_prompt, user_input, temperature=0.5, json_output=Fals
         return {
             "success": True,
             "result": result,
-            "model": DEPLOYMENT,
+            "model": deployment_name,
             "prompt_tokens": prompt_tokens,
             "completion_tokens": completion_tokens,
             "total_tokens": total_tokens,
@@ -276,19 +339,27 @@ def o1_mini_service(system_prompt, user_input, temperature=0.5, json_output=Fals
             "error": str(e)
         }
 
-def o3_mini_service(system_prompt, user_input, max_completion_tokens=100000, reasoning_effort="medium", json_output=False):
-    """O3-Mini LLM service function with variable reasoning effort"""
+def o3_mini_service(system_prompt, user_input, max_completion_tokens=100000, reasoning_effort="medium", json_output=False, deployment_config=None):
+    """O3-Mini LLM service function with variable reasoning effort and failover support"""
     try:
-        # Fixed deployment information
-        ENDPOINT = "https://ai-coe-services-dev.openai.azure.com/"
-        DEPLOYMENT = "o3-mini"
-        API_VERSION = "2024-12-01-preview"
+        # Use deployment config if provided, otherwise use default
+        if deployment_config:
+            endpoint = deployment_config.get("endpoint")
+            api_key = deployment_config.get("api_key")
+            api_version = deployment_config.get("api_version", "2024-12-01-preview")
+            deployment_name = deployment_config.get("deployment", "o3-mini")
+        else:
+            # Fallback to original configuration
+            endpoint = "https://ai-coe-services-dev.openai.azure.com/"
+            api_key = O3_MINI_API_KEY
+            api_version = "2024-12-01-preview"
+            deployment_name = "o3-mini"
         
         # Initialize Azure OpenAI client
         client = AzureOpenAI(
-            azure_endpoint=ENDPOINT,
-            api_key=O3_MINI_API_KEY,
-            api_version=API_VERSION,
+            azure_endpoint=endpoint,
+            api_key=api_key,
+            api_version=api_version,
         )
         
         # Prepare messages for the model
@@ -325,7 +396,7 @@ def o3_mini_service(system_prompt, user_input, max_completion_tokens=100000, rea
         
         # Make request to LLM
         completion = client.chat.completions.create(
-            model=DEPLOYMENT,
+            model=deployment_name,
             messages=chat_prompt,
             **additional_params,
             stop=None,
@@ -337,7 +408,7 @@ def o3_mini_service(system_prompt, user_input, max_completion_tokens=100000, rea
         prompt_tokens = completion.usage.prompt_tokens
         completion_tokens = completion.usage.completion_tokens
         total_tokens = prompt_tokens + completion_tokens
-        model_name = DEPLOYMENT
+        model_name = deployment_name
         cached_tokens = completion.usage.cached_tokens if hasattr(completion.usage, 'cached_tokens') else 0
         
         return {
@@ -357,16 +428,22 @@ def o3_mini_service(system_prompt, user_input, max_completion_tokens=100000, rea
             "error": str(e)
         }
 
-def llama_service(system_prompt, user_input, temperature=0.8, json_output=False, max_tokens=2048, top_p=0.1, presence_penalty=0, frequency_penalty=0):
-    """Meta Llama LLM service function for text generation"""
+def llama_service(system_prompt, user_input, temperature=0.8, json_output=False, max_tokens=2048, top_p=0.1, presence_penalty=0, frequency_penalty=0, deployment_config=None):
+    """Meta Llama LLM service function for text generation with failover support"""
     try:
-        # Fixed deployment endpoint
-        ENDPOINT = 'https://Meta-Llama-3-1-405B-aiapis.eastus.models.ai.azure.com'
+        # Use deployment config if provided, otherwise use default
+        if deployment_config:
+            endpoint = deployment_config.get("endpoint")
+            api_key = deployment_config.get("api_key")
+        else:
+            # Fallback to original configuration
+            endpoint = 'https://Meta-Llama-3-1-405B-aiapis.eastus.models.ai.azure.com'
+            api_key = LLAMA_API_KEY
         
         # Initialize Azure Inference client
         client = ChatCompletionsClient(
-            endpoint=ENDPOINT,
-            credential=AzureKeyCredential(LLAMA_API_KEY)
+            endpoint=endpoint,
+            credential=AzureKeyCredential(api_key)
         )
         
         # Prepare messages for the model
@@ -438,11 +515,18 @@ def is_image_file_for_multimodal(filename, content_type):
     
     return False
 
-def gpt4o_multimodal_service(system_prompt, user_input, temperature=0.5, json_output=False, file_ids=None, user_id=None):
-    """OpenAI GPT-4o LLM service function for multimodal content generation with image file support"""
+def gpt4o_multimodal_service(system_prompt, user_input, temperature=0.5, json_output=False, file_ids=None, user_id=None, deployment_config=None):
+    """OpenAI GPT-4o LLM service function for multimodal content generation with image file support and failover"""
     try:
-        # Fixed deployment model
-        DEPLOYMENT = 'gpt-4o'
+        # Use deployment config if provided, otherwise use default
+        if deployment_config:
+            client = get_azure_openai_client(deployment_config)
+            deployment_name = deployment_config.get("deployment", "gpt-4o")
+        else:
+            # Fallback to original configuration
+            client = get_openai_client()
+            deployment_name = 'gpt-4o'
+        
         temp_files = []  # Keep track of temporary files for cleanup
         
         # Track file processing statistics
@@ -556,8 +640,8 @@ def gpt4o_multimodal_service(system_prompt, user_input, temperature=0.5, json_ou
         ]
         
         # Make the API call
-        response = openai_client.chat.completions.create(
-            model=DEPLOYMENT,
+        response = client.chat.completions.create(
+            model=deployment_name,
             messages=messages,
             temperature=temperature,
             max_tokens=4000,  # Add reasonable limit
@@ -584,7 +668,7 @@ def gpt4o_multimodal_service(system_prompt, user_input, temperature=0.5, json_ou
         return {
             "success": True,
             "result": result,
-            "model": DEPLOYMENT,
+            "model": deployment_name,
             "prompt_tokens": prompt_tokens,
             "completion_tokens": completion_tokens,
             "total_tokens": total_tokens,
@@ -607,11 +691,18 @@ def gpt4o_multimodal_service(system_prompt, user_input, temperature=0.5, json_ou
             "error": str(e)
         }
 
-def gpt4o_mini_multimodal_service(system_prompt, user_input, temperature=0.5, json_output=False, file_ids=None, user_id=None):
-    """OpenAI GPT-4o-mini LLM service function for multimodal content generation with image file support"""
+def gpt4o_mini_multimodal_service(system_prompt, user_input, temperature=0.5, json_output=False, file_ids=None, user_id=None, deployment_config=None):
+    """OpenAI GPT-4o-mini LLM service function for multimodal content generation with image file support and failover"""
     try:
-        # Fixed deployment model
-        DEPLOYMENT = 'gpt-4o-mini'
+        # Use deployment config if provided, otherwise use default
+        if deployment_config:
+            client = get_azure_openai_client(deployment_config)
+            deployment_name = deployment_config.get("deployment", "gpt-4o-mini")
+        else:
+            # Fallback to original configuration
+            client = get_openai_client()
+            deployment_name = 'gpt-4o-mini'
+        
         temp_files = []  # Keep track of temporary files for cleanup
         
         # Track file processing statistics
@@ -725,8 +816,8 @@ def gpt4o_mini_multimodal_service(system_prompt, user_input, temperature=0.5, js
         ]
         
         # Make the API call
-        response = openai_client.chat.completions.create(
-            model=DEPLOYMENT,
+        response = client.chat.completions.create(
+            model=deployment_name,
             messages=messages,
             temperature=temperature,
             response_format={"type": "json_object"} if json_output else {"type": "text"}
@@ -752,7 +843,7 @@ def gpt4o_mini_multimodal_service(system_prompt, user_input, temperature=0.5, js
         return {
             "success": True,
             "result": result,
-            "model": DEPLOYMENT,
+            "model": deployment_name,
             "prompt_tokens": prompt_tokens,
             "completion_tokens": completion_tokens,
             "total_tokens": total_tokens,
