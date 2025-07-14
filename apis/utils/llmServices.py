@@ -1,5 +1,5 @@
 import logging
-from openai import AzureOpenAI
+from openai import AzureOpenAI, RateLimitError, APIError  # Added specific error imports
 from azure.ai.inference import ChatCompletionsClient
 from azure.core.credentials import AzureKeyCredential
 from apis.utils.config import (
@@ -27,23 +27,26 @@ ALLOWED_IMAGE_EXTENSIONS = {
 
 def get_azure_openai_client(deployment_config=None):
     """
-    Get Azure OpenAI client with deployment configuration support.
+    Get Azure OpenAI client with deployment configuration support and fast-fail setup.
     
     Args:
         deployment_config (dict, optional): Deployment configuration with endpoint, api_key, etc.
         
     Returns:
-        AzureOpenAI: Configured client
+        AzureOpenAI: Configured client with fast-fail settings
     """
     if deployment_config:
         return AzureOpenAI(
             azure_endpoint=deployment_config.get("endpoint"),
             api_key=deployment_config.get("api_key"),
-            api_version=deployment_config.get("api_version", "2024-02-01")
+            api_version=deployment_config.get("api_version", "2024-02-01"),
+            timeout=30,  # 30 second timeout for fast failover
+            max_retries=0  # Disable automatic retries for immediate failover
         )
     else:
-        # Fallback to default client
-        return get_openai_client()
+        # Fallback to default client with fast-fail settings
+        from apis.utils.config import get_openai_client_fast_fail
+        return get_openai_client_fast_fail()
 
 def get_azure_inference_client(deployment_config):
     """
@@ -198,27 +201,52 @@ def deepseek_v3_service(system_prompt, user_input, temperature=0.7, json_output=
         }
 
 def gpt4o_service(system_prompt, user_input, temperature=0.5, json_output=False, deployment_config=None):
-    """OpenAI GPT-4o LLM service function for text completion and content generation with failover support"""
+    """OpenAI GPT-4o LLM service function for text completion and content generation with fast-fail failover support"""
     try:
         # Use deployment config if provided, otherwise use default
         if deployment_config:
             client = get_azure_openai_client(deployment_config)
             deployment_name = deployment_config.get("deployment", "gpt-4o")
         else:
-            # Fallback to original configuration
-            client = get_openai_client()
+            # Fallback to original configuration with fast-fail settings
+            client = get_azure_openai_client()
             deployment_name = 'gpt-4o'
         
-        # Make request to LLM
-        response = client.chat.completions.create(
-            model=deployment_name,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": f"Provided text: {user_input}"}
-            ],
-            temperature=temperature,
-            response_format={"type": "json_object"} if json_output else {"type": "text"}
-        )
+        try:
+            # Make request to LLM with fast-fail settings
+            response = client.chat.completions.create(
+                model=deployment_name,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": f"Provided text: {user_input}"}
+                ],
+                temperature=temperature,
+                response_format={"type": "json_object"} if json_output else {"type": "text"},
+                timeout=30  # 30 second timeout for fast failover
+            )
+            
+        except RateLimitError as e:
+            # Immediately return rate limit error for failover
+            logger.warning(f"GPT-4o rate limit hit: {str(e)}")
+            return {
+                "success": False,
+                "error": f"429 Rate limit exceeded: {str(e)}"
+            }
+        except APIError as e:
+            # Handle other API errors that might be rate/quota related
+            error_str = str(e).lower()
+            if "429" in error_str or "rate limit" in error_str or "quota" in error_str or "too many requests" in error_str:
+                logger.warning(f"GPT-4o quota/rate error: {str(e)}")
+                return {
+                    "success": False,
+                    "error": f"429 Rate limit or quota exceeded: {str(e)}"
+                }
+            else:
+                logger.error(f"GPT-4o API error: {str(e)}")
+                return {
+                    "success": False,
+                    "error": str(e)
+                }
         
         # Extract response data
         result = response.choices[0].message.content
@@ -516,15 +544,15 @@ def is_image_file_for_multimodal(filename, content_type):
     return False
 
 def gpt4o_multimodal_service(system_prompt, user_input, temperature=0.5, json_output=False, file_ids=None, user_id=None, deployment_config=None):
-    """OpenAI GPT-4o LLM service function for multimodal content generation with image file support and failover"""
+    """OpenAI GPT-4o LLM service function for multimodal content generation with image file support and fast-fail failover"""
     try:
         # Use deployment config if provided, otherwise use default
         if deployment_config:
             client = get_azure_openai_client(deployment_config)
             deployment_name = deployment_config.get("deployment", "gpt-4o")
         else:
-            # Fallback to original configuration
-            client = get_openai_client()
+            # Fallback to original configuration with fast-fail settings
+            client = get_azure_openai_client()
             deployment_name = 'gpt-4o'
         
         temp_files = []  # Keep track of temporary files for cleanup
@@ -639,14 +667,39 @@ def gpt4o_multimodal_service(system_prompt, user_input, temperature=0.5, json_ou
             {"role": "user", "content": message_content}
         ]
         
-        # Make the API call
-        response = client.chat.completions.create(
-            model=deployment_name,
-            messages=messages,
-            temperature=temperature,
-            max_tokens=4000,  # Add reasonable limit
-            response_format={"type": "json_object"} if json_output else {"type": "text"}
-        )
+        try:
+            # Make the API call with fast-fail settings
+            response = client.chat.completions.create(
+                model=deployment_name,
+                messages=messages,
+                temperature=temperature,
+                max_tokens=4000,  # Add reasonable limit
+                response_format={"type": "json_object"} if json_output else {"type": "text"},
+                timeout=30  # 30 second timeout for fast failover
+            )
+            
+        except RateLimitError as e:
+            # Immediately return rate limit error for failover
+            logger.warning(f"GPT-4o Multimodal rate limit hit: {str(e)}")
+            return {
+                "success": False,
+                "error": f"429 Rate limit exceeded: {str(e)}"
+            }
+        except APIError as e:
+            # Handle other API errors that might be rate/quota related
+            error_str = str(e).lower()
+            if "429" in error_str or "rate limit" in error_str or "quota" in error_str or "too many requests" in error_str:
+                logger.warning(f"GPT-4o Multimodal quota/rate error: {str(e)}")
+                return {
+                    "success": False,
+                    "error": f"429 Rate limit or quota exceeded: {str(e)}"
+                }
+            else:
+                logger.error(f"GPT-4o Multimodal API error: {str(e)}")
+                return {
+                    "success": False,
+                    "error": str(e)
+                }
         
         # Extract response data
         result = response.choices[0].message.content
