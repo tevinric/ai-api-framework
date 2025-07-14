@@ -9,7 +9,8 @@ class FailoverService:
     AI Service Failover System
     
     Provides automatic failover across primary, secondary, and tertiary deployments
-    for AI models. Handles quota exceeded, service unavailable, and other errors.
+    for AI models. Handles quota exceeded, service unavailable, and other errors with
+    immediate failover for rate limits to prevent gateway timeouts.
     """
     
     # Error codes and messages that trigger failover
@@ -40,6 +41,7 @@ class FailoverService:
     def should_failover(cls, error_response):
         """
         Determine if an error response should trigger failover to next deployment.
+        Now includes immediate failover for rate limits and quota issues.
         
         Args:
             error_response (dict): Error response from service function
@@ -55,9 +57,30 @@ class FailoverService:
             if error_response.get("success", False):
                 return False  # Success, no failover needed
             
-            # Check error message for failover triggers
+            # Get error message
             error_msg = str(error_response.get("error", "")).lower()
             
+            # IMMEDIATE failover triggers for rate limits and quota issues
+            # These need to fail over immediately to prevent KONG Gateway timeouts
+            immediate_failover_triggers = [
+                "429",
+                "rate limit",
+                "quota exceeded", 
+                "too many requests",
+                "requests per minute",
+                "tokens per minute",
+                "rpm",
+                "tpm",
+                "rate limited",
+                "quota exhausted"
+            ]
+            
+            for trigger in immediate_failover_triggers:
+                if trigger in error_msg:
+                    logger.info(f"IMMEDIATE failover triggered by: {trigger} in error: {error_msg}")
+                    return True
+            
+            # Check other standard failover triggers
             for trigger in cls.FAILOVER_TRIGGERS["error_messages"]:
                 if trigger in error_msg:
                     logger.info(f"Failover triggered by error message: {trigger}")
@@ -161,10 +184,11 @@ class FailoverService:
                 
             except Exception as e:
                 # Record the failed attempt
+                response_time = int((time.time() - start_time) * 1000) if 'start_time' in locals() else 0
                 attempt_info = {
                     "tier": tier_name,
                     "endpoint": deployment_config.get("endpoint", "unknown"),
-                    "response_time_ms": int((time.time() - start_time) * 1000) if 'start_time' in locals() else 0,
+                    "response_time_ms": response_time,
                     "success": False,
                     "exception": str(e)
                 }
@@ -261,6 +285,11 @@ class FailoverService:
         """
         return {
             "failover_triggers": cls.FAILOVER_TRIGGERS,
+            "immediate_failover_triggers": [
+                "429", "rate limit", "quota exceeded", "too many requests",
+                "requests per minute", "tokens per minute", "rpm", "tpm",
+                "rate limited", "quota exhausted"
+            ],
             "configured_models": DeploymentConfig.list_configured_models(),
             "total_configured_models": len(DeploymentConfig.list_configured_models())
         }
