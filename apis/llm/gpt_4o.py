@@ -31,7 +31,8 @@ def gpt4o_route():
     
     OpenAI GPT-4o LLM model for text completion and content generation.
     Supports multimodal input with image file references for enhanced visual analysis.
-    Now includes automatic failover across primary, secondary, and tertiary deployments.
+    Now includes automatic failover across primary, secondary, and tertiary deployments
+    with fast-fail 429 handling to prevent KONG Gateway timeouts.
     
     ---
     tags:
@@ -195,6 +196,9 @@ def gpt4o_route():
             message:
               type: string
               example: "AI service is currently unavailable. All deployment tiers have been exhausted. Please try again later."
+            attempted_deployments:
+              type: array
+              description: List of deployment attempts made during failover
     """
     # Get token from X-Token header
     token = request.headers.get('X-Token')
@@ -306,7 +310,7 @@ def gpt4o_route():
                     "message": "Too many files. GPT-4o can process a maximum of 20 image files per request."
                 }, 400)
             
-            # Use the multimodal service function with failover
+            # Use the multimodal service function with fast-fail failover
             service_response = FailoverService.execute_multimodal_with_failover(
                 model_name="gpt-4o",
                 service_function=gpt4o_multimodal_service,
@@ -318,7 +322,7 @@ def gpt4o_route():
                 user_id=user_id
             )
         else:
-            # Use the standard service function for text-only requests with failover
+            # Use the standard service function for text-only requests with fast-fail failover
             service_response = FailoverService.execute_with_failover(
                 model_name="gpt-4o",
                 service_function=gpt4o_service,
@@ -337,7 +341,8 @@ def gpt4o_route():
                     "response": "503",
                     "message": service_response["error"],
                     "attempted_deployments": service_response.get("attempted_deployments", []),
-                    "model": service_response.get("model", "gpt-4o")
+                    "model": service_response.get("model", "gpt-4o"),
+                    "failover_exhausted": True
                 }, 503)
             
             # Other errors
