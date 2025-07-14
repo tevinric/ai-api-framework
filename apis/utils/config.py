@@ -32,15 +32,29 @@ LLAMA_API_KEY=os.environ.get("LLAMA_API_KEY")
 DEEPSEEK_V3_API_KEY= OPENAI_API_KEY
 O3_MINI_API_KEY = OPENAI_API_KEY
 
-
 STABLE_DIFFUSION_API_KEY = os.environ.get("STABLE_DIFFUSION_API_KEY")
 
 def get_openai_client():
+    """Get standard OpenAI client (legacy compatibility)"""
     client = AzureOpenAI(
-    azure_endpoint=OPENAI_API_ENDPOINT,
-    api_key=OPENAI_API_KEY,
-    api_version="2024-02-01",
-)
+        azure_endpoint=OPENAI_API_ENDPOINT,
+        api_key=OPENAI_API_KEY,
+        api_version="2024-02-01",
+    )
+    return client
+
+def get_openai_client_fast_fail():
+    """
+    Get OpenAI client configured to fail fast on rate limits and quota exceeded errors.
+    This prevents KONG Gateway timeouts by avoiding the 60-second retry behavior.
+    """
+    client = AzureOpenAI(
+        azure_endpoint=OPENAI_API_ENDPOINT,
+        api_key=OPENAI_API_KEY,
+        api_version="2024-02-01",
+        timeout=30,  # 30 second timeout for fast failover
+        max_retries=0  # Disable automatic retries to fail immediately on 429
+    )
     return client
 
 # apis/utils/config.py
