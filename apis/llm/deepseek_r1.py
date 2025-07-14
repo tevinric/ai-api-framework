@@ -5,6 +5,7 @@ import logging
 import pytz
 from datetime import datetime
 from apis.utils.llmServices import deepseek_r1_service  # Import the service function
+from apis.utils.failoverService import FailoverService  # Import failover service
 
 # CONFIGURE LOGGING
 logging.basicConfig(level=logging.INFO)
@@ -17,6 +18,7 @@ def deepseek_r1_route():
     Consumes 3 AI credits per call
     
     DeepSeek-R1 LLM model for text generation on complex tasks that required chain of though and deep reasoning.
+    Now includes automatic failover across primary, secondary, and tertiary deployments.
 
     ---
     tags:
@@ -107,6 +109,10 @@ def deepseek_r1_route():
               type: string
               example: "ctx-123"
               description: ID of the context file that was used (if any)
+            deployment_used:
+              type: string
+              example: "primary"
+              description: Which deployment tier was used (primary/secondary/tertiary)
       400:
         description: Bad request
         schema:
@@ -140,6 +146,17 @@ def deepseek_r1_route():
             message:
               type: string
               example: "Internal server error occurred during API request"
+      503:
+        description: Service unavailable
+        schema:
+          type: object
+          properties:
+            response:
+              type: string
+              example: "503"
+            message:
+              type: string
+              example: "AI service is currently unavailable. All deployment tiers have been exhausted. Please try again later."
     """
     # Get token from X-Token header
     token = request.headers.get('X-Token')
@@ -159,7 +176,7 @@ def deepseek_r1_route():
     
     # Store token ID and user ID in g for logging and balance check
     g.token_id = token_details["id"]
-    g.user_id = token_details["user_id"]  # This is critical for the balance middleware
+    g.user_id = token_details["user_id"]
     
     # Check if token is expired
     now = datetime.now(pytz.UTC)
@@ -233,8 +250,10 @@ def deepseek_r1_route():
         from apis.llm.context_helper import apply_context_if_provided, add_context_to_response
         enhanced_system_prompt, context_used = apply_context_if_provided(system_prompt, context_id)
         
-        # Use the service function instead of direct API call
-        service_response = deepseek_r1_service(
+        # Use the service function with failover instead of direct API call
+        service_response = FailoverService.execute_with_failover(
+            model_name="deepseek-r1",
+            service_function=deepseek_r1_service,
             system_prompt=enhanced_system_prompt,  # Use enhanced prompt with context
             user_input=user_input,
             temperature=temperature,
@@ -244,10 +263,22 @@ def deepseek_r1_route():
         
         if not service_response["success"]:
             logger.error(f"DeepSeek-R1 API error: {service_response['error']}")
+            
+            # Check if this is a service unavailable error (all deployments exhausted)
+            if service_response.get("failover_exhausted", False):
+                return create_api_response({
+                    "response": "503",
+                    "message": service_response["error"],
+                    "attempted_deployments": service_response.get("attempted_deployments", []),
+                    "model": service_response.get("model", "deepseek-r1")
+                }, 503)
+            
+            # Other errors
             status_code = 500 if not str(service_response["error"]).startswith("4") else 400
             return create_api_response({
                 "response": str(status_code),
                 "message": service_response["error"]
+                # Remove attempted_deployments from regular error responses
             }, status_code)
         
         # Prepare successful response with user details
@@ -266,6 +297,12 @@ def deepseek_r1_route():
         
         # Include context usage info if context was used
         response_data = add_context_to_response(response_data, context_used)
+        
+        # Include deployment information from failover service
+        if "deployment_used" in service_response:
+            response_data["deployment_used"] = service_response["deployment_used"]
+        
+        # Remove attempted_deployments from API response - keep only deployment_used
         
         return create_api_response(response_data, 200)
         
