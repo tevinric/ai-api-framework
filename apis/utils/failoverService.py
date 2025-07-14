@@ -164,7 +164,7 @@ class FailoverService:
                     
                     # Add deployment info to response
                     response["deployment_used"] = tier_name
-                    response["attempted_deployments"] = attempted_deployments
+                    # Remove attempted_deployments from successful responses
                     return response
                 
                 # Check if we should failover
@@ -174,7 +174,7 @@ class FailoverService:
                     # Add deployment info even for non-failover errors
                     if isinstance(response, dict):
                         response["deployment_used"] = tier_name
-                        response["attempted_deployments"] = attempted_deployments
+                        # Remove attempted_deployments from responses
                     return response
                 
                 # Log failover decision
