@@ -5,7 +5,8 @@ from apis.utils.databaseService import DatabaseService
 import logging
 import pytz
 from datetime import datetime
-from apis.utils.llmServices import gpt4o_service, gpt4o_multimodal_service  # Import the multimodal service function
+from apis.utils.llmServices import gpt4o_service, gpt4o_multimodal_service  # Import both service functions
+from apis.utils.failoverService import FailoverService  # Import failover service
 from apis.utils.fileService import FileService
 import os
 import tempfile
@@ -23,13 +24,14 @@ ALLOWED_IMAGE_EXTENSIONS = {
 }
 
 from apis.utils.config import create_api_response
-# Remove the balance check decorator from here - we'll apply it in the registration
+
 def gpt4o_route():
     """
     Consumes 2 AI credits per call
     
     OpenAI GPT-4o LLM model for text completion and content generation.
     Supports multimodal input with image file references for enhanced visual analysis.
+    Now includes automatic failover across primary, secondary, and tertiary deployments.
     
     ---
     tags:
@@ -131,6 +133,24 @@ def gpt4o_route():
                 images_processed:
                   type: integer
                   example: 1
+            deployment_used:
+              type: string
+              example: "primary"
+              description: Which deployment tier was used (primary/secondary/tertiary)
+            attempted_deployments:
+              type: array
+              description: List of deployment attempts made during failover
+              items:
+                type: object
+                properties:
+                  tier:
+                    type: string
+                  endpoint:
+                    type: string
+                  response_time_ms:
+                    type: integer
+                  success:
+                    type: boolean
       400:
         description: Bad request
         schema:
@@ -164,6 +184,17 @@ def gpt4o_route():
             message:
               type: string
               example: "Internal server error occurred during API request"
+      503:
+        description: Service unavailable
+        schema:
+          type: object
+          properties:
+            response:
+              type: string
+              example: "503"
+            message:
+              type: string
+              example: "AI service is currently unavailable. All deployment tiers have been exhausted. Please try again later."
     """
     # Get token from X-Token header
     token = request.headers.get('X-Token')
@@ -275,8 +306,10 @@ def gpt4o_route():
                     "message": "Too many files. GPT-4o can process a maximum of 20 image files per request."
                 }, 400)
             
-            # Use the multimodal service function with enhanced system prompt
-            service_response = gpt4o_multimodal_service(
+            # Use the multimodal service function with failover
+            service_response = FailoverService.execute_multimodal_with_failover(
+                model_name="gpt-4o",
+                service_function=gpt4o_multimodal_service,
                 system_prompt=enhanced_system_prompt,  # Use enhanced prompt with context
                 user_input=user_input,
                 temperature=temperature,
@@ -285,8 +318,10 @@ def gpt4o_route():
                 user_id=user_id
             )
         else:
-            # Use the standard service function for text-only requests with enhanced system prompt
-            service_response = gpt4o_service(
+            # Use the standard service function for text-only requests with failover
+            service_response = FailoverService.execute_with_failover(
+                model_name="gpt-4o",
+                service_function=gpt4o_service,
                 system_prompt=enhanced_system_prompt,  # Use enhanced prompt with context
                 user_input=user_input,
                 temperature=temperature,
@@ -295,10 +330,22 @@ def gpt4o_route():
         
         if not service_response["success"]:
             logger.error(f"GPT-4o API error: {service_response['error']}")
+            
+            # Check if this is a service unavailable error (all deployments exhausted)
+            if service_response.get("failover_exhausted", False):
+                return create_api_response({
+                    "response": "503",
+                    "message": service_response["error"],
+                    "attempted_deployments": service_response.get("attempted_deployments", []),
+                    "model": service_response.get("model", "gpt-4o")
+                }, 503)
+            
+            # Other errors
             status_code = 500 if not str(service_response["error"]).startswith("4") else 400
             return create_api_response({
                 "response": str(status_code),
-                "message": service_response["error"]
+                "message": service_response["error"],
+                "attempted_deployments": service_response.get("attempted_deployments", [])
             }, status_code)
         
         # Prepare successful response with user details
@@ -325,6 +372,13 @@ def gpt4o_route():
         # Include context usage info if context was used
         if context_id:
             response_data["context_used"] = context_id
+        
+        # Include deployment information from failover service
+        if "deployment_used" in service_response:
+            response_data["deployment_used"] = service_response["deployment_used"]
+        
+        if "attempted_deployments" in service_response:
+            response_data["attempted_deployments"] = service_response["attempted_deployments"]
         
         return create_api_response(response_data, 200)
         
