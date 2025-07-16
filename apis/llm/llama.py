@@ -69,6 +69,9 @@ def llama_route():
               type: boolean
               default: false
               description: Whether to return the response in JSON format
+            context_id:
+              type: string
+              description: ID of a context file to use as an enhanced system prompt (optional)
     produces:
       - application/json
     responses:
@@ -111,6 +114,10 @@ def llama_route():
               type: integer
               example: 0
               description: Number of cached tokens (if supported by model)  
+            context_used:
+              type: string
+              example: "ctx-123"
+              description: ID of the context file that was used (if any)
       400:
         description: Bad request
         schema:
@@ -223,6 +230,7 @@ def llama_route():
     top_p = float(data.get('top_p', 0.1))
     presence_penalty = float(data.get('presence_penalty', 0))
     frequency_penalty = float(data.get('frequency_penalty', 0))
+    context_id = data.get('context_id')  # New parameter for context_id
     
     # Validate temperature range
     if not (0 <= temperature <= 1):
@@ -256,9 +264,13 @@ def llama_route():
         # Log API usage
         logger.info(f"Llama API called by user: {user_id}")
         
+        # Apply context if provided
+        from apis.llm.context_helper import apply_context_if_provided, add_context_to_response
+        enhanced_system_prompt, context_used = apply_context_if_provided(system_prompt, context_id)
+        
         # Use the service function instead of direct API call
         service_response = llama_service(
-            system_prompt=system_prompt,
+            system_prompt=enhanced_system_prompt,  # Use enhanced prompt with context
             user_input=user_input,
             temperature=temperature,
             json_output=json_output,
@@ -277,18 +289,24 @@ def llama_route():
             }, status_code)
         
         # Prepare successful response with user details
-        return create_api_response({
+        response_data = {
             "response": "200",
             "message": service_response["result"],
             "user_id": user_details["id"],
             "user_name": user_details["user_name"],
             "user_email": user_details["user_email"],
-            "model": "llama-3-1-405b",
+            "model": service_response["model"],
+            "client_used": service_response.get("client_used", "unknown"),
             "prompt_tokens": service_response["prompt_tokens"],
             "completion_tokens": service_response["completion_tokens"],
             "total_tokens": service_response["total_tokens"],
             "cached_tokens": service_response.get("cached_tokens", 0)
-        }, 200)
+        }
+        
+        # Include context usage info if context was used
+        response_data = add_context_to_response(response_data, context_used)
+        
+        return create_api_response(response_data, 200)
         
     except Exception as e:
         logger.error(f"Llama API error: {str(e)}")

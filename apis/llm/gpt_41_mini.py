@@ -1,23 +1,37 @@
+# apis/llm/gpt_41_mini.py
 from flask import jsonify, request, g, make_response
 from apis.utils.tokenService import TokenService
 from apis.utils.databaseService import DatabaseService
 import logging
 import pytz
 from datetime import datetime
-from apis.utils.llmServices import deepseek_v3_service  # Import the service function
+from apis.utils.llmServices import gpt41_mini_service # Import the multimodal service function
+from apis.utils.fileService import FileService
+import os
+import tempfile
+import base64
 
 # CONFIGURE LOGGING
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Allowed image file extensions and MIME types
+ALLOWED_IMAGE_EXTENSIONS = {
+    'png': 'image/png',
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg'
+}
+
 from apis.utils.config import create_api_response
 
-def deepseek_v3_route():
+# Remove the balance check decorator from here - we'll apply it in the registration
+def gpt41_mini_route():
     """
-    Consumes 3 AI credits per call
+    Consumes 0.75 AI credits per call
     
-    DeepSeek-V3-0324 LLM model for text generation and general task completion.
-
+    OpenAI GPT-4.1-mini LLM model for efficient text completion tasks.
+    Supports multimodal input with image file references for enhanced visual analysis.
+    
     ---
     tags:
       - LLM
@@ -54,10 +68,15 @@ def deepseek_v3_route():
               maximum: 1
               default: 0.5
               description: Controls randomness (0=focused, 1=creative)
-            max_tokens:
-              type: integer
-              default: 2048
-              description: Maximum number of tokens to generate
+            json_output:
+              type: boolean
+              default: false
+              description: When true, the model will return a structured JSON response
+            file_ids:
+              type: array
+              items:
+                type: string
+              description: Array of image file IDs to process with the model (supports PNG, JPG, JPEG only)
             context_id:
               type: string
               description: ID of a context file to use as an enhanced system prompt (optional)
@@ -86,7 +105,7 @@ def deepseek_v3_route():
               example: "john.doe@example.com"
             model:
               type: string
-              example: "DeepSeek-V3-0324"
+              example: "gpt-4.1-mini"
             prompt_tokens:
               type: integer
               example: 125
@@ -103,10 +122,16 @@ def deepseek_v3_route():
               type: integer
               example: 0
               description: Number of cached tokens (if supported by model)  
-            context_used:
-              type: string
-              example: "ctx-123"
-              description: ID of the context file that was used (if any)
+            files_processed:
+              type: integer
+              example: 1
+              description: Number of image files processed in the request
+            file_processing_details:
+              type: object
+              properties:
+                images_processed:
+                  type: integer
+                  example: 1
       400:
         description: Bad request
         schema:
@@ -215,8 +240,22 @@ def deepseek_v3_route():
     user_input = data.get('user_input', '')
     temperature = float(data.get('temperature', 0.5))
     json_output = data.get('json_output', False)
-    max_tokens = int(data.get('max_tokens', 2048))
+    file_ids = data.get('file_ids', [])
     context_id = data.get('context_id')  # New parameter for context_id
+    
+    # Validate and clean file_ids - filter out empty strings and non-string values
+    if file_ids and isinstance(file_ids, list):
+        file_ids = [file_id.strip() for file_id in file_ids if isinstance(file_id, str) and file_id.strip()]
+    else:
+        file_ids = []
+    
+    # Validate and clean context_id - treat empty strings as None
+    if context_id and isinstance(context_id, str):
+        context_id = context_id.strip()
+        if not context_id:  # Empty string after stripping
+            context_id = None
+    else:
+        context_id = None
     
     # Validate temperature range
     if not (0 <= temperature <= 1):
@@ -227,30 +266,52 @@ def deepseek_v3_route():
     
     try:
         # Log API usage
-        logger.info(f"DeepSeek-V3-0324 API called by user: {user_id}")
+        logger.info(f"GPT-4.1-mini API called by user: {user_id}")
         
-        # Apply context if provided
-        from apis.llm.context_helper import apply_context_if_provided, add_context_to_response
-        enhanced_system_prompt, context_used = apply_context_if_provided(system_prompt, context_id)
+        # Apply context if provided (now properly validated)
+        if context_id:
+            from apis.llm.context_integration import apply_context_to_system_prompt
+            enhanced_system_prompt, error = apply_context_to_system_prompt(system_prompt, context_id, g.user_id)
+            if error:
+                logger.warning(f"Error applying context {context_id}: {error}")
+                # Continue with original system prompt but log the issue
+                enhanced_system_prompt = system_prompt
+        else:
+            enhanced_system_prompt = system_prompt
         
-        # Use the service function instead of direct API call
-        service_response = deepseek_v3_service(
+        # Log request type for debugging
+        if file_ids and len(file_ids) > 0:
+            logger.info(f"Multimodal request with {len(file_ids)} files")
+            # Check for too many files to prevent context overflow
+            if len(file_ids) > 15:  # Moderate limit for GPT-4.1-mini
+                return create_api_response({
+                    "response": "400",
+                    "message": "Too many files. GPT-4.1-mini can process a maximum of 15 image files per request."
+                }, 400)
+ 
+        else:
+            logger.info("Text-only request (using multimodal service)")
+
+        
+        # Always use the multimodal service - it handles both scenarios
+        service_response = gpt41_mini_service(
             system_prompt=enhanced_system_prompt,  # Use enhanced prompt with context
             user_input=user_input,
             temperature=temperature,
             json_output=json_output,
-            max_tokens=max_tokens
+            file_ids=file_ids,  # Will be empty list for text-only requests
+            user_id=user_id
         )
         
         if not service_response["success"]:
-            logger.error(f"DeepSeek-V3-0324 API error: {service_response['error']}")
+            logger.error(f"GPT-4.1-mini API error: {service_response['error']}")
             status_code = 500 if not str(service_response["error"]).startswith("4") else 400
             return create_api_response({
                 "response": str(status_code),
                 "message": service_response["error"]
             }, status_code)
         
-        # Prepare successful response with user details
+        # Prepare successful response with user details - consistent structure
         response_data = {
             "response": "200",
             "message": service_response["result"],
@@ -258,31 +319,43 @@ def deepseek_v3_route():
             "user_name": user_details["user_name"],
             "user_email": user_details["user_email"],
             "model": service_response["model"],
-            "client_used": service_response.get("client_used", "unknown"),
             "prompt_tokens": service_response["prompt_tokens"],
             "completion_tokens": service_response["completion_tokens"],
             "total_tokens": service_response["total_tokens"],
-            "cached_tokens": service_response.get("cached_tokens", 0)
+            "cached_tokens": service_response.get("cached_tokens", 0),
+            "client_used": service_response.get("client_used"),
         }
         
-        # Include context usage info if context was used
-        response_data = add_context_to_response(response_data, context_used)
+        # Always include file processing details for consistency
+        response_data["files_processed"] = service_response.get("files_processed", 0)
+        
+        if "file_processing_details" in service_response:
+            response_data["file_processing_details"] = service_response["file_processing_details"]
+        else:
+            # Provide consistent structure even for text-only requests
+            response_data["file_processing_details"] = {
+                "images_processed": 0,
+                "file_ids_processed": []
+            }
+        
+        # Always include context usage info - show "none" if no context was used
+        response_data["context_used"] = context_id if context_id else "none"
         
         return create_api_response(response_data, 200)
         
     except Exception as e:
-        logger.error(f"DeepSeek-V3-0324 API error: {str(e)}")
+        logger.error(f"GPT-4.1-mini API error: {str(e)}")
         status_code = 500 if not str(e).startswith("4") else 400
         return create_api_response({
             "response": str(status_code),
             "message": str(e)
         }, status_code)
 
-def register_llm_deepseek_v3(app):
+def register_llm_gpt_41_mini(app):
     """Register routes with the Flask app"""
     from apis.utils.logMiddleware import api_logger
     from apis.utils.balanceMiddleware import check_balance
     from apis.utils.usageMiddleware import track_usage
-    from apis.utils.rbacMiddleware import check_endpoint_access
-    
-    app.route('/llm/deepseek-v3', methods=['POST'])(track_usage(api_logger(check_endpoint_access(check_balance(deepseek_v3_route)))))
+    from apis.utils.rbacMiddleware import check_endpoint_access    
+  
+    app.route('/llm/gpt-4.1-mini', methods=['POST'])(track_usage(api_logger(check_endpoint_access(check_balance(gpt41_mini_route)))))

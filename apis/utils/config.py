@@ -23,6 +23,31 @@ class Config:
         
         if missing:
             raise ValueError(f"Missing required environment variables: {', '.join(missing)}")
+ 
+
+# DEPOLYMENT CONFIGURATION FOR ALL MODELS WITH DIFFERENT DEPLOYMENTS
+DEPLOYMENTS = {
+    "openai": {
+        "primary": {
+            #ZAR DEPLOYMENT
+            "api_key": os.environ.get("OPENAI_API_KEY"),
+            "api_endpoint": os.environ.get("OPENAI_API_ENDPOINT")
+        },
+        "secondary": {
+            #WEST EUROPE DEPLOYMENT
+            "api_key": os.environ.get("OPENAI_API_KEY_SECONDARY"),
+            "api_endpoint": os.environ.get("OPENAI_API_ENDPOINT_SECONDARY")
+        },
+        "tertiary": {
+            #EAST US DEPLOYMENT
+            "api_key": os.environ.get("OPENAI_API_KEY_TERTIARY"),
+            "api_endpoint": os.environ.get("OPENAI_API_ENDPOINT_TERTIARY")
+        }
+    }
+}
+
+
+ 
         
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 OPENAI_API_ENDPOINT = os.environ.get("OPENAI_API_ENDPOINT")

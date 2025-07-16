@@ -204,6 +204,12 @@ register_llm_gpt_4o_mini(app)
 from apis.llm.gpt_4o import register_llm_gpt_4o
 register_llm_gpt_4o(app)
 
+from apis.llm.gpt_41_mini import register_llm_gpt_41_mini
+register_llm_gpt_41_mini(app)
+
+from apis.llm.gpt_41 import register_llm_gpt_41
+register_llm_gpt_41(app)
+
 from apis.llm.gpt_o1_mini import register_llm_o1_mini
 register_llm_o1_mini(app)
 

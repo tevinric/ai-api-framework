@@ -30,3 +30,4 @@ apis/file_upload/__pycache__/
 apis/token_services/__pycache__/
 apis/file_upload/__pycache__
 static/resources/GAIA Collection.postman_collection.json
+runnables/env_var_init_dev_gaia.sh
