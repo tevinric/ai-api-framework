@@ -214,7 +214,6 @@ def deepseek_v3_route():
     system_prompt = data.get('system_prompt', 'You are a helpful AI assistant')
     user_input = data.get('user_input', '')
     temperature = float(data.get('temperature', 0.5))
-    json_output = data.get('json_output', False)
     max_tokens = int(data.get('max_tokens', 2048))
     context_id = data.get('context_id')  # New parameter for context_id
     
@@ -238,7 +237,6 @@ def deepseek_v3_route():
             system_prompt=enhanced_system_prompt,  # Use enhanced prompt with context
             user_input=user_input,
             temperature=temperature,
-            json_output=json_output,
             max_tokens=max_tokens
         )
         

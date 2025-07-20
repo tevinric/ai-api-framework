@@ -97,7 +97,11 @@ def llama_route():
               example: "john.doe@example.com"
             model:
               type: string
-              example: "llama-3-1-405b"
+              example: "Meta-Llama-3.1-405B-Instruct"
+            client_used:
+              type: string
+              example: "primary"
+              description: Which client endpoint was used (primary, secondary)
             prompt_tokens:
               type: integer
               example: 125
@@ -232,6 +236,14 @@ def llama_route():
     frequency_penalty = float(data.get('frequency_penalty', 0))
     context_id = data.get('context_id')  # New parameter for context_id
     
+    # Validate and clean context_id - treat empty strings as None
+    if context_id and isinstance(context_id, str):
+        context_id = context_id.strip()
+        if not context_id:  # Empty string after stripping
+            context_id = None
+    else:
+        context_id = None
+    
     # Validate temperature range
     if not (0 <= temperature <= 1):
         return create_api_response({
@@ -264,9 +276,16 @@ def llama_route():
         # Log API usage
         logger.info(f"Llama API called by user: {user_id}")
         
-        # Apply context if provided
-        from apis.llm.context_helper import apply_context_if_provided, add_context_to_response
-        enhanced_system_prompt, context_used = apply_context_if_provided(system_prompt, context_id)
+        # Apply context if provided (now properly validated)
+        if context_id:
+            from apis.llm.context_integration import apply_context_to_system_prompt
+            enhanced_system_prompt, error = apply_context_to_system_prompt(system_prompt, context_id, g.user_id)
+            if error:
+                logger.warning(f"Error applying context {context_id}: {error}")
+                # Continue with original system prompt but log the issue
+                enhanced_system_prompt = system_prompt
+        else:
+            enhanced_system_prompt = system_prompt
         
         # Use the service function instead of direct API call
         service_response = llama_service(
@@ -288,7 +307,7 @@ def llama_route():
                 "message": service_response["error"]
             }, status_code)
         
-        # Prepare successful response with user details
+        # Prepare successful response with user details - consistent structure
         response_data = {
             "response": "200",
             "message": service_response["result"],
@@ -303,8 +322,8 @@ def llama_route():
             "cached_tokens": service_response.get("cached_tokens", 0)
         }
         
-        # Include context usage info if context was used
-        response_data = add_context_to_response(response_data, context_used)
+        # Always include context usage info - show "none" if no context was used
+        response_data["context_used"] = context_id if context_id else "none"
         
         return create_api_response(response_data, 200)
         

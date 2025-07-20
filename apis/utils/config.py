@@ -42,6 +42,11 @@ DEPLOYMENTS = {
             #EAST US DEPLOYMENT
             "api_key": os.environ.get("OPENAI_API_KEY_TERTIARY"),
             "api_endpoint": os.environ.get("OPENAI_API_ENDPOINT_TERTIARY")
+        },
+        "fourth": {
+            #EAST US 2 REGION DEPLOYMENT
+            "api_key": os.environ.get("OPENAI_API_KEY_FOURTH"),
+            "api_endpoint": os.environ.get("OPENAI_API_ENDPOINT_FOURTH")
         }
     }
 }

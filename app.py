@@ -192,12 +192,34 @@ from apis.balance_management.balance_endpoints import register_balance_routes
 register_balance_routes(app)
 
 # LLM ENDPOINTS
+## DEEPSEEK
 from apis.llm.deepseek_r1 import register_llm_deepseek_r1
 register_llm_deepseek_r1(app)
 
+from apis.llm.deepseekv3 import register_llm_deepseek_v3
+register_llm_deepseek_v3(app)
+
+## LLAMA
 from apis.llm.llama import register_llm_llama
 register_llm_llama(app)
 
+from apis.llm.llama_32_vision_instruct import register_llm_llama_32_vision_instruct
+register_llm_llama_32_vision_instruct(app)
+
+from apis.llm.llama_4_maverick_17b_128E import register_llm_llama_4_maverick_17b_128E
+register_llm_llama_4_maverick_17b_128E(app)
+
+from apis.llm.llama_4_scout_17b_16E import register_llm_llama_4_scout_17b_16E
+register_llm_llama_4_scout_17b_16E(app)
+
+## MISTRAL
+from apis.llm.mistral_medium_2505 import register_llm_mistral_medium_2505
+register_llm_mistral_medium_2505(app)
+
+from apis.llm.mistral_nemo import register_llm_mistral_nemo
+register_llm_mistral_nemo(app)
+
+## OPENAI
 from apis.llm.gpt_4o_mini import register_llm_gpt_4o_mini
 register_llm_gpt_4o_mini(app)
 
@@ -213,11 +235,13 @@ register_llm_gpt_41(app)
 from apis.llm.gpt_o1_mini import register_llm_o1_mini
 register_llm_o1_mini(app)
 
-from apis.llm.deepseekv3 import register_llm_deepseek_v3
-register_llm_deepseek_v3(app)
-
 from apis.llm.gpt_o3_mini import register_llm_o3_mini
 register_llm_o3_mini(app)
+
+from apis.llm.gpt_o4_mini import register_llm_gpt_o4_mini
+register_llm_gpt_o4_mini(app)
+
+
 
 # IMAGE GENERATION ENDPOINTS
 from apis.image_generation.dalle3 import register_image_generation_routes

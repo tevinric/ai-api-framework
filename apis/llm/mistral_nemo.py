@@ -4,8 +4,7 @@ from apis.utils.databaseService import DatabaseService
 import logging
 import pytz
 from datetime import datetime
-import uuid
-from apis.utils.llmServices import o1_mini_service  # Import the service function
+from apis.utils.llmServices import mistral_nemo_service  # Import the service function
 
 # CONFIGURE LOGGING
 logging.basicConfig(level=logging.INFO)
@@ -13,11 +12,12 @@ logger = logging.getLogger(__name__)
 
 from apis.utils.config import create_api_response
 
-def o1_mini_route():
+def mistral_nemo_route():
     """
-    Consumes 5 AI credits per call
+    Consumes 2 AI credits per call
     
-    OpenAI LLM model for text generation on complex tasks that required chain of though and deep reasoning.
+    Mistral Nemo LLM model for text generation and general task completion.
+    
     ---
     tags:
       - LLM
@@ -47,6 +47,38 @@ def o1_mini_route():
             user_input:
               type: string
               description: Text for the model to process
+            temperature:
+              type: number
+              format: float
+              minimum: 0
+              maximum: 1
+              default: 0.7
+              description: Controls randomness (0=focused, 1=creative)
+            max_tokens:
+              type: integer
+              default: 2048
+              description: Maximum number of tokens to generate
+            top_p:
+              type: number
+              format: float
+              minimum: 0.1
+              maximum: 1
+              default: 0.1
+              description: Controls diversity via nucleus sampling
+            presence_penalty:
+              type: number
+              format: float
+              minimum: -2
+              maximum: 2
+              default: 0
+              description: Penalizes new tokens based on whether they appear in the text so far
+            frequency_penalty:
+              type: number
+              format: float
+              minimum: -2
+              maximum: 2
+              default: 0
+              description: Penalizes new tokens based on their existing frequency in the text so far
             context_id:
               type: string
               description: ID of a context file to use as an enhanced system prompt (optional)
@@ -75,15 +107,11 @@ def o1_mini_route():
               example: "john.doe@example.com"
             model:
               type: string
-              example: "o1-mini"
+              example: "mistral-nemo"
             client_used:
               type: string
               example: "primary"
-              description: Which client was used (primary, secondary, tertiary)
-            context_used:
-              type: string
-              example: "ctx_123e4567-e89b-12d3-a456-426614174000"
-              description: Context identifier used in this request (or 'none' if no context)
+              description: Which client endpoint was used (primary, secondary)
             prompt_tokens:
               type: integer
               example: 125
@@ -100,7 +128,10 @@ def o1_mini_route():
               type: integer
               example: 0
               description: Number of cached tokens (if supported by model)  
-
+            context_used:
+              type: string
+              example: "ctx-123"
+              description: ID of the context file that was used (if any)
       400:
         description: Bad request
         schema:
@@ -207,9 +238,12 @@ def o1_mini_route():
     # Extract parameters with defaults
     system_prompt = data.get('system_prompt', 'You are a helpful AI assistant')
     user_input = data.get('user_input', '')
-    temperature = float(data.get('temperature', 0.5))
-    json_output = data.get('json_output', False)
-    context_id = data.get('context_id')
+    temperature = float(data.get('temperature', 0.7))
+    max_tokens = int(data.get('max_tokens', 2048))
+    top_p = float(data.get('top_p', 0.1))
+    presence_penalty = float(data.get('presence_penalty', 0))
+    frequency_penalty = float(data.get('frequency_penalty', 0))
+    context_id = data.get('context_id')  # New parameter for context_id
     
     # Validate and clean context_id - treat empty strings as None
     if context_id and isinstance(context_id, str):
@@ -226,11 +260,32 @@ def o1_mini_route():
             "message": "Temperature must be between 0 and 1"
         }, 400)
     
+    # Validate top_p range
+    if not (0 <= top_p <= 1):
+        return create_api_response({
+            "response": "400",
+            "message": "top_p must be between 0 and 1"
+        }, 400)
+    
+    # Validate presence_penalty range
+    if not (-2 <= presence_penalty <= 2):
+        return create_api_response({
+            "response": "400",
+            "message": "presence_penalty must be between -2 and 2"
+        }, 400)
+    
+    # Validate frequency_penalty range
+    if not (-2 <= frequency_penalty <= 2):
+        return create_api_response({
+            "response": "400",
+            "message": "frequency_penalty must be between -2 and 2"
+        }, 400)
+    
     try:
         # Log API usage
-        logger.info(f"O1-mini API called by user: {user_id}")
+        logger.info(f"Mistral Nemo API called by user: {user_id}")
         
-        # Apply context if provided (same as gpt-4o implementation)
+        # Apply context if provided (now properly validated)
         if context_id:
             from apis.llm.context_integration import apply_context_to_system_prompt
             enhanced_system_prompt, error = apply_context_to_system_prompt(system_prompt, context_id, g.user_id)
@@ -241,51 +296,58 @@ def o1_mini_route():
         else:
             enhanced_system_prompt = system_prompt
         
-        # Use the service function with enhanced system prompt
-        service_response = o1_mini_service(
+        # Use the service function instead of direct API call
+        service_response = mistral_nemo_service(
             system_prompt=enhanced_system_prompt,  # Use enhanced prompt with context
             user_input=user_input,
             temperature=temperature,
-            json_output=json_output
+            max_tokens=max_tokens,
+            top_p=top_p,
+            presence_penalty=presence_penalty,
+            frequency_penalty=frequency_penalty
         )
         
         if not service_response["success"]:
-            logger.error(f"O1-mini API error: {service_response['error']}")
+            logger.error(f"Mistral Nemo API error: {service_response['error']}")
             status_code = 500 if not str(service_response["error"]).startswith("4") else 400
             return create_api_response({
                 "response": str(status_code),
                 "message": service_response["error"]
             }, status_code)
         
-        # Prepare successful response with user details and context information
-        return create_api_response({
+        # Prepare successful response with user details - consistent structure
+        response_data = {
             "response": "200",
             "message": service_response["result"],
             "user_id": user_details["id"],
             "user_name": user_details["user_name"],
             "user_email": user_details["user_email"],
             "model": service_response["model"],
-            "client_used": service_response["client_used"],
-            "context_used": context_id if context_id else "none",
+            "client_used": service_response.get("client_used", "unknown"),
             "prompt_tokens": service_response["prompt_tokens"],
             "completion_tokens": service_response["completion_tokens"],
             "total_tokens": service_response["total_tokens"],
             "cached_tokens": service_response.get("cached_tokens", 0)
-        }, 200)
+        }
+        
+        # Always include context usage info - show "none" if no context was used
+        response_data["context_used"] = context_id if context_id else "none"
+        
+        return create_api_response(response_data, 200)
         
     except Exception as e:
-        logger.error(f"O1-mini API error: {str(e)}")
+        logger.error(f"Mistral Nemo API error: {str(e)}")
         status_code = 500 if not str(e).startswith("4") else 400
         return create_api_response({
             "response": str(status_code),
             "message": str(e)
         }, status_code)
 
-def register_llm_o1_mini(app):
+def register_llm_mistral_nemo(app):
     """Register routes with the Flask app"""
     from apis.utils.logMiddleware import api_logger
     from apis.utils.balanceMiddleware import check_balance
     from apis.utils.usageMiddleware import track_usage
     from apis.utils.rbacMiddleware import check_endpoint_access
-        
-    app.route('/llm/o1-mini', methods=['POST'])(track_usage(api_logger(check_endpoint_access(check_balance(o1_mini_route)))))
+    
+    app.route('/llm/mistral-nemo', methods=['POST'])(track_usage(api_logger(check_endpoint_access(check_balance(mistral_nemo_route)))))
