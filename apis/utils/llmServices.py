@@ -95,8 +95,8 @@ def deepseek_r1_service(system_prompt, user_input, temperature=0.5, json_output=
         },
         {
             "name": "secondary", # EU
-            "endpoint": os.environ.get("INFERENCE_ENDPOINT_SECONDARY"),
-            "api_key": os.environ.get("INFERENCE_API_KEY_SECONDARY"),
+            "endpoint": os.environ.get("INFERENCE_ENDPOINT_PRIMARY"),
+            "api_key": os.environ.get("INFERENCE_API_KEY_PRIMARY"),
             "model": "DeepSeek-R1-0528-2"
         }
     ]
@@ -145,6 +145,9 @@ def deepseek_r1_service(system_prompt, user_input, temperature=0.5, json_output=
             completion_tokens = response.usage.completion_tokens
             total_tokens = response.usage.total_tokens
             model_name = client_config['model']
+            if model_name.endswith("-2"):
+                model_name = model_name[:-2]
+
             cached_tokens = 0  # Default to 0 as this model doesn't support cached tokens
             
             logger.info(f"DeepSeek-R1 request successful using {client_config['name']} client")
@@ -345,6 +348,8 @@ def deepseek_v3_service(system_prompt, user_input, temperature=0.7, json_output=
             completion_tokens = response.usage.completion_tokens
             total_tokens = response.usage.total_tokens
             model_name = client_config['model']
+            if model_name.endswith("-2"):
+                model_name = model_name[:-2]
             cached_tokens = 0  # Default to 0 as this model doesn't support cached tokens
             
             logger.info(f"DeepSeek-V3-0324 request successful using {client_config['name']} client")
@@ -866,6 +871,9 @@ def llama_service(system_prompt, user_input, temperature=0.7, json_output=False,
             completion_tokens = response.usage.completion_tokens
             total_tokens = response.usage.total_tokens
             model_name = client_config['model']
+            if model_name.endswith("-2"):
+                model_name = model_name[:-2]
+
             cached_tokens = response.usage.cached_tokens if hasattr(response.usage, 'cached_tokens') else 0
             
             logger.info(f"Llama request successful using {client_config['name']} client")
@@ -920,9 +928,9 @@ def llama_3_2_vision_instruct_service(system_prompt, user_input, temperature=0.7
         },
         {
             "name": "secondary",
-            "endpoint": os.environ.get("INFERENCE_ENDPOINT_SECONDARY"),
-            "api_key": os.environ.get("INFERENCE_API_KEY_SECONDARY"),
-            "model": "Llama-3.2-90B-Vision-Instruct"
+            "endpoint": os.environ.get("INFERENCE_ENDPOINT_PRIMARY"),
+            "api_key": os.environ.get("INFERENCE_API_KEY_PRIMARY"),
+            "model": "Llama-3.2-90B-Vision-Instruct-2"
         }
     ]
     
@@ -1124,6 +1132,8 @@ def llama_3_2_vision_instruct_service(system_prompt, user_input, temperature=0.7
                 completion_tokens = response.usage.completion_tokens
                 total_tokens = response.usage.total_tokens
                 model_name = client_config['model']
+                if model_name.endswith("-2"):
+                    model_name = model_name[:-2]
                 cached_tokens = response.usage.cached_tokens if hasattr(response.usage, 'cached_tokens') else 0
                 
                 # Total files processed
@@ -1193,7 +1203,7 @@ def llama_3_2_vision_instruct_service(system_prompt, user_input, temperature=0.7
             "error": str(e)
         }
 
-def llama_4_maverick_17b_128E_instruct_fp8_service(system_prompt, user_input, temperature=0.7, json_output=False, max_tokens=2048, file_ids=None, user_id=None):
+def llama_4_maverick_17b_128E_instruct_fp8_service(system_prompt, user_input, temperature=0.7, max_tokens=2048, file_ids=None, user_id=None):
     """Llama 4 Maverick 17B 128E Instruct FP8 LLM service function for multimodal content generation with failover logic"""
     
     # Llama 4 Maverick client configurations with failover
@@ -1206,9 +1216,9 @@ def llama_4_maverick_17b_128E_instruct_fp8_service(system_prompt, user_input, te
         },
         {
             "name": "secondary",
-            "endpoint": os.environ.get("INFERENCE_ENDPOINT_SECONDARY"),
-            "api_key": os.environ.get("INFERENCE_API_KEY_SECONDARY"),
-            "model": "Llama-4-Maverick-17B-128E-Instruct-FP8"
+            "endpoint": os.environ.get("INFERENCE_ENDPOINT_PRIMARY"),
+            "api_key": os.environ.get("INFERENCE_API_KEY_PRIMARY"),
+            "model": "Llama-4-Maverick-17B-128E-Instruct-FP8-2"
         }
     ]
     
@@ -1257,7 +1267,7 @@ def llama_4_maverick_17b_128E_instruct_fp8_service(system_prompt, user_input, te
                     unsupported_files.append(file_name)
                     logger.warning(f"Unsupported file format: {file_name} ({content_type})")
                     continue
-                
+
                 try:
                     # Create a temporary file to store the downloaded content
                     fd, temp_path = tempfile.mkstemp(suffix=f'.{file_name.rsplit(".", 1)[1].lower()}' if '.' in file_name else '')
@@ -1366,10 +1376,6 @@ def llama_4_maverick_17b_128E_instruct_fp8_service(system_prompt, user_input, te
                     "model": client_config['model']
                 }
                 
-                # Add response format if JSON output is requested
-                if json_output:
-                    payload["response_format"] = {"type": "json_object"}
-                
                 # Make request to LLM
                 response = client.complete(**payload)
                 
@@ -1379,6 +1385,8 @@ def llama_4_maverick_17b_128E_instruct_fp8_service(system_prompt, user_input, te
                 completion_tokens = response.usage.completion_tokens
                 total_tokens = response.usage.total_tokens
                 model_name = client_config['model']
+                if model_name.endswith("-2"):
+                    model_name = model_name[:-2]
                 cached_tokens = response.usage.cached_tokens if hasattr(response.usage, 'cached_tokens') else 0
                 
                 # Total files processed
@@ -1446,7 +1454,7 @@ def llama_4_maverick_17b_128E_instruct_fp8_service(system_prompt, user_input, te
             "error": str(e)
         }
 
-def llama_4_scout_17b_16E_instruct_service(system_prompt, user_input, temperature=0.7, json_output=False, max_tokens=2048, file_ids=None, user_id=None):
+def llama_4_scout_17b_16E_instruct_service(system_prompt, user_input, temperature=0.7, max_tokens=2048, file_ids=None, user_id=None):
     """Llama 4 Scout 17B 16E Instruct LLM service function for multimodal content generation with failover logic"""
     
     # Llama 4 Scout client configurations with failover
@@ -1510,7 +1518,7 @@ def llama_4_scout_17b_16E_instruct_service(system_prompt, user_input, temperatur
                     unsupported_files.append(file_name)
                     logger.warning(f"Unsupported file format: {file_name} ({content_type})")
                     continue
-                
+
                 try:
                     # Create a temporary file to store the downloaded content
                     fd, temp_path = tempfile.mkstemp(suffix=f'.{file_name.rsplit(".", 1)[1].lower()}' if '.' in file_name else '')
@@ -1565,7 +1573,7 @@ def llama_4_scout_17b_16E_instruct_service(system_prompt, user_input, temperatur
         estimated_tokens = text_tokens + image_tokens
         
         # Conservative context window limit for Llama 4 Scout (16k context)
-        MAX_CONTEXT_TOKENS = 14000
+        MAX_CONTEXT_TOKENS = 128000
         
         if estimated_tokens > MAX_CONTEXT_TOKENS:
             return {
@@ -1619,10 +1627,6 @@ def llama_4_scout_17b_16E_instruct_service(system_prompt, user_input, temperatur
                     "model": client_config['model']
                 }
                 
-                # Add response format if JSON output is requested
-                if json_output:
-                    payload["response_format"] = {"type": "json_object"}
-                
                 # Make request to LLM
                 response = client.complete(**payload)
                 
@@ -1632,6 +1636,8 @@ def llama_4_scout_17b_16E_instruct_service(system_prompt, user_input, temperatur
                 completion_tokens = response.usage.completion_tokens
                 total_tokens = response.usage.total_tokens
                 model_name = client_config['model']
+                if model_name.endswith("-2"):
+                    model_name = model_name[:-2]
                 cached_tokens = response.usage.cached_tokens if hasattr(response.usage, 'cached_tokens') else 0
                 
                 # Total files processed
@@ -1642,7 +1648,7 @@ def llama_4_scout_17b_16E_instruct_service(system_prompt, user_input, temperatur
                     try:
                         os.remove(temp_file)
                     except Exception as e:
-                        logger.error(f"Error removing temporary file {temp_file}: {str(e)}")
+                        logger.warning(f"Failed to remove temporary file {temp_file}: {str(e)}")
                 
                 logger.info(f"Llama 4 Scout request successful using {client_config['name']} client")
                 
@@ -2222,7 +2228,7 @@ def gpt41_service(system_prompt, user_input, temperature=0.5, json_output=False,
         estimated_tokens = text_tokens + image_tokens
         
         # GPT-4.1 context window is approximately 128k tokens
-        MAX_CONTEXT_TOKENS = 120000  # Conservative limit
+        MAX_CONTEXT_TOKENS = 1000000  # Conservative limit
         
         if estimated_tokens > MAX_CONTEXT_TOKENS:
             return {
@@ -2533,9 +2539,9 @@ def mistral_medium_2505_service(system_prompt, user_input, temperature=0.8, json
         },
         {
             "name": "secondary",
-            "endpoint": os.environ.get("INFERENCE_ENDPOINT_SECONDARY"),
-            "api_key": os.environ.get("INFERENCE_API_KEY_SECONDARY"),
-            "model": "mistral-medium-2505"
+            "endpoint": os.environ.get("INFERENCE_ENDPOINT_PRIMARY"),
+            "api_key": os.environ.get("INFERENCE_API_KEY_PRIMARY"),
+            "model": "mistral-medium-2505-2"
         }
     ]
     
@@ -2707,6 +2713,8 @@ def mistral_medium_2505_service(system_prompt, user_input, temperature=0.8, json
                 completion_tokens = response.usage.completion_tokens
                 total_tokens = response.usage.total_tokens
                 model_name = client_config['model']
+                if model_name.endswith("-2"):
+                    model_name = model_name[:-2]
                 cached_tokens = response.usage.cached_tokens if hasattr(response.usage, 'cached_tokens') else 0
                 
                 # Total files processed
@@ -2774,7 +2782,7 @@ def mistral_medium_2505_service(system_prompt, user_input, temperature=0.8, json
             "error": str(e)
         }
 
-def mistral_nemo_service(system_prompt, user_input, temperature=0.7, json_output=False, max_tokens=2048, top_p=0.1, presence_penalty=0, frequency_penalty=0):
+def mistral_nemo_service(system_prompt, user_input, temperature=0.7, max_tokens=2048, top_p=0.1, presence_penalty=0, frequency_penalty=0):
     """Mistral Nemo LLM service function for text generation with failover logic"""
     
     # Mistral Nemo client configurations with failover
@@ -2787,9 +2795,9 @@ def mistral_nemo_service(system_prompt, user_input, temperature=0.7, json_output
         },
         {
             "name": "secondary",
-            "endpoint": os.environ.get("INFERENCE_ENDPOINT_SECONDARY"),
-            "api_key": os.environ.get("INFERENCE_API_KEY_SECONDARY"),
-            "model": "mistral-nemo"
+            "endpoint": os.environ.get("INFERENCE_ENDPOINT_PRIMARY"),
+            "api_key": os.environ.get("INFERENCE_API_KEY_PRIMARY"),
+            "model": "mistral-nemo-2"
         }
     ]
     
@@ -2836,11 +2844,7 @@ def mistral_nemo_service(system_prompt, user_input, temperature=0.7, json_output
                 "frequency_penalty": frequency_penalty,
                 "model": client_config['model']
             }
-            
-            # Add response format if JSON output is requested
-            if json_output:
-                payload["response_format"] = {"type": "json_object"}
-            
+                        
             # Make request to LLM
             response = client.complete(**payload)
             
@@ -2850,6 +2854,8 @@ def mistral_nemo_service(system_prompt, user_input, temperature=0.7, json_output
             completion_tokens = response.usage.completion_tokens
             total_tokens = response.usage.total_tokens
             model_name = client_config['model']
+            if model_name.endswith("-2"):
+                model_name = model_name[:-2]
             cached_tokens = response.usage.cached_tokens if hasattr(response.usage, 'cached_tokens') else 0
             
             logger.info(f"Mistral Nemo request successful using {client_config['name']} client")

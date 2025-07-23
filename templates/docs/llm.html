@@ -26,6 +26,8 @@
             --meta-gradient: linear-gradient(90deg, #0668e1 0%, #0552b5 100%);
             --mistral-color: #ff7000;
             --mistral-gradient: linear-gradient(90deg, #ff7000 0%, #e65c00 100%);
+            --deepseek-color: #1a1a2e;
+            --deepseek-gradient: linear-gradient(90deg, #1a1a2e 0%, #16213e 100%);
             --gold-gradient: linear-gradient(to right, rgb(224, 146, 0), rgb(215, 162, 3));
         }
         
@@ -357,6 +359,18 @@
             font-size: 24px;
         }
         
+        .deepseek-icon {
+            background-color: var(--deepseek-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .deepseek-icon i {
+            color: white;
+            font-size: 24px;
+        }
+        
         .provider-header h2 {
             font-size: 2rem;
             color: var(--dark-color);
@@ -373,6 +387,9 @@
             grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
             gap: 2rem;
             margin-bottom: 3rem;
+            /* Force grid items to not overlap */
+            grid-auto-rows: auto;
+            align-items: start;
         }
         
         .model-card {
@@ -383,15 +400,22 @@
             transition: all 0.3s ease;
             position: relative;
             z-index: 1;
-            height: 100%;
+            /* Remove fixed height to allow natural sizing */
+            height: auto;
             display: flex;
             flex-direction: column;
-            min-height: 500px;
+            /* Prevent overlap with proper grid positioning */
+            align-self: stretch;
+            justify-self: stretch;
+            /* Ensure minimum height for consistency */
+            min-height: 450px;
         }
         
         .model-card:hover {
             transform: translateY(-10px);
             box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+            /* Ensure hover doesn't affect grid layout */
+            z-index: 10;
         }
         
         /* OpenAI Model Card */
@@ -409,20 +433,28 @@
             background: var(--mistral-gradient);
         }
         
+        /* Deepseek Model Card */
+        .deepseek-card .model-header {
+            background: var(--deepseek-gradient);
+        }
+        
         .model-header {
             padding: 1.5rem;
             color: white;
             position: relative;
-            height: 120px;
+            /* Remove fixed height to allow natural sizing */
+            min-height: 100px;
             display: flex;
             flex-direction: column;
             justify-content: center;
+            flex-shrink: 0;
         }
         
         .model-name {
-            font-size: 1.6rem;
+            font-size: 1.5rem;
             margin-bottom: 0.5rem;
             font-weight: 600;
+            line-height: 1.2;
         }
         
         .model-body {
@@ -430,6 +462,10 @@
             flex-grow: 1;
             display: flex;
             flex-direction: column;
+            /* Ensure content doesn't overflow */
+            overflow: visible;
+            /* Allow natural content flow */
+            height: auto;
         }
         
         .model-description {
@@ -668,6 +704,10 @@
             background-color: var(--mistral-color);
         }
         
+        .deepseek-card .model-btn {
+            background-color: var(--deepseek-color);
+        }
+        
         .credit-badge {
             display: inline-flex;
             align-items: center;
@@ -785,6 +825,14 @@
             
             .model-cards {
                 grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+                gap: 1.5rem;
+                /* Ensure proper grid behavior on mobile */
+                grid-auto-rows: auto;
+            }
+            
+            .model-card {
+                /* Allow cards to be more flexible on smaller screens */
+                min-height: 400px;
             }
         }
         
@@ -811,9 +859,31 @@
             
             .model-cards {
                 grid-template-columns: 1fr;
+                gap: 1.5rem;
+                /* Single column on mobile */
+                grid-auto-rows: auto;
+            }
+            
+            .model-card {
+                /* Natural height on mobile */
+                min-height: auto;
+                margin-bottom: 1rem;
             }
         }
         
+        @media (max-width: 480px) {
+            .model-cards {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+                grid-auto-rows: auto;
+            }
+            
+            .model-card {
+                margin-bottom: 1rem;
+                min-height: auto;
+            }
+        }
+
         /* Dark overlay when sidebar is active on mobile */
         .sidebar-overlay {
             display: none;
@@ -861,7 +931,6 @@
             </div>
         </section>
         
-        <!-- OpenAI Models -->
         <section class="provider-section">
             <div class="provider-container">
                 <div class="provider-header">
@@ -872,405 +941,119 @@
                 </div>
                 
                 <div class="model-cards">
-                    <!-- GPT-4o Model Card -->
-                    <div class="model-card openai-card">
-                        <div class="model-header">
-                            <h3 class="model-name">GPT-4o</h3>
-                        </div>
-                        <div class="model-body">
-                            <div class="model-description collapsed" id="desc-gpt4o" style="font-size: 12px;">
-                                OpenAI's gpt-4o is engineered for speed and efficiency. Its advanced ability to handle complex queries with minimal resources can translate into cost savings and performance.
+                    {% if models_by_family.OpenAI %}
+                        {% for model in models_by_family.OpenAI %}
+                        <div class="model-card openai-card">
+                            <div class="model-header">
+                                <h3 class="model-name">{{ model.modelName }}</h3>
                             </div>
-                            <button class="expand-btn" onclick="toggleDescription('desc-gpt4o', this)">
-                                <span>Read more</span>
-                                <i class="fas fa-chevron-down"></i>
-                            </button>
-                            
-                            <div class="cost-rating">
-                                <span class="label">Cost:</span>
-                                <div class="cost-stars">
-                                    <i class="fas fa-dollar-sign cost-star active"></i>
-                                    <i class="fas fa-dollar-sign cost-star active"></i>
-                                    <i class="fas fa-dollar-sign cost-star active"></i>
-                                    <i class="fas fa-dollar-sign cost-star"></i>
-                                    <i class="fas fa-dollar-sign cost-star"></i>
+                            <div class="model-body">
+                                <div class="model-description collapsed" id="desc-{{ loop.index }}" style="font-size: 12px;">
+                                    {{ model.modelDescription|safe }}
                                 </div>
-                            </div>
-                            
-                            <div class="model-tags">
-                                <span class="model-tag multimodal"><i class="fas fa-eye"></i>Multimodal</span>
-                                <span class="model-tag context-config" style="background-color: orange;">
-                                    <i class="fas fa-file-alt"></i>Context Config
-                                </span>
-                                <span class="model-tag vision"><i class="fas fa-image"></i>Image Support</span>
-                                <span class="model-tag json" style="background-color: #145c2c;"><i class="fas fa-file-code"></i>JSON Output</span>
-                            </div>
-                            
-                            <div class="model-inputs">
-                                <span class="label">Model Inputs:</span>
-                                <div class="input-types">
-                                    <span class="input-type">Text</span>
-                                    <span class="input-type">Images (PNG, JPG)</span>
-                                    <span class="input-type">Context Files</span>
+                                <button class="expand-btn" onclick="toggleDescription('desc-{{ loop.index }}', this)">
+                                    <span>Read more</span>
+                                    <i class="fas fa-chevron-down"></i>
+                                </button>
+                                
+                                <div class="cost-rating">
+                                    <span class="label">Cost:</span>
+                                    <div class="cost-stars">
+                                        {% for star in model.cost_stars %}
+                                        <i class="fas fa-dollar-sign cost-star {% if star.active %}active{% endif %}"></i>
+                                        {% endfor %}
+                                    </div>
                                 </div>
-                            </div>
-                            
-                            <div class="deployment-regions">
-                                <span class="label">Deployment Regions:</span>
-                                <div class="region-flags">
-                                    <span class="region-flag">
-                                        <img src="/static/images/flags/zar.png" alt="ZA" class="flag-icon" style="width: 18px; height: 12px; border-radius: 2px;">
-                                        <span>ZA</span>
-                                    </span>
-                                    <span class="region-flag">
-                                        <div class="flag-icon flag-eu"></div>
-                                        <span>EU</span>
-                                    </span>
-                                    <span class="region-flag">
-                                        <div class="flag-icon flag-us"></div>
-                                        <span>US</span>
-                                    </span>
+                                
+                                {% if model.promptTokens or model.completionTokens %}
+                                <div class="cost-details" style="margin-top: 0.5rem; font-size: 12px;">
+                                    {% if model.promptTokens %}
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                                        <span><strong>Prompt tokens:</strong></span>
+                                        <span>{{ model.prompt_cost_display }}</span>
+                                    </div>
+                                    {% endif %}
+                                    {% if model.completionTokens %}
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                                        <span><strong>Completion tokens:</strong></span>
+                                        <span>{{ model.completion_cost_display }}</span>
+                                    </div>
+                                    {% endif %}
+                                    {% if model.cachedTokens %}
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                                        <span><strong>Cached tokens:</strong></span>
+                                        <span>{{ model.cached_cost_display }}</span>
+                                    </div>
+                                    {% endif %}
+                                    {% if model.estimateCost %}
+                                    <div style="display: flex; justify-content: space-between;">
+                                        <span><strong>Estimate Cost:</strong></span>
+                                        <span>{{ model.estimate_cost_display }}</span>
+                                    </div>
+                                    {% endif %}
                                 </div>
-                            </div>
-                        </div>
-                        <div class="model-footer">
-                            <a href="/apidocs/#/LLM/post_llm_gpt_4o" class="model-btn">
-                                <i class="fas fa-code"></i> API Reference
-                            </a>
-                        </div>
-                    </div>
-                    
-                    <!-- GPT-4o Mini Card -->
-                    <div class="model-card openai-card">
-                        <div class="model-header">
-                            <h3 class="model-name">GPT-4o-mini</h3>
-                        </div>
-                        <div class="model-body">
-                            <div class="model-description collapsed" id="desc-gpt4o-mini" style="font-size: 12px;">
-                                A fast, cost-effective version of GPT-4o designed for high-volume applications. Maintains strong performance across text and image understanding while offering significantly reduced costs. Ideal for chatbots, content generation, and applications requiring quick responses without compromising quality.
                                 <br><br>
-                                GPT-4o mini enables a broad range of tasks with its low cost and latency, such as applications that chain or parallelize multiple model calls (e.g., calling multiple APIs), pass a large volume of context to the model (e.g., full code base or conversation history), or interact with customers through fast, real-time text responses (e.g., customer support chatbots).
-                                <br><br>
-                                Today, GPT-4o mini supports text and vision in the API, with support for text, image, video and audio inputs and outputs coming in the future. The model has a context window of 128K tokens and knowledge up to October 2023. Thanks to the improved tokenizer shared with GPT-4o, handling non-English text is now even more cost effective.
-                            </div>
-                            <button class="expand-btn" onclick="toggleDescription('desc-gpt4o-mini', this)">
-                                <span>Read more</span>
-                                <i class="fas fa-chevron-down"></i>
-                            </button>
-                            
-                            <div class="cost-rating">
-                                <span class="label">Cost:</span>
-                                <div class="cost-stars">
-                                    <i class="fas fa-dollar-sign cost-star active"></i>
-                                    <i class="fas fa-dollar-sign cost-star"></i>
-                                    <i class="fas fa-dollar-sign cost-star"></i>
-                                    <i class="fas fa-dollar-sign cost-star"></i>
-                                    <i class="fas fa-dollar-sign cost-star"></i>
+                                {% endif %}
+                                
+                                <div class="model-tags">
+                                    {% if model.supportsMultimodal %}
+                                    <span class="model-tag multimodal"><i class="fas fa-eye"></i>Multimodal</span>
+                                    {% endif %}
+                                    {% if model.supportsContextFiles %}
+                                    <span class="model-tag context-config" style="background-color: orange;">
+                                        <i class="fas fa-file-alt"></i>Context Support
+                                    </span>
+                                    {% endif %}
+                                    {% if model.supportsJsonOutput %}
+                                    <span class="model-tag json" style="background-color: #145c2c;"><i class="fas fa-file-code"></i>JSON Output</span>
+                                    {% endif %}
+                                    {% if model.reasoningSupport %}
+                                    <span class="model-tag reasoning" style="background-color: #8e44ad;"><i class="fas fa-brain"></i>Reasoning</span>
+                                    {% endif %}
+                                    {% if model.toolsSupport %}
+                                    <span class="model-tag tooling"><i class="fas fa-tools"></i>Tool Use</span>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="model-inputs">
+                                    <span class="label">Model Inputs:</span>
+                                    <div class="input-types">
+                                        {% for input_type in model.formatted_inputs %}
+                                        <span class="input-type">{{ input_type }}</span>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                
+                                <div class="deployment-regions">
+                                    <span class="label">Deployment Regions:</span>
+                                    <div class="region-flags">
+                                        {% for region in model.deploymentRegions %}
+                                        {% set region_code = region.strip() %}
+                                        <span class="region-flag">
+                                            {% if region_code == 'ZA' %}
+                                            <img src="/static/images/flags/zar.png" alt="ZA" class="flag-icon" style="width: 18px; height: 12px; border-radius: 2px;">
+                                            {% elif region_code == 'EU' %}
+                                            <div class="flag-icon flag-eu"></div>
+                                            {% elif region_code == 'US' %}
+                                            <div class="flag-icon flag-us"></div>
+                                            {% endif %}
+                                            <span>{{ region_code }}</span>
+                                        </span>
+                                        {% endfor %}
+                                    </div>
                                 </div>
                             </div>
-                            
-                            <div class="model-tags">
-                                <span class="model-tag multimodal"><i class="fas fa-eye"></i>Multimodal</span>
-                                <span class="model-tag context-config" style="background-color: orange;">
-                                    <i class="fas fa-file-alt"></i>Context Config
-                                </span>
-                                <span class="model-tag vision"><i class="fas fa-image"></i>Image Support</span>
-                                <span class="model-tag json" style="background-color: #145c2c;"><i class="fas fa-file-code"></i>JSON Output</span>
-                            </div>
-                            
-                            <div class="model-inputs">
-                                <span class="label">Model Inputs:</span>
-                                <div class="input-types">
-                                    <span class="input-type">Text</span>
-                                    <span class="input-type">Images (PNG, JPG)</span>
-                                    <span class="input-type">Context Files</span>
-                                </div>
-                            </div>
-                            
-                            <div class="deployment-regions">
-                                <span class="label">Deployment Regions:</span>
-                                <div class="region-flags">
-                                    <span class="region-flag">
-                                        <img src="/static/images/flags/zar.png" alt="ZA" class="flag-icon" style="width: 18px; height: 12px; border-radius: 2px;">
-                                        <span>ZA</span>
-                                    </span>
-                                    <span class="region-flag">
-                                        <div class="flag-icon flag-eu"></div>
-                                        <span>EU</span>
-                                    </span>
-                                    <span class="region-flag">
-                                        <div class="flag-icon flag-us"></div>
-                                        <span>US</span>
-                                    </span>
-                                </div>
+                            <div class="model-footer">
+                                <a href="/apidocs/#/LLM/post_llm_{{ model.modelName.lower().replace('-', '_').replace('.', '_') }}" class="model-btn">
+                                    <i class="fas fa-code"></i> API Reference
+                                </a>
                             </div>
                         </div>
-                        <div class="model-footer">
-                            <a href="/apidocs/#/LLM/post_llm_gpt_4o_mini" class="model-btn">
-                                <i class="fas fa-code"></i> API Reference
-                            </a>
-                        </div>
-
-                    </div>
-                    
-                    <!-- GPT-4.1 Card -->
-                    <div class="model-card openai-card">
-                        <div class="model-header">
-                            <h3 class="model-name">GPT-4.1</h3>
-                        </div>
-                        <div class="model-body">
-                            <div class="model-description collapsed" id="desc-gpt41">
-                                An enhanced version of GPT-4 with improved reasoning capabilities and better instruction following. Offers superior performance on complex tasks while maintaining reliability and consistency. Perfect for enterprise applications requiring high-quality text generation and analysis.
-                            </div>
-                            <button class="expand-btn" onclick="toggleDescription('desc-gpt41', this)">
-                                <span>Read more</span>
-                                <i class="fas fa-chevron-down"></i>
-                            </button>
-                            
-                            <div class="cost-rating">
-                                <span class="label">Cost:</span>
-                                <div class="cost-stars">
-                                    <i class="fas fa-dollar-sign cost-star active"></i>
-                                    <i class="fas fa-dollar-sign cost-star active"></i>
-                                    <i class="fas fa-dollar-sign cost-star active"></i>
-                                    <i class="fas fa-dollar-sign cost-star active"></i>
-                                    <i class="fas fa-dollar-sign cost-star"></i>
-                                </div>
-                            </div>
-                            
-                            <div class="model-tags">
-                                <span class="model-tag text"><i class="fas fa-font"></i>Text Only</span>
-                                <span class="model-tag tooling"><i class="fas fa-tools"></i>Function Calling</span>
-                            </div>
-                            
-                            <div class="model-inputs">
-                                <span class="label">Model Inputs:</span>
-                                <div class="input-types">
-                                    <span class="input-type">Text</span>
-                                    <span class="input-type">System Prompts</span>
-                                    <span class="input-type">Structured Outputs</span>
-                                </div>
-                            </div>
-                            
-                            <div class="deployment-regions">
-                                <span class="label">Deployment Regions:</span>
-                                <div class="region-flags">
-                                    <span class="region-flag">
-                                        <div class="flag-icon flag-za"></div>
-                                        <span>ZA</span>
-                                    </span>
-                                    <span class="region-flag">
-                                        <div class="flag-icon flag-eu"></div>
-                                        <span>EU</span>
-                                    </span>
-                                    <span class="region-flag">
-                                        <div class="flag-icon flag-us"></div>
-                                        <span>US</span>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="model-footer">
-                            <a href="/apidocs/#/LLM/create_gpt41_route" class="model-btn">
-                                <i class="fas fa-code"></i> API Reference
-                            </a>
-                            <div class="credit-badge">3 AI Credits</div>
-                        </div>
-                    </div>
-                    
-                    <!-- GPT-4.1 Mini Card -->
-                    <div class="model-card openai-card">
-                        <div class="model-header">
-                            <h3 class="model-name">GPT-4.1-mini</h3>
-                        </div>
-                        <div class="model-body">
-                            <div class="model-description collapsed" id="desc-gpt41-mini">
-                                A streamlined version of GPT-4.1 optimized for speed and cost-effectiveness. Provides excellent performance for most text-based tasks while maintaining the improved reasoning capabilities of the 4.1 series. Great for production applications requiring consistent, high-quality outputs.
-                            </div>
-                            <button class="expand-btn" onclick="toggleDescription('desc-gpt41-mini', this)">
-                                <span>Read more</span>
-                                <i class="fas fa-chevron-down"></i>
-                            </button>
-                            
-                            <div class="cost-rating">
-                                <span class="label">Cost:</span>
-                                <div class="cost-stars">
-                                    <i class="fas fa-dollar-sign cost-star active"></i>
-                                    <i class="fas fa-dollar-sign cost-star"></i>
-                                    <i class="fas fa-dollar-sign cost-star"></i>
-                                    <i class="fas fa-dollar-sign cost-star"></i>
-                                    <i class="fas fa-dollar-sign cost-star"></i>
-                                </div>
-                            </div>
-                            
-                            <div class="model-tags">
-                                <span class="model-tag text"><i class="fas fa-font"></i>Text Only</span>
-                                <span class="model-tag tooling"><i class="fas fa-tools"></i>Function Calling</span>
-                            </div>
-                            
-                            <div class="model-inputs">
-                                <span class="label">Model Inputs:</span>
-                                <div class="input-types">
-                                    <span class="input-type">Text</span>
-                                    <span class="input-type">System Prompts</span>
-                                    <span class="input-type">JSON Mode</span>
-                                </div>
-                            </div>
-                            
-                            <div class="deployment-regions">
-                                <span class="label">Deployment Regions:</span>
-                                <div class="region-flags">
-                                    <span class="region-flag">
-                                        <div class="flag-icon flag-za"></div>
-                                        <span>ZA</span>
-                                    </span>
-                                    <span class="region-flag">
-                                        <div class="flag-icon flag-eu"></div>
-                                        <span>EU</span>
-                                    </span>
-                                    <span class="region-flag">
-                                        <div class="flag-icon flag-us"></div>
-                                        <span>US</span>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="model-footer">
-                            <a href="/apidocs/#/LLM/create_gpt41_mini_route" class="model-btn">
-                                <i class="fas fa-code"></i> API Reference
-                            </a>
-                            <div class="credit-badge">1 AI Credits</div>
-                        </div>
-                    </div>
-                    
-                    <!-- O1-mini Card -->
-                    <div class="model-card openai-card">
-                        <div class="model-header">
-                            <h3 class="model-name">O1-mini</h3>
-                        </div>
-                        <div class="model-body">
-                            <div class="model-description collapsed" id="desc-o1-mini">
-                                A specialized reasoning model designed for complex problem-solving tasks. Features advanced chain-of-thought capabilities and excels at mathematical problems, coding challenges, and logical reasoning. Optimized for tasks requiring deep analytical thinking and step-by-step problem decomposition.
-                            </div>
-                            <button class="expand-btn" onclick="toggleDescription('desc-o1-mini', this)">
-                                <span>Read more</span>
-                                <i class="fas fa-chevron-down"></i>
-                            </button>
-                            
-                            <div class="cost-rating">
-                                <span class="label">Cost:</span>
-                                <div class="cost-stars">
-                                    <i class="fas fa-dollar-sign cost-star active"></i>
-                                    <i class="fas fa-dollar-sign cost-star active"></i>
-                                    <i class="fas fa-dollar-sign cost-star active"></i>
-                                    <i class="fas fa-dollar-sign cost-star active"></i>
-                                    <i class="fas fa-dollar-sign cost-star active"></i>
-                                </div>
-                            </div>
-                            
-                            <div class="model-tags">
-                                <span class="model-tag text"><i class="fas fa-font"></i>Text Only</span>
-                            </div>
-                            
-                            <div class="model-inputs">
-                                <span class="label">Model Inputs:</span>
-                                <div class="input-types">
-                                    <span class="input-type">Text</span>
-                                    <span class="input-type">System Prompts</span>
-                                    <span class="input-type">Complex Problems</span>
-                                </div>
-                            </div>
-                            
-                            <div class="deployment-regions">
-                                <span class="label">Deployment Regions:</span>
-                                <div class="region-flags">
-                                    <span class="region-flag">
-                                        <div class="flag-icon flag-za"></div>
-                                        <span>ZA</span>
-                                    </span>
-                                    <span class="region-flag">
-                                        <div class="flag-icon flag-eu"></div>
-                                        <span>EU</span>
-                                    </span>
-                                    <span class="region-flag">
-                                        <div class="flag-icon flag-us"></div>
-                                        <span>US</span>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="model-footer">
-                            <a href="/apidocs/#/LLM/create_o1_mini_route" class="model-btn">
-                                <i class="fas fa-code"></i> API Reference
-                            </a>
-                            <div class="credit-badge">5 AI Credits</div>
-                        </div>
-                    </div>
-                    
-                    <!-- O3-mini Card -->
-                    <div class="model-card openai-card">
-                        <div class="model-header">
-                            <h3 class="model-name">O3-mini</h3>
-                        </div>
-                        <div class="model-body">
-                            <div class="model-description collapsed" id="desc-o3-mini">
-                                Latest reasoning model with configurable thinking time and enhanced problem-solving capabilities. Features adjustable reasoning modes (high, medium, low) allowing optimization for different task complexities. Excellent for research, analysis, and applications requiring variable reasoning depth.
-                            </div>
-                            <button class="expand-btn" onclick="toggleDescription('desc-o3-mini', this)">
-                                <span>Read more</span>
-                                <i class="fas fa-chevron-down"></i>
-                            </button>
-                            
-                            <div class="cost-rating">
-                                <span class="label">Cost:</span>
-                                <div class="cost-stars">
-                                    <i class="fas fa-dollar-sign cost-star active"></i>
-                                    <i class="fas fa-dollar-sign cost-star active"></i>
-                                    <i class="fas fa-dollar-sign cost-star active"></i>
-                                    <i class="fas fa-dollar-sign cost-star active"></i>
-                                    <i class="fas fa-dollar-sign cost-star"></i>
-                                </div>
-                            </div>
-                            
-                            <div class="model-tags">
-                                <span class="model-tag text"><i class="fas fa-font"></i>Text Only</span>
-                            </div>
-                            
-                            <div class="model-inputs">
-                                <span class="label">Model Inputs:</span>
-                                <div class="input-types">
-                                    <span class="input-type">Text</span>
-                                    <span class="input-type">System Prompts</span>
-                                    <span class="input-type">Reasoning Modes</span>
-                                    <span class="input-type">JSON Output</span>
-                                </div>
-                            </div>
-                            
-                            <div class="deployment-regions">
-                                <span class="label">Deployment Regions:</span>
-                                <div class="region-flags">
-                                    <span class="region-flag">
-                                        <div class="flag-icon flag-za"></div>
-                                        <span>ZA</span>
-                                    </span>
-                                    <span class="region-flag">
-                                        <div class="flag-icon flag-eu"></div>
-                                        <span>EU</span>
-                                    </span>
-                                    <span class="region-flag">
-                                        <div class="flag-icon flag-us"></div>
-                                        <span>US</span>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="model-footer">
-                            <a href="/apidocs/#/LLM/create_o3_mini_route" class="model-btn">
-                                <i class="fas fa-code"></i> API Reference
-                            </a>
-                            <div class="credit-badge">3 AI Credits</div>
-                        </div>
-                    </div>
+                        {% endfor %}
+                    {% else %}
+                        <!-- Fallback if no OpenAI models found -->
+                        <p>No OpenAI models currently available.</p>
+                    {% endif %}
                 </div>
             </div>
         </section>
@@ -1286,226 +1069,377 @@
                 </div>
                 
                 <div class="model-cards">
-                    <!-- Llama 3.2 Vision Instruct Card -->
-                    <div class="model-card meta-card">
-                        <div class="model-header">
-                            <h3 class="model-name">Llama 3.2 Vision Instruct</h3>
-                        </div>
-                        <div class="model-body">
-                            <div class="model-description collapsed" id="desc-llama32-vision">
-                                Meta's multimodal Llama model with vision capabilities for image understanding and analysis. Combines powerful text generation with image comprehension, making it ideal for applications requiring both visual and textual analysis. Open-source foundation with commercial-grade performance.
+                    {% if models_by_family.Meta %}
+                        {% for model in models_by_family.Meta %}
+                        <div class="model-card meta-card">
+                            <div class="model-header">
+                                <h3 class="model-name">{{ model.modelName }}</h3>
                             </div>
-                            <button class="expand-btn" onclick="toggleDescription('desc-llama32-vision', this)">
-                                <span>Read more</span>
-                                <i class="fas fa-chevron-down"></i>
-                            </button>
-                            
-                            <div class="cost-rating">
-                                <span class="label">Cost:</span>
-                                <div class="cost-stars">
-                                    <i class="fas fa-dollar-sign cost-star active"></i>
-                                    <i class="fas fa-dollar-sign cost-star active"></i>
-                                    <i class="fas fa-dollar-sign cost-star"></i>
-                                    <i class="fas fa-dollar-sign cost-star"></i>
-                                    <i class="fas fa-dollar-sign cost-star"></i>
+                            <div class="model-body">
+                                <div class="model-description collapsed" id="desc-meta-{{ loop.index }}" style="font-size: 12px;">
+                                    {{ model.modelDescription|safe }}
                                 </div>
-                            </div>
-                            
-                            <div class="model-tags">
-                                <span class="model-tag multimodal"><i class="fas fa-eye"></i>Multimodal</span>
-                            </div>
-                            
-                            <div class="model-inputs">
-                                <span class="label">Model Inputs:</span>
-                                <div class="input-types">
-                                    <span class="input-type">Text</span>
-                                    <span class="input-type">Images</span>
-                                    <span class="input-type">System Prompts</span>
+                                <button class="expand-btn" onclick="toggleDescription('desc-meta-{{ loop.index }}', this)">
+                                    <span>Read more</span>
+                                    <i class="fas fa-chevron-down"></i>
+                                </button>
+                                
+                                <div class="cost-rating">
+                                    <span class="label">Cost:</span>
+                                    <div class="cost-stars">
+                                        {% for star in model.cost_stars %}
+                                        <i class="fas fa-dollar-sign cost-star {% if star.active %}active{% endif %}"></i>
+                                        {% endfor %}
+                                    </div>
                                 </div>
-                            </div>
-                            
-                            <div class="deployment-regions">
-                                <span class="label">Deployment Regions:</span>
-                                <div class="region-flags">
-                                    <span class="region-flag">
-                                        <div class="flag-icon flag-za"></div>
-                                        <span>ZA</span>
+                                
+                                {% if model.promptTokens or model.completionTokens %}
+                                <div class="cost-details" style="margin-top: 0.5rem; font-size: 12px;">
+                                    {% if model.promptTokens %}
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                                        <span><strong>Prompt tokens:</strong></span>
+                                        <span>{{ model.prompt_cost_display }}</span>
+                                    </div>
+                                    {% endif %}
+                                    {% if model.completionTokens %}
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                                        <span><strong>Completion tokens:</strong></span>
+                                        <span>{{ model.completion_cost_display }}</span>
+                                    </div>
+                                    {% endif %}
+                                    {% if model.cachedTokens %}
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                                        <span><strong>Cached tokens:</strong></span>
+                                        <span>{{ model.cached_cost_display }}</span>
+                                    </div>
+                                    {% endif %}
+                                    {% if model.estimateCost %}
+                                    <div style="display: flex; justify-content: space-between;">
+                                        <span><strong>Estimate Cost:</strong></span>
+                                        <span>{{ model.estimate_cost_display }}</span>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <br><br>
+                                {% endif %}
+                                
+                                <div class="model-tags">
+                                    {% if model.supportsMultimodal %}
+                                    <span class="model-tag multimodal"><i class="fas fa-eye"></i>Multimodal</span>
+                                    {% endif %}
+                                    {% if model.supportsContextFiles %}
+                                    <span class="model-tag context-config" style="background-color: orange;">
+                                        <i class="fas fa-file-alt"></i>Context Support
                                     </span>
-                                    <span class="region-flag">
-                                        <div class="flag-icon flag-eu"></div>
-                                        <span>EU</span>
-                                    </span>
-                                    <span class="region-flag">
-                                        <div class="flag-icon flag-us"></div>
-                                        <span>US</span>
-                                    </span>
+                                    {% endif %}
+                                    {% if model.supportsJsonOutput %}
+                                    <span class="model-tag json" style="background-color: #145c2c;"><i class="fas fa-file-code"></i>JSON Output</span>
+                                    {% endif %}
+                                    {% if model.reasoningSupport %}
+                                    <span class="model-tag reasoning" style="background-color: #8e44ad;"><i class="fas fa-brain"></i>Reasoning</span>
+                                    {% endif %}
+                                    {% if model.toolsSupport %}
+                                    <span class="model-tag tooling"><i class="fas fa-tools"></i>Tool Use</span>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="model-inputs">
+                                    <span class="label">Model Inputs:</span>
+                                    <div class="input-types">
+                                        {% for input_type in model.formatted_inputs %}
+                                        <span class="input-type">{{ input_type }}</span>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                
+                                <div class="deployment-regions">
+                                    <span class="label">Deployment Regions:</span>
+                                    <div class="region-flags">
+                                        {% for region in model.deploymentRegions %}
+                                        {% set region_code = region.strip() %}
+                                        <span class="region-flag">
+                                            {% if region_code == 'ZA' %}
+                                            <img src="/static/images/flags/zar.png" alt="ZA" class="flag-icon" style="width: 18px; height: 12px; border-radius: 2px;">
+                                            {% elif region_code == 'EU' %}
+                                            <div class="flag-icon flag-eu"></div>
+                                            {% elif region_code == 'US' %}
+                                            <div class="flag-icon flag-us"></div>
+                                            {% endif %}
+                                            <span>{{ region_code }}</span>
+                                        </span>
+                                        {% endfor %}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="model-footer">
-                            <a href="/apidocs/#/LLM/create_llama_32_vision_instruct_route" class="model-btn">
-                                <i class="fas fa-code"></i> API Reference
-                            </a>
-                            <div class="credit-badge">2 AI Credits</div>
-                        </div>
-                    </div>
-                    
-                    <!-- Llama 3.1 (405B) Card -->
-                    <div class="model-card meta-card">
-                        <div class="model-header">
-                            <h3 class="model-name">Llama 3.1 (405B)</h3>
-                        </div>
-                        <div class="model-body">
-                            <div class="model-description collapsed" id="desc-llama">
-                                Meta's largest and most capable open-source language model with 405 billion parameters. Offers exceptional performance across diverse tasks including creative writing, code generation, mathematical reasoning, and multilingual capabilities. Perfect for applications requiring high-quality, versatile AI assistance.
-                            </div>
-                            <button class="expand-btn" onclick="toggleDescription('desc-llama', this)">
-                                <span>Read more</span>
-                                <i class="fas fa-chevron-down"></i>
-                            </button>
-                            
-                            <div class="cost-rating">
-                                <span class="label">Cost:</span>
-                                <div class="cost-stars">
-                                    <i class="fas fa-dollar-sign cost-star active"></i>
-                                    <i class="fas fa-dollar-sign cost-star active"></i>
-                                    <i class="fas fa-dollar-sign cost-star active"></i>
-                                    <i class="fas fa-dollar-sign cost-star"></i>
-                                    <i class="fas fa-dollar-sign cost-star"></i>
-                                </div>
-                            </div>
-                            
-                            <div class="model-tags">
-                                <span class="model-tag text"><i class="fas fa-font"></i>Text Only</span>
-                            </div>
-                            
-                            <div class="model-inputs">
-                                <span class="label">Model Inputs:</span>
-                                <div class="input-types">
-                                    <span class="input-type">Text</span>
-                                    <span class="input-type">System Prompts</span>
-                                    <span class="input-type">Temperature Control</span>
-                                    <span class="input-type">JSON Output</span>
-                                </div>
-                            </div>
-                            
-                            <div class="deployment-regions">
-                                <span class="label">Deployment Regions:</span>
-                                <div class="region-flags">
-                                    <span class="region-flag">
-                                        <div class="flag-icon flag-za"></div>
-                                        <span>ZA</span>
-                                    </span>
-                                    <span class="region-flag">
-                                        <div class="flag-icon flag-eu"></div>
-                                        <span>EU</span>
-                                    </span>
-                                    <span class="region-flag">
-                                        <div class="flag-icon flag-us"></div>
-                                        <span>US</span>
-                                    </span>
-                                </div>
+                            <div class="model-footer">
+                                <a href="/apidocs/#/LLM/post_llm_{{ model.modelName.lower().replace('-', '_').replace('.', '_') }}" class="model-btn">
+                                    <i class="fas fa-code"></i> API Reference
+                                </a>
                             </div>
                         </div>
-                        <div class="model-footer">
-                            <a href="/apidocs/#/LLM/create_llama_route" class="model-btn">
-                                <i class="fas fa-code"></i> API Reference
-                            </a>
-                            <div class="credit-badge">3 AI Credits</div>
-                        </div>
-                    </div>
-                    
-                    <!-- Llama 4 Maverick Card -->
-                    <div class="model-card meta-card">
-                        <div class="model-header">
-                            <h3 class="model-name">Llama 4 Maverick 17B</h3>
-                        </div>
-                        <div class="model-body">
-                            <div class="model-description collapsed" id="desc-llama4-maverick">
-                                Advanced Llama 4 variant optimized for creative and unconventional problem-solving. Features enhanced reasoning capabilities with a focus on innovative approaches and out-of-the-box thinking. Ideal for creative applications, brainstorming, and tasks requiring novel solutions.
-                            </div>
-                            <button class="expand-btn" onclick="toggleDescription('desc-llama4-maverick', this)">
-                                <span>Read more</span>
-                                <i class="fas fa-chevron-down"></i>
-                            </button>
-                            
-                            <div class="cost-rating">
-                                <span class="label">Cost:</span>
-                                <div class="cost-stars">
-                                    <i class="fas fa-dollar-sign cost-star active"></i>
-                                    <i class="fas fa-dollar-sign cost-star active"></i>
-                                    <i class="fas fa-dollar-sign cost-star"></i>
-                                    <i class="fas fa-dollar-sign cost-star"></i>
-                                    <i class="fas fa-dollar-sign cost-star"></i>
-                                </div>
-                            </div>
-                            
-                            <div class="model-tags">
-                                <span class="model-tag text"><i class="fas fa-font"></i>Text Only</span>
-                            </div>
-                            
-                            <div class="model-inputs">
-                                <span class="label">Model Inputs:</span>
-                                <div class="input-types">
-                                    <span class="input-type">Text</span>
-                                    <span class="input-type">System Prompts</span>
-                                    <span class="input-type">Creative Tasks</span>
-                                </div>
-                            </div>
-                            
-                            <div class="deployment-regions">
-                                <span class="label">Deployment Regions:</span>
-                                <div class="region-flags">
-                                    <span class="region-flag">
-                                        <div class="flag-icon flag-za"></div>
-                                        <span>ZA</span>
-                                    </span>
-                                    <span class="region-flag">
-                                        <div class="flag-icon flag-eu"></div>
-                                        <span>EU</span>
-                                    </span>
-                                    <span class="region-flag">
-                                        <div class="flag-icon flag-us"></div>
-                                        <span>US</span>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="model-footer">
-                            <a href="/apidocs/#/LLM/create_llama_4_maverick_17b_128E_route" class="model-btn">
-                                <i class="fas fa-code"></i> API Reference
-                            </a>
-                            <div class="credit-badge">4 AI Credits</div>
-                        </div>
-                    </div>
-                    
-                    <!-- Llama 4 Scout Card -->
-                    <div class="model-card meta-card">
-                        <div class="model-header">
-                            <h3 class="model-name">Llama 4 Scout 17B</h3>
-                        </div>
-                        <div class="model-body">
-                            <div class="model-description collapsed" id="desc-llama4-scout">
-                                Reconnaissance-focused Llama 4 model designed for information gathering, analysis, and exploration tasks. Excels at research, data analysis, and systematic investigation of complex topics. Perfect for applications requiring thorough exploration and detailed information synthesis.
-                            </div>
-                            <button class="expand-btn" onclick="toggleDescription('desc-llama4-scout', this)">
-                                <span>Read more</span>
-                                <i class="fas fa-chevron-down"></i>
-                            </button>
-                            
-                            <div class="cost-rating">
-                                <span class="label">Cost:</span>
-                                <div class="cost-stars">
-                                    <i class="fas fa-dollar-sign cost-star active"></i>
-                                    <i class="fas fa-dollar-sign cost-star active"></i>
-                                    <i class="fas fa-dollar-sign cost-star active"></i>
-                                    <i class="fas fa-dollar-sign cost-star active"></i>
-                                    <i class="fas fa-dollar-sign cost-star"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                        {% endfor %}
+                    {% else %}
+                        <!-- Fallback if no Meta models found -->
+                        <p>No Meta models currently available.</p>
+                    {% endif %}
                 </div>
+            </div>
+        </section>
+        
+        <!-- Mistral Models -->
+        <section class="provider-section">
+            <div class="provider-container">
+                <div class="provider-header">
+                    <div class="provider-icon mistral-icon">
+                        <i class="fas fa-wind"></i>
+                    </div>
+                    <h2>Mistral Models</h2>
+                </div>
+                
+                <div class="model-cards">
+                    {% if models_by_family.Mistral %}
+                        {% for model in models_by_family.Mistral %}
+                        <div class="model-card mistral-card">
+                            <div class="model-header">
+                                <h3 class="model-name">{{ model.modelName }}</h3>
+                            </div>
+                            <div class="model-body">
+                                <div class="model-description collapsed" id="desc-mistral-{{ loop.index }}" style="font-size: 12px;">
+                                    {{ model.modelDescription|safe }}
+                                </div>
+                                <button class="expand-btn" onclick="toggleDescription('desc-mistral-{{ loop.index }}', this)">
+                                    <span>Read more</span>
+                                    <i class="fas fa-chevron-down"></i>
+                                </button>
+                                
+                                <div class="cost-rating">
+                                    <span class="label">Cost:</span>
+                                    <div class="cost-stars">
+                                        {% for star in model.cost_stars %}
+                                        <i class="fas fa-dollar-sign cost-star {% if star.active %}active{% endif %}"></i>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                
+                                {% if model.promptTokens or model.completionTokens %}
+                                <div class="cost-details" style="margin-top: 0.5rem; font-size: 12px;">
+                                    {% if model.promptTokens %}
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                                        <span><strong>Prompt tokens:</strong></span>
+                                        <span>{{ model.prompt_cost_display }}</span>
+                                    </div>
+                                    {% endif %}
+                                    {% if model.completionTokens %}
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                                        <span><strong>Completion tokens:</strong></span>
+                                        <span>{{ model.completion_cost_display }}</span>
+                                    </div>
+                                    {% endif %}
+                                    {% if model.cachedTokens %}
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                                        <span><strong>Cached tokens:</strong></span>
+                                        <span>{{ model.cached_cost_display }}</span>
+                                    </div>
+                                    {% endif %}
+                                    {% if model.estimateCost %}
+                                    <div style="display: flex; justify-content: space-between;">
+                                        <span><strong>Estimate Cost:</strong></span>
+                                        <span>{{ model.estimate_cost_display }}</span>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <br><br>
+                                {% endif %}
+                                
+                                <div class="model-tags">
+                                    {% if model.supportsMultimodal %}
+                                    <span class="model-tag multimodal"><i class="fas fa-eye"></i>Multimodal</span>
+                                    {% endif %}
+                                    {% if model.supportsContextFiles %}
+                                    <span class="model-tag context-config" style="background-color: orange;">
+                                        <i class="fas fa-file-alt"></i>Context Support
+                                    </span>
+                                    {% endif %}
+                                    {% if model.supportsJsonOutput %}
+                                    <span class="model-tag json" style="background-color: #145c2c;"><i class="fas fa-file-code"></i>JSON Output</span>
+                                    {% endif %}
+                                    {% if model.reasoningSupport %}
+                                    <span class="model-tag reasoning" style="background-color: #8e44ad;"><i class="fas fa-brain"></i>Reasoning</span>
+                                    {% endif %}
+                                    {% if model.toolsSupport %}
+                                    <span class="model-tag tooling"><i class="fas fa-tools"></i>Tool Use</span>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="model-inputs">
+                                    <span class="label">Model Inputs:</span>
+                                    <div class="input-types">
+                                        {% for input_type in model.formatted_inputs %}
+                                        <span class="input-type">{{ input_type }}</span>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                
+                                <div class="deployment-regions">
+                                    <span class="label">Deployment Regions:</span>
+                                    <div class="region-flags">
+                                        {% for region in model.deploymentRegions %}
+                                        {% set region_code = region.strip() %}
+                                        <span class="region-flag">
+                                            {% if region_code == 'ZA' %}
+                                            <img src="/static/images/flags/zar.png" alt="ZA" class="flag-icon" style="width: 18px; height: 12px; border-radius: 2px;">
+                                            {% elif region_code == 'EU' %}
+                                            <div class="flag-icon flag-eu"></div>
+                                            {% elif region_code == 'US' %}
+                                            <div class="flag-icon flag-us"></div>
+                                            {% endif %}
+                                            <span>{{ region_code }}</span>
+                                        </span>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="model-footer">
+                                <a href="/apidocs/#/LLM/post_llm_{{ model.modelName.lower().replace('-', '_').replace('.', '_') }}" class="model-btn">
+                                    <i class="fas fa-code"></i> API Reference
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <!-- Fallback if no Mistral models found -->
+                        <p>No Mistral models currently available.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </section>
+        
+        <!-- Deepseek Models -->
+        <section class="provider-section" style="background-color: #f8faff;">
+            <div class="provider-container">
+                <div class="provider-header">
+                    <div class="provider-icon deepseek-icon">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <h2>Deepseek Models</h2>
+                </div>
+                
+                <div class="model-cards">
+                    {% if models_by_family.Deepseek %}
+                        {% for model in models_by_family.Deepseek %}
+                        <div class="model-card deepseek-card">
+                            <div class="model-header">
+                                <h3 class="model-name">{{ model.modelName }}</h3>
+                            </div>
+                            <div class="model-body">
+                                <div class="model-description collapsed" id="desc-deepseek-{{ loop.index }}" style="font-size: 12px;">
+                                    {{ model.modelDescription|safe }}
+                                </div>
+                                <button class="expand-btn" onclick="toggleDescription('desc-deepseek-{{ loop.index }}', this)">
+                                    <span>Read more</span>
+                                    <i class="fas fa-chevron-down"></i>
+                                </button>
+                                
+                                <div class="cost-rating">
+                                    <span class="label">Cost:</span>
+                                    <div class="cost-stars">
+                                        {% for star in model.cost_stars %}
+                                        <i class="fas fa-dollar-sign cost-star {% if star.active %}active{% endif %}"></i>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                
+                                {% if model.promptTokens or model.completionTokens %}
+                                <div class="cost-details" style="margin-top: 0.5rem; font-size: 12px;">
+                                    {% if model.promptTokens %}
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                                        <span><strong>Prompt tokens:</strong></span>
+                                        <span>{{ model.prompt_cost_display }}</span>
+                                    </div>
+                                    {% endif %}
+                                    {% if model.completionTokens %}
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                                        <span><strong>Completion tokens:</strong></span>
+                                        <span>{{ model.completion_cost_display }}</span>
+                                    </div>
+                                    {% endif %}
+                                    {% if model.cachedTokens %}
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                                        <span><strong>Cached tokens:</strong></span>
+                                        <span>{{ model.cached_cost_display }}</span>
+                                    </div>
+                                    {% endif %}
+                                    {% if model.estimateCost %}
+                                    <div style="display: flex; justify-content: space-between;">
+                                        <span><strong>Estimate Cost:</strong></span>
+                                        <span>{{ model.estimate_cost_display }}</span>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <br><br>
+                                {% endif %}
+                                
+                                <div class="model-tags">
+                                    {% if model.supportsMultimodal %}
+                                    <span class="model-tag multimodal"><i class="fas fa-eye"></i>Multimodal</span>
+                                    {% endif %}
+                                    {% if model.supportsContextFiles %}
+                                    <span class="model-tag context-config" style="background-color: orange;">
+                                        <i class="fas fa-file-alt"></i>Context Support
+                                    </span>
+                                    {% endif %}
+                                    {% if model.supportsJsonOutput %}
+                                    <span class="model-tag json" style="background-color: #145c2c;"><i class="fas fa-file-code"></i>JSON Output</span>
+                                    {% endif %}
+                                    {% if model.reasoningSupport %}
+                                    <span class="model-tag reasoning" style="background-color: #8e44ad;"><i class="fas fa-brain"></i>Reasoning</span>
+                                    {% endif %}
+                                    {% if model.toolsSupport %}
+                                    <span class="model-tag tooling"><i class="fas fa-tools"></i>Tool Use</span>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="model-inputs">
+                                    <span class="label">Model Inputs:</span>
+                                    <div class="input-types">
+                                        {% for input_type in model.formatted_inputs %}
+                                        <span class="input-type">{{ input_type }}</span>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                
+                                <div class="deployment-regions">
+                                    <span class="label">Deployment Regions:</span>
+                                    <div class="region-flags">
+                                        {% for region in model.deploymentRegions %}
+                                        {% set region_code = region.strip() %}
+                                        <span class="region-flag">
+                                            {% if region_code == 'ZA' %}
+                                            <img src="/static/images/flags/zar.png" alt="ZA" class="flag-icon" style="width: 18px; height: 12px; border-radius: 2px;">
+                                            {% elif region_code == 'EU' %}
+                                            <div class="flag-icon flag-eu"></div>
+                                            {% elif region_code == 'US' %}
+                                            <div class="flag-icon flag-us"></div>
+                                            {% endif %}
+                                            <span>{{ region_code }}</span>
+                                        </span>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="model-footer">
+                                <a href="/apidocs/#/LLM/post_llm_{{ model.modelName.lower().replace('-', '_').replace('.', '_') }}" class="model-btn">
+                                    <i class="fas fa-code"></i> API Reference
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <!-- Fallback if no Deepseek models found -->
+                        <p>No Deepseek models currently available.</p>
+                    {% endif %}
+                </div>
+            </div>
         </section>
     </main>
 

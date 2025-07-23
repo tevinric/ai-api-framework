@@ -83,19 +83,34 @@ def token_services():
     return render_template('docs/token_services.html')
 
 ## BALANCE MANAGEMENT
-@app.route('/docs/balance_management')
-def balance_management():
-    return render_template('docs/balance_management.html')
+# @app.route('/docs/balance_management')
+# def balance_management():
+#     return render_template('docs/balance_management.html')
 
 ## FILE MANAGEMENT
 @app.route('/docs/file_management')
 def file_management():
     return render_template('docs/file_management.html')
 
+from apis.utils.templateHelpers import get_llm_template_context
 ## LLMS
 @app.route('/docs/llm')
+# def llm():
+#     return render_template('docs/llm.html')
 def llm():
-    return render_template('docs/llm.html')
+    try:
+        # Get model data from database
+        context = get_llm_template_context()
+        
+        return render_template('docs/llm.html', **context)
+        
+    except Exception as e:
+        logger.error(f"Error loading LLM page: {str(e)}")
+        # Fallback to empty context
+        return render_template('docs/llm.html', 
+                             models_by_family={}, 
+                             error="Failed to load model information")
+
 
 ## LLM CONVERSATION
 @app.route('/docs/llm_conversation')
@@ -168,6 +183,8 @@ from apis.token_services.refresh_token import register_refresh_token_routes
 register_refresh_token_routes(app)
 
 # ADMIN ENDPOINTS
+
+# USER MANAGER 
 ## CREATE USER
 from apis.admin.admin_create_user import register_create_user_routes
 register_create_user_routes(app)
@@ -177,6 +194,20 @@ register_admin_update_user_routes(app)
 ## DELETE USER
 # from apis.admin.admin_delete_user import register_admin_delete_user_routes
 # register_admin_delete_user_routes(app)
+
+# MODEL METADATA MANAGEMENT 
+## CREATE model metadata record  
+from apis.admin.admin_create_model_metadata import register_admin_create_model_metadata_routes
+register_admin_create_model_metadata_routes(app)
+## READ/GET model metadata record
+from apis.admin.admin_read_model_metadata import register_admin_read_model_metadata_routes
+register_admin_read_model_metadata_routes(app)
+## UPDATE model metadata record
+from apis.admin.admin_update_model_metadata import register_admin_update_model_metadata_routes
+register_admin_update_model_metadata_routes(app)
+## DELETE model metadata record
+from apis.admin.admin_delete_model_metadata import register_admin_delete_model_metadata_routes
+register_admin_delete_model_metadata_routes(app)
 
 ## RBAC ENDPOINT ACCESS CONTROL
 from apis.admin.admin_endpoint_access import register_admin_endpoint_access_routes
@@ -188,8 +219,8 @@ from apis.endpoint_management.admin_endpoint_management import register_admin_en
 register_admin_endpoint_routes(app)
 
 # BALANCE MANAGEMENT ENDPOINTS
-from apis.balance_management.balance_endpoints import register_balance_routes
-register_balance_routes(app)
+# from apis.balance_management.balance_endpoints import register_balance_routes
+# register_balance_routes(app)
 
 # LLM ENDPOINTS
 ## DEEPSEEK
@@ -254,8 +285,8 @@ register_stable_diffusion_ultra_routes(app)
 from apis.file_upload.upload_file import register_file_upload_routes
 register_file_upload_routes(app)
 
-from apis.balance_management.usage_statistics import register_usage_stats_routes
-register_usage_stats_routes(app)
+# from apis.balance_management.usage_statistics import register_usage_stats_routes
+# register_usage_stats_routes(app)
 
 # JOB MANAGEMENT ENDPOINTS
 from apis.jobs.job_routes import register_job_routes
@@ -311,8 +342,8 @@ from apis.context import register_context_routes
 register_context_routes(app)
 
 #Agentic 
-from apis.llm.agentic_llm import register_agentic_llm
-register_agentic_llm(app)
+# from apis.llm.agentic_llm import register_agentic_llm
+# register_agentic_llm(app)
 
 if __name__ == '__main__':
     app.run(debug=True)

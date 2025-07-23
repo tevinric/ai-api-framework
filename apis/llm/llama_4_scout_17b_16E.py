@@ -67,10 +67,12 @@ def llama_4_scout_17b_16E_route():
               maximum: 1
               default: 0.7
               description: Controls randomness (0=focused, 1=creative)
-            json_output:
-              type: boolean
-              default: false
-              description: When true, the model will return a structured JSON response
+            max_tokens:
+              type: integer
+              minimum: 1
+              maximum: 128000
+              default: 2048
+              description: Maximum number of tokens to generate in the response
             file_ids:
               type: array
               items:
@@ -131,6 +133,14 @@ def llama_4_scout_17b_16E_route():
                 images_processed:
                   type: integer
                   example: 1
+            context_used:
+              type: string
+              example: "context123"
+              description: ID of context file used, or 'none' if no context was applied
+            client_used:
+              type: string
+              example: "primary"
+              description: Which client endpoint was used for the request
       400:
         description: Bad request
         schema:
@@ -238,7 +248,7 @@ def llama_4_scout_17b_16E_route():
     system_prompt = data.get('system_prompt', 'You are a helpful AI assistant')
     user_input = data.get('user_input', '')
     temperature = float(data.get('temperature', 0.7))
-    json_output = data.get('json_output', False)
+    max_tokens = data.get('max_tokens', 2048)
     file_ids = data.get('file_ids', [])
     context_id = data.get('context_id')  # New parameter for context_id
     
@@ -261,6 +271,13 @@ def llama_4_scout_17b_16E_route():
         return create_api_response({
             "response": "400",
             "message": "Temperature must be between 0 and 1"
+        }, 400)
+    
+    # Validate max_tokens
+    if not isinstance(max_tokens, int) or max_tokens < 1 or max_tokens > 127999:
+        return create_api_response({
+            "response": "400",
+            "message": "max_tokens must be an integer between 1 and 128000 for Llama 4 Scout model"
         }, 400)
     
     try:
@@ -297,7 +314,7 @@ def llama_4_scout_17b_16E_route():
             system_prompt=enhanced_system_prompt,  # Use enhanced prompt with context
             user_input=user_input,
             temperature=temperature,
-            json_output=json_output,
+            max_tokens=max_tokens,
             file_ids=file_ids,  # Will be empty list for text-only requests
             user_id=user_id
         )
@@ -357,4 +374,13 @@ def register_llm_llama_4_scout_17b_16E(app):
     from apis.utils.usageMiddleware import track_usage
     from apis.utils.rbacMiddleware import check_endpoint_access
     
-    app.route('/llm/llama-4-scout-17b-16e', methods=['POST'])(track_usage(api_logger(check_endpoint_access(check_balance(llama_4_scout_17b_16E_route)))))
+    # Fixed middleware order - only track_usage should log to database
+    app.route('/llm/llama-4-scout-17b-16e', methods=['POST'])(
+        track_usage(
+            api_logger(
+                check_endpoint_access(
+                    check_balance(llama_4_scout_17b_16E_route)
+                )
+            )
+        )
+    )
