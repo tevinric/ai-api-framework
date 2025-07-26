@@ -925,7 +925,7 @@
                 <h2 style="font-size: 220%;">Getting Started with GAIA</h2>
                 <p>Follow this guide to use GAIA for breathing intelligence into your new or existing applications. From obtaining your API key to making your first API calls, this guide will walk you through everything you need to know to get started with GAIA.</p>
                 <div class="cta-buttons">
-                    <a href="/static/resources/GAIA.postman_collection" class="cta-btn" style="background-color: var(--accent-color); color: var(--dark-color);" download>
+                    <a href="/static/resources/GAIA.postman_collection.json" class="cta-btn" style="background-color: var(--accent-color); color: var(--dark-color);" download>
                         <i class="fas fa-download"></i> Download GAIA Collection
                     </a>
                     <a href="/apidocs/" class="cta-btn cta-btn-secondary">
@@ -986,7 +986,7 @@
                         <div class="step-number">2</div>
                         <h3>Download GAIA'S Postman Collection</h3>
                         <p>The easiest way to get started with GAIA is to use our Postman collection, which includes all endpoints. You can call GAIA's API endpoints using any programming language through the collection.</p>
-                        <p style="margin-top: 1rem; font-size: 0.9rem;">You can also view and test our endpoints directly on the <a href="/static/resources/GAIA Collection.postman_collection.json">API Swagger documentation</a>.</p>
+                        <p style="margin-top: 1rem; font-size: 0.9rem;">You can also view and test our endpoints directly on the <a href="/apidocs/">API Swagger documentation</a>.</p>
                     </div>
                     <div class="step-card">
                         <div class="step-number">3</div>
@@ -1228,16 +1228,9 @@
                 <a href="{{ url_for('file_management') }}">File Management</a> - Upload and manage files
                 </li>
             </ul>
-            
-            <h3>Monitor Your Usage</h3>
-            <br>
-            <p>Keep track of your API consumption using GAIA's <a href="{{ url_for('balance_management') }}">Balance Management</a> endpoints:</p>
-            <ul style="margin-left: 1.5rem; line-height: 2.34;">
-                <li>Check your current AI credit balance</li>
-                <li>View detailed usage statistics by endpoint</li>
-                <li>Track consumption over time to optimize your usage</li>
-            </ul>
+
             </div>
+        
 
         </section>
             <div class="info-box" style="text-align: center; display: flex; flex-direction: column; align-items: center;">
@@ -1258,7 +1251,7 @@
             <h2>Ready to Build with GAIA?</h2>
             <p>Download GAIA's Postman Collection to quickly start integrating powerful AI capabilities into your applications.</p>
             <div style="display: flex; justify-content: center; margin: 2rem 0; gap: 2rem; flex-wrap: wrap;">
-                <a href="/static/resources/GAIA Collection.postman_collection.json" class="cta-btn" style="background-color: var(--accent-color); color: var(--dark-color);" download>
+                <a href="/static/resources/GAIA.postman_collection.json" class="cta-btn" style="background-color: var(--accent-color); color: var(--dark-color);" download>
                 <i class="fas fa-download"></i> Download Postman Collection
                 </a>
                 <a href="/apidocs/" class="cta-btn cta-btn-secondary">

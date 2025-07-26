@@ -103,12 +103,20 @@ def get_aliased_blob_url(container_name, blob_name):
     Returns:
         str: Aliased URL if alias domain is configured, otherwise direct URL
     """
+    # Add logging to debug
+    logger.info(f"BLOB_ALIAS_DOMAIN: {BLOB_ALIAS_DOMAIN}")
+    logger.info(f"STORAGE_ACCOUNT: {STORAGE_ACCOUNT}")
+    
     if BLOB_ALIAS_DOMAIN:
         # Use alias domain
-        return f"https://{BLOB_ALIAS_DOMAIN}/{container_name}/{blob_name}"
+        aliased_url = f"https://{BLOB_ALIAS_DOMAIN}/{container_name}/{blob_name}"
+        logger.info(f"Generated aliased URL: {aliased_url}")
+        return aliased_url
     else:
         # Fallback to direct URL if alias not configured
-        return f"https://{STORAGE_ACCOUNT}.blob.core.windows.net/{container_name}/{blob_name}"
+        direct_url = f"https://{STORAGE_ACCOUNT}.blob.core.windows.net/{container_name}/{blob_name}"
+        logger.warning(f"No BLOB_ALIAS_DOMAIN configured, using direct URL: {direct_url}")
+        return direct_url
 
 def convert_direct_url_to_aliased(direct_url):
     """

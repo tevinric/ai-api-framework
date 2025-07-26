@@ -952,7 +952,7 @@ def continue_conversation_route():
             "message": f"Error continuing conversation: {str(e)}"
         }, 500)
 
-def delete_conversation_route(conversation_id):
+def delete_conversation_route():
     """
     Delete an existing LLM conversation
     ---
@@ -970,7 +970,7 @@ def delete_conversation_route(conversation_id):
         required: false
         description: Unique identifier for tracking requests across multiple systems
       - name: conversation_id
-        in: path
+        in: query
         type: string
         required: true
         description: ID of the conversation to delete
@@ -1060,6 +1060,9 @@ def delete_conversation_route(conversation_id):
             "message": "Token has expired"
         }, 401)
     
+    # Get conversation_id from query parameters
+    conversation_id = request.args.get('conversation_id')
+    
     # Validate conversation_id parameter
     if not conversation_id or not conversation_id.strip():
         return create_api_response({
@@ -1099,4 +1102,4 @@ def register_llm_conversation_routes(app):
     
     app.route('/llm/conversation/chat', methods=['POST'])(track_usage(api_logger(check_endpoint_access(create_chat_route))))
     app.route('/llm/conversation/continue', methods=['POST'])(track_usage(api_logger(check_endpoint_access(continue_conversation_route))))
-    app.route('/llm/conversation/<conversation_id>', methods=['DELETE'])(api_logger(check_endpoint_access(delete_conversation_route)))
+    app.route('/llm/conversation', methods=['DELETE'])(api_logger(check_endpoint_access(delete_conversation_route)))
