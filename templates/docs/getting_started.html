@@ -925,7 +925,7 @@
                 <h2 style="font-size: 220%;">Getting Started with GAIA</h2>
                 <p>Follow this guide to use GAIA for breathing intelligence into your new or existing applications. From obtaining your API key to making your first API calls, this guide will walk you through everything you need to know to get started with GAIA.</p>
                 <div class="cta-buttons">
-                    <a href="/static/resources/GAIA.postman_collection" class="cta-btn" style="background-color: var(--accent-color); color: var(--dark-color);" download>
+                    <a href="/static/resources/GAIA.postman_collection.json" class="cta-btn" style="background-color: var(--accent-color); color: var(--dark-color);" download>
                         <i class="fas fa-download"></i> Download GAIA Collection
                     </a>
                     <a href="/apidocs/" class="cta-btn cta-btn-secondary">
@@ -986,7 +986,7 @@
                         <div class="step-number">2</div>
                         <h3>Download GAIA'S Postman Collection</h3>
                         <p>The easiest way to get started with GAIA is to use our Postman collection, which includes all endpoints. You can call GAIA's API endpoints using any programming language through the collection.</p>
-                        <p style="margin-top: 1rem; font-size: 0.9rem;">You can also view and test our endpoints directly on the <a href="/static/resources/AIAPIS.postman_collection">API Swagger documentation</a>.</p>
+                        <p style="margin-top: 1rem; font-size: 0.9rem;">You can also view and test our endpoints directly on the <a href="/apidocs/">API Swagger documentation</a>.</p>
                     </div>
                     <div class="step-card">
                         <div class="step-number">3</div>
@@ -1063,14 +1063,51 @@
                     <h3>GAIA API Key Request</h3>
                     <p class="form-description">To access the TIH GAIA Platform, you'll need to request an API key with appropriate permissions. You must submit a SysAid request to the TIH AI Center of Excellence to get started:</p>
                     
-                    <a href="https://forms.office.com/Pages/ResponsePage.aspx?id=uM6zjUZ0vEiLtJeAPFJ6N2xrQvNFNxxGn2IZUHwM9CxUQUkzUTlURE9JR0c0UVJGN0Q2RTRCU0pYVC4u" class="form-link" target="_blank">
-                        <i class="fas fa-external-link-alt"></i> Access Registration Form
+                    <a href="https://sysaidsvr1.isservices.co.za/servicePortal" class="form-link" target="_blank">
+                        <i class="fas fa-external-link-alt"></i> Request Access via SysAid
                     </a>
+
+                    <div style="display: flex; flex-direction: column; gap: 1rem; align-items: flex-start; margin: 2rem 0;">
+                        <div style="flex: 1 1 320px; min-width: 260px;">
+                            <h4 style="margin-bottom: 1rem; color: var(--primary-color);">How to Select the Correct Categories</h4>
+                            <p style="margin-bottom: 1.2rem;">To ensure your request is routed to the AI COE, please select the following options in SysAid:</p>
+                            <ol class="no-tick-list" style="margin-left: 1.5rem; margin-bottom: 1.2rem; line-height: 1.8; list-style-type: decimal;">
+                                <li style="list-style-type: decimal; position: static; padding-left: 0; list-style-position: inside; font-family: inherit;">
+                                    Select the <b>Basic Template</b>
+                                </li>
+                                <li style="list-style-type: decimal; position: static; padding-left: 0; list-style-position: inside; font-family: inherit;">
+                                    Choose the category <b>AI Center of Excellence</b>
+                                </li>
+                                <li style="list-style-type: decimal; position: static; padding-left: 0; list-style-position: inside; font-family: inherit;">
+                                    Pick the sub-category <b>GAIA (Global AI Access)</b>
+                                </li>
+                                <li style="list-style-type: decimal; position: static; padding-left: 0; list-style-position: inside; font-family: inherit;">
+                                    For the third-level category, select the option related to your request, e.g. <b>Register New User</b>
+                                </li>
+                            </ol>
+                        </div>
+                        <div style="flex: 1 1 320px; min-width: 260px; display: flex; justify-content: center; align-items: center;">
+                            <img src="/static/images/techincal_support_guide/selectCategories.png"
+                                 alt="Select SysAid categories"
+                                 style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.08);">
+                        </div>
+                    </div>
+                    <style>
+                        /* Remove tick for this specific list only */
+                        .no-tick-list li {
+                            position: static !important;
+                            padding-left: 0 !important;
+                        }
+                        .no-tick-list li::before {
+                            content: none !important;
+                        }
+                    </style>
+                    <br>
                     
                     <h4>What happens after you register?</h4>
                     <ul>
                         <li>The AI COE team receives your request</li>
-                        <li>A user profile will be created for you using the details you provide on the SysAid request</li>
+                        <li>A user profile will be created for you using the details you provided on the SysAid request</li>
                         <li>Your unique user ID and API key will be communicated to you by the AI COE within 48 hours</li>
                         <li>You must <strong>NEVER</strong> share your unique user ID or API key with anyone or store them in any code repository</li>
                     </ul>
@@ -1091,34 +1128,21 @@
                         <tr>
                             <th>User Role</th>
                             <th>Description</th>
-                            <th>Monthly AI Credits</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
                             <td class="tier-name">Test/Trial</td>
                             <td>Get started with using our APIs with a test/trial API key.</td>
-                            <td class="tier-credits">100</td>
                         </tr>
                         <tr>
                             <td class="tier-name">Developer</td>
-                            <td>Developer keys are to be used to develop applications using our APIs.</td>
-                            <td class="tier-credits">999</td>
+                            <td>Developer keys are to be used to develop applications using our APIs. This API key must only be used for dev workloads and should not be used for production use cases.</td>
+
                         </tr>
                         <tr>
-                            <td class="tier-name">Production Tier 3 - Basic</td>
-                            <td>A starter subscription for production applications with low volume requirements.</td>
-                            <td class="tier-credits">5,000</td>
-                        </tr>
-                        <tr>
-                            <td class="tier-name">Production Tier 2 - Professional</td>
-                            <td>An intermediate subscription for production applications with medium volume requirements.</td>
-                            <td class="tier-credits">10,000</td>
-                        </tr>
-                        <tr>
-                            <td class="tier-name">Production Tier 1 - Professional</td>
-                            <td>A premium subscription for production applications with high volume requirements.</td>
-                            <td class="tier-credits">25,000</td>
+                            <td class="tier-name">Production</td>
+                            <td>Production Keys are requested for use case specific projects. Each project/use case should have its own unique API key to track costs and usage for the project. Please note that requests for production keys require motivation for the use case in which they will be applied.</td>
                         </tr>
                     </tbody>
                 </table>
@@ -1204,16 +1228,9 @@
                 <a href="{{ url_for('file_management') }}">File Management</a> - Upload and manage files
                 </li>
             </ul>
-            
-            <h3>Monitor Your Usage</h3>
-            <br>
-            <p>Keep track of your API consumption using GAIA's <a href="{{ url_for('balance_management') }}">Balance Management</a> endpoints:</p>
-            <ul style="margin-left: 1.5rem; line-height: 2.34;">
-                <li>Check your current AI credit balance</li>
-                <li>View detailed usage statistics by endpoint</li>
-                <li>Track consumption over time to optimize your usage</li>
-            </ul>
+
             </div>
+        
 
         </section>
             <div class="info-box" style="text-align: center; display: flex; flex-direction: column; align-items: center;">
@@ -1234,7 +1251,7 @@
             <h2>Ready to Build with GAIA?</h2>
             <p>Download GAIA's Postman Collection to quickly start integrating powerful AI capabilities into your applications.</p>
             <div style="display: flex; justify-content: center; margin: 2rem 0; gap: 2rem; flex-wrap: wrap;">
-                <a href="/static/resources/AIAPIS.postman_collection" class="cta-btn" style="background-color: var(--accent-color); color: var(--dark-color);" download>
+                <a href="/static/resources/GAIA.postman_collection.json" class="cta-btn" style="background-color: var(--accent-color); color: var(--dark-color);" download>
                 <i class="fas fa-download"></i> Download Postman Collection
                 </a>
                 <a href="/apidocs/" class="cta-btn cta-btn-secondary">

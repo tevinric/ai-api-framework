@@ -66,6 +66,8 @@ spec:
                 name: tihaiapi-credentials
                 key: DB_PASSWORD
 
+          ## PRIMARY REGION - ZA
+          ### OPENAI 
           - name: OPENAI_API_KEY
             valueFrom:
               secretKeyRef:
@@ -78,30 +80,86 @@ spec:
                 name: tihaiapi-credentials
                 key: OPENAI_API_ENDPOINT
 
-          - name: DEEPSEEK_API_KEY
+          ### INFERENCE ENDPOINTS
+          - name: INFERENCE_ENDPOINT_PRIMARY
             valueFrom:
               secretKeyRef:
                 name: tihaiapi-credentials
-                key: DEEPSEEK_API_KEY       
+                key: INFERENCE_ENDPOINT_PRIMARY
 
-          - name: LLAMA_API_KEY
+          - name: INFERENCE_API_KEY_PRIMARY
             valueFrom:
               secretKeyRef:
                 name: tihaiapi-credentials
-                key: LLAMA_API_KEY
+                key: INFERENCE_API_KEY_PRIMARY
 
-          - name: DEEPSEEK_V3_API_KEY
+          ### DOCUMENT INTELLIGENCE DETAILS
+          - name: AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT
             valueFrom:
               secretKeyRef:
                 name: tihaiapi-credentials
-                key: DEEPSEEK_V3_API_KEY
+                key: AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT  
 
-          - name: STABLE_DIFFUSION_API_KEY
+          - name: AZURE_DOCUMENT_INTELLIGENCE_KEY
             valueFrom:
               secretKeyRef:
                 name: tihaiapi-credentials
-                key: STABLE_DIFFUSION_API_KEY    
+                key: AZURE_DOCUMENT_INTELLIGENCE_KEY    
 
+          ### AZURE LANGUAGE SERVICE DETAILS
+          - name: AZURE_TEXT_ANALYTICS_ENDPOINT
+            valueFrom:
+              secretKeyRef:
+                name: tihaiapi-credentials
+                key: AZURE_TEXT_ANALYTICS_ENDPOINT
+
+          - name: AZURE_TEXT_ANALYTICS_KEY
+            valueFrom:
+              secretKeyRef:
+                name: tihaiapi-credentials
+                key: AZURE_TEXT_ANALYTICS_KEY
+
+          ### SPEECH SERVICE DETAILS - TTS
+          - name: AZURE_SPEECH_KEY
+            valueFrom:
+              secretKeyRef:
+                name: tihaiapi-credentials
+                key: AZURE_SPEECH_KEY
+
+          - name: AZURE_SPEECH_REGION
+            valueFrom:
+              secretKeyRef:
+                name: tihaiapi-credentials
+                key: AZURE_SPEECH_REGION
+
+          ## SECONDARY REGION - WE
+          ### OPENAI
+          - name: OPENAI_API_KEY_SECONDARY
+            valueFrom:
+              secretKeyRef:
+                name: tihaiapi-credentials
+                key: OPENAI_API_KEY_SECONDARY
+
+          - name: OPENAI_API_ENDPOINT_SECONDARY
+            valueFrom:
+              secretKeyRef:
+                name: tihaiapi-credentials
+                key: OPENAI_API_ENDPOINT_SECONDARY
+
+          ### INFERENCE ENDPOINTS
+          - name: INFERENCE_ENDPOINT_SECONDARY
+            valueFrom:
+              secretKeyRef:
+                name: tihaiapi-credentials
+                key: INFERENCE_ENDPOINT_SECONDARY
+
+          - name: INFERENCE_API_KEY_SECONDARY
+            valueFrom:
+              secretKeyRef:
+                name: tihaiapi-credentials
+                key: INFERENCE_API_KEY_SECONDARY
+
+          ### SPEECH SERVICE DETAILS - STT
           - name: MS_STT_API_KEY
             valueFrom:
               secretKeyRef:
@@ -112,13 +170,62 @@ spec:
             valueFrom:
               secretKeyRef:
                 name: tihaiapi-credentials
-                key: MS_STT_ENDPOINT 
+                key: MS_STT_ENDPOINT
 
+          ## TERTIARY REGION - EUS
+          ### OPENAI 
+          - name: OPENAI_API_KEY_TERTIARY
+            valueFrom:
+              secretKeyRef:
+                name: tihaiapi-credentials
+                key: OPENAI_API_KEY_TERTIARY
+
+          - name: OPENAI_API_ENDPOINT_TERTIARY
+            valueFrom: 
+              secretKeyRef:
+                name: tihaiapi-credentials
+                key: OPENAI_API_ENDPOINT_TERTIARY
+
+            ### INFERENCE ENDPOINTS
+          - name: INFERENCE_ENDPOINT_TERTIARY
+            valueFrom: 
+              secretKeyRef:
+                name: tihaiapi-credentials
+                key: INFERENCE_ENDPOINT_TERTIARY
+
+          - name: INFERENCE_API_KEY_TERTIARY
+            valueFrom: 
+              secretKeyRef:
+                name: tihaiapi-credentials
+                key: INFERENCE_API_KEY_TERTIARY
+
+          ### FOURTH REGION - EUS2
+          #### OPENAI
+          - name: OPENAI_API_KEY_FOURTH
+            valueFrom: 
+              secretKeyRef:
+                name: tihaiapi-credentials
+                key: OPENAI_API_KEY_FOURTH       
+
+          - name: OPENAI_API_ENDPOINT_FOURTH
+            valueFrom: 
+              secretKeyRef:
+                name: tihaiapi-credentials
+                key: OPENAI_API_ENDPOINT_FOURTH   
+
+          ### IMAGE GENERATION KEYS
+          - name: STABLE_DIFFUSION_API_KEY
+            valueFrom: 
+              secretKeyRef:
+                name: tihaiapi-credentials
+                key: STABLE_DIFFUSION_API_KEY
+
+          ### BLOB STORAGE DETAILS
           - name: AZURE_STORAGE_CONNECTION_STRING
             valueFrom:
               secretKeyRef:
                 name: tihaiapi-credentials
-                key: AZURE_STORAGE_CONNECTION_STRING     
+                key: AZURE_STORAGE_CONNECTION_STRING
 
           - name: FILE_UPLOADS_CONTAINER
             valueFrom:
@@ -136,19 +243,13 @@ spec:
             valueFrom:
               secretKeyRef:
                 name: tihaiapi-credentials
-                key: AZURE_STORAGE_ACCOUNT            
-
-          - name: AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT
+                key: AZURE_STORAGE_ACCOUNT
+          
+          - name: BLOB_ALIAS_DOMAIN
             valueFrom:
               secretKeyRef:
                 name: tihaiapi-credentials
-                key: AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT                
-
-          - name: AZURE_DOCUMENT_INTELLIGENCE_KEY
-            valueFrom:
-              secretKeyRef:
-                name: tihaiapi-credentials
-                key: AZURE_DOCUMENT_INTELLIGENCE_KEY   
+                key: BLOB_ALIAS_DOMAIN
 
           securityContext:
             allowPrivilegeEscalation: false

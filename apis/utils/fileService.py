@@ -1,4 +1,4 @@
-from apis.utils.config import get_azure_blob_client, ensure_container_exists
+from apis.utils.config import get_azure_blob_client, ensure_container_exists, get_aliased_blob_url
 import uuid
 import os
 import logging
@@ -14,8 +14,6 @@ logger = logging.getLogger(__name__)
 
 # Define container for file uploads
 FILE_UPLOAD_CONTAINER = os.environ.get("AZURE_STORAGE_UPLOAD_CONTAINER", "file-uploads")
-STORAGE_ACCOUNT = os.environ.get("AZURE_STORAGE_ACCOUNT")
-BASE_BLOB_URL = f"https://{STORAGE_ACCOUNT}.blob.core.windows.net/{FILE_UPLOAD_CONTAINER}"
 
 class FileService:
     @staticmethod
@@ -59,8 +57,8 @@ class FileService:
             
             blob_client.upload_blob(file_content, overwrite=True, content_settings=content_settings)
             
-            # Generate URL to the blob
-            blob_url = f"{BASE_BLOB_URL}/{blob_name}"
+            # Generate aliased URL to the blob
+            blob_url = get_aliased_blob_url(container_name, blob_name)
             
             # Store file info in database
             db_conn = None
@@ -87,7 +85,7 @@ class FileService:
                     user_id,
                     original_filename,
                     blob_name,
-                    blob_url,
+                    blob_url,  # This is now the aliased URL
                     file_obj.content_type or 'application/octet-stream',
                     len(file_content)  # File size in bytes
                 ])
@@ -166,10 +164,10 @@ class FileService:
                 if user_scope != 0 and str(file_info[1]) != user_id:
                     return None, "You don't have permission to access this file"
             
-            # Return file info with URL
+            # Return file info with URL (already aliased from database)
             result = {
                 "file_name": file_info[2],
-                "file_url": file_info[3],
+                "file_url": file_info[3],  # This is already the aliased URL from DB
                 "content_type": file_info[4],
                 "upload_date": file_info[5].isoformat() if file_info[5] else None
             }
@@ -355,7 +353,7 @@ class FileService:
                     "content_type": row[5],
                     "upload_date": row[7].isoformat() if row[7] else None,
                     "file_size": row[6],
-                    "blob_url": row[4]  # Include the blob URL for reference
+                    "blob_url": row[4]  # This is already the aliased URL from DB
                 }
                 
                 # Add user info for admin view

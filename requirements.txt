@@ -22,3 +22,9 @@ pymupdf
 pypdf
 azure.ai.formrecognizer
 gevent
+azure-cognitiveservices-speech
+mutagen
+PyPDF2
+python-docx
+openpyxl
+asyncio

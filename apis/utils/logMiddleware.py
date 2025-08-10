@@ -10,6 +10,23 @@ from datetime import datetime
 # CONFIGURE LOGGING
 logger = logging.getLogger(__name__)
 
+def redact_sensitive_response_data(response_data):
+    """Remove sensitive information from response data before logging"""
+    if not response_data or not isinstance(response_data, dict):
+        return response_data
+    
+    # Create a copy to avoid modifying the original response
+    response_copy = response_data.copy()
+    
+    # List of sensitive fields to redact in responses
+    sensitive_response_fields = ['api_key', 'Api-Key', 'API-Key', 'password', 'secret', 'token', 'access_token']
+    
+    for field in sensitive_response_fields:
+        if field in response_copy:
+            response_copy[field] = '[REDACTED]'
+    
+    return response_copy
+
 def get_token_details():
     """Extract token details from request"""
     # Try X-Token header first
@@ -121,8 +138,11 @@ def api_logger(f):
             response_status = response.status_code
             try:
                 response_data = response.get_json() if hasattr(response, 'get_json') else None
+                # Redact sensitive information from response data before logging
+                response_data_for_logging = redact_sensitive_response_data(response_data)
             except:
                 response_data = None
+                response_data_for_logging = None
                 
             # Log successful request - IMPORTANT: Store the returned log_id
             log_id = DatabaseService.log_api_call(
@@ -136,7 +156,7 @@ def api_logger(f):
                 response_time_ms=response_time,
                 user_agent=user_agent,
                 ip_address=ip_address,
-                response_body=json.dumps(response_data) if response_data else None,
+                response_body=json.dumps(response_data_for_logging) if response_data_for_logging else None,
                 correlation_id=correlation_id  # Pass the correlation ID
             )
             

@@ -25,3 +25,9 @@ apis/jobs/__pycache__/
 apis/car_insurance/__pycache__/
 apis/context/__pycache__/
 readmes/subscription_mapping.md
+apis/agentic/__pycache__/
+apis/file_upload/__pycache__/
+apis/token_services/__pycache__/
+apis/file_upload/__pycache__
+static/resources/GAIA.postman_collection.json
+runnables/env_var_init_dev_gaia.sh

@@ -5,7 +5,7 @@ from apis.utils.databaseService import DatabaseService
 import logging
 import pytz
 from datetime import datetime
-from apis.utils.llmServices import gpt4o_service, gpt4o_multimodal_service  # Import the multimodal service function
+from apis.utils.llmServices import gpt4o_service # Import the multimodal service function
 from apis.utils.fileService import FileService
 import os
 import tempfile
@@ -242,6 +242,20 @@ def gpt4o_route():
     file_ids = data.get('file_ids', [])
     context_id = data.get('context_id')  # New parameter for context_id
     
+    # Validate and clean file_ids - filter out empty strings and non-string values
+    if file_ids and isinstance(file_ids, list):
+        file_ids = [file_id.strip() for file_id in file_ids if isinstance(file_id, str) and file_id.strip()]
+    else:
+        file_ids = []
+    
+    # Validate and clean context_id - treat empty strings as None
+    if context_id and isinstance(context_id, str):
+        context_id = context_id.strip()
+        if not context_id:  # Empty string after stripping
+            context_id = None
+    else:
+        context_id = None
+    
     # Validate temperature range
     if not (0 <= temperature <= 1):
         return create_api_response({
@@ -253,7 +267,7 @@ def gpt4o_route():
         # Log API usage
         logger.info(f"GPT-4o API called by user: {user_id}")
         
-        # Apply context if provided
+        # Apply context if provided (now properly validated)
         if context_id:
             from apis.llm.context_integration import apply_context_to_system_prompt
             enhanced_system_prompt, error = apply_context_to_system_prompt(system_prompt, context_id, g.user_id)
@@ -264,34 +278,29 @@ def gpt4o_route():
         else:
             enhanced_system_prompt = system_prompt
         
-        # Check if this is a multimodal request with file_ids
-        if file_ids and isinstance(file_ids, list) and len(file_ids) > 0:
+        # Log request type for debugging
+        if file_ids and len(file_ids) > 0:
             logger.info(f"Multimodal request with {len(file_ids)} files")
-            
             # Check for too many files to prevent context overflow
             if len(file_ids) > 20:  # Reasonable limit for GPT-4o
                 return create_api_response({
                     "response": "400",
                     "message": "Too many files. GPT-4o can process a maximum of 20 image files per request."
                 }, 400)
-            
-            # Use the multimodal service function with enhanced system prompt
-            service_response = gpt4o_multimodal_service(
-                system_prompt=enhanced_system_prompt,  # Use enhanced prompt with context
-                user_input=user_input,
-                temperature=temperature,
-                json_output=json_output,
-                file_ids=file_ids,
-                user_id=user_id
-            )
+ 
         else:
-            # Use the standard service function for text-only requests with enhanced system prompt
-            service_response = gpt4o_service(
-                system_prompt=enhanced_system_prompt,  # Use enhanced prompt with context
-                user_input=user_input,
-                temperature=temperature,
-                json_output=json_output
-            )
+            logger.info("Text-only request (using multimodal service)")
+
+        
+        # Always use the multimodal service - it handles both scenarios
+        service_response = gpt4o_service(
+            system_prompt=enhanced_system_prompt,  # Use enhanced prompt with context
+            user_input=user_input,
+            temperature=temperature,
+            json_output=json_output,
+            file_ids=file_ids,  # Will be empty list for text-only requests
+            user_id=user_id
+        )
         
         if not service_response["success"]:
             logger.error(f"GPT-4o API error: {service_response['error']}")
@@ -301,7 +310,7 @@ def gpt4o_route():
                 "message": service_response["error"]
             }, status_code)
         
-        # Prepare successful response with user details
+        # Prepare successful response with user details - consistent structure
         response_data = {
             "response": "200",
             "message": service_response["result"],
@@ -312,19 +321,24 @@ def gpt4o_route():
             "prompt_tokens": service_response["prompt_tokens"],
             "completion_tokens": service_response["completion_tokens"],
             "total_tokens": service_response["total_tokens"],
-            "cached_tokens": service_response.get("cached_tokens", 0)
+            "cached_tokens": service_response.get("cached_tokens", 0),
+            "client_used": service_response.get("client_used"),
         }
         
-        # Include file processing details if present
-        if "files_processed" in service_response:
-            response_data["files_processed"] = service_response["files_processed"]
+        # Always include file processing details for consistency
+        response_data["files_processed"] = service_response.get("files_processed", 0)
         
         if "file_processing_details" in service_response:
             response_data["file_processing_details"] = service_response["file_processing_details"]
+        else:
+            # Provide consistent structure even for text-only requests
+            response_data["file_processing_details"] = {
+                "images_processed": 0,
+                "file_ids_processed": []
+            }
         
-        # Include context usage info if context was used
-        if context_id:
-            response_data["context_used"] = context_id
+        # Always include context usage info - show "none" if no context was used
+        response_data["context_used"] = context_id if context_id else "none"
         
         return create_api_response(response_data, 200)
         

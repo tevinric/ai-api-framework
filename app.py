@@ -83,19 +83,34 @@ def token_services():
     return render_template('docs/token_services.html')
 
 ## BALANCE MANAGEMENT
-@app.route('/docs/balance_management')
-def balance_management():
-    return render_template('docs/balance_management.html')
+# @app.route('/docs/balance_management')
+# def balance_management():
+#     return render_template('docs/balance_management.html')
 
 ## FILE MANAGEMENT
 @app.route('/docs/file_management')
 def file_management():
     return render_template('docs/file_management.html')
 
+from apis.utils.templateHelpers import get_llm_template_context
 ## LLMS
 @app.route('/docs/llm')
+# def llm():
+#     return render_template('docs/llm.html')
 def llm():
-    return render_template('docs/llm.html')
+    try:
+        # Get model data from database
+        context = get_llm_template_context()
+        
+        return render_template('docs/llm.html', **context)
+        
+    except Exception as e:
+        logger.error(f"Error loading LLM page: {str(e)}")
+        # Fallback to empty context
+        return render_template('docs/llm.html', 
+                             models_by_family={}, 
+                             error="Failed to load model information")
+
 
 ## LLM CONVERSATION
 @app.route('/docs/llm_conversation')
@@ -168,6 +183,8 @@ from apis.token_services.refresh_token import register_refresh_token_routes
 register_refresh_token_routes(app)
 
 # ADMIN ENDPOINTS
+
+# USER MANAGER 
 ## CREATE USER
 from apis.admin.admin_create_user import register_create_user_routes
 register_create_user_routes(app)
@@ -177,6 +194,20 @@ register_admin_update_user_routes(app)
 ## DELETE USER
 # from apis.admin.admin_delete_user import register_admin_delete_user_routes
 # register_admin_delete_user_routes(app)
+
+# MODEL METADATA MANAGEMENT 
+## CREATE model metadata record  
+from apis.admin.admin_create_model_metadata import register_admin_create_model_metadata_routes
+register_admin_create_model_metadata_routes(app)
+## READ/GET model metadata record
+from apis.admin.admin_read_model_metadata import register_admin_read_model_metadata_routes
+register_admin_read_model_metadata_routes(app)
+## UPDATE model metadata record
+from apis.admin.admin_update_model_metadata import register_admin_update_model_metadata_routes
+register_admin_update_model_metadata_routes(app)
+## DELETE model metadata record
+from apis.admin.admin_delete_model_metadata import register_admin_delete_model_metadata_routes
+register_admin_delete_model_metadata_routes(app)
 
 ## RBAC ENDPOINT ACCESS CONTROL
 from apis.admin.admin_endpoint_access import register_admin_endpoint_access_routes
@@ -192,26 +223,56 @@ from apis.balance_management.balance_endpoints import register_balance_routes
 register_balance_routes(app)
 
 # LLM ENDPOINTS
+## DEEPSEEK
 from apis.llm.deepseek_r1 import register_llm_deepseek_r1
 register_llm_deepseek_r1(app)
 
+from apis.llm.deepseekv3 import register_llm_deepseek_v3
+register_llm_deepseek_v3(app)
+
+## LLAMA
 from apis.llm.llama import register_llm_llama
 register_llm_llama(app)
 
+from apis.llm.llama_32_vision_instruct import register_llm_llama_32_vision_instruct
+register_llm_llama_32_vision_instruct(app)
+
+from apis.llm.llama_4_maverick_17b_128E import register_llm_llama_4_maverick_17b_128E
+register_llm_llama_4_maverick_17b_128E(app)
+
+from apis.llm.llama_4_scout_17b_16E import register_llm_llama_4_scout_17b_16E
+register_llm_llama_4_scout_17b_16E(app)
+
+## MISTRAL
+from apis.llm.mistral_medium_2505 import register_llm_mistral_medium_2505
+register_llm_mistral_medium_2505(app)
+
+from apis.llm.mistral_nemo import register_llm_mistral_nemo
+register_llm_mistral_nemo(app)
+
+## OPENAI
 from apis.llm.gpt_4o_mini import register_llm_gpt_4o_mini
 register_llm_gpt_4o_mini(app)
 
 from apis.llm.gpt_4o import register_llm_gpt_4o
 register_llm_gpt_4o(app)
 
+from apis.llm.gpt_41_mini import register_llm_gpt_41_mini
+register_llm_gpt_41_mini(app)
+
+from apis.llm.gpt_41 import register_llm_gpt_41
+register_llm_gpt_41(app)
+
 from apis.llm.gpt_o1_mini import register_llm_o1_mini
 register_llm_o1_mini(app)
 
-from apis.llm.deepseekv3 import register_llm_deepseek_v3
-register_llm_deepseek_v3(app)
-
 from apis.llm.gpt_o3_mini import register_llm_o3_mini
 register_llm_o3_mini(app)
+
+from apis.llm.gpt_o4_mini import register_llm_gpt_o4_mini
+register_llm_gpt_o4_mini(app)
+
+
 
 # IMAGE GENERATION ENDPOINTS
 from apis.image_generation.dalle3 import register_image_generation_routes
@@ -224,8 +285,8 @@ register_stable_diffusion_ultra_routes(app)
 from apis.file_upload.upload_file import register_file_upload_routes
 register_file_upload_routes(app)
 
-from apis.balance_management.usage_statistics import register_usage_stats_routes
-register_usage_stats_routes(app)
+# from apis.balance_management.usage_statistics import register_usage_stats_routes
+# register_usage_stats_routes(app)
 
 # JOB MANAGEMENT ENDPOINTS
 from apis.jobs.job_routes import register_job_routes
@@ -234,6 +295,9 @@ register_job_routes(app)
 # SPEECH SERVICES ENDPOINTS
 from apis.speech_services.stt_async import register_async_speech_to_text_routes
 register_async_speech_to_text_routes(app)
+
+from apis.speech_services.tts import register_text_to_speech_routes
+register_text_to_speech_routes(app)
 
 # DOCUMENT INTELLIGENCE ENDPOINTS
 from apis.document_intelligence.summarization import register_document_intelligence_routes
@@ -277,8 +341,9 @@ register_nlp_routes(app)
 from apis.context import register_context_routes
 register_context_routes(app)
 
-
-
+#Agentic 
+# from apis.llm.agentic_llm import register_agentic_llm
+# register_agentic_llm(app)
 
 if __name__ == '__main__':
     app.run(debug=True)

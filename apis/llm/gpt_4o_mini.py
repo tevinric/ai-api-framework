@@ -4,11 +4,22 @@ from apis.utils.databaseService import DatabaseService
 import logging
 import pytz
 from datetime import datetime
-from apis.utils.llmServices import gpt4o_mini_service, gpt4o_mini_multimodal_service  # Import both service functions
+from apis.utils.llmServices import gpt4o_mini_service # Import the multimodal service function
+from apis.utils.fileService import FileService
+import os
+import tempfile
+import base64
 
 # CONFIGURE LOGGING
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Allowed image file extensions and MIME types
+ALLOWED_IMAGE_EXTENSIONS = {
+    'png': 'image/png',
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg'
+}
 
 from apis.utils.config import create_api_response
 
@@ -65,6 +76,9 @@ def gpt4o_mini_route():
               items:
                 type: string
               description: Array of image file IDs to process with the model (supports PNG, JPG, JPEG only)
+            context_id:
+              type: string
+              description: ID of a context file to use as an enhanced system prompt (optional)
     produces:
       - application/json
     responses:
@@ -117,7 +131,6 @@ def gpt4o_mini_route():
                 images_processed:
                   type: integer
                   example: 1
-
       400:
         description: Bad request
         schema:
@@ -227,6 +240,21 @@ def gpt4o_mini_route():
     temperature = float(data.get('temperature', 0.5))
     json_output = data.get('json_output', False)
     file_ids = data.get('file_ids', [])
+    context_id = data.get('context_id')  # New parameter for context_id
+    
+    # Validate and clean file_ids - filter out empty strings and non-string values
+    if file_ids and isinstance(file_ids, list):
+        file_ids = [file_id.strip() for file_id in file_ids if isinstance(file_id, str) and file_id.strip()]
+    else:
+        file_ids = []
+    
+    # Validate and clean context_id - treat empty strings as None
+    if context_id and isinstance(context_id, str):
+        context_id = context_id.strip()
+        if not context_id:  # Empty string after stripping
+            context_id = None
+    else:
+        context_id = None
     
     # Validate temperature range
     if not (0 <= temperature <= 1):
@@ -239,34 +267,40 @@ def gpt4o_mini_route():
         # Log API usage
         logger.info(f"GPT-4o-mini API called by user: {user_id}")
         
-        # Check if this is a multimodal request with file_ids
-        if file_ids and isinstance(file_ids, list) and len(file_ids) > 0:
+        # Apply context if provided (now properly validated)
+        if context_id:
+            from apis.llm.context_integration import apply_context_to_system_prompt
+            enhanced_system_prompt, error = apply_context_to_system_prompt(system_prompt, context_id, g.user_id)
+            if error:
+                logger.warning(f"Error applying context {context_id}: {error}")
+                # Continue with original system prompt but log the issue
+                enhanced_system_prompt = system_prompt
+        else:
+            enhanced_system_prompt = system_prompt
+        
+        # Log request type for debugging
+        if file_ids and len(file_ids) > 0:
             logger.info(f"Multimodal request with {len(file_ids)} files")
-            
             # Check for too many files to prevent context overflow
             if len(file_ids) > 10:  # Lower limit for GPT-4o-mini due to smaller context
                 return create_api_response({
                     "response": "400",
                     "message": "Too many files. GPT-4o-mini can process a maximum of 10 image files per request."
                 }, 400)
-            
-            # Use the multimodal service function
-            service_response = gpt4o_mini_multimodal_service(
-                system_prompt=system_prompt,
-                user_input=user_input,
-                temperature=temperature,
-                json_output=json_output,
-                file_ids=file_ids,
-                user_id=user_id
-            )
+ 
         else:
-            # Use the standard service function for text-only requests
-            service_response = gpt4o_mini_service(
-                system_prompt=system_prompt,
-                user_input=user_input,
-                temperature=temperature,
-                json_output=json_output
-            )
+            logger.info("Text-only request (using multimodal service)")
+
+        
+        # Always use the multimodal service - it handles both scenarios
+        service_response = gpt4o_mini_service(
+            system_prompt=enhanced_system_prompt,  # Use enhanced prompt with context
+            user_input=user_input,
+            temperature=temperature,
+            json_output=json_output,
+            file_ids=file_ids,  # Will be empty list for text-only requests
+            user_id=user_id
+        )
         
         if not service_response["success"]:
             logger.error(f"GPT-4o-mini API error: {service_response['error']}")
@@ -276,7 +310,7 @@ def gpt4o_mini_route():
                 "message": service_response["error"]
             }, status_code)
         
-        # Prepare successful response with user details
+        # Prepare successful response with user details - consistent structure
         response_data = {
             "response": "200",
             "message": service_response["result"],
@@ -287,15 +321,24 @@ def gpt4o_mini_route():
             "prompt_tokens": service_response["prompt_tokens"],
             "completion_tokens": service_response["completion_tokens"],
             "total_tokens": service_response["total_tokens"],
-            "cached_tokens": service_response.get("cached_tokens", 0)
+            "cached_tokens": service_response.get("cached_tokens", 0),
+            "client_used": service_response.get("client_used"),
         }
         
-        # Include file processing details if present
-        if "files_processed" in service_response:
-            response_data["files_processed"] = service_response["files_processed"]
+        # Always include file processing details for consistency
+        response_data["files_processed"] = service_response.get("files_processed", 0)
         
         if "file_processing_details" in service_response:
             response_data["file_processing_details"] = service_response["file_processing_details"]
+        else:
+            # Provide consistent structure even for text-only requests
+            response_data["file_processing_details"] = {
+                "images_processed": 0,
+                "file_ids_processed": []
+            }
+        
+        # Always include context usage info - show "none" if no context was used
+        response_data["context_used"] = context_id if context_id else "none"
         
         return create_api_response(response_data, 200)
         

@@ -12,7 +12,6 @@ logger = logging.getLogger(__name__)
 
 from apis.utils.config import create_api_response
 
-# Remove the balance check decorator from here - we'll apply it in the registration
 def deepseek_r1_route():
     """
     Consumes 3 AI credits per call
@@ -55,11 +54,13 @@ def deepseek_r1_route():
               maximum: 1
               default: 0.5
               description: Controls randomness (0=focused, 1=creative)
-
             max_tokens:
               type: integer
               default: 2048
               description: Maximum number of tokens to generate
+            context_id:
+              type: string
+              description: ID of a context file to use as an enhanced system prompt (optional)
     produces:
       - application/json
     responses:
@@ -102,6 +103,10 @@ def deepseek_r1_route():
               type: integer
               example: 0
               description: Number of cached tokens (if supported by model)  
+            context_used:
+              type: string
+              example: "ctx-123"
+              description: ID of the context file that was used (if any)
       400:
         description: Bad request
         schema:
@@ -211,6 +216,7 @@ def deepseek_r1_route():
     temperature = float(data.get('temperature', 0.5))
     json_output = data.get('json_output', False)
     max_tokens = int(data.get('max_tokens', 2048))
+    context_id = data.get('context_id')  # New parameter for context_id
     
     # Validate temperature range
     if not (0 <= temperature <= 1):
@@ -223,9 +229,13 @@ def deepseek_r1_route():
         # Log API usage
         logger.info(f"DeepSeek-R1 API called by user: {user_id}")
         
+        # Apply context if provided
+        from apis.llm.context_helper import apply_context_if_provided, add_context_to_response
+        enhanced_system_prompt, context_used = apply_context_if_provided(system_prompt, context_id)
+        
         # Use the service function instead of direct API call
         service_response = deepseek_r1_service(
-            system_prompt=system_prompt,
+            system_prompt=enhanced_system_prompt,  # Use enhanced prompt with context
             user_input=user_input,
             temperature=temperature,
             json_output=json_output,
@@ -241,18 +251,24 @@ def deepseek_r1_route():
             }, status_code)
         
         # Prepare successful response with user details
-        return create_api_response({
+        response_data = {
             "response": "200",
             "message": service_response["result"],
             "user_id": user_details["id"],
             "user_name": user_details["user_name"],
             "user_email": user_details["user_email"],
             "model": service_response["model"],
+            "client_used": service_response.get("client_used", "unknown"),
             "prompt_tokens": service_response["prompt_tokens"],
             "completion_tokens": service_response["completion_tokens"],
             "total_tokens": service_response["total_tokens"],
             "cached_tokens": service_response.get("cached_tokens", 0)
-        }, 200)
+        }
+        
+        # Include context usage info if context was used
+        response_data = add_context_to_response(response_data, context_used)
+        
+        return create_api_response(response_data, 200)
         
     except Exception as e:
         logger.error(f"DeepSeek-R1 API error: {str(e)}")
