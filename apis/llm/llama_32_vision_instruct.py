@@ -1,23 +1,37 @@
+# apis/llm/llama_32_vision_instruct.py
 from flask import jsonify, request, g, make_response
 from apis.utils.tokenService import TokenService
 from apis.utils.databaseService import DatabaseService
 import logging
 import pytz
 from datetime import datetime
-import uuid
-from apis.utils.llmServices import o1_mini_service  # Import the service function
+from apis.utils.llmServices import llama_3_2_vision_instruct_service # Import the multimodal service function
+from apis.utils.fileService import FileService
+import os
+import tempfile
+import base64
 
 # CONFIGURE LOGGING
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-from apis.utils.config import create_api_response
+# Allowed image file extensions and MIME types
+ALLOWED_IMAGE_EXTENSIONS = {
+    'png': 'image/png',
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg'
+}
 
-def o1_mini_route():
+from apis.utils.config import create_api_response
+# Remove the balance check decorator from here - we'll apply it in the registration
+def llama_32_vision_instruct_route():
     """
-    Consumes 5 AI credits per call
+    Consumes 2 AI credits per call
     
-    OpenAI LLM model for text generation on complex tasks that required chain of though and deep reasoning.
+    Meta Llama 3.2 Vision Instruct LLM model for multimodal content generation.
+    Supports text completion and visual analysis with image file references.
+    Note: This model has a 8000 token context limit - use concise prompts and limit images.
+    
     ---
     tags:
       - LLM
@@ -42,14 +56,32 @@ def o1_mini_route():
           properties:
             system_prompt:
               type: string
-              description: System prompt to control model behavior
+              description: System prompt to control model behavior (keep concise - will be truncated if too long)
               default: "You are a helpful AI assistant"
             user_input:
               type: string
-              description: Text for the model to process
+              description: Text for the model to process (will be truncated if combined input exceeds model limits)
+            temperature:
+              type: number
+              format: float
+              minimum: 0
+              maximum: 1
+              default: 0.7
+              description: Controls randomness (0=focused, 1=creative)
+            max_tokens:
+              type: integer
+              minimum: 1
+              maximum: 8000
+              default: 1000
+              description: Maximum number of tokens to generate in the response (capped at 8000 for this model)
+            file_ids:
+              type: array
+              items:
+                type: string
+              description: Array of image file IDs to process with the model (supports PNG, JPG, JPEG only - limit 4-5 images due to token constraints)
             context_id:
               type: string
-              description: ID of a context file to use as an enhanced system prompt (optional)
+              description: ID of a context file to use as an enhanced system prompt (optional - may be truncated)
     produces:
       - application/json
     responses:
@@ -75,15 +107,7 @@ def o1_mini_route():
               example: "john.doe@example.com"
             model:
               type: string
-              example: "o1-mini"
-            client_used:
-              type: string
-              example: "primary"
-              description: Which client was used (primary, secondary, tertiary)
-            context_used:
-              type: string
-              example: "ctx_123e4567-e89b-12d3-a456-426614174000"
-              description: Context identifier used in this request (or 'none' if no context)
+              example: "Llama-3.2-90B-Vision-Instruct"
             prompt_tokens:
               type: integer
               example: 125
@@ -100,7 +124,24 @@ def o1_mini_route():
               type: integer
               example: 0
               description: Number of cached tokens (if supported by model)  
-
+            files_processed:
+              type: integer
+              example: 1
+              description: Number of image files processed in the request
+            file_processing_details:
+              type: object
+              properties:
+                images_processed:
+                  type: integer
+                  example: 1
+            context_used:
+              type: string
+              example: "context123"
+              description: ID of context file used, or 'none' if no context was applied
+            client_used:
+              type: string
+              example: "primary"
+              description: Which client endpoint was used for the request
       400:
         description: Bad request
         schema:
@@ -207,9 +248,16 @@ def o1_mini_route():
     # Extract parameters with defaults
     system_prompt = data.get('system_prompt', 'You are a helpful AI assistant')
     user_input = data.get('user_input', '')
-    temperature = float(data.get('temperature', 0.5))
-    json_output = data.get('json_output', False)
-    context_id = data.get('context_id')
+    temperature = float(data.get('temperature', 0.7))
+    max_tokens = data.get('max_tokens', 1000)  # Updated default to be more conservative
+    file_ids = data.get('file_ids', [])
+    context_id = data.get('context_id')  # New parameter for context_id
+    
+    # Validate and clean file_ids - filter out empty strings and non-string values
+    if file_ids and isinstance(file_ids, list):
+        file_ids = [file_id.strip() for file_id in file_ids if isinstance(file_id, str) and file_id.strip()]
+    else:
+        file_ids = []
     
     # Validate and clean context_id - treat empty strings as None
     if context_id and isinstance(context_id, str):
@@ -226,11 +274,18 @@ def o1_mini_route():
             "message": "Temperature must be between 0 and 1"
         }, 400)
     
+    # Validate max_tokens - Updated for model constraints
+    if not isinstance(max_tokens, int) or max_tokens < 1 or max_tokens > 7999:
+        return create_api_response({
+            "response": "400",
+            "message": "max_tokens must be an integer between 1 and 8000 for Llama 3.2 Vision model"
+        }, 400)
+    
     try:
         # Log API usage
-        logger.info(f"O1-mini API called by user: {user_id}")
+        logger.info(f"Llama 3.2 Vision Instruct API called by user: {user_id}")
         
-        # Apply context if provided (same as gpt-4o implementation)
+        # Apply context if provided (now properly validated)
         if context_id:
             from apis.llm.context_integration import apply_context_to_system_prompt
             enhanced_system_prompt, error = apply_context_to_system_prompt(system_prompt, context_id, g.user_id)
@@ -241,51 +296,83 @@ def o1_mini_route():
         else:
             enhanced_system_prompt = system_prompt
         
-        # Use the service function with enhanced system prompt
-        service_response = o1_mini_service(
+        # Log request type for debugging
+        if file_ids and len(file_ids) > 0:
+            logger.info(f"Multimodal request with {len(file_ids)} files")
+            # Updated limit for Llama 3.2 Vision Instruct due to token constraints
+            if len(file_ids) > 5:  # Reduced limit due to 8000 token constraint
+                return create_api_response({
+                    "response": "400",
+                    "message": "Too many files. Llama 3.2 Vision Instruct can process a maximum of 5 image files per request due to token limits."
+                }, 400)
+ 
+        else:
+            logger.info("Text-only request (using multimodal service)")
+
+        
+        # Always use the multimodal service - it handles both scenarios
+        service_response = llama_3_2_vision_instruct_service(
             system_prompt=enhanced_system_prompt,  # Use enhanced prompt with context
             user_input=user_input,
             temperature=temperature,
-            json_output=json_output
+            max_tokens=max_tokens,  # Pass the max_tokens parameter
+            file_ids=file_ids,  # Will be empty list for text-only requests
+            user_id=user_id
         )
         
         if not service_response["success"]:
-            logger.error(f"O1-mini API error: {service_response['error']}")
+            logger.error(f"Llama 3.2 Vision Instruct API error: {service_response['error']}")
             status_code = 500 if not str(service_response["error"]).startswith("4") else 400
             return create_api_response({
                 "response": str(status_code),
                 "message": service_response["error"]
             }, status_code)
         
-        # Prepare successful response with user details and context information
-        return create_api_response({
+        # Prepare successful response with user details - consistent structure
+        response_data = {
             "response": "200",
             "message": service_response["result"],
             "user_id": user_details["id"],
             "user_name": user_details["user_name"],
             "user_email": user_details["user_email"],
             "model": service_response["model"],
-            "client_used": service_response["client_used"],
-            "context_used": context_id if context_id else "none",
             "prompt_tokens": service_response["prompt_tokens"],
             "completion_tokens": service_response["completion_tokens"],
             "total_tokens": service_response["total_tokens"],
-            "cached_tokens": service_response.get("cached_tokens", 0)
-        }, 200)
+            "cached_tokens": service_response.get("cached_tokens", 0),
+            "client_used": service_response.get("client_used"),
+        }
+        
+        # Always include file processing details for consistency
+        response_data["files_processed"] = service_response.get("files_processed", 0)
+        
+        if "file_processing_details" in service_response:
+            response_data["file_processing_details"] = service_response["file_processing_details"]
+        else:
+            # Provide consistent structure even for text-only requests
+            response_data["file_processing_details"] = {
+                "images_processed": 0,
+                "file_ids_processed": []
+            }
+        
+        # Always include context usage info - show "none" if no context was used
+        response_data["context_used"] = context_id if context_id else "none"
+        
+        return create_api_response(response_data, 200)
         
     except Exception as e:
-        logger.error(f"O1-mini API error: {str(e)}")
+        logger.error(f"Llama 3.2 Vision Instruct API error: {str(e)}")
         status_code = 500 if not str(e).startswith("4") else 400
         return create_api_response({
             "response": str(status_code),
             "message": str(e)
         }, status_code)
 
-def register_llm_o1_mini(app):
+def register_llm_llama_32_vision_instruct(app):
     """Register routes with the Flask app"""
     from apis.utils.logMiddleware import api_logger
     from apis.utils.balanceMiddleware import check_balance
     from apis.utils.usageMiddleware import track_usage
     from apis.utils.rbacMiddleware import check_endpoint_access
-        
-    app.route('/llm/o1-mini', methods=['POST'])(track_usage(api_logger(check_endpoint_access(check_balance(o1_mini_route)))))
+    
+    app.route('/llm/llama-3.2-vision-instruct', methods=['POST'])(track_usage(api_logger(check_endpoint_access(check_balance(llama_32_vision_instruct_route)))))

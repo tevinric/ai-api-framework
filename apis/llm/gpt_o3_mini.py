@@ -62,6 +62,9 @@ def o3_mini_route():
               type: boolean
               default: false
               description: Whether to return the response in JSON format
+            context_id:
+              type: string
+              description: ID of a context file to use as an enhanced system prompt (optional)
     produces:
       - application/json
     responses:
@@ -88,6 +91,14 @@ def o3_mini_route():
             model:
               type: string
               example: "o3-mini"
+            client_used:
+              type: string
+              example: "primary"
+              description: Which client was used (primary, secondary, tertiary)
+            context_used:
+              type: string
+              example: "ctx_123e4567-e89b-12d3-a456-426614174000"
+              description: Context identifier used in this request (or 'none' if no context)
             prompt_tokens:
               type: integer
               example: 125
@@ -214,6 +225,15 @@ def o3_mini_route():
     max_completion_tokens = int(data.get('max_completion_tokens', 100000))
     reasoning_effort = data.get('reasoning_effort', 'medium')
     json_output = data.get('json_output', False)
+    context_id = data.get('context_id')
+    
+    # Validate and clean context_id - treat empty strings as None
+    if context_id and isinstance(context_id, str):
+        context_id = context_id.strip()
+        if not context_id:  # Empty string after stripping
+            context_id = None
+    else:
+        context_id = None
     
     # Validate max_completion_tokens range
     if not (1 <= max_completion_tokens <= 120000):
@@ -234,9 +254,20 @@ def o3_mini_route():
         # Log API usage
         logger.info(f"O3-Mini API called by user: {user_id}")
         
-        # Use the service function instead of direct API call
+        # Apply context if provided (same as gpt-4o implementation)
+        if context_id:
+            from apis.llm.context_integration import apply_context_to_system_prompt
+            enhanced_system_prompt, error = apply_context_to_system_prompt(system_prompt, context_id, g.user_id)
+            if error:
+                logger.warning(f"Error applying context {context_id}: {error}")
+                # Continue with original system prompt but log the issue
+                enhanced_system_prompt = system_prompt
+        else:
+            enhanced_system_prompt = system_prompt
+        
+        # Use the service function with enhanced system prompt
         service_response = o3_mini_service(
-            system_prompt=system_prompt,
+            system_prompt=enhanced_system_prompt,  # Use enhanced prompt with context
             user_input=user_input,
             max_completion_tokens=max_completion_tokens,
             reasoning_effort=reasoning_effort,
@@ -251,7 +282,7 @@ def o3_mini_route():
                 "message": service_response["error"]
             }, status_code)
         
-        # Prepare successful response with user details
+        # Prepare successful response with user details and context information
         return create_api_response({
             "response": "200",
             "message": service_response["result"],
@@ -259,6 +290,8 @@ def o3_mini_route():
             "user_name": user_details["user_name"],
             "user_email": user_details["user_email"],
             "model": service_response["model"],
+            "client_used": service_response["client_used"],
+            "context_used": context_id if context_id else "none",
             "prompt_tokens": service_response["prompt_tokens"],
             "completion_tokens": service_response["completion_tokens"],
             "total_tokens": service_response["total_tokens"],

@@ -258,6 +258,7 @@ def deepseek_r1_route():
             "user_name": user_details["user_name"],
             "user_email": user_details["user_email"],
             "model": service_response["model"],
+            "client_used": service_response.get("client_used", "unknown"),
             "prompt_tokens": service_response["prompt_tokens"],
             "completion_tokens": service_response["completion_tokens"],
             "total_tokens": service_response["total_tokens"],

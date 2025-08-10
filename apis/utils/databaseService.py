@@ -10,7 +10,6 @@ logger = logging.getLogger(__name__)
 
 # DATABASE SERVICE
 class DatabaseService:
-
     DB_CONFIG={
     "DRIVER" : os.environ['DB_DRIVER'],
     "SERVER" : os.environ['DB_SERVER'],
@@ -26,6 +25,58 @@ class DatabaseService:
         f"PWD={DB_CONFIG['PASSWORD']};"
     )
     
+    @staticmethod
+    def execute_query(query, params=None):
+        """
+        Execute a SQL query and return results
+        
+        Args:
+            query (str): SQL query to execute
+            params (tuple): Query parameters (optional)
+            
+        Returns:
+            dict: {'success': bool, 'data': list, 'error': str}
+        """
+        try:
+            conn = DatabaseService.get_connection()
+            cursor = conn.cursor()
+            
+            if params:
+                cursor.execute(query, params)
+            else:
+                cursor.execute(query)
+            
+            # For SELECT queries, fetch results
+            if query.strip().upper().startswith('SELECT'):
+                results = cursor.fetchall()
+                data = [list(row) for row in results]  # Convert to list of lists
+            else:
+                # For non-SELECT queries (INSERT, UPDATE, DELETE)
+                conn.commit()
+                data = cursor.rowcount  # Number of affected rows
+            
+            cursor.close()
+            conn.close()
+            
+            return {
+                'success': True,
+                'data': data,
+                'error': None
+            }
+            
+        except Exception as e:
+            logger.error(f"Database query error: {str(e)}")
+            if 'conn' in locals():
+                try:
+                    conn.rollback()
+                    conn.close()
+                except:
+                    pass
+            return {
+                'success': False,
+                'data': None,
+                'error': str(e)
+            }
     
     @staticmethod
     def get_connection():

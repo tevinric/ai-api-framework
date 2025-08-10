@@ -4,20 +4,32 @@ from apis.utils.databaseService import DatabaseService
 import logging
 import pytz
 from datetime import datetime
-import uuid
-from apis.utils.llmServices import o1_mini_service  # Import the service function
+from apis.utils.llmServices import gpt_o4_mini_service  # Import the multimodal service function
+from apis.utils.fileService import FileService
+import os
+import tempfile
+import base64
 
 # CONFIGURE LOGGING
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Allowed image file extensions and MIME types
+ALLOWED_IMAGE_EXTENSIONS = {
+    'png': 'image/png',
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg'
+}
+
 from apis.utils.config import create_api_response
 
-def o1_mini_route():
+def gpt_o4_mini_route():
     """
-    Consumes 5 AI credits per call
+    Consumes 2 AI credits per call
     
-    OpenAI LLM model for text generation on complex tasks that required chain of though and deep reasoning.
+    OpenAI GPT-o4-mini LLM model for multimodal content generation with enhanced reasoning capabilities.
+    Supports image file references and advanced reasoning parameters for enhanced visual analysis.
+    
     ---
     tags:
       - LLM
@@ -47,9 +59,38 @@ def o1_mini_route():
             user_input:
               type: string
               description: Text for the model to process
+            json_output:
+              type: boolean
+              default: false
+              description: When true, the model will return a structured JSON response
+            file_ids:
+              type: array
+              items:
+                type: string
+              description: Array of image file IDs to process with the model (supports PNG, JPG, JPEG only)
             context_id:
               type: string
               description: ID of a context file to use as an enhanced system prompt (optional)
+            formatting_reenabled:
+              type: boolean
+              default: true
+              description: Enable enhanced formatting capabilities
+            reasoning_effort:
+              type: string
+              enum: ["high", "medium", "low"]
+              default: "medium"
+              description: Level of reasoning effort for enhanced analysis
+            generate_summary:
+              type: string
+              enum: ["none", "detailed"]
+              default: "none"
+              description: Generate detailed summary of reasoning process
+            max_completion_tokens:
+              type: integer
+              default: 4000
+              minimum: 1
+              maximum: 16000
+              description: Maximum number of tokens to generate in the completion
     produces:
       - application/json
     responses:
@@ -75,7 +116,7 @@ def o1_mini_route():
               example: "john.doe@example.com"
             model:
               type: string
-              example: "o1-mini"
+              example: "gpt-o4-mini"
             client_used:
               type: string
               example: "primary"
@@ -100,7 +141,16 @@ def o1_mini_route():
               type: integer
               example: 0
               description: Number of cached tokens (if supported by model)  
-
+            files_processed:
+              type: integer
+              example: 1
+              description: Number of image files processed in the request
+            file_processing_details:
+              type: object
+              properties:
+                images_processed:
+                  type: integer
+                  example: 1
       400:
         description: Bad request
         schema:
@@ -207,9 +257,19 @@ def o1_mini_route():
     # Extract parameters with defaults
     system_prompt = data.get('system_prompt', 'You are a helpful AI assistant')
     user_input = data.get('user_input', '')
-    temperature = float(data.get('temperature', 0.5))
     json_output = data.get('json_output', False)
+    file_ids = data.get('file_ids', [])
     context_id = data.get('context_id')
+    formatting_reenabled = data.get('formatting_reenabled', True)
+    reasoning_effort = data.get('reasoning_effort', 'medium')
+    generate_summary = data.get('generate_summary', 'none')
+    max_completion_tokens = data.get('max_completion_tokens', 4000)
+    
+    # Validate and clean file_ids - filter out empty strings and non-string values
+    if file_ids and isinstance(file_ids, list):
+        file_ids = [file_id.strip() for file_id in file_ids if isinstance(file_id, str) and file_id.strip()]
+    else:
+        file_ids = []
     
     # Validate and clean context_id - treat empty strings as None
     if context_id and isinstance(context_id, str):
@@ -219,18 +279,40 @@ def o1_mini_route():
     else:
         context_id = None
     
-    # Validate temperature range
-    if not (0 <= temperature <= 1):
+    # Validate max_completion_tokens
+    if not isinstance(max_completion_tokens, int) or max_completion_tokens <= 0:
         return create_api_response({
             "response": "400",
-            "message": "Temperature must be between 0 and 1"
+            "message": "max_completion_tokens must be a positive integer"
+        }, 400)
+    
+    if max_completion_tokens > 16000:
+        return create_api_response({
+            "response": "400",
+            "message": "max_completion_tokens cannot exceed 16000"
+        }, 400)
+    
+    # Validate reasoning_effort
+    valid_reasoning_efforts = ["high", "medium", "low"]
+    if reasoning_effort not in valid_reasoning_efforts:
+        return create_api_response({
+            "response": "400",
+            "message": f"reasoning_effort must be one of: {', '.join(valid_reasoning_efforts)}"
+        }, 400)
+    
+    # Validate generate_summary
+    valid_summary_options = ["none", "detailed"]
+    if generate_summary not in valid_summary_options:
+        return create_api_response({
+            "response": "400",
+            "message": f"generate_summary must be one of: {', '.join(valid_summary_options)}"
         }, 400)
     
     try:
         # Log API usage
-        logger.info(f"O1-mini API called by user: {user_id}")
+        logger.info(f"GPT-o4-mini API called by user: {user_id}")
         
-        # Apply context if provided (same as gpt-4o implementation)
+        # Apply context if provided (same as other implementations)
         if context_id:
             from apis.llm.context_integration import apply_context_to_system_prompt
             enhanced_system_prompt, error = apply_context_to_system_prompt(system_prompt, context_id, g.user_id)
@@ -241,51 +323,83 @@ def o1_mini_route():
         else:
             enhanced_system_prompt = system_prompt
         
-        # Use the service function with enhanced system prompt
-        service_response = o1_mini_service(
+        # Log request type for debugging
+        if file_ids and len(file_ids) > 0:
+            logger.info(f"Multimodal request with {len(file_ids)} files")
+            # Check for too many files to prevent context overflow
+            if len(file_ids) > 15:  # Conservative limit for o4-mini model
+                return create_api_response({
+                    "response": "400",
+                    "message": "Too many files. GPT-o4-mini can process a maximum of 15 image files per request."
+                }, 400)
+        else:
+            logger.info("Text-only request (using multimodal service)")
+
+        # Use the multimodal service with enhanced reasoning parameters
+        service_response = gpt_o4_mini_service(
             system_prompt=enhanced_system_prompt,  # Use enhanced prompt with context
             user_input=user_input,
-            temperature=temperature,
-            json_output=json_output
+            json_output=json_output,
+            file_ids=file_ids,  # Will be empty list for text-only requests
+            user_id=user_id,
+            formatting_reenabled=formatting_reenabled,
+            reasoning_effort=reasoning_effort,
+            generate_summary=generate_summary,
+            max_completion_tokens=max_completion_tokens
         )
         
         if not service_response["success"]:
-            logger.error(f"O1-mini API error: {service_response['error']}")
+            logger.error(f"GPT-o4-mini API error: {service_response['error']}")
             status_code = 500 if not str(service_response["error"]).startswith("4") else 400
             return create_api_response({
                 "response": str(status_code),
                 "message": service_response["error"]
             }, status_code)
         
-        # Prepare successful response with user details and context information
-        return create_api_response({
+        # Prepare successful response with user details - consistent structure
+        response_data = {
             "response": "200",
             "message": service_response["result"],
             "user_id": user_details["id"],
             "user_name": user_details["user_name"],
             "user_email": user_details["user_email"],
             "model": service_response["model"],
-            "client_used": service_response["client_used"],
+            "client_used": service_response.get("client_used"),
             "context_used": context_id if context_id else "none",
             "prompt_tokens": service_response["prompt_tokens"],
             "completion_tokens": service_response["completion_tokens"],
             "total_tokens": service_response["total_tokens"],
-            "cached_tokens": service_response.get("cached_tokens", 0)
-        }, 200)
+            "cached_tokens": service_response.get("cached_tokens", 0),
+        }
+        
+        # Always include file processing details for consistency
+        response_data["files_processed"] = service_response.get("files_processed", 0)
+        
+        if "file_processing_details" in service_response:
+            response_data["file_processing_details"] = service_response["file_processing_details"]
+        else:
+            # Provide consistent structure even for text-only requests
+            response_data["file_processing_details"] = {
+                "images_processed": 0,
+                "file_ids_processed": []
+            }
+        
+        
+        return create_api_response(response_data, 200)
         
     except Exception as e:
-        logger.error(f"O1-mini API error: {str(e)}")
+        logger.error(f"GPT-o4-mini API error: {str(e)}")
         status_code = 500 if not str(e).startswith("4") else 400
         return create_api_response({
             "response": str(status_code),
             "message": str(e)
         }, status_code)
 
-def register_llm_o1_mini(app):
+def register_llm_gpt_o4_mini(app):
     """Register routes with the Flask app"""
     from apis.utils.logMiddleware import api_logger
     from apis.utils.balanceMiddleware import check_balance
     from apis.utils.usageMiddleware import track_usage
     from apis.utils.rbacMiddleware import check_endpoint_access
-        
-    app.route('/llm/o1-mini', methods=['POST'])(track_usage(api_logger(check_endpoint_access(check_balance(o1_mini_route)))))
+    
+    app.route('/llm/gpt-o4-mini', methods=['POST'])(track_usage(api_logger(check_endpoint_access(check_balance(gpt_o4_mini_route)))))

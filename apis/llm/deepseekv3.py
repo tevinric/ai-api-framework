@@ -16,7 +16,7 @@ def deepseek_v3_route():
     """
     Consumes 3 AI credits per call
     
-    DeepSeek-V3 LLM model for text generation and general task completion.
+    DeepSeek-V3-0324 LLM model for text generation and general task completion.
 
     ---
     tags:
@@ -50,20 +50,14 @@ def deepseek_v3_route():
             temperature:
               type: number
               format: float
-              minimum: 0.1
-              maximum: 0.99
-              default: 0.7
-              description: Controls randomness (0.1=focused, 0.99=creative)
+              minimum: 0
+              maximum: 1
+              default: 0.5
+              description: Controls randomness (0=focused, 1=creative)
             max_tokens:
               type: integer
-              minimum: 0
-              maximum: 4000
-              default: 1000
+              default: 2048
               description: Maximum number of tokens to generate
-            json_output:
-              type: boolean
-              default: false
-              description: Whether to return the response in JSON format
             context_id:
               type: string
               description: ID of a context file to use as an enhanced system prompt (optional)
@@ -92,7 +86,7 @@ def deepseek_v3_route():
               example: "john.doe@example.com"
             model:
               type: string
-              example: "DeepSeek-V3"
+              example: "DeepSeek-V3-0324"
             prompt_tokens:
               type: integer
               example: 125
@@ -113,7 +107,6 @@ def deepseek_v3_route():
               type: string
               example: "ctx-123"
               description: ID of the context file that was used (if any)
-
       400:
         description: Bad request
         schema:
@@ -220,28 +213,20 @@ def deepseek_v3_route():
     # Extract parameters with defaults
     system_prompt = data.get('system_prompt', 'You are a helpful AI assistant')
     user_input = data.get('user_input', '')
-    temperature = float(data.get('temperature', 0.7))
-    json_output = data.get('json_output', False)
-    max_tokens = int(data.get('max_tokens', 1000))
+    temperature = float(data.get('temperature', 0.5))
+    max_tokens = int(data.get('max_tokens', 2048))
     context_id = data.get('context_id')  # New parameter for context_id
     
     # Validate temperature range
-    if not (0.1 <= temperature <= 0.99):
+    if not (0 <= temperature <= 1):
         return create_api_response({
             "response": "400",
-            "message": "Temperature must be between 0.1 and 0.99"
-        }, 400)
-    
-    # Validate max_tokens range
-    if not (0 <= max_tokens <= 4000):
-        return create_api_response({
-            "response": "400",
-            "message": "max_tokens must be between 0 and 4000"
+            "message": "Temperature must be between 0 and 1"
         }, 400)
     
     try:
         # Log API usage
-        logger.info(f"DeepSeek-V3 API called by user: {user_id}")
+        logger.info(f"DeepSeek-V3-0324 API called by user: {user_id}")
         
         # Apply context if provided
         from apis.llm.context_helper import apply_context_if_provided, add_context_to_response
@@ -252,12 +237,11 @@ def deepseek_v3_route():
             system_prompt=enhanced_system_prompt,  # Use enhanced prompt with context
             user_input=user_input,
             temperature=temperature,
-            json_output=json_output,
             max_tokens=max_tokens
         )
         
         if not service_response["success"]:
-            logger.error(f"DeepSeek-V3 API error: {service_response['error']}")
+            logger.error(f"DeepSeek-V3-0324 API error: {service_response['error']}")
             status_code = 500 if not str(service_response["error"]).startswith("4") else 400
             return create_api_response({
                 "response": str(status_code),
@@ -272,6 +256,7 @@ def deepseek_v3_route():
             "user_name": user_details["user_name"],
             "user_email": user_details["user_email"],
             "model": service_response["model"],
+            "client_used": service_response.get("client_used", "unknown"),
             "prompt_tokens": service_response["prompt_tokens"],
             "completion_tokens": service_response["completion_tokens"],
             "total_tokens": service_response["total_tokens"],
@@ -284,7 +269,7 @@ def deepseek_v3_route():
         return create_api_response(response_data, 200)
         
     except Exception as e:
-        logger.error(f"DeepSeek-V3 API error: {str(e)}")
+        logger.error(f"DeepSeek-V3-0324 API error: {str(e)}")
         status_code = 500 if not str(e).startswith("4") else 400
         return create_api_response({
             "response": str(status_code),

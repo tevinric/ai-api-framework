@@ -13,13 +13,11 @@ from apis.utils.logMiddleware import api_logger
 from apis.utils.balanceMiddleware import check_balance
 from azure.storage.blob import BlobServiceClient, ContentSettings
 from apis.utils.fileService import FileService, FILE_UPLOAD_CONTAINER
+from apis.utils.imageServices import dalle3_service
 
 # CONFIGURE LOGGING
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-# Initialize OpenAI client
-client = get_openai_client()
 
 # Default deployment model for image generation
 DEFAULT_IMAGE_DEPLOYMENT = 'dall-e-3'  # Options: 'dalle3', 'dalle3-hd'
@@ -117,9 +115,6 @@ def custom_image_generation_route():
               type: string
               description: ID of the file in the upload system
               example: "12345678-1234-5678-1234-567812345678"
-            prompt_tokens:
-              type: integer
-              description: Number of prompt tokens used
             user_id:
               type: integer
               description: ID of the authenticated user
@@ -278,24 +273,30 @@ def custom_image_generation_route():
     
     try:
         # Log API usage
-        logger.info(f"Image Generation API called by user: {user_id}, deployment: {deployment}")
+        logger.info(f"Image Generation API called by user: {user_id}, deployment: {deployment}, quality: {quality}")
         
-        # Make request to DALLE-3
-        response = client.images.generate(
-            model=deployment,
+        # Use the consolidated dalle3_service function
+        response = dalle3_service(
             prompt=prompt,
-            n=1,  # Generate 1 image
             size=size,
             quality=quality,
             style=style,
-            response_format="b64_json"  # Get base64 encoded image data
+            deployment=deployment
         )
         
-        # Extract token usage
-        prompt_tokens = response.usage.prompt_tokens if hasattr(response, 'usage') and hasattr(response.usage, 'prompt_tokens') else 0
+        # Check if the service call was successful
+        if not response["success"]:
+            logger.error(f"Image generation service failed: {response['error']}")
+            return create_api_response({
+                "response": "500",
+                "message": f"Image generation failed: {response['error']}"
+            }, 500)
         
-        # Get the image data (base64)
-        b64_image = response.data[0].b64_json
+        # Extract response data
+        b64_image = response["b64_image"]
+        model_used = response["model"]
+        client_used = response["client_used"]
+        quality_used = response["quality"]
         
         # Convert base64 to binary
         import base64
@@ -339,11 +340,12 @@ def custom_image_generation_route():
             "response": "200",
             "message": "Image generated successfully",
             "file_id": file_id,
-            "prompt_tokens": prompt_tokens,
             "user_id": user_details["id"],
             "user_name": user_details["user_name"],
             "user_email": user_details["user_email"],
-            "model": deployment
+            "model": model_used,
+            "client_used": client_used,
+            "quality": quality_used
         }, 200)
         
     except Exception as e:
