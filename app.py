@@ -219,8 +219,8 @@ from apis.endpoint_management.admin_endpoint_management import register_admin_en
 register_admin_endpoint_routes(app)
 
 # BALANCE MANAGEMENT ENDPOINTS
-# from apis.balance_management.balance_endpoints import register_balance_routes
-# register_balance_routes(app)
+from apis.balance_management.balance_endpoints import register_balance_routes
+register_balance_routes(app)
 
 # LLM ENDPOINTS
 ## DEEPSEEK
