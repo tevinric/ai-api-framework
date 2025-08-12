@@ -12,29 +12,33 @@ import {
   ListItemIcon,
   ListItemText,
   CssBaseline,
-  Chip
+  Chip,
+  Avatar,
+  Divider
 } from '@mui/material';
 import { 
   People as PeopleIcon,
   Settings as SettingsIcon,
   ExitToApp as LogoutIcon,
   Dashboard as DashboardIcon,
-  DeveloperMode as DevIcon
+  DeveloperMode as DevIcon,
+  Person as PersonIcon
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
-import apiService from '../services/api';
-import { isLoginDisabled } from '../utils/auth';
+import authService from '../services/authService';
+import { getCurrentUser } from '../utils/auth';
 
 const drawerWidth = 240;
 
 const Layout = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const loginDisabled = isLoginDisabled();
+  const isDevelopment = authService.isLoginBypassEnabled();
+  const currentUser = getCurrentUser();
 
-  const handleLogout = () => {
-    if (!loginDisabled) {
-      apiService.clearCredentials();
+  const handleLogout = async () => {
+    await authService.logout();
+    if (!isDevelopment) {
       navigate('/login');
     }
   };
@@ -60,7 +64,7 @@ const Layout = ({ children }) => {
         <Toolbar>
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
             AI API Admin Portal
-            {loginDisabled && (
+            {isDevelopment && (
               <Chip 
                 icon={<DevIcon />}
                 label="DEV MODE" 
@@ -70,14 +74,21 @@ const Layout = ({ children }) => {
               />
             )}
           </Typography>
-          {!loginDisabled && (
-            <Button 
-              color="inherit" 
-              onClick={handleLogout}
-              startIcon={<LogoutIcon />}
-            >
-              Logout
-            </Button>
+          
+          {currentUser && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Typography variant="body2" sx={{ color: 'inherit' }}>
+                Welcome, {currentUser.user_name}
+              </Typography>
+              <Button 
+                color="inherit" 
+                onClick={handleLogout}
+                startIcon={<LogoutIcon />}
+                size="small"
+              >
+                {isDevelopment ? 'Reset' : 'Logout'}
+              </Button>
+            </Box>
           )}
         </Toolbar>
       </AppBar>
@@ -99,6 +110,39 @@ const Layout = ({ children }) => {
             Admin Menu
           </Typography>
         </Toolbar>
+        
+        {/* User Info Section */}
+        {currentUser && (
+          <Box sx={{ p: 2, bgcolor: 'grey.50' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+              <Avatar sx={{ bgcolor: 'primary.main', mr: 1, width: 32, height: 32 }}>
+                <PersonIcon />
+              </Avatar>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography variant="subtitle2" noWrap>
+                  {currentUser.common_name || currentUser.user_name}
+                </Typography>
+                <Typography variant="caption" color="textSecondary" noWrap>
+                  {currentUser.department || 'No Department'}
+                </Typography>
+              </Box>
+            </Box>
+            <Typography variant="caption" color="textSecondary" display="block">
+              {currentUser.user_email}
+            </Typography>
+            {isDevelopment && (
+              <Chip 
+                label="DEV USER" 
+                size="small" 
+                color="warning" 
+                sx={{ mt: 1, fontSize: '0.7rem', height: 20 }} 
+              />
+            )}
+          </Box>
+        )}
+        
+        <Divider />
+        
         <List>
           {menuItems.map((item) => (
             <ListItem 

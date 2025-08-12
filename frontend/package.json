@@ -4,6 +4,13 @@
   "description": "Admin portal for AI API framework",
   "private": true,
   "dependencies": {
+    "@azure/msal-browser": "^4.19.0",
+    "@azure/msal-react": "^3.0.17",
+    "@emotion/react": "^11.11.3",
+    "@emotion/styled": "^11.11.0",
+    "@mui/icons-material": "^5.15.10",
+    "@mui/material": "^5.15.10",
+    "@mui/x-data-grid": "^6.19.4",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^14.5.2",
@@ -12,12 +19,7 @@
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.8.1",
     "react-scripts": "5.0.1",
-    "web-vitals": "^2.1.4",
-    "@mui/material": "^5.15.10",
-    "@mui/icons-material": "^5.15.10",
-    "@emotion/react": "^11.11.3",
-    "@emotion/styled": "^11.11.0",
-    "@mui/x-data-grid": "^6.19.4"
+    "web-vitals": "^2.1.4"
   },
   "scripts": {
     "start": "react-scripts start",

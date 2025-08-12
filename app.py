@@ -191,6 +191,12 @@ register_create_user_routes(app)
 ## UPDATE USER
 from apis.admin.admin_update_user import register_admin_update_user_routes
 register_admin_update_user_routes(app)
+## GET USER DETAILS
+from apis.admin.admin_get_user_details import register_get_user_details_routes
+register_get_user_details_routes(app)
+## GET ALL USERS
+from apis.admin.admin_get_all_users import register_get_all_users_routes
+register_get_all_users_routes(app)
 ## DELETE USER
 # from apis.admin.admin_delete_user import register_admin_delete_user_routes
 # register_admin_delete_user_routes(app)

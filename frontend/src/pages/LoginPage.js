@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Container, 
   Paper, 
-  TextField, 
   Button, 
   Typography, 
   Box, 
@@ -10,53 +9,42 @@ import {
   CircularProgress
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import apiService from '../services/api';
+import authService from '../services/authService';
 
 const LoginPage = () => {
-  const [credentials, setCredentials] = useState({
-    apiKey: '',
-    token: ''
-  });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setCredentials(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    if (error) setError('');
-  };
+  useEffect(() => {
+    // Check if already authenticated
+    if (authService.isAuthenticated()) {
+      navigate('/');
+    }
+  }, [navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    
-    if (!credentials.apiKey || !credentials.token) {
-      setError('Please enter both API Key and Token');
-      return;
-    }
-
     setLoading(true);
     setError('');
 
     try {
-      const isValid = await apiService.validateCredentials(credentials.apiKey, credentials.token);
+      const result = await authService.login();
       
-      if (isValid) {
-        apiService.setCredentials(credentials.apiKey, credentials.token);
+      if (result.success) {
         navigate('/');
       } else {
-        setError('Invalid credentials. Please check your API Key and Token.');
+        setError(result.error || 'Login failed');
       }
     } catch (error) {
       console.error('Login error:', error);
-      setError('Login failed. Please check your credentials and try again.');
+      setError('Login failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
+
+  const isDevelopment = authService.isLoginBypassEnabled();
 
   return (
     <Container component="main" maxWidth="sm">
@@ -73,9 +61,15 @@ const LoginPage = () => {
             AI API Admin Portal
           </Typography>
           <Typography component="h2" variant="h6" align="center" color="textSecondary" gutterBottom>
-            Sign in to continue
+            {isDevelopment ? 'Development Mode' : 'Sign in to continue'}
           </Typography>
           
+          {isDevelopment && (
+            <Alert severity="info" sx={{ mb: 2 }}>
+              Development mode is active. Authentication will be bypassed using default test user.
+            </Alert>
+          )}
+
           {error && (
             <Alert severity="error" sx={{ mb: 2 }}>
               {error}
@@ -83,33 +77,6 @@ const LoginPage = () => {
           )}
 
           <Box component="form" onSubmit={handleLogin} sx={{ mt: 1 }}>
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              id="apiKey"
-              label="Admin API Key"
-              name="apiKey"
-              type="password"
-              autoComplete="current-password"
-              autoFocus
-              value={credentials.apiKey}
-              onChange={handleInputChange}
-              disabled={loading}
-            />
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              name="token"
-              label="Admin Token"
-              type="password"
-              id="token"
-              autoComplete="current-password"
-              value={credentials.token}
-              onChange={handleInputChange}
-              disabled={loading}
-            />
             <Button
               type="submit"
               fullWidth
@@ -117,8 +84,19 @@ const LoginPage = () => {
               sx={{ mt: 3, mb: 2 }}
               disabled={loading}
             >
-              {loading ? <CircularProgress size={24} /> : 'Sign In'}
+              {loading ? (
+                <CircularProgress size={24} />
+              ) : (
+                isDevelopment ? 'Continue as Test User' : 'Sign In with Azure AD'
+              )}
             </Button>
+
+            {!isDevelopment && (
+              <Typography variant="body2" align="center" sx={{ mt: 2 }}>
+                You will be redirected to Azure Active Directory to authenticate.
+                Only authorized admin users can access this portal.
+              </Typography>
+            )}
           </Box>
         </Paper>
       </Box>

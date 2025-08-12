@@ -1,14 +1,7 @@
+import authService from '../services/authService';
+
 export const isAuthenticated = () => {
-  // Check if login is disabled via environment variable
-  const disableLogin = process.env.REACT_APP_DISABLE_LOGIN === 'true';
-  
-  if (disableLogin) {
-    return true;
-  }
-  
-  const apiKey = localStorage.getItem('adminApiKey');
-  const token = localStorage.getItem('adminToken');
-  return !!(apiKey && token);
+  return authService.isAuthenticated();
 };
 
 export const getStoredCredentials = () => {
@@ -21,8 +14,13 @@ export const getStoredCredentials = () => {
 export const clearStoredCredentials = () => {
   localStorage.removeItem('adminApiKey');
   localStorage.removeItem('adminToken');
+  localStorage.removeItem('currentUser');
 };
 
 export const isLoginDisabled = () => {
-  return process.env.REACT_APP_DISABLE_LOGIN === 'true';
+  return authService.isLoginBypassEnabled();
+};
+
+export const getCurrentUser = () => {
+  return authService.getCurrentUser();
 };

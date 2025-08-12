@@ -446,6 +446,62 @@ class DatabaseService:
             logger.error(f"Error retrieving user by ID: {str(e)}")
             return None
 
+    @staticmethod
+    def get_user_by_email(email):
+        """Get user details by email address
+        
+        Args:
+            email (str): Email address of the user to retrieve
+            
+        Returns:
+            dict: User details if found, None otherwise
+        """
+        try:
+            conn = DatabaseService.get_connection()
+            cursor = conn.cursor()
+            
+            query = """
+            SELECT id, user_name, user_email, common_name, company, department, 
+                   phone_ext, division, sub_department, cost_center, manager_full_name, 
+                   manager_email, api_key, scope, active, created_at, modified_at, 
+                   comment, aic_balance
+            FROM users
+            WHERE user_email = ?
+            """
+            
+            cursor.execute(query, [email])
+            user = cursor.fetchone()
+            cursor.close()
+            conn.close()
+            
+            if user:
+                return {
+                    "id": str(user[0]),
+                    "user_name": user[1],
+                    "user_email": user[2],
+                    "common_name": user[3],
+                    "company": user[4],
+                    "department": user[5],
+                    "phone_ext": user[6],
+                    "division": user[7],
+                    "sub_department": user[8],
+                    "cost_center": user[9],
+                    "manager_full_name": user[10],
+                    "manager_email": user[11],
+                    "api_key": str(user[12]),
+                    "scope": user[13],
+                    "active": bool(user[14]),
+                    "created_at": user[15],
+                    "modified_at": user[16],
+                    "comment": user[17],
+                    "aic_balance": user[18]
+                }
+            return None
+            
+        except Exception as e:
+            logger.error(f"Error retrieving user by email: {str(e)}")
+            return None
+
 
     @staticmethod
     def update_user(user_id, update_data):

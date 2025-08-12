@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { CssBaseline } from '@mui/material';
+import { MsalProvider } from "@azure/msal-react";
 
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -10,6 +11,7 @@ import DashboardPage from './pages/DashboardPage';
 import UserManagementPage from './pages/UserManagementPage';
 import EndpointAccessPage from './pages/EndpointAccessPage';
 import { isAuthenticated, isLoginDisabled } from './utils/auth';
+import { msalInstance } from './services/authService';
 
 const theme = createTheme({
   palette: {
@@ -55,7 +57,7 @@ const theme = createTheme({
 function App() {
   const loginDisabled = isLoginDisabled();
 
-  return (
+  const AppContent = () => (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Router>
@@ -107,6 +109,17 @@ function App() {
       </Router>
     </ThemeProvider>
   );
+
+  // Only wrap with MsalProvider in production mode
+  if (loginDisabled) {
+    return <AppContent />;
+  } else {
+    return (
+      <MsalProvider instance={msalInstance}>
+        <AppContent />
+      </MsalProvider>
+    );
+  }
 }
 
 export default App;

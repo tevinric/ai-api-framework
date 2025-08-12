@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://dev-api.tihsa.co.za/ext/api/v1/gaia';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://gaia.com';
 
 class ApiService {
   constructor() {
@@ -90,12 +90,28 @@ class ApiService {
 
   async getAllUsers() {
     try {
+      // This API is used AFTER authentication is complete to display the user list in the admin portal
+      // It requires a valid admin token which is obtained after successful login
       const response = await this.api.get('/admin/users', {
         params: { token: this.token }
       });
       return response.data;
     } catch (error) {
       console.error('Error fetching users:', error);
+      throw error;
+    }
+  }
+
+  async getUserDetailsByEmail(email) {
+    try {
+      // This API is used for INITIAL authentication - it does NOT require a token
+      // It's called with just the email address to validate admin access and get API key
+      const response = await this.api.get('/admin/user-details', {
+        params: { email: email }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching user details:', error);
       throw error;
     }
   }
