@@ -1,7 +1,7 @@
 import { PublicClientApplication } from "@azure/msal-browser";
 import { MsalProvider } from "@azure/msal-react";
-import { API_BASE_URL } from '../config/apiConfig';
-import apiService from './api';
+
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://dev-api.tihsa.co.za/ext/api/v1/gaia';
 
 // MSAL configuration
 const msalConfig = {
@@ -29,6 +29,19 @@ class AuthService {
     this.isDevelopment = process.env.REACT_APP_ENVIRONMENT === 'DEV';
     this.disableLogin = process.env.REACT_APP_DISABLE_LOGIN === 'true';
     this.devUserEmail = process.env.REACT_APP_DEV_USER_EMAIL || 'gaiatester@test.com';
+  }
+
+  // Store credentials in localStorage
+  setCredentials(apiKey, token) {
+    localStorage.setItem('adminApiKey', apiKey);
+    localStorage.setItem('adminToken', token);
+  }
+
+  // Clear credentials from localStorage
+  clearCredentials() {
+    localStorage.removeItem('adminApiKey');
+    localStorage.removeItem('adminToken');
+    localStorage.removeItem('currentUser');
   }
 
   // Check if we're in development mode with login bypass
@@ -191,7 +204,7 @@ class AuthService {
         console.log('Token generated successfully:', tokenData);
         
         // Store credentials
-        apiService.setCredentials(userDetails.api_key, tokenData.access_token);
+        this.setCredentials(userDetails.api_key, tokenData.access_token);
         
         // Store user details
         localStorage.setItem('currentUser', JSON.stringify(userDetails));
@@ -225,7 +238,7 @@ class AuthService {
         console.log('Token generated successfully:', tokenData);
         
         // Store credentials
-        apiService.setCredentials(userDetails.api_key, tokenData.access_token);
+        this.setCredentials(userDetails.api_key, tokenData.access_token);
         
         // Store user details
         localStorage.setItem('currentUser', JSON.stringify(userDetails));
@@ -246,8 +259,7 @@ class AuthService {
   async logout() {
     try {
       // Clear stored credentials
-      apiService.clearCredentials();
-      localStorage.removeItem('currentUser');
+      this.clearCredentials();
       
       if (!this.isLoginBypassEnabled()) {
         // Production mode - logout from Azure AD
