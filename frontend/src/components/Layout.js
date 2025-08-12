@@ -11,26 +11,32 @@ import {
   ListItem,
   ListItemIcon,
   ListItemText,
-  CssBaseline
+  CssBaseline,
+  Chip
 } from '@mui/material';
 import { 
   People as PeopleIcon,
   Settings as SettingsIcon,
   ExitToApp as LogoutIcon,
-  Dashboard as DashboardIcon
+  Dashboard as DashboardIcon,
+  DeveloperMode as DevIcon
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import apiService from '../services/api';
+import { isLoginDisabled } from '../utils/auth';
 
 const drawerWidth = 240;
 
 const Layout = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const loginDisabled = isLoginDisabled();
 
   const handleLogout = () => {
-    apiService.clearCredentials();
-    navigate('/login');
+    if (!loginDisabled) {
+      apiService.clearCredentials();
+      navigate('/login');
+    }
   };
 
   const menuItems = [
@@ -54,14 +60,25 @@ const Layout = ({ children }) => {
         <Toolbar>
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
             AI API Admin Portal
+            {loginDisabled && (
+              <Chip 
+                icon={<DevIcon />}
+                label="DEV MODE" 
+                size="small" 
+                color="warning" 
+                sx={{ ml: 2 }} 
+              />
+            )}
           </Typography>
-          <Button 
-            color="inherit" 
-            onClick={handleLogout}
-            startIcon={<LogoutIcon />}
-          >
-            Logout
-          </Button>
+          {!loginDisabled && (
+            <Button 
+              color="inherit" 
+              onClick={handleLogout}
+              startIcon={<LogoutIcon />}
+            >
+              Logout
+            </Button>
+          )}
         </Toolbar>
       </AppBar>
 

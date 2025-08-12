@@ -9,7 +9,7 @@ import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import UserManagementPage from './pages/UserManagementPage';
 import EndpointAccessPage from './pages/EndpointAccessPage';
-import { isAuthenticated } from './utils/auth';
+import { isAuthenticated, isLoginDisabled } from './utils/auth';
 
 const theme = createTheme({
   palette: {
@@ -53,6 +53,8 @@ const theme = createTheme({
 });
 
 function App() {
+  const loginDisabled = isLoginDisabled();
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -60,7 +62,11 @@ function App() {
         <Routes>
           <Route 
             path="/login" 
-            element={isAuthenticated() ? <Navigate to="/" replace /> : <LoginPage />} 
+            element={
+              loginDisabled || isAuthenticated() ? 
+                <Navigate to="/" replace /> : 
+                <LoginPage />
+            } 
           />
           
           <Route 

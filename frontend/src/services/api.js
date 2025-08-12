@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://dev-api.tihsa.co.za/ext/api/v1/gaia';
 
 class ApiService {
   constructor() {
@@ -13,12 +13,22 @@ class ApiService {
     this.token = localStorage.getItem('adminToken') || '';
 
     this.api.interceptors.request.use((config) => {
-      if (this.apiKey) {
-        config.headers['API-Key'] = this.apiKey;
+      // Check if login is disabled
+      const disableLogin = process.env.REACT_APP_DISABLE_LOGIN === 'true';
+      
+      if (!disableLogin) {
+        if (this.apiKey) {
+          config.headers['API-Key'] = this.apiKey;
+        }
+        if (this.token) {
+          config.headers['X-Token'] = this.token;
+        }
+      } else {
+        // In bypass mode, you might want to set default/mock credentials
+        config.headers['API-Key'] = 'dev-bypass-key';
+        config.headers['X-Token'] = 'dev-bypass-token';
       }
-      if (this.token) {
-        config.headers['X-Token'] = this.token;
-      }
+      
       config.headers['X-Correlation-ID'] = this.generateCorrelationId();
       return config;
     });
@@ -26,7 +36,10 @@ class ApiService {
     this.api.interceptors.response.use(
       (response) => response,
       (error) => {
-        if (error.response?.status === 401) {
+        // Only redirect to login if login is not disabled
+        const disableLogin = process.env.REACT_APP_DISABLE_LOGIN === 'true';
+        
+        if (error.response?.status === 401 && !disableLogin) {
           localStorage.removeItem('adminApiKey');
           localStorage.removeItem('adminToken');
           window.location.href = '/login';
@@ -169,6 +182,12 @@ class ApiService {
   }
 
   async validateCredentials(apiKey, token) {
+    // If login is disabled, always return true
+    const disableLogin = process.env.REACT_APP_DISABLE_LOGIN === 'true';
+    if (disableLogin) {
+      return true;
+    }
+
     try {
       const tempApi = axios.create({
         baseURL: API_BASE_URL,
