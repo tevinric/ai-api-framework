@@ -50,10 +50,28 @@ function App() {
       console.log('Dev User Email:', DEV_USER_EMAIL);
 
       // Step 1: Get user details
-      const userResponse = await fetch(`${API_BASE_URL}/admin/user-details?email=${encodeURIComponent(DEV_USER_EMAIL)}`);
+      const url = `${API_BASE_URL}/admin/user-details?email=${encodeURIComponent(DEV_USER_EMAIL)}`;
+      console.log('Calling URL:', url);
+      console.log('Expected endpoint: admin/user-details');
+      console.log('Full URL breakdown:');
+      console.log('  Base:', API_BASE_URL);
+      console.log('  Endpoint: /admin/user-details');
+      console.log('  Parameter: email=' + DEV_USER_EMAIL);
+      
+      const userResponse = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      console.log('Response status:', userResponse.status);
+      console.log('Response headers:', Object.fromEntries(userResponse.headers.entries()));
       
       if (!userResponse.ok) {
-        throw new Error(`User lookup failed: ${userResponse.status}`);
+        const errorText = await userResponse.text();
+        console.log('Error response body:', errorText);
+        console.log('Response status text:', userResponse.statusText);
+        throw new Error(`User lookup failed: ${userResponse.status} (${userResponse.statusText}) - ${errorText}`);
       }
 
       const userData = await userResponse.json();
