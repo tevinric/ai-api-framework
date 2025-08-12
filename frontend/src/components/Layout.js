@@ -25,19 +25,18 @@ import {
   Person as PersonIcon
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
-import authService from '../services/authService';
-import { getCurrentUser } from '../utils/auth';
+import { getCurrentUser, isLoginDisabled, clearStoredCredentials } from '../utils/auth';
 
 const drawerWidth = 240;
 
 const Layout = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const isDevelopment = authService.isLoginBypassEnabled();
+  const isDevelopment = isLoginDisabled();
   const currentUser = getCurrentUser();
 
   const handleLogout = async () => {
-    await authService.logout();
+    clearStoredCredentials();
     if (!isDevelopment) {
       navigate('/login');
     }

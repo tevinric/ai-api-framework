@@ -48,7 +48,7 @@ const LoginPage = () => {
     }
   };
 
-  const isDevelopment = authService.isLoginBypassEnabled();
+  const isDevelopment = process.env.REACT_APP_DISABLE_LOGIN === 'true';
 
   return (
     <Container component="main" maxWidth="sm">

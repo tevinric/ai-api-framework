@@ -9,7 +9,23 @@ import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import UserManagementPage from './pages/UserManagementPage';
 import EndpointAccessPage from './pages/EndpointAccessPage';
-import { isAuthenticated, isLoginDisabled } from './utils/auth';
+
+// Simple auth functions without circular imports
+const isLoginDisabled = () => {
+  return process.env.REACT_APP_DISABLE_LOGIN === 'true';
+};
+
+const isAuthenticated = () => {
+  if (isLoginDisabled()) {
+    const hasUser = localStorage.getItem('currentUser') !== null;
+    const hasApiKey = localStorage.getItem('adminApiKey') !== null;
+    const hasToken = localStorage.getItem('adminToken') !== null;
+    return hasUser && hasApiKey && hasToken;
+  }
+  
+  const hasValidTokens = localStorage.getItem('adminApiKey') && localStorage.getItem('adminToken');
+  return !!hasValidTokens;
+};
 
 const theme = createTheme({
   palette: {
@@ -53,17 +69,6 @@ const theme = createTheme({
 });
 
 function App() {
-  const loginDisabled = isLoginDisabled();
-  const authenticated = isAuthenticated();
-  
-  // Debug logging
-  console.log('App.js - Authentication state:', {
-    loginDisabled,
-    authenticated,
-    env: process.env.REACT_APP_ENVIRONMENT,
-    disableLogin: process.env.REACT_APP_DISABLE_LOGIN
-  });
-
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -72,17 +77,9 @@ function App() {
           <Route 
             path="/login" 
             element={
-              loginDisabled || authenticated ? (
-                (() => {
-                  console.log('Redirecting from login to dashboard - loginDisabled:', loginDisabled, 'authenticated:', authenticated);
-                  return <Navigate to="/" replace />;
-                })()
-              ) : (
-                (() => {
-                  console.log('Showing login page');
-                  return <LoginPage />;
-                })()
-              )
+              isLoginDisabled() || isAuthenticated() ? 
+                <Navigate to="/" replace /> : 
+                <LoginPage />
             } 
           />
           
