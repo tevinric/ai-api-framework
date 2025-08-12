@@ -49,21 +49,54 @@ function App() {
       console.log('API Base URL:', API_BASE_URL);
       console.log('Dev User Email:', DEV_USER_EMAIL);
 
-      // Step 1: Get user details
-      const url = `${API_BASE_URL}/admin/user-details?email=${encodeURIComponent(DEV_USER_EMAIL)}`;
-      console.log('Calling URL:', url);
-      console.log('Expected endpoint: admin/user-details');
-      console.log('Full URL breakdown:');
-      console.log('  Base:', API_BASE_URL);
-      console.log('  Endpoint: /admin/user-details');
-      console.log('  Parameter: email=' + DEV_USER_EMAIL);
+      // Step 1: Get user details - Try different endpoint paths
+      const possibleEndpoints = [
+        '/admin/user-details',
+        '/ext/api/v1/gaia/admin/user-details', 
+        '/api/admin/user-details',
+        '/v1/admin/user-details'
+      ];
       
-      const userResponse = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
+      let userResponse = null;
+      let workingUrl = '';
+      
+      for (const endpoint of possibleEndpoints) {
+        const testUrl = `${API_BASE_URL}${endpoint}?email=${encodeURIComponent(DEV_USER_EMAIL)}`;
+        console.log(`Trying URL: ${testUrl}`);
+        
+        try {
+          const response = await fetch(testUrl, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            }
+          });
+          
+          console.log(`Response status for ${endpoint}:`, response.status);
+          
+          if (response.ok) {
+            userResponse = response;
+            workingUrl = testUrl;
+            console.log(`✅ Success! Working endpoint: ${endpoint}`);
+            break;
+          } else if (response.status !== 404) {
+            // If it's not 404, it might be the right endpoint but with different error (e.g., 401, 500)
+            const errorText = await response.text();
+            console.log(`❓ Non-404 error for ${endpoint}:`, response.status, errorText);
+            userResponse = response;
+            workingUrl = testUrl;
+            break;
+          }
+        } catch (error) {
+          console.log(`❌ Network error for ${endpoint}:`, error.message);
         }
-      });
+      }
+      
+      if (!userResponse) {
+        throw new Error('Unable to find working admin endpoint. All endpoints returned 404 or network errors.');
+      }
+      
+      console.log('Using URL:', workingUrl);
       console.log('Response status:', userResponse.status);
       console.log('Response headers:', Object.fromEntries(userResponse.headers.entries()));
       
