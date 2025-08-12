@@ -1,5 +1,6 @@
 import { PublicClientApplication } from "@azure/msal-browser";
 import { MsalProvider } from "@azure/msal-react";
+import { API_BASE_URL } from '../config/apiConfig';
 import apiService from './api';
 
 // MSAL configuration
@@ -38,7 +39,14 @@ class AuthService {
   // Get current authentication state
   isAuthenticated() {
     if (this.isLoginBypassEnabled()) {
-      return true;
+      // In dev mode, check if we have stored user data and tokens
+      const hasUser = localStorage.getItem('currentUser') !== null;
+      const hasApiKey = localStorage.getItem('adminApiKey') !== null;
+      const hasToken = localStorage.getItem('adminToken') !== null;
+      
+      console.log('Dev mode authentication check:', { hasUser, hasApiKey, hasToken });
+      
+      return hasUser && hasApiKey && hasToken;
     }
     
     const accounts = msalInstance.getAllAccounts();
@@ -50,9 +58,17 @@ class AuthService {
   // Handle login process
   async login() {
     try {
+      console.log('Login process started');
+      console.log('Environment check:', {
+        isDevelopment: this.isDevelopment,
+        disableLogin: this.disableLogin,
+        isLoginBypassEnabled: this.isLoginBypassEnabled()
+      });
+      
       if (this.isLoginBypassEnabled()) {
         // Development mode - bypass authentication
         console.log('Development mode: bypassing authentication');
+        console.log('Dev user email:', this.devUserEmail);
         
         // Try to get user details and validate admin access
         const userDetails = await this.validateDevUser();
@@ -102,7 +118,8 @@ class AuthService {
   async validateDevUser() {
     try {
       console.log('Validating dev user:', this.devUserEmail);
-      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/admin/user-details?email=${encodeURIComponent(this.devUserEmail)}`);
+      console.log('Using API base URL:', API_BASE_URL);
+      const response = await fetch(`${API_BASE_URL}/admin/user-details?email=${encodeURIComponent(this.devUserEmail)}`);
       
       if (response.ok) {
         const data = await response.json();
@@ -117,6 +134,8 @@ class AuthService {
         return data;
       } else {
         console.log('Dev user validation failed with status:', response.status);
+        const errorText = await response.text();
+        console.log('Error response:', errorText);
         return null;
       }
     } catch (error) {
@@ -129,7 +148,8 @@ class AuthService {
   async validateAdminUser(email) {
     try {
       console.log('Validating admin user:', email);
-      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/admin/user-details?email=${encodeURIComponent(email)}`);
+      console.log('Using API base URL:', API_BASE_URL);
+      const response = await fetch(`${API_BASE_URL}/admin/user-details?email=${encodeURIComponent(email)}`);
       
       if (response.ok) {
         const data = await response.json();
@@ -144,6 +164,8 @@ class AuthService {
         return data;
       } else {
         console.log('Admin user validation failed with status:', response.status);
+        const errorText = await response.text();
+        console.log('Error response:', errorText);
         return null;
       }
     } catch (error) {
@@ -155,8 +177,9 @@ class AuthService {
   // Setup authentication for development
   async setupDevAuthentication(userDetails) {
     try {
+      console.log('Setting up dev authentication for user:', userDetails.user_email);
       // Generate token using the user's API key
-      const tokenResponse = await fetch(`${process.env.REACT_APP_API_BASE_URL}/token`, {
+      const tokenResponse = await fetch(`${API_BASE_URL}/token`, {
         headers: {
           'API-Key': userDetails.api_key,
           'Content-Type': 'application/json'
@@ -165,6 +188,7 @@ class AuthService {
 
       if (tokenResponse.ok) {
         const tokenData = await tokenResponse.json();
+        console.log('Token generated successfully:', tokenData);
         
         // Store credentials
         apiService.setCredentials(userDetails.api_key, tokenData.access_token);
@@ -174,7 +198,9 @@ class AuthService {
         
         console.log('Development authentication setup complete');
       } else {
-        throw new Error('Failed to generate token');
+        const errorText = await tokenResponse.text();
+        console.error('Token generation failed:', tokenResponse.status, errorText);
+        throw new Error(`Failed to generate token: ${tokenResponse.status}`);
       }
     } catch (error) {
       console.error('Error setting up dev authentication:', error);
@@ -185,8 +211,9 @@ class AuthService {
   // Setup authentication for production
   async setupProdAuthentication(userDetails) {
     try {
+      console.log('Setting up prod authentication for user:', userDetails.user_email);
       // Generate token using the user's API key
-      const tokenResponse = await fetch(`${process.env.REACT_APP_API_BASE_URL}/token`, {
+      const tokenResponse = await fetch(`${API_BASE_URL}/token`, {
         headers: {
           'API-Key': userDetails.api_key,
           'Content-Type': 'application/json'
@@ -195,6 +222,7 @@ class AuthService {
 
       if (tokenResponse.ok) {
         const tokenData = await tokenResponse.json();
+        console.log('Token generated successfully:', tokenData);
         
         // Store credentials
         apiService.setCredentials(userDetails.api_key, tokenData.access_token);
@@ -204,7 +232,9 @@ class AuthService {
         
         console.log('Production authentication setup complete');
       } else {
-        throw new Error('Failed to generate token');
+        const errorText = await tokenResponse.text();
+        console.error('Token generation failed:', tokenResponse.status, errorText);
+        throw new Error(`Failed to generate token: ${tokenResponse.status}`);
       }
     } catch (error) {
       console.error('Error setting up prod authentication:', error);
@@ -253,7 +283,7 @@ class AuthService {
         return false;
       }
 
-      const tokenResponse = await fetch(`${process.env.REACT_APP_API_BASE_URL}/token-details`, {
+      const tokenResponse = await fetch(`${API_BASE_URL}/token-details`, {
         headers: {
           'API-Key': user.api_key,
           'Content-Type': 'application/json'
@@ -275,7 +305,7 @@ class AuthService {
           console.log('Token near expiration, refreshing...');
           
           // Refresh token
-          const refreshResponse = await fetch(`${process.env.REACT_APP_API_BASE_URL}/refresh-token`, {
+          const refreshResponse = await fetch(`${API_BASE_URL}/refresh-token`, {
             headers: {
               'API-Key': user.api_key,
               'Content-Type': 'application/json'

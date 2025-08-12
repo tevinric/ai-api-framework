@@ -29,16 +29,20 @@ const LoginPage = () => {
     setError('');
 
     try {
+      console.log('LoginPage: Starting login process');
       const result = await authService.login();
+      console.log('LoginPage: Login result:', result);
       
       if (result.success) {
+        console.log('LoginPage: Login successful, navigating to dashboard');
         navigate('/');
       } else {
+        console.log('LoginPage: Login failed:', result.error);
         setError(result.error || 'Login failed');
       }
     } catch (error) {
-      console.error('Login error:', error);
-      setError('Login failed. Please try again.');
+      console.error('LoginPage: Login error:', error);
+      setError(`Login failed: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -67,6 +71,16 @@ const LoginPage = () => {
           {isDevelopment && (
             <Alert severity="info" sx={{ mb: 2 }}>
               Development mode is active. Authentication will be bypassed using default test user.
+              <br />
+              <strong>Debug Info:</strong>
+              <br />
+              API Base URL: {process.env.REACT_APP_API_BASE_URL || 'https://dev-api.tihsa.co.za/ext/api/v1/gaia'}
+              <br />
+              Dev User Email: {process.env.REACT_APP_DEV_USER_EMAIL || 'gaiatester@test.com'}
+              <br />
+              Environment: {process.env.REACT_APP_ENVIRONMENT}
+              <br />
+              Disable Login: {process.env.REACT_APP_DISABLE_LOGIN}
             </Alert>
           )}
 
