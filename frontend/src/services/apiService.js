@@ -82,6 +82,79 @@ export const adminAPI = {
       console.error('[API_SERVICE] Failed to generate token:', error.response?.data || error.message);
       throw error;
     }
+  },
+
+  // Get all users (admin only)
+  getAllUsers: async (apiKey, token) => {
+    console.log('[API_SERVICE] Getting all users');
+    try {
+      const response = await apiClient.get('/admin/users', {
+        headers: {
+          'API-Key': apiKey
+        },
+        params: { token }
+      });
+      console.log('[API_SERVICE] All users retrieved successfully:', response.data.total_count, 'users');
+      return response.data;
+    } catch (error) {
+      console.error('[API_SERVICE] Failed to get all users:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+
+  // Create new user (admin only)
+  createUser: async (apiKey, token, userData) => {
+    console.log('[API_SERVICE] Creating new user:', userData.user_name);
+    try {
+      const response = await apiClient.post('/admin/user', userData, {
+        headers: {
+          'API-Key': apiKey
+        },
+        params: { token }
+      });
+      console.log('[API_SERVICE] User created successfully:', response.data.user_id);
+      return response.data;
+    } catch (error) {
+      console.error('[API_SERVICE] Failed to create user:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+
+  // Update user (admin only)
+  updateUser: async (apiKey, token, userData) => {
+    console.log('[API_SERVICE] Updating user:', userData.id);
+    try {
+      const response = await apiClient.put('/admin/user', userData, {
+        headers: {
+          'API-Key': apiKey
+        },
+        params: { token }
+      });
+      console.log('[API_SERVICE] User updated successfully:', response.data.updated_fields);
+      return response.data;
+    } catch (error) {
+      console.error('[API_SERVICE] Failed to update user:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+
+  // Delete user (admin only) - Note: This API seems to be commented out in backend
+  deleteUser: async (apiKey, token, userId) => {
+    console.log('[API_SERVICE] Deleting user:', userId);
+    try {
+      const response = await apiClient.delete('/admin/user', {
+        headers: {
+          'API-Key': apiKey
+        },
+        params: { token },
+        data: { id: userId }
+      });
+      console.log('[API_SERVICE] User deleted successfully');
+      return response.data;
+    } catch (error) {
+      console.error('[API_SERVICE] Failed to delete user:', error.response?.data || error.message);
+      throw error;
+    }
   }
 };
 

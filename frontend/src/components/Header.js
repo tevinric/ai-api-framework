@@ -1,7 +1,7 @@
 import React from 'react';
 import './Header.css';
 
-const Header = ({ user }) => {
+const Header = ({ user, currentView, onNavigate }) => {
   console.log('[HEADER] Rendering header for user:', user?.user_name);
 
   const currentTime = new Date().toLocaleString();
@@ -20,26 +20,41 @@ const Header = ({ user }) => {
 
       <div className="header-center">
         <nav className="header-nav">
-          <a href="#dashboard" className="nav-link active">
+          <button 
+            onClick={() => onNavigate('dashboard')} 
+            className={`nav-link ${currentView === 'dashboard' ? 'active' : ''}`}
+          >
             <span className="nav-icon">📊</span>
             Dashboard
-          </a>
-          <a href="#users" className="nav-link">
+          </button>
+          <button 
+            onClick={() => onNavigate('users')} 
+            className={`nav-link ${currentView === 'users' ? 'active' : ''}`}
+          >
             <span className="nav-icon">👥</span>
             Users
-          </a>
-          <a href="#models" className="nav-link">
+          </button>
+          <button 
+            onClick={() => onNavigate('models')} 
+            className={`nav-link ${currentView === 'models' ? 'active' : ''}`}
+          >
             <span className="nav-icon">🧠</span>
             Models
-          </a>
-          <a href="#analytics" className="nav-link">
+          </button>
+          <button 
+            onClick={() => onNavigate('analytics')} 
+            className={`nav-link ${currentView === 'analytics' ? 'active' : ''}`}
+          >
             <span className="nav-icon">📈</span>
             Analytics
-          </a>
-          <a href="#settings" className="nav-link">
+          </button>
+          <button 
+            onClick={() => onNavigate('settings')} 
+            className={`nav-link ${currentView === 'settings' ? 'active' : ''}`}
+          >
             <span className="nav-icon">⚙️</span>
             Settings
-          </a>
+          </button>
         </nav>
       </div>
 

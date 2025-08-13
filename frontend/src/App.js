@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAuth } from './hooks/useAuth';
+import { useNavigation } from './hooks/useNavigation';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import MainContent from './components/MainContent';
@@ -11,12 +12,14 @@ function App() {
   console.log('[APP] Application starting...');
   
   const { user, token, loading, error, logout, retry } = useAuth();
+  const { currentView, navigateTo } = useNavigation();
 
   console.log('[APP] Current state:', {
     loading,
     hasUser: !!user,
     hasToken: !!token,
-    hasError: !!error
+    hasError: !!error,
+    currentView
   });
 
   // Show loading screen while authenticating
@@ -33,9 +36,9 @@ function App() {
   console.log('[APP] Rendering main application interface');
   return (
     <div className="app">
-      <Header user={user} />
-      <Sidebar user={user} onLogout={logout} />
-      <MainContent user={user} token={token} />
+      <Header user={user} currentView={currentView} onNavigate={navigateTo} />
+      <Sidebar user={user} currentView={currentView} onNavigate={navigateTo} onLogout={logout} />
+      <MainContent user={user} token={token} currentView={currentView} />
     </div>
   );
 }

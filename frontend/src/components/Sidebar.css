@@ -140,23 +140,27 @@
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
-.nav-section a {
+.nav-section button {
   display: flex;
   align-items: center;
   padding: 12px 25px;
   color: rgba(255, 255, 255, 0.8);
-  text-decoration: none;
+  background: none;
+  border: none;
   transition: all 0.3s ease;
   position: relative;
   gap: 12px;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
 }
 
-.nav-section li.active a {
+.nav-section li.active button {
   background: rgba(255, 255, 255, 0.08);
   color: white;
 }
 
-.nav-section a:hover {
+.nav-section button:hover {
   background: rgba(255, 255, 255, 0.05);
   color: white;
 }

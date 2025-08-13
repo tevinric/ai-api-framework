@@ -4,3 +4,16 @@
   background-color: #f5f7fa;
   min-height: calc(100vh - 70px);
 }
+
+.coming-soon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: calc(100vh - 140px);
+  font-size: 24px;
+  color: #7f8c8d;
+  background: white;
+  margin: 40px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}

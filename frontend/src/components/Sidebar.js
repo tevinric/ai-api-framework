@@ -1,7 +1,7 @@
 import React from 'react';
 import './Sidebar.css';
 
-const Sidebar = ({ user, onLogout }) => {
+const Sidebar = ({ user, currentView, onNavigate, onLogout }) => {
   console.log('[SIDEBAR] Rendering sidebar with user:', user ? {
     user_name: user.user_name,
     department: user.department,
@@ -14,14 +14,14 @@ const Sidebar = ({ user, onLogout }) => {
   }
 
   const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: '📊', active: true },
-    { id: 'users', label: 'User Management', icon: '👥', active: false },
-    { id: 'models', label: 'AI Models', icon: '🧠', active: false },
-    { id: 'endpoints', label: 'API Endpoints', icon: '🔗', active: false },
-    { id: 'analytics', label: 'Analytics', icon: '📈', active: false },
-    { id: 'balance', label: 'Balance & Usage', icon: '💰', active: false },
-    { id: 'logs', label: 'System Logs', icon: '📋', active: false },
-    { id: 'settings', label: 'Settings', icon: '⚙️', active: false },
+    { id: 'dashboard', label: 'Dashboard', icon: '📊' },
+    { id: 'users', label: 'User Management', icon: '👥' },
+    { id: 'models', label: 'AI Models', icon: '🧠' },
+    { id: 'endpoints', label: 'API Endpoints', icon: '🔗' },
+    { id: 'analytics', label: 'Analytics', icon: '📈' },
+    { id: 'balance', label: 'Balance & Usage', icon: '💰' },
+    { id: 'logs', label: 'System Logs', icon: '📋' },
+    { id: 'settings', label: 'Settings', icon: '⚙️' },
   ];
 
   return (
@@ -62,12 +62,12 @@ const Sidebar = ({ user, onLogout }) => {
           <h4>MAIN MENU</h4>
           <ul>
             {menuItems.slice(0, 4).map(item => (
-              <li key={item.id} className={item.active ? 'active' : ''}>
-                <a href={`#${item.id}`}>
+              <li key={item.id} className={currentView === item.id ? 'active' : ''}>
+                <button onClick={() => onNavigate(item.id)}>
                   <span className="nav-icon">{item.icon}</span>
                   <span className="nav-label">{item.label}</span>
-                  {item.active && <span className="active-indicator"></span>}
-                </a>
+                  {currentView === item.id && <span className="active-indicator"></span>}
+                </button>
               </li>
             ))}
           </ul>
@@ -77,12 +77,12 @@ const Sidebar = ({ user, onLogout }) => {
           <h4>MANAGEMENT</h4>
           <ul>
             {menuItems.slice(4, 8).map(item => (
-              <li key={item.id} className={item.active ? 'active' : ''}>
-                <a href={`#${item.id}`}>
+              <li key={item.id} className={currentView === item.id ? 'active' : ''}>
+                <button onClick={() => onNavigate(item.id)}>
                   <span className="nav-icon">{item.icon}</span>
                   <span className="nav-label">{item.label}</span>
-                  {item.active && <span className="active-indicator"></span>}
-                </a>
+                  {currentView === item.id && <span className="active-indicator"></span>}
+                </button>
               </li>
             ))}
           </ul>
