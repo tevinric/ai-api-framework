@@ -650,6 +650,8 @@ const UserDetailModal = ({ user: selectedUser, currentUser, token, onClose, onRe
 
 // Create User Modal Component
 const CreateUserModal = ({ currentUser, token, onClose, onRefresh }) => {
+  console.log('[CREATE_USER_MODAL] Initializing Create User Modal');
+  
   const [formData, setFormData] = useState({
     user_name: '',
     user_email: '',
@@ -670,7 +672,10 @@ const CreateUserModal = ({ currentUser, token, onClose, onRefresh }) => {
   const [error, setError] = useState(null);
 
   const handleInputChange = (field, value) => {
+    console.log('[CREATE_USER_MODAL] Field changed:', field, '=', value);
     setFormData(prev => ({ ...prev, [field]: value }));
+    // Clear any existing errors when user starts typing
+    if (error) setError(null);
   };
 
   const handleSubmit = async (e) => {
@@ -678,8 +683,12 @@ const CreateUserModal = ({ currentUser, token, onClose, onRefresh }) => {
       e.preventDefault();
     }
     
+    console.log('[CREATE_USER_MODAL] handleSubmit called with form data:', formData);
+    
     if (!formData.user_name.trim() || !formData.user_email.trim()) {
-      setError('Username and email are required fields');
+      const errorMsg = 'Username and email are required fields';
+      console.error('[CREATE_USER_MODAL]', errorMsg);
+      setError(errorMsg);
       return;
     }
 
@@ -687,9 +696,13 @@ const CreateUserModal = ({ currentUser, token, onClose, onRefresh }) => {
       setLoading(true);
       setError(null);
       console.log('[CREATE_USER_MODAL] Creating new user:', formData.user_name);
+      console.log('[CREATE_USER_MODAL] Full form data being sent:', formData);
       
-      await adminAPI.createUser(currentUser.api_key, token, formData);
-      console.log('[CREATE_USER_MODAL] User created successfully');
+      const response = await adminAPI.createUser(currentUser.api_key, token, formData);
+      console.log('[CREATE_USER_MODAL] User created successfully:', response);
+      
+      // Show success message briefly
+      alert(`User "${formData.user_name}" created successfully!`);
       
       onRefresh();
       onClose();
@@ -702,6 +715,7 @@ const CreateUserModal = ({ currentUser, token, onClose, onRefresh }) => {
   };
 
   const handleButtonClick = (e) => {
+    console.log('[CREATE_USER_MODAL] Create User button clicked!');
     e.preventDefault();
     handleSubmit();
   };
@@ -732,6 +746,7 @@ const CreateUserModal = ({ currentUser, token, onClose, onRefresh }) => {
                     value={formData.user_name} 
                     onChange={(e) => handleInputChange('user_name', e.target.value)}
                     className="form-input"
+                    placeholder="Enter username"
                     required
                   />
                 </div>
@@ -742,6 +757,7 @@ const CreateUserModal = ({ currentUser, token, onClose, onRefresh }) => {
                     value={formData.user_email} 
                     onChange={(e) => handleInputChange('user_email', e.target.value)}
                     className="form-input"
+                    placeholder="Enter email address"
                     required
                   />
                 </div>
@@ -902,8 +918,14 @@ const CreateUserModal = ({ currentUser, token, onClose, onRefresh }) => {
                 className="btn btn-primary"
                 onClick={handleButtonClick}
                 disabled={loading}
+                style={{
+                  minWidth: '120px',
+                  fontWeight: '600',
+                  backgroundColor: loading ? '#999' : '',
+                  cursor: loading ? 'not-allowed' : 'pointer'
+                }}
               >
-                {loading ? 'Creating...' : 'Create User'}
+                {loading ? 'Creating...' : '✓ Create User'}
               </button>
             </div>
           </div>
