@@ -13,44 +13,96 @@ const Sidebar = ({ user, onLogout }) => {
     return null;
   }
 
+  const menuItems = [
+    { id: 'dashboard', label: 'Dashboard', icon: '📊', active: true },
+    { id: 'users', label: 'User Management', icon: '👥', active: false },
+    { id: 'models', label: 'AI Models', icon: '🧠', active: false },
+    { id: 'endpoints', label: 'API Endpoints', icon: '🔗', active: false },
+    { id: 'analytics', label: 'Analytics', icon: '📈', active: false },
+    { id: 'balance', label: 'Balance & Usage', icon: '💰', active: false },
+    { id: 'logs', label: 'System Logs', icon: '📋', active: false },
+    { id: 'settings', label: 'Settings', icon: '⚙️', active: false },
+  ];
+
   return (
     <div className="sidebar">
-      <div className="sidebar-header">
-        <h2>Admin Portal</h2>
-      </div>
-      
-      <div className="user-details-section">
-        <h3>User Details</h3>
-        <div className="user-info">
-          <div className="user-field">
-            <label>Username:</label>
-            <span>{user.user_name}</span>
-          </div>
-          <div className="user-field">
-            <label>Department:</label>
-            <span>{user.department || 'N/A'}</span>
-          </div>
-          <div className="user-field">
-            <label>User ID:</label>
-            <span>{user.user_id}</span>
+      <div className="user-profile-card">
+        <div className="profile-avatar">
+          {user.user_name?.charAt(0)?.toUpperCase()}
+        </div>
+        <div className="profile-info">
+          <h3>{user.user_name}</h3>
+          <p className="department">{user.department || 'Administrator'}</p>
+          <div className="user-badge">
+            <span className="badge-icon">🛡️</span>
+            <span>Admin Access</span>
           </div>
         </div>
       </div>
 
-      <div className="sidebar-menu">
-        <h3>Navigation</h3>
-        <ul>
-          <li><a href="#dashboard">Dashboard</a></li>
-          <li><a href="#users">User Management</a></li>
-          <li><a href="#models">Model Management</a></li>
-          <li><a href="#endpoints">Endpoint Management</a></li>
-          <li><a href="#settings">Settings</a></li>
-        </ul>
+      <div className="quick-stats">
+        <div className="stat-item">
+          <span className="stat-icon">⚡</span>
+          <div>
+            <span className="stat-value">Online</span>
+            <span className="stat-label">Status</span>
+          </div>
+        </div>
+        <div className="stat-item">
+          <span className="stat-icon">🔑</span>
+          <div>
+            <span className="stat-value">Active</span>
+            <span className="stat-label">Session</span>
+          </div>
+        </div>
       </div>
 
+      <nav className="sidebar-nav">
+        <div className="nav-section">
+          <h4>MAIN MENU</h4>
+          <ul>
+            {menuItems.slice(0, 4).map(item => (
+              <li key={item.id} className={item.active ? 'active' : ''}>
+                <a href={`#${item.id}`}>
+                  <span className="nav-icon">{item.icon}</span>
+                  <span className="nav-label">{item.label}</span>
+                  {item.active && <span className="active-indicator"></span>}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="nav-section">
+          <h4>MANAGEMENT</h4>
+          <ul>
+            {menuItems.slice(4, 8).map(item => (
+              <li key={item.id} className={item.active ? 'active' : ''}>
+                <a href={`#${item.id}`}>
+                  <span className="nav-icon">{item.icon}</span>
+                  <span className="nav-label">{item.label}</span>
+                  {item.active && <span className="active-indicator"></span>}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </nav>
+
       <div className="sidebar-footer">
+        <div className="user-details-mini">
+          <div className="detail-row">
+            <span className="detail-label">ID:</span>
+            <span className="detail-value">{user.user_id?.substring(0, 8)}...</span>
+          </div>
+          <div className="detail-row">
+            <span className="detail-label">Scope:</span>
+            <span className="detail-value admin-scope">Admin ({user.scope})</span>
+          </div>
+        </div>
         <button onClick={onLogout} className="logout-button">
-          Logout
+          <span className="logout-icon">🚪</span>
+          <span>Sign Out</span>
         </button>
       </div>
     </div>

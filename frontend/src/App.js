@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAuth } from './hooks/useAuth';
+import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import MainContent from './components/MainContent';
 import LoadingScreen from './components/LoadingScreen';
@@ -32,6 +33,7 @@ function App() {
   console.log('[APP] Rendering main application interface');
   return (
     <div className="app">
+      <Header user={user} />
       <Sidebar user={user} onLogout={logout} />
       <MainContent user={user} token={token} />
     </div>
