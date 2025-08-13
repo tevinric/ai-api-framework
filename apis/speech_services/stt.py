@@ -68,19 +68,79 @@ def calculate_audio_duration(transcription_result):
     """
     Calculate the total audio duration in seconds from the transcription result
     
-    The Microsoft Speech API returns duration in milliseconds
+    The Microsoft Speech API can return duration in different structures:
+    - Top level 'duration' in milliseconds
+    - 'durationInTicks' (100-nanosecond intervals)
+    - Calculate from combinedPhrases timestamps
     """
     try:
-        # Check if duration is directly available in milliseconds
+        print(f"DEBUG: Transcription result structure: {json.dumps(transcription_result, indent=2)}")
+        
+        # Method 1: Check if duration is directly available in milliseconds
         if 'duration' in transcription_result:
+            duration_ms = transcription_result['duration']
+            print(f"DEBUG: Found direct duration field: {duration_ms} ms")
             # Convert milliseconds to seconds
-            return transcription_result['duration'] / 1000.0
+            return duration_ms / 1000.0
             
-        # If all else fails, return a default value
+        # Method 2: Check for durationInTicks (100-nanosecond intervals)
+        if 'durationInTicks' in transcription_result:
+            duration_ticks = transcription_result['durationInTicks']
+            print(f"DEBUG: Found durationInTicks: {duration_ticks}")
+            # Convert ticks to seconds (1 tick = 100 nanoseconds = 1e-7 seconds)
+            return duration_ticks * 1e-7
+            
+        # Method 3: Look for duration in nested structures
+        for key in transcription_result.keys():
+            if isinstance(transcription_result[key], dict):
+                nested_obj = transcription_result[key]
+                if 'duration' in nested_obj:
+                    duration_ms = nested_obj['duration']
+                    print(f"DEBUG: Found duration in nested object '{key}': {duration_ms} ms")
+                    return duration_ms / 1000.0
+                if 'durationInTicks' in nested_obj:
+                    duration_ticks = nested_obj['durationInTicks']
+                    print(f"DEBUG: Found durationInTicks in nested object '{key}': {duration_ticks}")
+                    return duration_ticks * 1e-7
+        
+        # Method 4: Calculate from combinedPhrases if available
+        if 'combinedPhrases' in transcription_result and transcription_result['combinedPhrases']:
+            phrases = transcription_result['combinedPhrases']
+            max_end_time = 0
+            
+            for phrase in phrases:
+                # Look for offset and duration in phrase
+                if 'offsetInTicks' in phrase and 'durationInTicks' in phrase:
+                    end_time_ticks = phrase['offsetInTicks'] + phrase['durationInTicks']
+                    max_end_time = max(max_end_time, end_time_ticks)
+                elif 'offset' in phrase and 'duration' in phrase:
+                    end_time_ms = phrase['offset'] + phrase['duration']
+                    max_end_time = max(max_end_time, end_time_ms / 10000.0)  # Convert to ticks if needed
+            
+            if max_end_time > 0:
+                print(f"DEBUG: Calculated duration from combinedPhrases: {max_end_time} ticks")
+                # Convert ticks to seconds
+                return max_end_time * 1e-7
+        
+        # Method 5: Look for any time-related fields
+        time_fields = ['totalDuration', 'audioDuration', 'lengthInSeconds', 'durationSeconds']
+        for field in time_fields:
+            if field in transcription_result:
+                duration = transcription_result[field]
+                print(f"DEBUG: Found {field}: {duration}")
+                # Assume it's already in seconds if it's a reasonable value
+                if isinstance(duration, (int, float)) and duration > 0:
+                    if duration > 1000:  # Likely milliseconds
+                        return duration / 1000.0
+                    else:
+                        return duration
+        
+        print(f"DEBUG: No duration information found in transcription result")
         return 0
             
     except Exception as e:
         logger.error(f"Error calculating audio duration: {str(e)}")
+        print(f"DEBUG: Exception in calculate_audio_duration: {str(e)}")
         return 0
 
 def speech_to_text_route():
@@ -284,7 +344,9 @@ def speech_to_text_route():
             transcript = "No transcript available"
         
         # Calculate the duration of the audio file
+        print(f"DEBUG: About to calculate audio duration from transcription result")
         seconds_processed = calculate_audio_duration(transcription_result)
+        print(f"DEBUG: Calculated audio duration: {seconds_processed} seconds")
         
         # Delete the uploaded file to avoid storage bloat using FileService directly
         success, message = FileService.delete_file(file_id, g.user_id)
