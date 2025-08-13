@@ -1,0 +1,129 @@
+.main-content {
+  margin-left: 300px;
+  padding: 40px;
+  background-color: #f8f9fa;
+  min-height: 100vh;
+}
+
+.content-header {
+  margin-bottom: 40px;
+}
+
+.content-header h1 {
+  color: #2c3e50;
+  margin-bottom: 10px;
+  font-size: 32px;
+}
+
+.content-header p {
+  color: #7f8c8d;
+  font-size: 18px;
+  margin: 0;
+}
+
+.dashboard-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 25px;
+  margin-bottom: 40px;
+}
+
+.dashboard-card {
+  background: white;
+  padding: 25px;
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-left: 4px solid #3498db;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.dashboard-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.dashboard-card h3 {
+  color: #2c3e50;
+  margin: 0 0 10px 0;
+  font-size: 20px;
+}
+
+.dashboard-card p {
+  color: #7f8c8d;
+  margin: 0 0 15px 0;
+  line-height: 1.5;
+}
+
+.card-stats {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.stat-label {
+  color: #7f8c8d;
+  font-weight: 500;
+}
+
+.stat-value {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.stat-value.authenticated {
+  background-color: #d5f4e6;
+  color: #27ae60;
+}
+
+.stat-value.admin {
+  background-color: #fce4ec;
+  color: #e91e63;
+}
+
+.stat-value:not(.authenticated):not(.admin) {
+  background-color: #e3f2fd;
+  color: #2196f3;
+}
+
+.debug-info {
+  background: white;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.debug-info h3 {
+  color: #2c3e50;
+  margin: 0 0 20px 0;
+  font-size: 22px;
+}
+
+.debug-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 15px;
+}
+
+.debug-item {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.debug-item label {
+  color: #7f8c8d;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.debug-item span {
+  color: #2c3e50;
+  font-family: 'Courier New', monospace;
+  background-color: #f8f9fa;
+  padding: 8px;
+  border-radius: 4px;
+  word-break: break-all;
+}

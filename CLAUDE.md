@@ -1,27 +1,26 @@
-You are given my codebase.
+you are given the following AI API base. 
 
-Please accomplish the following objectives on the frontend folder:
+These apis are deployed to the base url http:gaia.com
 
-The front end is created in React. 
+For all database table schemas and designs refer to the sql_init folder
 
-1. The front end will have a login in page. Under normal circumstances the front end will use Azure Active Directory Entra App Authentication. 
-2. For prod when the user logins in -> Entra will get their email address -> Email addres will get passed to an apis/admin endpoit to check the the scope of the user in the  users table (see sql_init table for schema). If the scope is 0 then redirect the user to the add. if scope is NOT 0 then give then user an error that they are not authorised to access the application
-3. For development -> bypass the login process and use a default email that is "gaiatester@test.com". Use an environment vairable to check the environment. if PROD then use login page and if DEV then bypass. Do not overcomplicate this use one variable only
+Your task is as follows:
 
-Next you must create Admin APIS in the apis/admin folder for: 
+1. Create a react front end to manage the admin functions of my application. 
+2. Application process flow:
 
-1. GET user details -> takes an email and and looks up the users table (see sql_init folder for schema). only is scope =0 then return the user details including the api_key of the user. If scope not 0 then return a suitable response that forces the app to give the user an error message that they are not authorised to use the application.
+    - The app will load the email_address from the .env file
+    - The email address will be used in the apis/admin/admin_get_user_details endpoint
+    - This will lookup the user details in the DB (users table) based on the email address
+    - If the user scope of the user for the passed email address is 0 then return get the user details and display the username, department and user_id on the top of the sidebar (user details sections)
+    - if the scope is > 0 then return and error message that the user is not allowed to access this portal. 
+    - from the user details, you must get the api_key
+    - Use the api_key to generate a token using the apis/token_services/get_token endpoint 
+    - the token will be saved to the session state for the user to authenticate api calls
 
-2. When a valid admin user autheticates themselve the application will then use the user's api_key to generate a token which gets cached to session_state. Please include checking validity of the token -> if token is expired then generated a new one and replace in cached variables (use the apis/token_services endpoints for this) 
 
-3. Please create any other useful admin apis that will support the admin portal and management of users. Please allow for CRUD operations where neccessary. 
+For Now just create this react front end in the frontend folder. Please read in the backend API base url from the .env file (only once and dynamically referenced)
 
-Please check how my apis are structured and take this into account for the front end.
+Please ensure that there is good print statements to the terminal for debugging issues
 
-Please ensure that all admin portal interations are api driven and that all required apis are available. 
 
-DO NOT change anything regarding functionality of other apis. 
-
-Create a file in the frontend folder called changes_made.md which documents all the changes you make. 
-
-Please note that the base url is https:gaia.com - please reference this once from the .env file only! 
