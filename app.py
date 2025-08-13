@@ -351,6 +351,10 @@ register_nlp_routes(app)
 from apis.context import register_context_routes
 register_context_routes(app)
 
+# USAGE TRACKING ENDPOINTS
+from apis.usage_tracking.usage_analytics import register_usage_tracking_routes
+register_usage_tracking_routes(app)
+
 #Agentic 
 # from apis.llm.agentic_llm import register_agentic_llm
 # register_agentic_llm(app)
