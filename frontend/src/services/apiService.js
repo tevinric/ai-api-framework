@@ -138,7 +138,7 @@ export const adminAPI = {
     }
   },
 
-  // Delete user (admin only) - Note: This API seems to be commented out in backend
+  // Delete user (admin only)
   deleteUser: async (apiKey, token, userId) => {
     console.log('[API_SERVICE] Deleting user:', userId);
     try {

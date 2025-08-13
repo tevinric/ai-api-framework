@@ -202,8 +202,8 @@ register_get_user_details_routes(app)
 from apis.admin.admin_get_all_users import register_get_all_users_routes
 register_get_all_users_routes(app)
 ## DELETE USER
-# from apis.admin.admin_delete_user import register_admin_delete_user_routes
-# register_admin_delete_user_routes(app)
+from apis.admin.admin_delete_user import register_admin_delete_user_routes
+register_admin_delete_user_routes(app)
 
 # MODEL METADATA MANAGEMENT 
 ## CREATE model metadata record  
