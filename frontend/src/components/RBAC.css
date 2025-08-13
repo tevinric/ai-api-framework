@@ -215,7 +215,7 @@
 
 .table-header {
   display: grid;
-  grid-template-columns: minmax(200px, 3fr) minmax(200px, 3fr) minmax(120px, 1.5fr) minmax(80px, 1fr) minmax(100px, 1fr);
+  grid-template-columns: 30% 30% 15% 10% 15%;
   gap: 15px;
   padding: 20px 25px;
   background: #f8f9fa;
@@ -231,7 +231,7 @@
 
 .table-row {
   display: grid;
-  grid-template-columns: minmax(200px, 3fr) minmax(200px, 3fr) minmax(120px, 1.5fr) minmax(80px, 1fr) minmax(100px, 1fr);
+  grid-template-columns: 30% 30% 15% 10% 15%;
   gap: 15px;
   padding: 20px 25px;
   border-bottom: 1px solid #f0f0f0;
@@ -520,11 +520,11 @@
 }
 
 .access-table .table-header {
-  grid-template-columns: 60px minmax(150px, 2fr) minmax(100px, 1.5fr) minmax(60px, 1fr) minmax(100px, 1.5fr) minmax(100px, 1.5fr);
+  grid-template-columns: 8% 25% 20% 12% 17% 18%;
 }
 
 .access-table .table-row {
-  grid-template-columns: 60px minmax(150px, 2fr) minmax(100px, 1.5fr) minmax(60px, 1fr) minmax(100px, 1.5fr) minmax(100px, 1.5fr);
+  grid-template-columns: 8% 25% 20% 12% 17% 18%;
 }
 
 .checkbox-cell {
