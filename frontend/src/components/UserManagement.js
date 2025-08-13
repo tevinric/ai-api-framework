@@ -194,12 +194,10 @@ const UserManagement = ({ user, token }) => {
             <div className="table-header">
               <div className="table-cell">User</div>
               <div className="table-cell">Email</div>
-              <div className="table-cell">Company</div>
               <div className="table-cell">Department</div>
               <div className="table-cell">Role</div>
               <div className="table-cell">Status</div>
               <div className="table-cell">Actions</div>
-              <div className="table-cell">Created</div>
             </div>
             
             {filteredUsers.map((userData) => (
@@ -216,10 +214,6 @@ const UserManagement = ({ user, token }) => {
                 
                 <div className="table-cell email-cell">
                   {userData.user_email}
-                </div>
-                
-                <div className="table-cell">
-                  {userData.company || 'N/A'}
                 </div>
                 
                 <div className="table-cell">
@@ -246,13 +240,6 @@ const UserManagement = ({ user, token }) => {
                     <span className="btn-icon">👁️</span>
                     View
                   </button>
-                </div>
-                
-                <div className="table-cell">
-                  {userData.created_at 
-                    ? new Date(userData.created_at).toLocaleDateString()
-                    : 'N/A'
-                  }
                 </div>
               </div>
             ))}

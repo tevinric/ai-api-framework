@@ -1,33 +1,53 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { adminAPI, endpointAPI } from '../services/apiService';
 import './Dashboard.css';
 
 const Dashboard = ({ user, token }) => {
   console.log('[DASHBOARD] Rendering dashboard for user:', user?.user_name);
+  
+  const [userCount, setUserCount] = useState('—');
+  const [endpointCount, setEndpointCount] = useState('—');
+
+  useEffect(() => {
+    loadDashboardData();
+  }, [user, token]);
+
+  const loadDashboardData = async () => {
+    try {
+      // Load user count
+      const usersResponse = await adminAPI.getAllUsers(user.api_key, token);
+      setUserCount(usersResponse.users?.length || 0);
+    } catch (err) {
+      console.error('[DASHBOARD] Failed to load user count:', err);
+    }
+
+    try {
+      // Load endpoint count
+      const endpointsResponse = await endpointAPI.getAllEndpoints(user.api_key, token);
+      setEndpointCount(endpointsResponse.endpoints?.length || 0);
+    } catch (err) {
+      console.error('[DASHBOARD] Failed to load endpoint count:', err);
+    }
+  };
 
   const stats = [
     {
       title: 'Total Users',
-      value: '—',
+      value: userCount,
       icon: '👥',
       color: '#4CAF50'
     },
     {
       title: 'API Endpoints',
-      value: '—',
+      value: endpointCount,
       icon: '🔗',
       color: '#2196F3'
     },
     {
-      title: 'Active Sessions',
-      value: '—',
-      icon: '📊',
-      color: '#FF9800'
-    },
-    {
-      title: 'System Status',
-      value: 'Online',
-      icon: '✅',
-      color: '#4CAF50'
+      title: 'Admin Sessions',
+      value: '1',
+      icon: '🔐',
+      color: '#9C27B0'
     }
   ];
 
