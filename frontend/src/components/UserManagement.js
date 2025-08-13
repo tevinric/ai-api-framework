@@ -194,6 +194,7 @@ const UserManagement = ({ user, token }) => {
             <div className="table-header">
               <div className="table-cell">User</div>
               <div className="table-cell">Email</div>
+              <div className="table-cell">Company</div>
               <div className="table-cell">Department</div>
               <div className="table-cell">Role</div>
               <div className="table-cell">Status</div>
@@ -215,6 +216,10 @@ const UserManagement = ({ user, token }) => {
                 
                 <div className="table-cell email-cell">
                   {userData.user_email}
+                </div>
+                
+                <div className="table-cell">
+                  {userData.company || 'N/A'}
                 </div>
                 
                 <div className="table-cell">
@@ -455,6 +460,52 @@ const UserDetailModal = ({ user: selectedUser, currentUser, token, onClose, onRe
 
             <div className="form-row">
               <div className="form-group">
+                <label>Sub Department</label>
+                <input 
+                  type="text" 
+                  value={formData.sub_department || ''} 
+                  onChange={(e) => handleInputChange('sub_department', e.target.value)}
+                  disabled={!editing}
+                  className={`form-input ${!editing ? 'disabled' : ''}`}
+                />
+              </div>
+              <div className="form-group">
+                <label>Cost Center</label>
+                <input 
+                  type="text" 
+                  value={formData.cost_center || ''} 
+                  onChange={(e) => handleInputChange('cost_center', e.target.value)}
+                  disabled={!editing}
+                  className={`form-input ${!editing ? 'disabled' : ''}`}
+                />
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label>Manager Full Name</label>
+                <input 
+                  type="text" 
+                  value={formData.manager_full_name || ''} 
+                  onChange={(e) => handleInputChange('manager_full_name', e.target.value)}
+                  disabled={!editing}
+                  className={`form-input ${!editing ? 'disabled' : ''}`}
+                />
+              </div>
+              <div className="form-group">
+                <label>Manager Email</label>
+                <input 
+                  type="email" 
+                  value={formData.manager_email || ''} 
+                  onChange={(e) => handleInputChange('manager_email', e.target.value)}
+                  disabled={!editing}
+                  className={`form-input ${!editing ? 'disabled' : ''}`}
+                />
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
                 <label>Scope</label>
                 <select 
                   value={parseInt(formData.scope, 10) || 1} 
@@ -497,12 +548,13 @@ const UserDetailModal = ({ user: selectedUser, currentUser, token, onClose, onRe
 
             <div className="form-row">
               <div className="form-group">
-                <label>Created At</label>
+                <label>API Key</label>
                 <input 
                   type="text" 
-                  value={selectedUser.created_at ? new Date(selectedUser.created_at).toLocaleString() : 'N/A'} 
+                  value={selectedUser.api_key || 'N/A'} 
                   disabled 
                   className="form-input disabled"
+                  style={{fontFamily: 'Courier New, monospace', fontSize: '12px'}}
                 />
               </div>
               <div className="form-group">
@@ -514,6 +566,27 @@ const UserDetailModal = ({ user: selectedUser, currentUser, token, onClose, onRe
                   onChange={(e) => handleInputChange('aic_balance', parseFloat(e.target.value))}
                   disabled={!editing}
                   className={`form-input ${!editing ? 'disabled' : ''}`}
+                />
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label>Created At</label>
+                <input 
+                  type="text" 
+                  value={selectedUser.created_at ? new Date(selectedUser.created_at).toLocaleString() : 'N/A'} 
+                  disabled 
+                  className="form-input disabled"
+                />
+              </div>
+              <div className="form-group">
+                <label>Modified At</label>
+                <input 
+                  type="text" 
+                  value={selectedUser.modified_at ? new Date(selectedUser.modified_at).toLocaleString() : 'N/A'} 
+                  disabled 
+                  className="form-input disabled"
                 />
               </div>
             </div>
@@ -604,7 +677,6 @@ const CreateUserModal = ({ currentUser, token, onClose, onRefresh }) => {
     if (e) {
       e.preventDefault();
     }
-    console.log('[CREATE_USER_MODAL] Form submitted!', formData);
     
     if (!formData.user_name.trim() || !formData.user_email.trim()) {
       setError('Username and email are required fields');
@@ -631,7 +703,6 @@ const CreateUserModal = ({ currentUser, token, onClose, onRefresh }) => {
 
   const handleButtonClick = (e) => {
     e.preventDefault();
-    console.log('[CREATE_USER_MODAL] Button clicked directly!');
     handleSubmit();
   };
 
@@ -736,6 +807,21 @@ const CreateUserModal = ({ currentUser, token, onClose, onRefresh }) => {
                     onChange={(e) => handleInputChange('sub_department', e.target.value)}
                     className="form-input"
                   />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Cost Center</label>
+                  <input 
+                    type="text" 
+                    value={formData.cost_center} 
+                    onChange={(e) => handleInputChange('cost_center', e.target.value)}
+                    className="form-input"
+                  />
+                </div>
+                <div className="form-group">
+                  {/* Empty space for alignment */}
                 </div>
               </div>
 

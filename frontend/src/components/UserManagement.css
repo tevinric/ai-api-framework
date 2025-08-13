@@ -214,8 +214,8 @@
 
 .table-header {
   display: grid;
-  grid-template-columns: 2fr 2fr 1.5fr 1fr 1fr 1fr 1fr;
-  gap: 20px;
+  grid-template-columns: 2fr 2fr 1.5fr 1.5fr 1fr 1fr 1fr 1fr;
+  gap: 15px;
   padding: 20px 25px;
   background: #f8f9fa;
   border-bottom: 1px solid #e0e0e0;
@@ -228,8 +228,8 @@
 
 .table-row {
   display: grid;
-  grid-template-columns: 2fr 2fr 1.5fr 1fr 1fr 1fr 1fr;
-  gap: 20px;
+  grid-template-columns: 2fr 2fr 1.5fr 1.5fr 1fr 1fr 1fr 1fr;
+  gap: 15px;
   padding: 20px 25px;
   border-bottom: 1px solid #f0f0f0;
   transition: background-color 0.2s ease;
@@ -552,7 +552,7 @@
   }
   
   .table-cell:nth-child(3),
-  .table-cell:nth-child(6) {
+  .table-cell:nth-child(7) {
     display: none;
   }
 }
@@ -582,7 +582,8 @@
   .table-cell:nth-child(3),
   .table-cell:nth-child(4),
   .table-cell:nth-child(5),
-  .table-cell:nth-child(6) {
+  .table-cell:nth-child(6),
+  .table-cell:nth-child(7) {
     display: none;
   }
   
