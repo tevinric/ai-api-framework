@@ -6,6 +6,7 @@ from flasgger import swag_from
 import logging
 from datetime import datetime, timedelta
 import json
+import pytz
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -30,17 +31,32 @@ def token_required_usage(f):
                     "message": "Missing X-Token header"
                 }, 401)
             
-            # Validate token and get user info
-            validation_result = token_service.validate_token(token)
-            if not validation_result["valid"]:
+            # Validate token using DatabaseService (same approach as other endpoints)
+            token_details = DatabaseService.get_token_details_by_value(token)
+            if not token_details:
                 return create_api_response({
-                    "error": "Authentication Error", 
-                    "message": validation_result["message"]
+                    "error": "Authentication Error",
+                    "message": "Invalid token"
+                }, 401)
+                
+            # Check if token is expired
+            now = datetime.now(pytz.UTC)
+            expiration_time = token_details["token_expiration_time"]
+            
+            # Ensure expiration_time is timezone-aware
+            if expiration_time.tzinfo is None:
+                johannesburg_tz = pytz.timezone('Africa/Johannesburg')
+                expiration_time = johannesburg_tz.localize(expiration_time)
+                
+            if now > expiration_time:
+                return create_api_response({
+                    "error": "Authentication Error",
+                    "message": "Token has expired"
                 }, 401)
             
             # Store user info in g for use in the endpoint
-            g.user_id = validation_result["user_id"]
-            g.token_id = validation_result["token_id"]
+            g.user_id = token_details["user_id"]
+            g.token_id = token_details["id"]
             
             return f(*args, **kwargs)
             
