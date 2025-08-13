@@ -40,22 +40,6 @@ const Sidebar = ({ user, currentView, onNavigate, onLogout }) => {
         </div>
       </div>
 
-      <div className="quick-stats">
-        <div className="stat-item">
-          <span className="stat-icon">⚡</span>
-          <div>
-            <span className="stat-value">Online</span>
-            <span className="stat-label">Status</span>
-          </div>
-        </div>
-        <div className="stat-item">
-          <span className="stat-icon">🔑</span>
-          <div>
-            <span className="stat-value">Active</span>
-            <span className="stat-label">Session</span>
-          </div>
-        </div>
-      </div>
 
       <nav className="sidebar-nav">
         <div className="nav-section">
