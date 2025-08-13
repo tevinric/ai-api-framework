@@ -74,7 +74,7 @@ const LoginPage = () => {
               <br />
               <strong>Debug Info:</strong>
               <br />
-              API Base URL: {process.env.REACT_APP_API_BASE_URL || 'https://dev-api.tihsa.co.za/ext/api/v1/gaia'}
+              API Base URL: {process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000'}
               <br />
               Dev User Email: {process.env.REACT_APP_DEV_USER_EMAIL || 'gaiatester@test.com'}
               <br />

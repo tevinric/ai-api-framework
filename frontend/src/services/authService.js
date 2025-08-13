@@ -1,7 +1,7 @@
 import { PublicClientApplication } from "@azure/msal-browser";
 import { MsalProvider } from "@azure/msal-react";
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://dev-api.tihsa.co.za/ext/api/v1/gaia';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
 
 // MSAL configuration
 const msalConfig = {

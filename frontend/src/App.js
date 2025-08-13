@@ -21,7 +21,7 @@ const theme = createTheme({
   },
 });
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://dev-api.tihsa.co.za/ext/api/v1/gaia';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
 const DEV_USER_EMAIL = process.env.REACT_APP_DEV_USER_EMAIL || 'gaiatester@test.com';
 const IS_DEV_MODE = process.env.REACT_APP_DISABLE_LOGIN === 'true';
 
@@ -51,10 +51,7 @@ function App() {
 
       // Step 1: Get user details - Try different endpoint paths
       const possibleEndpoints = [
-        '/admin/user-details',
-        '/ext/api/v1/gaia/admin/user-details', 
-        '/api/admin/user-details',
-        '/v1/admin/user-details'
+        '/admin/user-details'
       ];
       
       let userResponse = null;
