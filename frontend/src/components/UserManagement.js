@@ -198,18 +198,18 @@ const UserManagement = ({ user, token }) => {
               <div className="table-cell">Department</div>
               <div className="table-cell">Role</div>
               <div className="table-cell">Status</div>
-              <div className="table-cell">Created</div>
               <div className="table-cell">Actions</div>
+              <div className="table-cell">Created</div>
             </div>
             
             {filteredUsers.map((userData) => (
               <div key={userData.user_id} className="table-row">
                 <div className="table-cell user-cell">
                   <div className="user-avatar">
-                    {userData.user_name?.charAt(0)?.toUpperCase()}
+                    {(userData.common_name || userData.user_name)?.charAt(0)?.toUpperCase()}
                   </div>
                   <div className="user-info">
-                    <div className="user-name">{userData.user_name}</div>
+                    <div className="user-name">{userData.common_name || userData.user_name}</div>
                     <div className="user-id">{userData.user_id?.substring(0, 8)}...</div>
                   </div>
                 </div>
@@ -238,13 +238,6 @@ const UserManagement = ({ user, token }) => {
                   </span>
                 </div>
                 
-                <div className="table-cell">
-                  {userData.created_at 
-                    ? new Date(userData.created_at).toLocaleDateString()
-                    : 'N/A'
-                  }
-                </div>
-                
                 <div className="table-cell actions-cell">
                   <button 
                     className="btn btn-small btn-outline"
@@ -253,6 +246,13 @@ const UserManagement = ({ user, token }) => {
                     <span className="btn-icon">👁️</span>
                     View
                   </button>
+                </div>
+                
+                <div className="table-cell">
+                  {userData.created_at 
+                    ? new Date(userData.created_at).toLocaleDateString()
+                    : 'N/A'
+                  }
                 </div>
               </div>
             ))}

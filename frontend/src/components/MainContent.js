@@ -13,8 +13,6 @@ const MainContent = ({ user, token, currentView }) => {
         return <Dashboard user={user} token={token} />;
       case 'users':
         return <UserManagement user={user} token={token} />;
-      case 'models':
-        return <div className="coming-soon">🧠 AI Models Management - Coming Soon</div>;
       case 'endpoints':
         return <EndpointManagement user={user} token={token} />;
       case 'analytics':

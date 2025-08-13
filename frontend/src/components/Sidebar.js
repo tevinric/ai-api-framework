@@ -16,7 +16,6 @@ const Sidebar = ({ user, currentView, onNavigate, onLogout }) => {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: '📊' },
     { id: 'users', label: 'User Management', icon: '👥' },
-    { id: 'models', label: 'AI Models', icon: '🧠' },
     { id: 'endpoints', label: 'Endpoint Management', icon: '🔗' },
     { id: 'analytics', label: 'Analytics', icon: '📈' },
     { id: 'balance', label: 'Balance & Usage', icon: '💰' },
@@ -61,7 +60,7 @@ const Sidebar = ({ user, currentView, onNavigate, onLogout }) => {
         <div className="nav-section">
           <h4>MAIN MENU</h4>
           <ul>
-            {menuItems.slice(0, 4).map(item => (
+            {menuItems.slice(0, 3).map(item => (
               <li key={item.id} className={currentView === item.id ? 'active' : ''}>
                 <button onClick={() => onNavigate(item.id)}>
                   <span className="nav-icon">{item.icon}</span>
@@ -76,7 +75,7 @@ const Sidebar = ({ user, currentView, onNavigate, onLogout }) => {
         <div className="nav-section">
           <h4>MANAGEMENT</h4>
           <ul>
-            {menuItems.slice(4, 8).map(item => (
+            {menuItems.slice(3, 7).map(item => (
               <li key={item.id} className={currentView === item.id ? 'active' : ''}>
                 <button onClick={() => onNavigate(item.id)}>
                   <span className="nav-icon">{item.icon}</span>
