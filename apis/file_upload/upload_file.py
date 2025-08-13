@@ -182,7 +182,7 @@ def upload_file_route():
         '.sit','.slk','.snd','.spiff','.sqz','.swf','.sys',
         '.temp','.text','.tgz','.thmx','.thor','.uu','.uue','.vb',
         '.vbe','.vbs','.vob','.vsl','.vst','.vsu','.vsw',
-        '.vsx','.vtx','.vxd','.wax','.wcry','.wncry','.wma','.wncry',
+        '.vsx','.vtx','.vxd','.wax','.wcry','.wncry','.wncry',
         '.wncrpyt','.wnry','.wri','.ws','.wsc','.wsf','.wsh',
         '.wvx','.xlb','.xlc','.xld','.xlk','.xlv','.xsf',
         '.xsn','.z','.zepto','.zoo','.zzz','.zzzzz',
