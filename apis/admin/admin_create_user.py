@@ -78,13 +78,17 @@ def create_user_route():
               description: Manager's email address for the new user (optional)
             scope:
               type: integer
-              description: Permission scope for the new user (1-5)
+              description: Permission scope for the new user (0-5, where 0=Admin)
             active:
               type: boolean
               description: Whether the user is active
             comment:
               type: string
               description: Optional comment about the user
+            aic_balance:
+              type: number
+              format: decimal
+              description: Custom AIC balance for the user (optional)
     produces:
       - application/json
     responses:
@@ -244,15 +248,32 @@ def create_user_route():
         'sub_department': data.get('sub_department', None),
         'cost_center': data.get('cost_center', None),
         'manager_full_name': data.get('manager_full_name', None),
-        'manager_email': data.get('manager_email', None)
+        'manager_email': data.get('manager_email', None),
+        'aic_balance': data.get('aic_balance', None)  # AIC balance field
     }
     
-    # Validate scope is within allowed range (1-5)
-    if not (1 <= new_user['scope'] <= 5):
+    # Validate scope is within allowed range (0-5)
+    if not (0 <= new_user['scope'] <= 5):
         return create_api_response({
             "error": "Bad Request",
-            "message": "Scope must be between 1 and 5"
+            "message": "Scope must be between 0 and 5"
         }, 400)
+    
+    # Validate AIC balance if provided
+    if new_user['aic_balance'] is not None:
+        try:
+            balance = float(new_user['aic_balance'])
+            if balance < 0:
+                return create_api_response({
+                    "error": "Bad Request",
+                    "message": "AIC balance must be a non-negative number"
+                }, 400)
+            new_user['aic_balance'] = balance
+        except (ValueError, TypeError):
+            return create_api_response({
+                "error": "Bad Request",
+                "message": "AIC balance must be a valid number"
+            }, 400)
     
     try:
         # Create user in the database

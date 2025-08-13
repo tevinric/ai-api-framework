@@ -682,7 +682,8 @@ const CreateUserModal = ({ currentUser, token, onClose, onRefresh }) => {
     manager_email: '',
     scope: 1,
     active: true,
-    comment: ''
+    comment: '',
+    aic_balance: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -886,6 +887,7 @@ const CreateUserModal = ({ currentUser, token, onClose, onRefresh }) => {
                     onChange={(e) => handleInputChange('scope', parseInt(e.target.value))}
                     className="form-input"
                   >
+                    <option value={0}>Admin (0)</option>
                     <option value={1}>User (1)</option>
                     <option value={2}>Limited (2)</option>
                     <option value={3}>Guest (3)</option>
@@ -903,6 +905,23 @@ const CreateUserModal = ({ currentUser, token, onClose, onRefresh }) => {
                     <option value="true">Active</option>
                     <option value="false">Inactive</option>
                   </select>
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>AIC Balance</label>
+                  <input 
+                    type="number" 
+                    step="0.01"
+                    value={formData.aic_balance} 
+                    onChange={(e) => handleInputChange('aic_balance', e.target.value)}
+                    className="form-input"
+                    placeholder="Enter AIC balance (optional)"
+                  />
+                </div>
+                <div className="form-group">
+                  {/* Empty space for alignment */}
                 </div>
               </div>
 
