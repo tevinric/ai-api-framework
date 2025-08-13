@@ -85,7 +85,6 @@ def extract_usage_metrics(response):
         # Audio processing metrics
         if "seconds_processed" in response_data:
             metrics["audio_seconds_processed"] = response_data["seconds_processed"]
-            print(f"DEBUG: UsageMiddleware - Found seconds_processed: {response_data['seconds_processed']} in response")
         
         # Document processing metrics
         if "pages_processed" in response_data:
@@ -262,7 +261,6 @@ def track_usage(f):
                 )
                 
             # Log usage metrics and update the api_logs table
-            print(f"DEBUG: UsageMiddleware - Logging usage metrics for {request.path}: audio_seconds_processed={metrics['audio_seconds_processed']}")
             log_usage_metrics_and_update_api_log(metrics, api_log_id, usage_id)
             
         except Exception as e:

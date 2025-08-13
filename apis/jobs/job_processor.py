@@ -141,18 +141,16 @@ class JobProcessor:
             return len(audio_data) / (16000 * 2)
     
     @staticmethod
-    def update_usage_metrics(user_id, job_id, job_type, metrics, job_parameters=None):
+    def update_usage_metrics(user_id, job_type, metrics):
         """Update or create usage metrics in the user_usage table
         
-        This method will find the original usage record created when the job was submitted
-        and update it with the actual processing metrics after job completion.
+        This method will check if a usage record already exists for the job's API call
+        and update it rather than creating a duplicate record.
         
         Args:
             user_id (str): ID of the user who submitted the job
-            job_id (str): ID of the async job to link usage record to
             job_type (str): Type of job (e.g., 'stt', 'stt_diarize', 'tts')
             metrics (dict): Dictionary containing usage metrics
-            job_parameters (dict): Job parameters that might contain api_log_id
             
         Returns:
             bool: True if successful, False otherwise
@@ -170,54 +168,24 @@ class JobProcessor:
             conn = DatabaseService.get_connection()
             cursor = conn.cursor()
             
-            print(f"DEBUG: Looking for usage record to update for job {job_id}, user {user_id}, endpoint {endpoint_id}")
+            # First check if we already have a usage record for this user and endpoint
+            # (created within the last hour to avoid updating very old records)
+            query = """
+            SELECT id 
+            FROM user_usage 
+            WHERE user_id = ? 
+            AND endpoint_id = ? 
+            AND DATEDIFF(hour, timestamp, DATEADD(HOUR, 2, GETUTCDATE())) < 1
+            ORDER BY timestamp DESC
+            """
             
-            usage_id = None
+            cursor.execute(query, [user_id, endpoint_id])
+            existing_record = cursor.fetchone()
             
-            # First try: Use API log ID if available in job parameters
-            if job_parameters and 'api_log_id' in job_parameters and job_parameters['api_log_id']:
-                api_log_id = job_parameters['api_log_id']
-                print(f"DEBUG: Trying to find usage record by api_log_id: {api_log_id}")
-                
-                api_log_query = """
-                SELECT id 
-                FROM user_usage 
-                WHERE api_log_id = ? 
-                AND audio_seconds_processed = 0
-                """
-                
-                cursor.execute(api_log_query, [api_log_id])
-                api_log_record = cursor.fetchone()
-                
-                if api_log_record:
-                    usage_id = api_log_record[0]
-                    print(f"DEBUG: Found usage record {usage_id} by api_log_id")
-            
-            # Second try: Find the most recent usage record for this user and endpoint 
-            # with audio_seconds_processed = 0 (indicating it's from the initial job submission)
-            if not usage_id:
-                print(f"DEBUG: Trying to find usage record by user/endpoint/timestamp")
-                query = """
-                SELECT TOP 1 id, timestamp 
-                FROM user_usage 
-                WHERE user_id = ? 
-                AND endpoint_id = ? 
-                AND audio_seconds_processed = 0
-                ORDER BY timestamp DESC
-                """
-                
-                cursor.execute(query, [user_id, endpoint_id])
-                existing_record = cursor.fetchone()
-                
-                if existing_record:
-                    usage_id = existing_record[0]
-                    record_timestamp = existing_record[1]
-                    print(f"DEBUG: Found usage record {usage_id} created at {record_timestamp}")
-            
-            if usage_id:
+            if existing_record:
                 # Update existing record
-                print(f"DEBUG: Updating usage record {usage_id} with audio_seconds_processed: {metrics.get('audio_seconds_processed', 0)}")
-                logger.info(f"Updating existing usage record {usage_id} for {job_type} job {job_id}")
+                usage_id = existing_record[0]
+                logger.info(f"Updating existing usage record {usage_id} for {job_type}")
                 
                 update_query = """
                 UPDATE user_usage
@@ -227,7 +195,7 @@ class JobProcessor:
                     completion_tokens = ?,
                     total_tokens = ?,
                     cached_tokens = ?,
-                    files_uploaded = COALESCE(files_uploaded, 0) + ?
+                    files_uploaded = ?
                 WHERE id = ?
                 """
                 
@@ -242,23 +210,18 @@ class JobProcessor:
                     usage_id
                 ])
                 
-                rows_affected = cursor.rowcount
-                print(f"DEBUG: Updated {rows_affected} rows in user_usage table")
-                
                 conn.commit()
                 cursor.close()
                 conn.close()
                 
-                logger.info(f"Successfully updated usage metrics for {job_type} job {job_id}, usage_id: {usage_id}")
-                print(f"DEBUG: Successfully updated usage record {usage_id} with {metrics.get('audio_seconds_processed', 0)} audio seconds")
+                logger.info(f"Successfully updated usage metrics for {job_type} job, usage_id: {usage_id}")
                 return True
                 
             else:
-                # If no existing record found, create a new one as fallback
+                # If no existing record found (which shouldn't happen with middleware),
+                # create a new one as fallback
                 usage_id = str(uuid.uuid4())
-                print(f"DEBUG: No existing usage record found for {job_type} job {job_id}")
-                print(f"DEBUG: Creating new record {usage_id} with {metrics.get('audio_seconds_processed', 0)} audio seconds")
-                logger.warning(f"No existing usage record found for {job_type} job {job_id}. Creating new record {usage_id}")
+                logger.warning(f"No existing usage record found for {job_type}. Creating new record {usage_id}")
                 
                 insert_query = """
                 INSERT INTO user_usage (
@@ -293,12 +256,11 @@ class JobProcessor:
                 cursor.close()
                 conn.close()
                 
-                logger.info(f"Created new usage record {usage_id} for {job_type} job {job_id} as fallback")
+                logger.info(f"Created new usage record {usage_id} for {job_type} as fallback")
                 return True
             
         except Exception as e:
-            logger.error(f"Error updating usage metrics for async job {job_id}: {str(e)}")
-            print(f"DEBUG: Exception in update_usage_metrics: {str(e)}")
+            logger.error(f"Error updating usage metrics for async job: {str(e)}")
             return False
     
     @staticmethod
@@ -339,14 +301,6 @@ class JobProcessor:
             # Update job status to processing
             JobService.update_job_status(job_id, 'processing')
             
-            # Get job details to access parameters
-            job_details, error = JobService.get_job(job_id)
-            if error:
-                logger.error(f"Error getting job details: {error}")
-                job_parameters = None
-            else:
-                job_parameters = job_details.get('parameters', {})
-            
             # Get file URL
             file_info, error = FileService.get_file_url(file_id, user_id)
             if error:
@@ -380,7 +334,6 @@ class JobProcessor:
             
             # Calculate the duration of the audio file
             seconds_processed = calculate_audio_duration(transcription_result)
-            print(f"DEBUG: STT job {job_id} - Audio duration calculated: {seconds_processed} seconds")
             
             # Delete the uploaded file to avoid storage bloat using FileService directly
             success, message = FileService.delete_file(file_id, user_id)
@@ -401,8 +354,7 @@ class JobProcessor:
                 "audio_seconds_processed": seconds_processed,
                 "model_used": "ms_stt"
             }
-            print(f"DEBUG: STT job {job_id} - Calling update_usage_metrics with {seconds_processed} seconds")
-            JobProcessor.update_usage_metrics(user_id, job_id, "stt", metrics, job_parameters)
+            JobProcessor.update_usage_metrics(user_id, "stt", metrics)
             
             # Update job status to completed with results
             JobService.update_job_status(job_id, 'completed', result_data=result_data)
@@ -455,14 +407,6 @@ class JobProcessor:
             # Update job status to processing
             JobService.update_job_status(job_id, 'processing')
             
-            # Get job details to access parameters
-            job_details, error = JobService.get_job(job_id)
-            if error:
-                logger.error(f"Error getting job details: {error}")
-                job_parameters = None
-            else:
-                job_parameters = job_details.get('parameters', {})
-            
             # Get file URL
             file_info, error = FileService.get_file_url(file_id, user_id)
             if error:
@@ -490,7 +434,6 @@ class JobProcessor:
             
             # Calculate the duration of the audio file
             seconds_processed = calculate_audio_duration(transcription_result)
-            print(f"DEBUG: STT_DIARIZE job {job_id} - Audio duration calculated: {seconds_processed} seconds")
             
             # Extract the transcript text
             raw_transcript = ""
@@ -601,8 +544,7 @@ class JobProcessor:
                 "total_tokens": total_tokens,
                 "cached_tokens": total_cached_tokens
             }
-            print(f"DEBUG: STT_DIARIZE job {job_id} - Calling update_usage_metrics with {seconds_processed} seconds")
-            JobProcessor.update_usage_metrics(user_id, job_id, "stt_diarize", metrics, job_parameters)
+            JobProcessor.update_usage_metrics(user_id, "stt_diarize", metrics)
             
             # Update job status to completed with results
             JobService.update_job_status(job_id, 'completed', result_data=result_data)
@@ -651,15 +593,6 @@ class JobProcessor:
         try:
             # Update job status to processing
             JobService.update_job_status(job_id, 'processing')
-            
-            # Get job details to access parameters if not provided
-            if not job_parameters:
-                job_details, error = JobService.get_job(job_id)
-                if error:
-                    logger.error(f"Error getting job details: {error}")
-                    job_parameters = {}
-                else:
-                    job_parameters = job_details.get('parameters', {})
             
             # Extract parameters
             text = job_parameters.get('text')
@@ -776,7 +709,7 @@ class JobProcessor:
                     "prompt_tokens": prompt_tokens,
                     "model_used": "ms_tts"
                 }
-                JobProcessor.update_usage_metrics(user_id, job_id, "tts", metrics, job_parameters)
+                JobProcessor.update_usage_metrics(user_id, "tts", metrics)
                 
                 # Update job status to completed with results
                 JobService.update_job_status(job_id, 'completed', result_data=result_data)
