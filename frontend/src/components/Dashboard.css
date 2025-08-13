@@ -382,3 +382,39 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Welcome Section */
+.welcome-section {
+  grid-column: 1 / -1;
+}
+
+.welcome-content {
+  padding: 20px 0;
+}
+
+.welcome-content p {
+  margin: 0 0 15px 0;
+  color: #5a6c7d;
+  font-size: 16px;
+}
+
+.welcome-content ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.welcome-content li {
+  padding: 8px 0;
+  padding-left: 25px;
+  position: relative;
+  color: #2c3e50;
+}
+
+.welcome-content li::before {
+  content: "▶";
+  position: absolute;
+  left: 0;
+  color: #667eea;
+  font-size: 12px;
+}
