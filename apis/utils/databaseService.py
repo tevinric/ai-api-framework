@@ -887,6 +887,44 @@ class DatabaseService:
             return []
 
     @staticmethod
+    def get_all_users_endpoint_access():
+        """Get all user endpoint access records for all users (admin only)
+        
+        Returns:
+            list: List of all user endpoint access records
+        """
+        try:
+            conn = DatabaseService.get_connection()
+            cursor = conn.cursor()
+            
+            query = """
+            SELECT uea.id, uea.user_id, uea.endpoint_id, uea.created_at, uea.created_by
+            FROM user_endpoint_access uea
+            ORDER BY uea.created_at DESC
+            """
+            
+            cursor.execute(query)
+            access_list = []
+            
+            for row in cursor.fetchall():
+                access_list.append({
+                    "id": str(row[0]),
+                    "user_id": str(row[1]),
+                    "endpoint_id": str(row[2]),
+                    "created_at": row[3].isoformat() if row[3] else None,
+                    "created_by": str(row[4]) if row[4] else None
+                })
+            
+            cursor.close()
+            conn.close()
+            
+            return access_list
+            
+        except Exception as e:
+            logger.error(f"Error retrieving all users endpoint access: {str(e)}")
+            return []
+
+    @staticmethod
     def add_user_endpoint_access(user_id, endpoint_id, admin_id):
         """Grant a user access to a specific endpoint
         
@@ -1046,6 +1084,42 @@ class DatabaseService:
             logger.error(f"Error removing endpoint access: {str(e)}")
             if conn:
                 conn.rollback()
+            return False
+
+    @staticmethod
+    def remove_user_endpoint_access_by_id(access_id):
+        """Remove endpoint access by access record ID
+        
+        Args:
+            access_id (str): UUID of the access record to remove
+            
+        Returns:
+            bool: True if access was removed successfully, False otherwise
+        """
+        try:
+            conn = DatabaseService.get_connection()
+            cursor = conn.cursor()
+            
+            # Delete the access record by its ID
+            query = "DELETE FROM user_endpoint_access WHERE id = ?"
+            cursor.execute(query, [access_id])
+            
+            # Check if any row was affected
+            success = cursor.rowcount > 0
+            
+            conn.commit()
+            cursor.close()
+            conn.close()
+            
+            if success:
+                logger.info(f"Successfully removed access record: {access_id}")
+            else:
+                logger.warning(f"No access record found with ID: {access_id}")
+                
+            return success
+            
+        except Exception as e:
+            logger.error(f"Error removing access record by ID: {str(e)}")
             return False
 
     @staticmethod

@@ -1231,6 +1231,241 @@ def admin_delete_endpoint_access_multi_route():
         "failure_count": len(endpoints_failed)
     }, status_code)
 
+def admin_delete_endpoint_access_by_ids_route():
+    """
+    Delete endpoint access records by their access IDs (for RBAC management)
+    ---
+    tags:
+      - Admin Functions
+    parameters:
+      - name: API-Key
+        in: header
+        type: string
+        required: true
+        description: Admin API Key for authentication
+      - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems
+      - name: token
+        in: query
+        type: string
+        required: true
+        description: A valid token for verification
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+            - access_ids
+          properties:
+            access_ids:
+              type: array
+              items:
+                type: string
+              description: Array of UUIDs of the access records to remove
+    produces:
+      - application/json
+    responses:
+      200:
+        description: Access records removal processing complete
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              example: Access records removal processing complete
+            access_removed:
+              type: array
+              items:
+                type: object
+                properties:
+                  access_id:
+                    type: string
+                    description: ID of the access record
+                  status:
+                    type: string
+                    description: Status of the removal operation
+            access_failed:
+              type: array
+              items:
+                type: object
+                properties:
+                  access_id:
+                    type: string
+                    description: ID of the access record
+                  reason:
+                    type: string
+                    description: Reason for failure
+      400:
+        description: Bad request
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Bad Request
+            message:
+              type: string
+              example: Missing required parameters
+      401:
+        description: Authentication error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Authentication Error
+            message:
+              type: string
+              example: Missing API Key header or Invalid API Key
+      403:
+        description: Forbidden
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Forbidden
+            message:
+              type: string
+              example: Admin privileges required
+      500:
+        description: Server error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Server Error
+            message:
+              type: string
+              example: Error removing access records
+    """
+    # Get API key from request header
+    api_key = request.headers.get('API-Key')
+    if not api_key:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "Missing API Key header (API-Key)"
+        }, 401)
+    
+    # Validate API key
+    admin_info = DatabaseService.validate_api_key(api_key)
+    if not admin_info:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "Invalid API Key"
+        }, 401)
+    
+    g.user_id = admin_info["id"]
+    
+    # Check if user has admin privileges (scope=0)
+    if admin_info["scope"] != 0:
+        return create_api_response({
+            "error": "Forbidden",
+            "message": "Admin privileges required to remove endpoint access"
+        }, 403)
+    
+    # Get token from query parameter
+    token = request.args.get('token')
+    if not token:
+        return create_api_response({
+            "error": "Bad Request",
+            "message": "Missing token parameter"
+        }, 400)
+    
+    # Validate token
+    token_details = DatabaseService.get_token_details_by_value(token)
+    if not token_details:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "Invalid token provided"
+        }, 401)
+    
+    g.token_id = token_details["id"]
+    
+    # Check if token is expired
+    now = datetime.now(pytz.UTC)
+    expiration_time = token_details["token_expiration_time"]
+    
+    # Ensure expiration_time is timezone-aware
+    if expiration_time.tzinfo is None:
+        johannesburg_tz = pytz.timezone('Africa/Johannesburg')
+        expiration_time = johannesburg_tz.localize(expiration_time)
+        
+    if now > expiration_time:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "Token has expired"
+        }, 401)
+    
+    # Get request data from JSON body
+    data = request.get_json()
+    if not data:
+        return create_api_response({
+            "error": "Bad Request",
+            "message": "Request body is required"
+        }, 400)
+    
+    # Validate required parameters
+    if 'access_ids' not in data:
+        return create_api_response({
+            "error": "Bad Request",
+            "message": "Missing required parameter: access_ids is required"
+        }, 400)
+    
+    access_ids = data['access_ids']
+    
+    # Validate access_ids is a list
+    if not isinstance(access_ids, list) or len(access_ids) == 0:
+        return create_api_response({
+            "error": "Bad Request",
+            "message": "access_ids must be a non-empty array of access record IDs"
+        }, 400)
+    
+    # Process each access record removal request
+    access_removed = []
+    access_failed = []
+    
+    for access_id in access_ids:
+        try:
+            # Remove access record by ID
+            success = DatabaseService.remove_user_endpoint_access_by_id(access_id)
+            
+            if not success:
+                access_failed.append({
+                    "access_id": access_id,
+                    "reason": "Failed to remove access - record might not exist"
+                })
+                continue
+            
+            # Add to successful removals
+            access_removed.append({
+                "access_id": access_id,
+                "status": "Access removed"
+            })
+        
+        except Exception as e:
+            logger.error(f"Error removing access record {access_id}: {str(e)}")
+            access_failed.append({
+                "access_id": access_id,
+                "reason": f"Error: {str(e)}"
+            })
+    
+    # Return response with results
+    status_code = 200 if access_removed else 500 if not access_failed else 207  # Use 207 Multi-Status for partial success
+    
+    return create_api_response({
+        "message": "Access records removal processing complete",
+        "access_removed": access_removed,
+        "access_failed": access_failed,
+        "success_count": len(access_removed),
+        "failure_count": len(access_failed)
+    }, status_code)
+
 def admin_delete_endpoint_access_all_route():
     """
     Delete all endpoint access for a specific user
@@ -1424,6 +1659,191 @@ def admin_delete_endpoint_access_all_route():
             "message": f"Error removing all endpoint access: {str(e)}"
         }, 500)
 
+def admin_get_all_user_endpoint_access_route():
+    """
+    Get all user endpoint access records (admin only)
+    ---
+    tags:
+      - Admin Functions
+    parameters:
+      - name: API-Key
+        in: header
+        type: string
+        required: true
+        description: Admin API Key for authentication
+      - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems
+      - name: token
+        in: query
+        type: string
+        required: true
+        description: A valid token for verification
+    produces:
+      - application/json
+    responses:
+      200:
+        description: List of all user endpoint access records
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              example: User endpoint access retrieved successfully
+            user_access:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: UUID of the access record
+                  user_id:
+                    type: string
+                    description: UUID of the user
+                  endpoint_id:
+                    type: string
+                    description: UUID of the endpoint
+                  endpoint_name:
+                    type: string
+                    description: Name of the endpoint
+                  assigned_at:
+                    type: string
+                    format: date-time
+                    description: When access was assigned
+                  created_by:
+                    type: string
+                    description: UUID of the admin who created the access
+            total_count:
+              type: integer
+              description: Total number of access records
+      401:
+        description: Authentication error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Authentication Error
+            message:
+              type: string
+              example: Missing API Key header or Invalid API Key
+      403:
+        description: Forbidden
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Forbidden
+            message:
+              type: string
+              example: Admin privileges required
+      500:
+        description: Server error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Server Error
+            message:
+              type: string
+              example: Error retrieving user endpoint access
+    """
+    # Get API key from request header
+    api_key = request.headers.get('API-Key')
+    if not api_key:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "Missing API Key header (API-Key)"
+        }, 401)
+    
+    # Validate API key
+    admin_info = DatabaseService.validate_api_key(api_key)
+    if not admin_info:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "Invalid API Key"
+        }, 401)
+    
+    g.user_id = admin_info["id"]
+    
+    # Check if user has admin privileges (scope=0)
+    if admin_info["scope"] != 0:
+        return create_api_response({
+            "error": "Forbidden",
+            "message": "Admin privileges required to view all user endpoint access"
+        }, 403)
+    
+    # Get token from query parameter
+    token = request.args.get('token')
+    if not token:
+        return create_api_response({
+            "error": "Bad Request",
+            "message": "Missing token parameter"
+        }, 400)
+    
+    # Validate token
+    token_details = DatabaseService.get_token_details_by_value(token)
+    if not token_details:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "Invalid token provided"
+        }, 401)
+    
+    g.token_id = token_details["id"]
+    
+    # Check if token is expired
+    now = datetime.now(pytz.UTC)
+    expiration_time = token_details["token_expiration_time"]
+    
+    # Ensure expiration_time is timezone-aware
+    if expiration_time.tzinfo is None:
+        johannesburg_tz = pytz.timezone('Africa/Johannesburg')
+        expiration_time = johannesburg_tz.localize(expiration_time)
+        
+    if now > expiration_time:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "Token has expired"
+        }, 401)
+    
+    try:
+        # Get all user endpoint access records
+        all_user_access = DatabaseService.get_all_users_endpoint_access()
+        
+        # Format the response with endpoint names
+        user_access_with_details = []
+        for access in all_user_access:
+            # Get endpoint details to include endpoint name
+            endpoint_detail = DatabaseService.get_endpoint_by_id(access["endpoint_id"])
+            
+            access_record = {
+                "id": access["id"],
+                "user_id": access["user_id"],
+                "endpoint_id": access["endpoint_id"],
+                "endpoint_name": endpoint_detail["endpoint_name"] if endpoint_detail else "Unknown Endpoint",
+                "assigned_at": access["created_at"],
+                "created_by": access["created_by"]
+            }
+            user_access_with_details.append(access_record)
+        
+        return create_api_response({
+            "message": "User endpoint access retrieved successfully",
+            "user_access": user_access_with_details,
+            "total_count": len(user_access_with_details)
+        }, 200)
+        
+    except Exception as e:
+        logger.error(f"Error retrieving all user endpoint access: {str(e)}")
+        return create_api_response({
+            "error": "Server Error",
+            "message": f"Error retrieving user endpoint access: {str(e)}"
+        }, 500)
+
 def get_user_accessible_endpoints_route():
     """
     Get all endpoints accessible by the authenticated user
@@ -1586,10 +2006,11 @@ def get_user_accessible_endpoints_route():
 def register_admin_endpoint_access_routes(app):
     """Register routes with the Flask app"""
     # Updated function names and routes
+    app.route('/admin/endpoint/access', methods=['GET'])(api_logger(admin_get_all_user_endpoint_access_route))
     app.route('/admin/endpoint/access/single', methods=['POST'])(api_logger(admin_grant_endpoint_access_single_route))
     app.route('/admin/endpoint/access/multi', methods=['POST'])(api_logger(admin_grant_endpoint_access_multi_route))
     app.route('/admin/endpoint/access/all', methods=['POST'])(api_logger(admin_grant_endpoint_access_all_route))
     app.route('/admin/endpoint/access/single', methods=['DELETE'])(api_logger(admin_delete_endpoint_access_single_route))
-    app.route('/admin/endpoint/access/multi', methods=['DELETE'])(api_logger(admin_delete_endpoint_access_multi_route))
+    app.route('/admin/endpoint/access/multi', methods=['DELETE'])(api_logger(admin_delete_endpoint_access_by_ids_route))
     app.route('/admin/endpoint/access/all', methods=['DELETE'])(api_logger(admin_delete_endpoint_access_all_route))
     app.route('/user/endpoints', methods=['GET'])(api_logger(get_user_accessible_endpoints_route))
