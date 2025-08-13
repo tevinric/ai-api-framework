@@ -234,4 +234,44 @@ export const endpointAPI = {
   }
 };
 
+// RBAC API
+export const rbacAPI = {
+  // Get all user endpoint access (admin only)
+  getUserEndpointAccess: async (apiKey, token) => {
+    console.log('[RBAC_API] Getting all user endpoint access');
+    try {
+      const response = await apiClient.get('/admin/endpoint/access', {
+        headers: {
+          'API-Key': apiKey
+        },
+        params: { token }
+      });
+      console.log('[RBAC_API] User endpoint access retrieved successfully');
+      return response.data;
+    } catch (error) {
+      console.error('[RBAC_API] Failed to get user endpoint access:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+
+  // Remove multiple endpoint access for users (admin only)
+  removeMultipleEndpointAccess: async (apiKey, token, accessData) => {
+    console.log('[RBAC_API] Removing multiple endpoint access:', accessData);
+    try {
+      const response = await apiClient.delete('/admin/endpoint/access/multi', {
+        headers: {
+          'API-Key': apiKey
+        },
+        params: { token },
+        data: accessData
+      });
+      console.log('[RBAC_API] Multiple endpoint access removed successfully');
+      return response.data;
+    } catch (error) {
+      console.error('[RBAC_API] Failed to remove multiple endpoint access:', error.response?.data || error.message);
+      throw error;
+    }
+  }
+};
+
 export default apiClient;

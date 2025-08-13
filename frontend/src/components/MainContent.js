@@ -2,6 +2,7 @@ import React from 'react';
 import Dashboard from './Dashboard';
 import UserManagement from './UserManagement';
 import EndpointManagement from './EndpointManagement';
+import RBAC from './RBAC';
 import './MainContent.css';
 
 const MainContent = ({ user, token, currentView }) => {
@@ -15,6 +16,8 @@ const MainContent = ({ user, token, currentView }) => {
         return <UserManagement user={user} token={token} />;
       case 'endpoints':
         return <EndpointManagement user={user} token={token} />;
+      case 'rbac':
+        return <RBAC user={user} token={token} />;
       case 'analytics':
         return <div className="coming-soon">📈 Analytics Dashboard - Coming Soon</div>;
       case 'balance':
