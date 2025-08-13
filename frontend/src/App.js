@@ -123,7 +123,7 @@ function App() {
     } else {
       setLoading(false);
     }
-  }, []);
+  }, [IS_DEV_MODE]);
 
   // If logged in, show dashboard
   if (user) {

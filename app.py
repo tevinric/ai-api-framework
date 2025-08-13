@@ -1,4 +1,5 @@
 from flask import Flask, jsonify, request, render_template
+from flask_cors import CORS
 import requests
 from msal import ConfidentialClientApplication
 import os
@@ -17,6 +18,9 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+
+# Enable CORS for all routes
+CORS(app, origins=['http://localhost:3000'])
 
 # Initialize application components
 # This starts the job scheduler for async processing
