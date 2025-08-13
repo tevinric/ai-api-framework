@@ -739,8 +739,187 @@ def update_endpoint(endpoint_id, update_data):
         logger.error(f"Error updating endpoint: {str(e)}")
         return False
 
+def admin_delete_endpoint_route():
+    """
+    Delete an existing endpoint from the endpoints table (Admin only endpoint)
+    ---
+    tags:
+      - Admin Functions
+    parameters:
+      - name: API-Key
+        in: header
+        type: string
+        required: true
+        description: "Admin API Key for authentication"
+      - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems
+      - name: token
+        in: query
+        type: string
+        required: true
+        description: "A valid token for verification"
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+            - endpoint_id
+          properties:
+            endpoint_id:
+              type: string
+              description: "ID of the endpoint to delete"
+    produces:
+      - application/json
+    responses:
+      200:
+        description: "Endpoint deleted successfully"
+      400:
+        description: "Bad request"
+      401:
+        description: "Authentication error"
+      403:
+        description: "Forbidden - not an admin"
+      404:
+        description: "Endpoint not found"
+      500:
+        description: "Server error"
+    """
+    # Get API key from request header
+    api_key = request.headers.get('API-Key')
+    if not api_key:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "Missing API Key header (API-Key)"
+        }, 401)
+    
+    # Validate API key and check admin privileges
+    admin_info = DatabaseService.validate_api_key(api_key)
+    if not admin_info:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "Invalid API Key"
+        }, 401)
+        
+    g.user_id = admin_info["id"]
+    
+    # Check if user has admin privileges (scope=0)
+    if admin_info["scope"] != 0:
+        return create_api_response({
+            "error": "Forbidden",
+            "message": "Admin privileges required to delete endpoints"
+        }, 403)
+    
+    # Get token from query parameter
+    token = request.args.get('token')
+    if not token:
+        return create_api_response({
+            "error": "Bad Request",
+            "message": "Missing token parameter"
+        }, 400)
+    
+    # Validate token from query parameter
+    token_details = DatabaseService.get_token_details_by_value(token)
+    if not token_details:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "Invalid token provided"
+        }, 401)
+        
+    g.token_id = token_details["id"]
+    
+    # Check if token is expired
+    now = datetime.now(pytz.UTC)
+    expiration_time = token_details["token_expiration_time"]
+    if expiration_time.tzinfo is None:
+        johannesburg_tz = pytz.timezone('Africa/Johannesburg')
+        expiration_time = johannesburg_tz.localize(expiration_time)
+        
+    if now > expiration_time:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "Token has expired"
+        }, 401)
+    
+    # Get request data
+    data = request.get_json()
+    if not data:
+        return create_api_response({
+            "error": "Bad Request",
+            "message": "Request body is required"
+        }, 400)
+    
+    # Validate endpoint_id
+    endpoint_id = data.get('endpoint_id')
+    if not endpoint_id:
+        return create_api_response({
+            "error": "Bad Request",
+            "message": "endpoint_id is required"
+        }, 400)
+    
+    try:
+        # Check if endpoint exists
+        endpoint = get_endpoint_by_id(endpoint_id)
+        if not endpoint:
+            return create_api_response({
+                "error": "Not Found",
+                "message": f"Endpoint with ID '{endpoint_id}' not found"
+            }, 404)
+        
+        # Delete endpoint from database
+        success = delete_endpoint(endpoint_id)
+        
+        if not success:
+            return create_api_response({
+                "error": "Server Error",
+                "message": "Failed to delete endpoint"
+            }, 500)
+        
+        logger.info(f"Endpoint '{endpoint_id}' ({endpoint['endpoint_path']}) deleted successfully by admin {admin_info['id']}")
+        
+        return create_api_response({
+            "message": "Endpoint deleted successfully",
+            "endpoint_id": endpoint_id,
+            "endpoint_path": endpoint['endpoint_path']
+        }, 200)
+        
+    except Exception as e:
+        logger.error(f"Error deleting endpoint: {str(e)}")
+        return create_api_response({
+            "error": "Server Error",
+            "message": f"Error deleting endpoint: {str(e)}"
+        }, 500)
+
+def delete_endpoint(endpoint_id):
+    """Delete an endpoint from the database"""
+    try:
+        conn = DatabaseService.get_connection()
+        cursor = conn.cursor()
+        
+        query = """
+        DELETE FROM endpoints
+        WHERE id = ?
+        """
+        
+        cursor.execute(query, [endpoint_id])
+        
+        rows_affected = cursor.rowcount
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        return rows_affected > 0
+        
+    except Exception as e:
+        logger.error(f"Error deleting endpoint: {str(e)}")
+        return False
+
 def register_admin_endpoint_routes(app):
     """Register admin endpoint management routes with the Flask app"""
     app.route('/admin/endpoints', methods=['GET'])(api_logger(admin_get_endpoints_route))
     app.route('/admin/endpoint', methods=['POST'])(api_logger(admin_add_endpoint_route))
     app.route('/admin/endpoint', methods=['PUT'])(api_logger(admin_update_endpoint_route))
+    app.route('/admin/endpoint', methods=['DELETE'])(api_logger(admin_delete_endpoint_route))

@@ -17,7 +17,7 @@ const Sidebar = ({ user, currentView, onNavigate, onLogout }) => {
     { id: 'dashboard', label: 'Dashboard', icon: '📊' },
     { id: 'users', label: 'User Management', icon: '👥' },
     { id: 'models', label: 'AI Models', icon: '🧠' },
-    { id: 'endpoints', label: 'API Endpoints', icon: '🔗' },
+    { id: 'endpoints', label: 'Endpoint Management', icon: '🔗' },
     { id: 'analytics', label: 'Analytics', icon: '📈' },
     { id: 'balance', label: 'Balance & Usage', icon: '💰' },
     { id: 'logs', label: 'System Logs', icon: '📋' },

@@ -1,6 +1,7 @@
 import React from 'react';
 import Dashboard from './Dashboard';
 import UserManagement from './UserManagement';
+import EndpointManagement from './EndpointManagement';
 import './MainContent.css';
 
 const MainContent = ({ user, token, currentView }) => {
@@ -15,7 +16,7 @@ const MainContent = ({ user, token, currentView }) => {
       case 'models':
         return <div className="coming-soon">🧠 AI Models Management - Coming Soon</div>;
       case 'endpoints':
-        return <div className="coming-soon">🔗 API Endpoints Management - Coming Soon</div>;
+        return <EndpointManagement user={user} token={token} />;
       case 'analytics':
         return <div className="coming-soon">📈 Analytics Dashboard - Coming Soon</div>;
       case 'balance':

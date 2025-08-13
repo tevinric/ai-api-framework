@@ -158,4 +158,80 @@ export const adminAPI = {
   }
 };
 
+// Endpoint Management API
+export const endpointAPI = {
+  // Get all endpoints (admin only)
+  getAllEndpoints: async (apiKey, token) => {
+    console.log('[ENDPOINT_API] Getting all endpoints');
+    try {
+      const response = await apiClient.get('/admin/endpoints', {
+        headers: {
+          'API-Key': apiKey
+        },
+        params: { token }
+      });
+      console.log('[ENDPOINT_API] All endpoints retrieved successfully:', response.data.count, 'endpoints');
+      return response.data;
+    } catch (error) {
+      console.error('[ENDPOINT_API] Failed to get all endpoints:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+
+  // Create endpoint (admin only)
+  createEndpoint: async (apiKey, token, endpointData) => {
+    console.log('[ENDPOINT_API] Creating endpoint:', endpointData.endpoint_name);
+    try {
+      const response = await apiClient.post('/admin/endpoint', endpointData, {
+        headers: {
+          'API-Key': apiKey
+        },
+        params: { token }
+      });
+      console.log('[ENDPOINT_API] Endpoint created successfully');
+      return response.data;
+    } catch (error) {
+      console.error('[ENDPOINT_API] Failed to create endpoint:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+
+  // Update endpoint (admin only)
+  updateEndpoint: async (apiKey, token, endpointData) => {
+    console.log('[ENDPOINT_API] Updating endpoint:', endpointData.endpoint_id);
+    try {
+      const response = await apiClient.put('/admin/endpoint', endpointData, {
+        headers: {
+          'API-Key': apiKey
+        },
+        params: { token }
+      });
+      console.log('[ENDPOINT_API] Endpoint updated successfully');
+      return response.data;
+    } catch (error) {
+      console.error('[ENDPOINT_API] Failed to update endpoint:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+
+  // Delete endpoint (admin only)
+  deleteEndpoint: async (apiKey, token, endpointId) => {
+    console.log('[ENDPOINT_API] Deleting endpoint:', endpointId);
+    try {
+      const response = await apiClient.delete('/admin/endpoint', {
+        headers: {
+          'API-Key': apiKey
+        },
+        params: { token },
+        data: { endpoint_id: endpointId }
+      });
+      console.log('[ENDPOINT_API] Endpoint deleted successfully');
+      return response.data;
+    } catch (error) {
+      console.error('[ENDPOINT_API] Failed to delete endpoint:', error.response?.data || error.message);
+      throw error;
+    }
+  }
+};
+
 export default apiClient;
