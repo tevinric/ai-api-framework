@@ -148,6 +148,10 @@ def speech_to_text_route():
               type: number
               description: Duration of the processed audio in seconds
               example: 45.6
+            model_used:
+              type: string
+              description: STT model used for transcription
+              example: ms_stt
       400:
         description: Bad request
         schema:
@@ -292,7 +296,8 @@ def speech_to_text_route():
             "message": "Audio transcribed successfully",
             "transcript": transcript,
             "transcription_details": transcription_result,
-            "seconds_processed": seconds_processed
+            "seconds_processed": seconds_processed,
+            "model_used": "ms_stt"
         }
         
         return create_api_response(response_data, 200)

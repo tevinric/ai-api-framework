@@ -280,6 +280,14 @@ def enhanced_speech_to_text_route():
               example: 0
             model_used:
               type: string
+              description: Combined model string showing STT and LLM models used
+              example: ms_stt+gpt-4o-mini
+            stt_model:
+              type: string
+              description: STT model used for transcription
+              example: ms_stt
+            llm_model:
+              type: string
               description: LLM model used for diarization
               example: gpt-4o-mini
       400:
@@ -504,7 +512,9 @@ def enhanced_speech_to_text_route():
             "total_tokens": total_tokens,
             "cached_tokens": total_cached_tokens,
             "embedded_tokens": total_embedded_tokens,
-            "model_used": model_deplopyment
+            "model_used": f"ms_stt+{model_deplopyment}",
+            "stt_model": "ms_stt",
+            "llm_model": model_deplopyment
         }
         
         return create_api_response(response_data, 200)

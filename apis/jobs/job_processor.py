@@ -345,12 +345,14 @@ class JobProcessor:
                 "message": "Audio transcribed successfully",
                 "transcript": transcript,
                 "transcription_details": transcription_result,
-                "seconds_processed": seconds_processed
+                "seconds_processed": seconds_processed,
+                "model_used": "ms_stt"
             }
             
             # Update existing usage metrics
             metrics = {
-                "audio_seconds_processed": seconds_processed
+                "audio_seconds_processed": seconds_processed,
+                "model_used": "ms_stt"
             }
             JobProcessor.update_usage_metrics(user_id, "stt", metrics)
             
@@ -528,13 +530,15 @@ class JobProcessor:
                 "total_tokens": total_tokens,
                 "cached_tokens": total_cached_tokens,
                 "embedded_tokens": total_embedded_tokens,
-                "model_used": model_deplopyment
+                "model_used": f"ms_stt+{model_deplopyment}",
+                "stt_model": "ms_stt",
+                "llm_model": model_deplopyment
             }
             
             # Update existing usage metrics
             metrics = {
                 "audio_seconds_processed": seconds_processed,
-                "model_used": model_deplopyment,
+                "model_used": f"ms_stt+{model_deplopyment}",
                 "prompt_tokens": total_prompt_tokens,
                 "completion_tokens": total_completion_tokens,
                 "total_tokens": total_tokens,
