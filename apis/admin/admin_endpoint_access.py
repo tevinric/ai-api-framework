@@ -1659,6 +1659,212 @@ def admin_delete_endpoint_access_all_route():
             "message": f"Error removing all endpoint access: {str(e)}"
         }, 500)
 
+def admin_get_user_endpoint_assignments_route():
+    """
+    Get endpoint assignments for a specific user with full details (admin only)
+    ---
+    tags:
+      - Admin Functions
+    parameters:
+      - name: API-Key
+        in: header
+        type: string
+        required: true
+        description: Admin API Key for authentication
+      - name: X-Correlation-ID
+        in: header
+        type: string
+        required: false
+        description: Unique identifier for tracking requests across multiple systems
+      - name: token
+        in: query
+        type: string
+        required: true
+        description: A valid token for verification
+      - name: user_id
+        in: query
+        type: string
+        required: true
+        description: UUID of the user to get endpoint assignments for
+    produces:
+      - application/json
+    responses:
+      200:
+        description: User endpoint assignments retrieved successfully
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              example: User endpoint assignments retrieved successfully
+            user_id:
+              type: string
+              description: UUID of the user
+            assignments:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: UUID of the access record
+                  endpoint_id:
+                    type: string
+                    description: UUID of the endpoint
+                  endpoint_name:
+                    type: string
+                    description: Name of the endpoint
+                  endpoint_path:
+                    type: string
+                    description: Path of the endpoint
+                  description:
+                    type: string
+                    description: Description of the endpoint
+                  cost:
+                    type: number
+                    description: Cost of the endpoint
+                  assigned_at:
+                    type: string
+                    format: date-time
+                    description: When access was assigned
+                  created_by:
+                    type: string
+                    description: UUID of the admin who created the access
+                  created_by_name:
+                    type: string
+                    description: Name of the admin who created the access
+            total_count:
+              type: integer
+              description: Total number of assignments
+      400:
+        description: Bad request
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Bad Request
+            message:
+              type: string
+              example: Missing required parameters
+      401:
+        description: Authentication error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Authentication Error
+            message:
+              type: string
+              example: Missing API Key header or Invalid API Key
+      403:
+        description: Forbidden
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Forbidden
+            message:
+              type: string
+              example: Admin privileges required
+      500:
+        description: Server error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Server Error
+            message:
+              type: string
+              example: Error retrieving user endpoint assignments
+    """
+    # Get API key from request header
+    api_key = request.headers.get('API-Key')
+    if not api_key:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "Missing API Key header (API-Key)"
+        }, 401)
+    
+    # Validate API key
+    admin_info = DatabaseService.validate_api_key(api_key)
+    if not admin_info:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "Invalid API Key"
+        }, 401)
+    
+    g.user_id = admin_info["id"]
+    
+    # Check if user has admin privileges (scope=0)
+    if admin_info["scope"] != 0:
+        return create_api_response({
+            "error": "Forbidden",
+            "message": "Admin privileges required to view user endpoint assignments"
+        }, 403)
+    
+    # Get token from query parameter
+    token = request.args.get('token')
+    if not token:
+        return create_api_response({
+            "error": "Bad Request",
+            "message": "Missing token parameter"
+        }, 400)
+    
+    # Validate token
+    token_details = DatabaseService.get_token_details_by_value(token)
+    if not token_details:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "Invalid token provided"
+        }, 401)
+    
+    g.token_id = token_details["id"]
+    
+    # Check if token is expired
+    now = datetime.now(pytz.UTC)
+    expiration_time = token_details["token_expiration_time"]
+    
+    # Ensure expiration_time is timezone-aware
+    if expiration_time.tzinfo is None:
+        johannesburg_tz = pytz.timezone('Africa/Johannesburg')
+        expiration_time = johannesburg_tz.localize(expiration_time)
+        
+    if now > expiration_time:
+        return create_api_response({
+            "error": "Authentication Error",
+            "message": "Token has expired"
+        }, 401)
+    
+    # Get user_id from query parameter
+    user_id = request.args.get('user_id')
+    if not user_id:
+        return create_api_response({
+            "error": "Bad Request",
+            "message": "Missing user_id parameter"
+        }, 400)
+    
+    try:
+        # Get detailed endpoint assignments for the user
+        user_assignments = DatabaseService.get_user_endpoint_access_details(user_id)
+        
+        return create_api_response({
+            "message": "User endpoint assignments retrieved successfully",
+            "user_id": user_id,
+            "assignments": user_assignments,
+            "total_count": len(user_assignments)
+        }, 200)
+        
+    except Exception as e:
+        logger.error(f"Error retrieving user endpoint assignments: {str(e)}")
+        return create_api_response({
+            "error": "Server Error",
+            "message": f"Error retrieving user endpoint assignments: {str(e)}"
+        }, 500)
+
 def admin_get_all_user_endpoint_access_route():
     """
     Get all user endpoint access records (admin only)
@@ -1812,20 +2018,18 @@ def admin_get_all_user_endpoint_access_route():
         }, 401)
     
     try:
-        # Get all user endpoint access records
+        # Get all user endpoint access records - now with endpoint names included from optimized query
         all_user_access = DatabaseService.get_all_users_endpoint_access()
         
-        # Format the response with endpoint names
+        # Format the response - endpoint names are now included in the query results
         user_access_with_details = []
         for access in all_user_access:
-            # Get endpoint details to include endpoint name
-            endpoint_detail = DatabaseService.get_endpoint_by_id(access["endpoint_id"])
-            
             access_record = {
                 "id": access["id"],
                 "user_id": access["user_id"],
                 "endpoint_id": access["endpoint_id"],
-                "endpoint_name": endpoint_detail["endpoint_name"] if endpoint_detail else "Unknown Endpoint",
+                "endpoint_name": access["endpoint_name"],
+                "endpoint_path": access["endpoint_path"],
                 "assigned_at": access["created_at"],
                 "created_by": access["created_by"]
             }
@@ -2007,6 +2211,7 @@ def register_admin_endpoint_access_routes(app):
     """Register routes with the Flask app"""
     # Updated function names and routes
     app.route('/admin/endpoint/access', methods=['GET'])(api_logger(admin_get_all_user_endpoint_access_route))
+    app.route('/admin/endpoint/access/user', methods=['GET'])(api_logger(admin_get_user_endpoint_assignments_route))
     app.route('/admin/endpoint/access/single', methods=['POST'])(api_logger(admin_grant_endpoint_access_single_route))
     app.route('/admin/endpoint/access/multi', methods=['POST'])(api_logger(admin_grant_endpoint_access_multi_route))
     app.route('/admin/endpoint/access/all', methods=['POST'])(api_logger(admin_grant_endpoint_access_all_route))

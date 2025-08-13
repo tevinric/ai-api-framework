@@ -254,6 +254,24 @@ export const rbacAPI = {
     }
   },
 
+  // Get endpoint assignments for a specific user (admin only)
+  getUserEndpointAssignments: async (apiKey, token, userId) => {
+    console.log('[RBAC_API] Getting endpoint assignments for user:', userId);
+    try {
+      const response = await apiClient.get('/admin/endpoint/access/user', {
+        headers: {
+          'API-Key': apiKey
+        },
+        params: { token, user_id: userId }
+      });
+      console.log('[RBAC_API] User endpoint assignments retrieved successfully');
+      return response.data;
+    } catch (error) {
+      console.error('[RBAC_API] Failed to get user endpoint assignments:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+
   // Remove multiple endpoint access for users (admin only)
   removeMultipleEndpointAccess: async (apiKey, token, accessData) => {
     console.log('[RBAC_API] Removing multiple endpoint access:', accessData);

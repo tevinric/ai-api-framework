@@ -888,18 +888,27 @@ class DatabaseService:
 
     @staticmethod
     def get_all_users_endpoint_access():
-        """Get all user endpoint access records for all users (admin only)
+        """Get all user endpoint access records for all users (admin only) - Optimized with joins
         
         Returns:
-            list: List of all user endpoint access records
+            list: List of all user endpoint access records with endpoint names
         """
         try:
             conn = DatabaseService.get_connection()
             cursor = conn.cursor()
             
             query = """
-            SELECT uea.id, uea.user_id, uea.endpoint_id, uea.created_at, uea.created_by
+            SELECT 
+                uea.id, 
+                uea.user_id, 
+                uea.endpoint_id, 
+                e.endpoint_name,
+                e.endpoint_path,
+                uea.created_at, 
+                uea.created_by
             FROM user_endpoint_access uea
+            INNER JOIN endpoints e ON uea.endpoint_id = e.id
+            WHERE e.active = 1
             ORDER BY uea.created_at DESC
             """
             
@@ -911,8 +920,10 @@ class DatabaseService:
                     "id": str(row[0]),
                     "user_id": str(row[1]),
                     "endpoint_id": str(row[2]),
-                    "created_at": row[3].isoformat() if row[3] else None,
-                    "created_by": str(row[4]) if row[4] else None
+                    "endpoint_name": row[3],
+                    "endpoint_path": row[4],
+                    "created_at": row[5].isoformat() if row[5] else None,
+                    "created_by": str(row[6]) if row[6] else None
                 })
             
             cursor.close()
@@ -922,6 +933,63 @@ class DatabaseService:
             
         except Exception as e:
             logger.error(f"Error retrieving all users endpoint access: {str(e)}")
+            return []
+    
+    @staticmethod
+    def get_user_endpoint_access_details(user_id):
+        """Get detailed endpoint access for a specific user - Optimized query
+        
+        Args:
+            user_id: UUID of the user
+            
+        Returns:
+            list: List of detailed endpoint access records for the user
+        """
+        try:
+            conn = DatabaseService.get_connection()
+            cursor = conn.cursor()
+            
+            query = """
+            SELECT 
+                uea.id,
+                uea.endpoint_id,
+                e.endpoint_name,
+                e.endpoint_path,
+                e.description,
+                e.cost,
+                uea.created_at,
+                uea.created_by,
+                u.common_name as created_by_name
+            FROM user_endpoint_access uea
+            INNER JOIN endpoints e ON uea.endpoint_id = e.id
+            LEFT JOIN users u ON uea.created_by = u.id
+            WHERE uea.user_id = ? AND e.active = 1
+            ORDER BY e.endpoint_name
+            """
+            
+            cursor.execute(query, (user_id,))
+            access_list = []
+            
+            for row in cursor.fetchall():
+                access_list.append({
+                    "id": str(row[0]),
+                    "endpoint_id": str(row[1]),
+                    "endpoint_name": row[2],
+                    "endpoint_path": row[3],
+                    "description": row[4],
+                    "cost": float(row[5]) if row[5] else 0,
+                    "assigned_at": row[6].isoformat() if row[6] else None,
+                    "created_by": str(row[7]) if row[7] else None,
+                    "created_by_name": row[8] if row[8] else "Unknown"
+                })
+            
+            cursor.close()
+            conn.close()
+            
+            return access_list
+            
+        except Exception as e:
+            logger.error(f"Error retrieving user endpoint access details: {str(e)}")
             return []
 
     @staticmethod

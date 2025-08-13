@@ -49,7 +49,7 @@ const RBAC = ({ user, token }) => {
     }
   };
 
-  // Group access data by user
+  // Group access data by user - now with endpoint names
   const userAccessSummary = useMemo(() => {
     const summary = {};
     userAccess.forEach(access => {
@@ -58,10 +58,12 @@ const RBAC = ({ user, token }) => {
         summary[userId] = {
           user: users[userId],
           endpointCount: 0,
+          endpoints: [],
           accesses: []
         };
       }
       summary[userId].endpointCount += 1;
+      summary[userId].endpoints.push(access.endpoint_name || 'Unknown');
       summary[userId].accesses.push(access);
     });
     return Object.values(summary);
@@ -253,20 +255,44 @@ const RBAC = ({ user, token }) => {
 // User Endpoint Access Modal Component
 const UserEndpointAccessModal = ({ userSummary, currentUser, token, users, onClose, onRefresh }) => {
   const [selectedAccess, setSelectedAccess] = useState(new Set());
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [userAssignments, setUserAssignments] = useState([]);
 
-  // Prevent background scrolling when modal is open
+  // Prevent background scrolling when modal is open and load user assignments
   React.useEffect(() => {
     document.body.style.overflow = 'hidden';
+    loadUserAssignments();
     return () => {
       document.body.style.overflow = 'unset';
     };
   }, []);
 
+  const loadUserAssignments = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      console.log('[USER_ENDPOINT_ACCESS_MODAL] Loading assignments for user:', userSummary.user?.user_id);
+      
+      const response = await rbacAPI.getUserEndpointAssignments(
+        currentUser.api_key, 
+        token, 
+        userSummary.user?.user_id
+      );
+      
+      console.log('[USER_ENDPOINT_ACCESS_MODAL] Assignments loaded:', response.assignments?.length);
+      setUserAssignments(response.assignments || []);
+    } catch (err) {
+      console.error('[USER_ENDPOINT_ACCESS_MODAL] Failed to load assignments:', err);
+      setError(err.response?.data?.message || 'Failed to load user endpoint assignments');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSelectAll = (checked) => {
     if (checked) {
-      setSelectedAccess(new Set(userSummary.accesses.map(access => access.id)));
+      setSelectedAccess(new Set(userAssignments.map(assignment => assignment.id)));
     } else {
       setSelectedAccess(new Set());
     }
@@ -317,8 +343,8 @@ const UserEndpointAccessModal = ({ userSummary, currentUser, token, users, onClo
     }
   };
 
-  const allSelected = selectedAccess.size === userSummary.accesses.length;
-  const someSelected = selectedAccess.size > 0 && selectedAccess.size < userSummary.accesses.length;
+  const allSelected = selectedAccess.size === userAssignments.length && userAssignments.length > 0;
+  const someSelected = selectedAccess.size > 0 && selectedAccess.size < userAssignments.length;
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -336,6 +362,13 @@ const UserEndpointAccessModal = ({ userSummary, currentUser, token, users, onClo
         )}
 
         <div className="modal-body">
+          {loading ? (
+            <div className="loading-container">
+              <div className="spinner"></div>
+              <p>Loading endpoint assignments...</p>
+            </div>
+          ) : (
+            <>
           <div className="access-controls">
             <div className="select-controls">
               <label className="checkbox-label">
@@ -346,8 +379,9 @@ const UserEndpointAccessModal = ({ userSummary, currentUser, token, users, onClo
                     if (input) input.indeterminate = someSelected;
                   }}
                   onChange={(e) => handleSelectAll(e.target.checked)}
+                  disabled={userAssignments.length === 0}
                 />
-                <span>Select All ({userSummary.accesses.length} endpoints)</span>
+                <span>Select All ({userAssignments.length} endpoints)</span>
               </label>
               {selectedAccess.size > 0 && (
                 <button 
@@ -362,46 +396,61 @@ const UserEndpointAccessModal = ({ userSummary, currentUser, token, users, onClo
             </div>
           </div>
 
-          <div className="access-table">
-            <div className="table-header">
-              <div className="table-cell">Select</div>
-              <div className="table-cell">Endpoint Name</div>
-              <div className="table-cell">Endpoint ID</div>
-              <div className="table-cell">Assigned Date</div>
-              <div className="table-cell">Created By</div>
+          {userAssignments.length === 0 ? (
+            <div className="no-users">
+              <div className="no-users-icon">🔐</div>
+              <h3>No endpoint assignments</h3>
+              <p>This user doesn't have access to any endpoints</p>
             </div>
-            
-            {userSummary.accesses.map((access) => (
-              <div key={access.id} className="table-row">
-                <div className="table-cell checkbox-cell">
-                  <input
-                    type="checkbox"
-                    checked={selectedAccess.has(access.id)}
-                    onChange={(e) => handleSelectAccess(access.id, e.target.checked)}
-                  />
-                </div>
-                
-                <div className="table-cell">
-                  {access.endpoint_name || 'Unknown Endpoint'}
-                </div>
-                
-                <div className="table-cell endpoint-id-cell">
-                  <code>{access.endpoint_id?.substring(0, 8)}...</code>
-                </div>
-                
-                <div className="table-cell">
-                  {access.assigned_at 
-                    ? new Date(access.assigned_at).toLocaleDateString()
-                    : 'N/A'
-                  }
-                </div>
-                
-                <div className="table-cell">
-                  {users[access.created_by]?.common_name || users[access.created_by]?.user_name || 'Unknown'}
-                </div>
+          ) : (
+            <div className="access-table">
+              <div className="table-header">
+                <div className="table-cell">Select</div>
+                <div className="table-cell">Endpoint Name</div>
+                <div className="table-cell">Path</div>
+                <div className="table-cell">Cost</div>
+                <div className="table-cell">Assigned Date</div>
+                <div className="table-cell">Created By</div>
               </div>
-            ))}
-          </div>
+              
+              {userAssignments.map((assignment) => (
+                <div key={assignment.id} className="table-row">
+                  <div className="table-cell checkbox-cell">
+                    <input
+                      type="checkbox"
+                      checked={selectedAccess.has(assignment.id)}
+                      onChange={(e) => handleSelectAccess(assignment.id, e.target.checked)}
+                    />
+                  </div>
+                  
+                  <div className="table-cell">
+                    {assignment.endpoint_name || 'Unknown Endpoint'}
+                  </div>
+                  
+                  <div className="table-cell endpoint-path-cell">
+                    <code>{assignment.endpoint_path}</code>
+                  </div>
+                  
+                  <div className="table-cell">
+                    ${assignment.cost || 0}
+                  </div>
+                  
+                  <div className="table-cell">
+                    {assignment.assigned_at 
+                      ? new Date(assignment.assigned_at).toLocaleDateString()
+                      : 'N/A'
+                    }
+                  </div>
+                  
+                  <div className="table-cell">
+                    {assignment.created_by_name || 'Unknown'}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+            </>
+          )}
         </div>
 
         <div className="modal-footer">
