@@ -333,7 +333,7 @@ class JobProcessor:
                 transcript = "No transcript available"
             
             # Calculate the duration of the audio file
-            seconds_processed = calculate_audio_duration(transcription_result)
+            seconds_processed = calculate_audio_duration(file_url)
             
             # Delete the uploaded file to avoid storage bloat using FileService directly
             success, message = FileService.delete_file(file_id, user_id)
@@ -433,7 +433,7 @@ class JobProcessor:
                 return False
             
             # Calculate the duration of the audio file
-            seconds_processed = calculate_audio_duration(transcription_result)
+            seconds_processed = calculate_audio_duration(file_url)
             
             # Extract the transcript text
             raw_transcript = ""

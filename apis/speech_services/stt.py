@@ -64,80 +64,103 @@ def transcribe_audio(file_url):
             "status_code": getattr(e.response, 'status_code', None)
         }
 
-def calculate_audio_duration(transcription_result):
+def calculate_audio_duration(file_url):
     """
-    Calculate the total audio duration in seconds from the transcription result
+    Calculate the actual audio duration in seconds by downloading and analyzing the audio file
+    Uses mutagen for precise duration and manual estimation as fallback
+    Supports MP3, WAV, WMA, M4A, and other common audio formats
+    """
+    import tempfile
+    import os
     
-    The Microsoft Speech API can return duration in different structures:
-    - Top level 'duration' in milliseconds
-    - 'durationInTicks' (100-nanosecond intervals)
-    - Calculate from combinedPhrases timestamps
-    """
     try:
-        print(f"DEBUG: Transcription result structure: {json.dumps(transcription_result, indent=2)}")
+        print(f"DEBUG: Calculating duration for audio file: {file_url}")
         
-        # Method 1: Check if duration is directly available in milliseconds
-        if 'duration' in transcription_result:
-            duration_ms = transcription_result['duration']
-            print(f"DEBUG: Found direct duration field: {duration_ms} ms")
-            # Convert milliseconds to seconds
-            return duration_ms / 1000.0
-            
-        # Method 2: Check for durationInTicks (100-nanosecond intervals)
-        if 'durationInTicks' in transcription_result:
-            duration_ticks = transcription_result['durationInTicks']
-            print(f"DEBUG: Found durationInTicks: {duration_ticks}")
-            # Convert ticks to seconds (1 tick = 100 nanoseconds = 1e-7 seconds)
-            return duration_ticks * 1e-7
-            
-        # Method 3: Look for duration in nested structures
-        for key in transcription_result.keys():
-            if isinstance(transcription_result[key], dict):
-                nested_obj = transcription_result[key]
-                if 'duration' in nested_obj:
-                    duration_ms = nested_obj['duration']
-                    print(f"DEBUG: Found duration in nested object '{key}': {duration_ms} ms")
-                    return duration_ms / 1000.0
-                if 'durationInTicks' in nested_obj:
-                    duration_ticks = nested_obj['durationInTicks']
-                    print(f"DEBUG: Found durationInTicks in nested object '{key}': {duration_ticks}")
-                    return duration_ticks * 1e-7
+        # Download the audio file to a temporary location
+        response = requests.get(file_url, timeout=30)
+        response.raise_for_status()
         
-        # Method 4: Calculate from combinedPhrases if available
-        if 'combinedPhrases' in transcription_result and transcription_result['combinedPhrases']:
-            phrases = transcription_result['combinedPhrases']
-            max_end_time = 0
-            
-            for phrase in phrases:
-                # Look for offset and duration in phrase
-                if 'offsetInTicks' in phrase and 'durationInTicks' in phrase:
-                    end_time_ticks = phrase['offsetInTicks'] + phrase['durationInTicks']
-                    max_end_time = max(max_end_time, end_time_ticks)
-                elif 'offset' in phrase and 'duration' in phrase:
-                    end_time_ms = phrase['offset'] + phrase['duration']
-                    max_end_time = max(max_end_time, end_time_ms / 10000.0)  # Convert to ticks if needed
-            
-            if max_end_time > 0:
-                print(f"DEBUG: Calculated duration from combinedPhrases: {max_end_time} ticks")
-                # Convert ticks to seconds
-                return max_end_time * 1e-7
+        # Get file extension from URL or content type
+        file_extension = None
+        if file_url.lower().endswith('.mp3'):
+            file_extension = '.mp3'
+        elif file_url.lower().endswith('.wav'):
+            file_extension = '.wav'
+        elif file_url.lower().endswith('.m4a'):
+            file_extension = '.m4a'
+        elif file_url.lower().endswith('.wma'):
+            file_extension = '.wma'
+        else:
+            # Try to determine from content type
+            content_type = response.headers.get('content-type', '').lower()
+            if 'mp3' in content_type or 'mpeg' in content_type:
+                file_extension = '.mp3'
+            elif 'wav' in content_type:
+                file_extension = '.wav'
+            elif 'm4a' in content_type or 'mp4' in content_type:
+                file_extension = '.m4a'
+            else:
+                file_extension = '.mp3'  # Default fallback
         
-        # Method 5: Look for any time-related fields
-        time_fields = ['totalDuration', 'audioDuration', 'lengthInSeconds', 'durationSeconds']
-        for field in time_fields:
-            if field in transcription_result:
-                duration = transcription_result[field]
-                print(f"DEBUG: Found {field}: {duration}")
-                # Assume it's already in seconds if it's a reasonable value
-                if isinstance(duration, (int, float)) and duration > 0:
-                    if duration > 1000:  # Likely milliseconds
-                        return duration / 1000.0
-                    else:
-                        return duration
+        # Create temporary file
+        with tempfile.NamedTemporaryFile(delete=False, suffix=file_extension) as temp_file:
+            temp_file.write(response.content)
+            temp_file_path = temp_file.name
         
-        print(f"DEBUG: No duration information found in transcription result")
-        return 0
+        print(f"DEBUG: Downloaded audio file to: {temp_file_path}")
+        
+        try:
+            # Method 1: Try using mutagen (handles MP3, MP4/M4A, FLAC, WAV, etc.)
+            try:
+                from mutagen import File
+                audio_file = File(temp_file_path)
+                if audio_file is not None and hasattr(audio_file, 'info') and hasattr(audio_file.info, 'length'):
+                    duration = audio_file.info.length
+                    print(f"DEBUG: Got duration from mutagen: {duration} seconds")
+                    if duration > 0:
+                        return round(duration, 2)
+            except ImportError:
+                print("DEBUG: mutagen not available, using manual estimation")
+            except Exception as e:
+                print(f"DEBUG: mutagen failed: {str(e)}")
+        
+            # Method 2: Manual estimation based on file size and format
+            file_size = len(response.content)
+            print(f"DEBUG: File size: {file_size} bytes, extension: {file_extension}")
             
+            if file_extension.lower() == '.mp3':
+                # Estimate for MP3: assume 128kbps bitrate
+                estimated_duration = (file_size * 8) / (128 * 1000)  # bits / (bitrate * 1000)
+                print(f"DEBUG: Estimated MP3 duration based on file size: {estimated_duration} seconds")
+                return round(estimated_duration, 2)
+            elif file_extension.lower() == '.wav':
+                # Estimate for WAV: assume 16-bit, 44.1kHz, stereo
+                estimated_duration = file_size / (44100 * 2 * 2)  # bytes / (sample_rate * bytes_per_sample * channels)
+                print(f"DEBUG: Estimated WAV duration based on file size: {estimated_duration} seconds")
+                return round(estimated_duration, 2)
+            elif file_extension.lower() == '.m4a':
+                # Estimate for M4A: assume 128kbps bitrate (similar to MP3)
+                estimated_duration = (file_size * 8) / (128 * 1000)  # bits / (bitrate * 1000)
+                print(f"DEBUG: Estimated M4A duration based on file size: {estimated_duration} seconds")
+                return round(estimated_duration, 2)
+            elif file_extension.lower() == '.wma':
+                # Estimate for WMA: assume 128kbps bitrate
+                estimated_duration = (file_size * 8) / (128 * 1000)  # bits / (bitrate * 1000)
+                print(f"DEBUG: Estimated WMA duration based on file size: {estimated_duration} seconds")
+                return round(estimated_duration, 2)
+            else:
+                # Default estimation assuming compressed audio at 128kbps
+                estimated_duration = (file_size * 8) / (128 * 1000)
+                print(f"DEBUG: Estimated duration for unknown format based on file size: {estimated_duration} seconds")
+                return round(estimated_duration, 2)
+            
+        finally:
+            # Clean up temporary file
+            try:
+                os.unlink(temp_file_path)
+            except:
+                pass
+                
     except Exception as e:
         logger.error(f"Error calculating audio duration: {str(e)}")
         print(f"DEBUG: Exception in calculate_audio_duration: {str(e)}")
@@ -344,8 +367,8 @@ def speech_to_text_route():
             transcript = "No transcript available"
         
         # Calculate the duration of the audio file
-        print(f"DEBUG: About to calculate audio duration from transcription result")
-        seconds_processed = calculate_audio_duration(transcription_result)
+        print(f"DEBUG: About to calculate audio duration from file URL: {file_url}")
+        seconds_processed = calculate_audio_duration(file_url)
         print(f"DEBUG: Calculated audio duration: {seconds_processed} seconds")
         
         # Delete the uploaded file to avoid storage bloat using FileService directly
