@@ -132,7 +132,13 @@ class AuthService {
     try {
       console.log('Validating dev user:', this.devUserEmail);
       console.log('Using API base URL:', API_BASE_URL);
-      const response = await fetch(`${API_BASE_URL}/admin/user-details?email=${encodeURIComponent(this.devUserEmail)}`);
+      
+      const fullUrl = `${API_BASE_URL}/admin/user-details?email=${encodeURIComponent(this.devUserEmail)}`;
+      console.log('Full URL:', fullUrl);
+      
+      const response = await fetch(fullUrl);
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers);
       
       if (response.ok) {
         const data = await response.json();
@@ -141,19 +147,26 @@ class AuthService {
         // Check if user has admin scope (scope = 0)
         if (data.scope !== 0) {
           console.log('Dev user does not have admin scope:', data.scope);
-          return null;
+          throw new Error(`User exists but does not have admin access (scope: ${data.scope}). Admin access requires scope=0.`);
         }
         
         return data;
-      } else {
-        console.log('Dev user validation failed with status:', response.status);
+      } else if (response.status === 404) {
         const errorText = await response.text();
-        console.log('Error response:', errorText);
-        return null;
+        console.log('User not found response:', errorText);
+        throw new Error('Test user gaiatester@test.com not found in database. Please create this user with admin scope (scope=0).');
+      } else if (response.status === 401) {
+        const errorText = await response.text();
+        console.log('User not authorized response:', errorText);
+        throw new Error('Test user gaiatester@test.com exists but is not authorized for admin access (scope must be 0).');
+      } else {
+        const errorText = await response.text();
+        console.log('API error response:', errorText);
+        throw new Error(`API error: ${response.status} - ${errorText}`);
       }
     } catch (error) {
       console.error('Error validating dev user:', error);
-      return null;
+      throw error;
     }
   }
 

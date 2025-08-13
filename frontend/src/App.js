@@ -31,15 +31,7 @@ function App() {
   const [success, setSuccess] = useState('');
   const [user, setUser] = useState(null);
 
-  // Check if already logged in
-  React.useEffect(() => {
-    const currentUser = localStorage.getItem('currentUser');
-    if (currentUser) {
-      setUser(JSON.parse(currentUser));
-    }
-  }, []);
-
-  const handleLogin = async () => {
+  const handleLogin = React.useCallback(async () => {
     setLoading(true);
     setError('');
     setSuccess('');
@@ -140,7 +132,19 @@ function App() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  // Check if already logged in or auto-login in dev mode
+  React.useEffect(() => {
+    const currentUser = localStorage.getItem('currentUser');
+    if (currentUser) {
+      setUser(JSON.parse(currentUser));
+    } else if (IS_DEV_MODE) {
+      // Auto-login in development mode
+      console.log('Development mode detected - auto-logging in...');
+      handleLogin();
+    }
+  }, [handleLogin]);
 
   const handleLogout = () => {
     localStorage.removeItem('adminApiKey');
