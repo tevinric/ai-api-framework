@@ -63,6 +63,8 @@ const UserManagement = ({ user, token }) => {
   };
 
   const getScopeLabel = (scope) => {
+    // Convert to number to handle both string and numeric values
+    const numScope = parseInt(scope, 10);
     const scopes = {
       0: 'Admin',
       1: 'User',
@@ -71,12 +73,14 @@ const UserManagement = ({ user, token }) => {
       4: 'Restricted',
       5: 'Minimal'
     };
-    return scopes[scope] || 'Unknown';
+    return scopes[numScope] || `Unknown (${scope})`;
   };
 
   const getScopeClass = (scope) => {
-    if (scope === 0) return 'scope-admin';
-    if (scope <= 2) return 'scope-user';
+    // Convert to number to handle both string and numeric values
+    const numScope = parseInt(scope, 10);
+    if (numScope === 0) return 'scope-admin';
+    if (numScope <= 2) return 'scope-user';
     return 'scope-limited';
   };
 
@@ -281,7 +285,10 @@ const UserManagement = ({ user, token }) => {
 // User Detail Modal Component
 const UserDetailModal = ({ user: selectedUser, currentUser, token, onClose, onRefresh }) => {
   const [editing, setEditing] = useState(false);
-  const [formData, setFormData] = useState({ ...selectedUser });
+  const [formData, setFormData] = useState({ 
+    ...selectedUser, 
+    id: selectedUser.user_id // Ensure the id field is set for API calls
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -293,9 +300,15 @@ const UserDetailModal = ({ user: selectedUser, currentUser, token, onClose, onRe
     try {
       setLoading(true);
       setError(null);
-      console.log('[USER_DETAIL_MODAL] Updating user:', formData.user_id);
+      console.log('[USER_DETAIL_MODAL] Updating user:', formData.id || formData.user_id);
       
-      await adminAPI.updateUser(currentUser.api_key, token, formData);
+      // Ensure we have the correct id field for the API
+      const updateData = {
+        ...formData,
+        id: formData.id || formData.user_id
+      };
+      
+      await adminAPI.updateUser(currentUser.api_key, token, updateData);
       console.log('[USER_DETAIL_MODAL] User updated successfully');
       
       setEditing(false);
@@ -444,7 +457,7 @@ const UserDetailModal = ({ user: selectedUser, currentUser, token, onClose, onRe
               <div className="form-group">
                 <label>Scope</label>
                 <select 
-                  value={formData.scope || 1} 
+                  value={parseInt(formData.scope, 10) || 1} 
                   onChange={(e) => handleInputChange('scope', parseInt(e.target.value))}
                   disabled={!editing}
                   className={`form-input ${!editing ? 'disabled' : ''}`}
@@ -527,7 +540,7 @@ const UserDetailModal = ({ user: selectedUser, currentUser, token, onClose, onRe
                   className="btn btn-secondary" 
                   onClick={() => {
                     setEditing(false);
-                    setFormData({ ...selectedUser });
+                    setFormData({ ...selectedUser, id: selectedUser.user_id });
                     setError(null);
                   }}
                   disabled={loading}
@@ -588,7 +601,10 @@ const CreateUserModal = ({ currentUser, token, onClose, onRefresh }) => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    if (e) {
+      e.preventDefault();
+    }
+    console.log('[CREATE_USER_MODAL] Form submitted!', formData);
     
     if (!formData.user_name.trim() || !formData.user_email.trim()) {
       setError('Username and email are required fields');
@@ -611,6 +627,12 @@ const CreateUserModal = ({ currentUser, token, onClose, onRefresh }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleButtonClick = (e) => {
+    e.preventDefault();
+    console.log('[CREATE_USER_MODAL] Button clicked directly!');
+    handleSubmit();
   };
 
   return (
@@ -742,7 +764,7 @@ const CreateUserModal = ({ currentUser, token, onClose, onRefresh }) => {
                 <div className="form-group">
                   <label>Scope</label>
                   <select 
-                    value={formData.scope} 
+                    value={parseInt(formData.scope, 10)} 
                     onChange={(e) => handleInputChange('scope', parseInt(e.target.value))}
                     className="form-input"
                   >
@@ -792,6 +814,7 @@ const CreateUserModal = ({ currentUser, token, onClose, onRefresh }) => {
               <button 
                 type="submit" 
                 className="btn btn-primary"
+                onClick={handleButtonClick}
                 disabled={loading}
               >
                 {loading ? 'Creating...' : 'Create User'}
