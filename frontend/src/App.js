@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Container, 
   Paper, 
@@ -26,12 +26,12 @@ const DEV_USER_EMAIL = process.env.REACT_APP_DEV_USER_EMAIL || 'gaiatester@test.
 const IS_DEV_MODE = process.env.REACT_APP_DISABLE_LOGIN === 'true';
 
 function App() {
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(IS_DEV_MODE); // Start loading if in dev mode
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [user, setUser] = useState(null);
 
-  const handleLogin = React.useCallback(async () => {
+  const handleLogin = async () => {
     setLoading(true);
     setError('');
     setSuccess('');
@@ -41,69 +41,34 @@ function App() {
       console.log('API Base URL:', API_BASE_URL);
       console.log('Dev User Email:', DEV_USER_EMAIL);
 
-      // Step 1: Get user details - Try different endpoint paths
-      const possibleEndpoints = [
-        '/admin/user-details'
-      ];
+      // Try to get user details from the admin endpoint
+      const userUrl = `${API_BASE_URL}/admin/user-details?email=${encodeURIComponent(DEV_USER_EMAIL)}`;
+      console.log('Fetching user from:', userUrl);
       
-      let userResponse = null;
-      let workingUrl = '';
-      
-      for (const endpoint of possibleEndpoints) {
-        const testUrl = `${API_BASE_URL}${endpoint}?email=${encodeURIComponent(DEV_USER_EMAIL)}`;
-        console.log(`Trying URL: ${testUrl}`);
-        
-        try {
-          const response = await fetch(testUrl, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            }
-          });
-          
-          console.log(`Response status for ${endpoint}:`, response.status);
-          
-          if (response.ok) {
-            userResponse = response;
-            workingUrl = testUrl;
-            console.log(`✅ Success! Working endpoint: ${endpoint}`);
-            break;
-          } else if (response.status !== 404) {
-            // If it's not 404, it might be the right endpoint but with different error (e.g., 401, 500)
-            const errorText = await response.text();
-            console.log(`❓ Non-404 error for ${endpoint}:`, response.status, errorText);
-            userResponse = response;
-            workingUrl = testUrl;
-            break;
-          }
-        } catch (error) {
-          console.log(`❌ Network error for ${endpoint}:`, error.message);
+      const userResponse = await fetch(userUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
         }
-      }
+      });
       
-      if (!userResponse) {
-        throw new Error('Unable to find working admin endpoint. All endpoints returned 404 or network errors.');
-      }
-      
-      console.log('Using URL:', workingUrl);
-      console.log('Response status:', userResponse.status);
-      console.log('Response headers:', Object.fromEntries(userResponse.headers.entries()));
-      
+      console.log('User response status:', userResponse.status);
+
       if (!userResponse.ok) {
         const errorText = await userResponse.text();
-        console.log('Error response body:', errorText);
-        console.log('Response status text:', userResponse.statusText);
-        throw new Error(`User lookup failed: ${userResponse.status} (${userResponse.statusText}) - ${errorText}`);
+        console.log('User lookup error:', errorText);
+        throw new Error(`User lookup failed: ${userResponse.status} - ${errorText}`);
       }
 
       const userData = await userResponse.json();
       console.log('User data received:', userData);
 
       if (userData.scope !== 0) {
-        throw new Error('User does not have admin privileges (scope must be 0)');
+        throw new Error(`User does not have admin privileges. Current scope: ${userData.scope}, required scope: 0`);
       }
 
-      // Step 2: Generate token
+      // Generate token using user's API key
+      console.log('Generating token...');
       const tokenResponse = await fetch(`${API_BASE_URL}/token`, {
         headers: {
           'API-Key': userData.api_key,
@@ -112,13 +77,15 @@ function App() {
       });
 
       if (!tokenResponse.ok) {
-        throw new Error(`Token generation failed: ${tokenResponse.status}`);
+        const tokenError = await tokenResponse.text();
+        console.log('Token generation error:', tokenError);
+        throw new Error(`Token generation failed: ${tokenResponse.status} - ${tokenError}`);
       }
 
       const tokenData = await tokenResponse.json();
       console.log('Token generated successfully');
 
-      // Step 3: Store credentials
+      // Store credentials in localStorage
       localStorage.setItem('adminApiKey', userData.api_key);
       localStorage.setItem('adminToken', tokenData.access_token);
       localStorage.setItem('currentUser', JSON.stringify(userData));
@@ -132,19 +99,7 @@ function App() {
     } finally {
       setLoading(false);
     }
-  }, []);
-
-  // Check if already logged in or auto-login in dev mode
-  React.useEffect(() => {
-    const currentUser = localStorage.getItem('currentUser');
-    if (currentUser) {
-      setUser(JSON.parse(currentUser));
-    } else if (IS_DEV_MODE) {
-      // Auto-login in development mode
-      console.log('Development mode detected - auto-logging in...');
-      handleLogin();
-    }
-  }, [handleLogin]);
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('adminApiKey');
@@ -154,6 +109,21 @@ function App() {
     setSuccess('');
     setError('');
   };
+
+  // Check if already logged in, or auto-login in dev mode
+  useEffect(() => {
+    const currentUser = localStorage.getItem('currentUser');
+    if (currentUser) {
+      setUser(JSON.parse(currentUser));
+      setLoading(false);
+    } else if (IS_DEV_MODE) {
+      // Auto-login in development mode
+      console.log('Development mode detected - auto-logging in...');
+      handleLogin();
+    } else {
+      setLoading(false);
+    }
+  }, []);
 
   // If logged in, show dashboard
   if (user) {
@@ -199,7 +169,7 @@ function App() {
     );
   }
 
-  // Show login page
+  // Show loading screen during auto-login or login page
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -209,54 +179,62 @@ function App() {
             <Typography component="h1" variant="h4" align="center" gutterBottom>
               AI API Admin Portal
             </Typography>
-            <Typography component="h2" variant="h6" align="center" color="textSecondary" gutterBottom>
-              {IS_DEV_MODE ? 'Development Mode' : 'Sign in to continue'}
-            </Typography>
             
-            {IS_DEV_MODE && (
-              <Alert severity="info" sx={{ mb: 2 }}>
-                Development mode is active. Authentication will be bypassed using default test user.
-                <br />
-                <strong>API URL:</strong> {API_BASE_URL}
-                <br />
-                <strong>Test User:</strong> {DEV_USER_EMAIL}
-              </Alert>
-            )}
-
-            {error && (
-              <Alert severity="error" sx={{ mb: 2 }}>
-                {error}
-              </Alert>
-            )}
-
-            {success && (
-              <Alert severity="success" sx={{ mb: 2 }}>
-                {success}
-              </Alert>
-            )}
-
-            <Box sx={{ mt: 2 }}>
-              <Button
-                fullWidth
-                variant="contained"
-                onClick={handleLogin}
-                disabled={loading}
-                sx={{ mt: 3, mb: 2 }}
-              >
-                {loading ? (
-                  <CircularProgress size={24} />
-                ) : (
-                  IS_DEV_MODE ? 'Continue as Test User' : 'Sign In with Azure AD'
-                )}
-              </Button>
-
-              {!IS_DEV_MODE && (
-                <Typography variant="body2" align="center" sx={{ mt: 2 }}>
-                  You will be redirected to Azure Active Directory to authenticate.
-                  Only authorized admin users can access this portal.
+            {loading ? (
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 3 }}>
+                <CircularProgress sx={{ mb: 2 }} />
+                <Typography>
+                  {IS_DEV_MODE ? 'Authenticating in development mode...' : 'Loading...'}
                 </Typography>
-              )}
-            </Box>
+              </Box>
+            ) : (
+              <>
+                <Typography component="h2" variant="h6" align="center" color="textSecondary" gutterBottom>
+                  {IS_DEV_MODE ? 'Development Mode' : 'Sign in to continue'}
+                </Typography>
+                
+                {IS_DEV_MODE && (
+                  <Alert severity="info" sx={{ mb: 2 }}>
+                    Development mode is active. Authentication will be bypassed using default test user.
+                    <br />
+                    <strong>API URL:</strong> {API_BASE_URL}
+                    <br />
+                    <strong>Test User:</strong> {DEV_USER_EMAIL}
+                  </Alert>
+                )}
+
+                {error && (
+                  <Alert severity="error" sx={{ mb: 2 }}>
+                    {error}
+                  </Alert>
+                )}
+
+                {success && (
+                  <Alert severity="success" sx={{ mb: 2 }}>
+                    {success}
+                  </Alert>
+                )}
+
+                <Box sx={{ mt: 2 }}>
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    onClick={handleLogin}
+                    disabled={loading}
+                    sx={{ mt: 3, mb: 2 }}
+                  >
+                    {IS_DEV_MODE ? 'Continue as Test User' : 'Sign In with Azure AD'}
+                  </Button>
+
+                  {!IS_DEV_MODE && (
+                    <Typography variant="body2" align="center" sx={{ mt: 2 }}>
+                      You will be redirected to Azure Active Directory to authenticate.
+                      Only authorized admin users can access this portal.
+                    </Typography>
+                  )}
+                </Box>
+              </>
+            )}
           </Paper>
         </Box>
       </Container>
