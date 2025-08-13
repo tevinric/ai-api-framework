@@ -297,6 +297,14 @@ const UserDetailModal = ({ user: selectedUser, currentUser, token, onClose, onRe
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // Prevent background scrolling when modal is open
+  React.useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
+
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
@@ -651,6 +659,14 @@ const UserDetailModal = ({ user: selectedUser, currentUser, token, onClose, onRe
 // Create User Modal Component
 const CreateUserModal = ({ currentUser, token, onClose, onRefresh }) => {
   console.log('[CREATE_USER_MODAL] Initializing Create User Modal');
+
+  // Prevent background scrolling when modal is open
+  React.useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
   
   const [formData, setFormData] = useState({
     user_name: '',

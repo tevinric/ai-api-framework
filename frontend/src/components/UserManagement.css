@@ -425,6 +425,7 @@
   justify-content: center;
   z-index: 1000;
   padding: 20px;
+  overflow: hidden; /* Prevent background scrolling */
 }
 
 .modal-content {
@@ -473,6 +474,8 @@
   flex: 1;
   overflow-y: auto;
   padding: 30px;
+  min-height: 0; /* Allow flex shrinking */
+  max-height: calc(90vh - 140px); /* Account for header and footer */
 }
 
 .modal-footer {
