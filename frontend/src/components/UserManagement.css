@@ -210,11 +210,12 @@
 /* Users Table */
 .users-table {
   width: 100%;
+  table-layout: fixed;
 }
 
 .table-header {
   display: grid;
-  grid-template-columns: 2.5fr 2.5fr 1.5fr 1fr 1fr 1fr;
+  grid-template-columns: minmax(200px, 3fr) minmax(200px, 3fr) minmax(120px, 1.5fr) minmax(80px, 1fr) minmax(80px, 1fr) minmax(100px, 1fr);
   gap: 15px;
   padding: 20px 25px;
   background: #f8f9fa;
@@ -224,16 +225,20 @@
   font-size: 14px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .table-row {
   display: grid;
-  grid-template-columns: 2.5fr 2.5fr 1.5fr 1fr 1fr 1fr;
+  grid-template-columns: minmax(200px, 3fr) minmax(200px, 3fr) minmax(120px, 1.5fr) minmax(80px, 1fr) minmax(80px, 1fr) minmax(100px, 1fr);
   gap: 15px;
   padding: 20px 25px;
   border-bottom: 1px solid #f0f0f0;
   transition: background-color 0.2s ease;
   align-items: center;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .table-row:hover {
@@ -247,8 +252,9 @@
 .table-cell {
   font-size: 14px;
   color: #2c3e50;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   min-width: 0;
 }
 
@@ -290,8 +296,10 @@
 }
 
 .email-cell {
-  word-break: break-word;
   color: #667eea;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Badges */

@@ -210,11 +210,12 @@
 /* Endpoints Table */
 .endpoints-table {
   width: 100%;
+  table-layout: fixed;
 }
 
 .table-header {
   display: grid;
-  grid-template-columns: 2fr 2fr 1fr 1fr 1fr 1fr;
+  grid-template-columns: minmax(200px, 2.5fr) minmax(200px, 2.5fr) minmax(100px, 1fr) minmax(80px, 1fr) minmax(80px, 1fr) minmax(100px, 1fr);
   gap: 15px;
   padding: 20px 25px;
   background: #f8f9fa;
@@ -224,16 +225,20 @@
   font-size: 14px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .table-row {
   display: grid;
-  grid-template-columns: 2fr 2fr 1fr 1fr 1fr 1fr;
+  grid-template-columns: minmax(200px, 2.5fr) minmax(200px, 2.5fr) minmax(100px, 1fr) minmax(80px, 1fr) minmax(80px, 1fr) minmax(100px, 1fr);
   gap: 15px;
   padding: 20px 25px;
   border-bottom: 1px solid #f0f0f0;
   transition: background-color 0.2s ease;
   align-items: center;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .table-row:hover {
@@ -247,6 +252,10 @@
 .table-cell {
   font-size: 14px;
   color: #2c3e50;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 /* Endpoint Cell */
@@ -294,6 +303,11 @@
   font-size: 13px;
   color: #667eea;
   border: 1px solid #e9ecef;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+  max-width: 100%;
 }
 
 /* Cost Cell */
