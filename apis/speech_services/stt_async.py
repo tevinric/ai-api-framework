@@ -146,12 +146,16 @@ def submit_stt_job_route():
         # Get endpoint ID for tracking
         endpoint_id = DatabaseService.get_endpoint_id_by_path('/speech/stt')
         
+        # Get the current API log ID if available
+        api_log_id = getattr(g, 'current_api_log_id', None)
+        print(f"DEBUG: STT async endpoint - api_log_id from g: {api_log_id}")
+        
         # Create a new job
         job_id, error = JobService.create_job(
             user_id=g.user_id, 
             job_type='stt', 
             file_id=file_id,
-            parameters={'token_id': g.token_id},
+            parameters={'token_id': g.token_id, 'api_log_id': api_log_id},
             endpoint_id=endpoint_id
         )
         
@@ -306,12 +310,16 @@ def submit_stt_diarize_job_route():
         # Get endpoint ID for tracking
         endpoint_id = DatabaseService.get_endpoint_id_by_path('/speech/stt_diarize')
         
+        # Get the current API log ID if available
+        api_log_id = getattr(g, 'current_api_log_id', None)
+        print(f"DEBUG: STT_DIARIZE async endpoint - api_log_id from g: {api_log_id}")
+        
         # Create a new job
         job_id, error = JobService.create_job(
             user_id=g.user_id, 
             job_type='stt_diarize', 
             file_id=file_id,
-            parameters={'token_id': g.token_id, 'token_value': token},
+            parameters={'token_id': g.token_id, 'token_value': token, 'api_log_id': api_log_id},
             endpoint_id=endpoint_id
         )
         
