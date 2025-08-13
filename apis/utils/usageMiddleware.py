@@ -37,8 +37,10 @@ def extract_usage_metrics(response):
         # Extract model information
         if "model" in response_data:
             metrics["model_used"] = response_data["model"]
+            print(f"DEBUG: UsageMiddleware - Extracted model from 'model': {response_data['model']}")
         elif "model_used" in response_data:
             metrics["model_used"] = response_data["model_used"]
+            print(f"DEBUG: UsageMiddleware - Extracted model from 'model_used': {response_data['model_used']}")
         
         # Token usage metrics - direct fields
         if "prompt_tokens" in response_data:
@@ -85,6 +87,7 @@ def extract_usage_metrics(response):
         # Audio processing metrics
         if "seconds_processed" in response_data:
             metrics["audio_seconds_processed"] = response_data["seconds_processed"]
+            print(f"DEBUG: UsageMiddleware - Extracted audio seconds: {response_data['seconds_processed']}")
         
         # Document processing metrics
         if "pages_processed" in response_data:
