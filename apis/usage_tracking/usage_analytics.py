@@ -2,6 +2,7 @@ from flask import request, g
 from apis.utils.tokenService import TokenService
 from apis.utils.databaseService import DatabaseService
 from apis.utils.config import create_api_response
+from flasgger import swag_from
 import logging
 from datetime import datetime, timedelta
 import json
@@ -156,13 +157,81 @@ def get_usage_analytics(start_date, end_date, user_id):
 def usage_date_range():
     """
     Get usage analytics for a specific date range
-    
-    POST /usage_tracking/date_range
-    Headers: X-Token: <user_token>
-    Body: {
-        "start_date": "2024-01-01", 
-        "end_date": "2024-01-31"
-    }
+    ---
+    tags:
+      - Usage Tracking
+    security:
+      - ApiKeyAuth: []
+    parameters:
+      - in: header
+        name: X-Token
+        type: string
+        required: true
+        description: User authentication token
+      - in: body
+        name: date_range
+        required: true
+        schema:
+          type: object
+          properties:
+            start_date:
+              type: string
+              example: "2024-01-01"
+              description: Start date in YYYY-MM-DD format
+            end_date:
+              type: string
+              example: "2024-01-31" 
+              description: End date in YYYY-MM-DD format
+          required:
+            - start_date
+            - end_date
+    responses:
+      200:
+        description: Usage analytics retrieved successfully
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              example: "Usage analytics retrieved successfully"
+            user_id:
+              type: string
+              example: "user_123"
+            usage_by_model:
+              type: object
+              description: Usage statistics grouped by model
+            totals:
+              type: object
+              description: Total usage across all models
+            date_range:
+              type: object
+              properties:
+                start_date:
+                  type: string
+                end_date:
+                  type: string
+      400:
+        description: Bad request
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Bad Request
+            message:
+              type: string
+              example: start_date and end_date are required
+      401:
+        description: Authentication error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Authentication Error
+            message:
+              type: string
+              example: Missing X-Token header
     """
     try:
         # Get request data
@@ -222,9 +291,56 @@ def usage_date_range():
 def usage_mtd():
     """
     Get usage analytics for current month-to-date
-    
-    GET /usage_tracking/mtd
-    Headers: X-Token: <user_token>
+    ---
+    tags:
+      - Usage Tracking
+    security:
+      - ApiKeyAuth: []
+    parameters:
+      - in: header
+        name: X-Token
+        type: string
+        required: true
+        description: User authentication token
+    responses:
+      200:
+        description: MTD usage analytics retrieved successfully
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              example: "MTD usage analytics retrieved successfully"
+            user_id:
+              type: string
+              example: "user_123"
+            usage_by_model:
+              type: object
+              description: Usage statistics grouped by model
+            totals:
+              type: object
+              description: Total usage across all models
+            date_range:
+              type: object
+              properties:
+                start_date:
+                  type: string
+                end_date:
+                  type: string
+            period_type:
+              type: string
+              example: "MTD"
+      401:
+        description: Authentication error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Authentication Error
+            message:
+              type: string
+              example: Missing X-Token header
     """
     try:
         # Calculate MTD date range
@@ -263,12 +379,82 @@ def usage_mtd():
 def usage_monthly():
     """
     Get usage analytics for a specific month (YYYYMM format)
-    
-    POST /usage_tracking/monthly
-    Headers: X-Token: <user_token>
-    Body: {
-        "month": "202401"
-    }
+    ---
+    tags:
+      - Usage Tracking
+    security:
+      - ApiKeyAuth: []
+    parameters:
+      - in: header
+        name: X-Token
+        type: string
+        required: true
+        description: User authentication token
+      - in: body
+        name: month_data
+        required: true
+        schema:
+          type: object
+          properties:
+            month:
+              type: string
+              example: "202401"
+              description: Month in YYYYMM format
+          required:
+            - month
+    responses:
+      200:
+        description: Monthly usage analytics retrieved successfully
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              example: "Usage analytics for 202401 retrieved successfully"
+            user_id:
+              type: string
+              example: "user_123"
+            usage_by_model:
+              type: object
+              description: Usage statistics grouped by model
+            totals:
+              type: object
+              description: Total usage across all models
+            date_range:
+              type: object
+              properties:
+                start_date:
+                  type: string
+                end_date:
+                  type: string
+            period_type:
+              type: string
+              example: "Monthly"
+            month:
+              type: string
+              example: "202401"
+      400:
+        description: Bad request
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Bad Request
+            message:
+              type: string
+              example: Invalid month format. Use YYYYMM (e.g., 202401)
+      401:
+        description: Authentication error
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Authentication Error
+            message:
+              type: string
+              example: Missing X-Token header
     """
     try:
         # Get request data
