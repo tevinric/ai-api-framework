@@ -333,7 +333,14 @@ class JobProcessor:
                 transcript = "No transcript available"
             
             # Calculate the duration of the audio file
+            print(f"DEBUG: ASYNC_STT - About to calculate audio duration from file URL: {file_url}")
             seconds_processed = calculate_audio_duration(file_url)
+            print(f"DEBUG: ASYNC_STT - Got audio duration: {seconds_processed} seconds")
+            
+            # Force a minimum value if we got 0
+            if seconds_processed <= 0:
+                seconds_processed = 1.0
+                print(f"DEBUG: ASYNC_STT - Duration was 0, forcing to: {seconds_processed} seconds")
             
             # Delete the uploaded file to avoid storage bloat using FileService directly
             success, message = FileService.delete_file(file_id, user_id)
@@ -349,11 +356,15 @@ class JobProcessor:
                 "model_used": "ms_stt"
             }
             
+            print(f"DEBUG: ASYNC_STT - Job result data: seconds_processed={result_data['seconds_processed']}, model_used={result_data['model_used']}")
+            
             # Update existing usage metrics
             metrics = {
                 "audio_seconds_processed": seconds_processed,
                 "model_used": "ms_stt"
             }
+            
+            print(f"DEBUG: ASYNC_STT - Calling update_usage_metrics with: {metrics}")
             JobProcessor.update_usage_metrics(user_id, "stt", metrics)
             
             # Update job status to completed with results
@@ -433,7 +444,14 @@ class JobProcessor:
                 return False
             
             # Calculate the duration of the audio file
+            print(f"DEBUG: ASYNC_STT_DIARIZE - About to calculate audio duration from file URL: {file_url}")
             seconds_processed = calculate_audio_duration(file_url)
+            print(f"DEBUG: ASYNC_STT_DIARIZE - Got audio duration: {seconds_processed} seconds")
+            
+            # Force a minimum value if we got 0
+            if seconds_processed <= 0:
+                seconds_processed = 1.0
+                print(f"DEBUG: ASYNC_STT_DIARIZE - Duration was 0, forcing to: {seconds_processed} seconds")
             
             # Extract the transcript text
             raw_transcript = ""

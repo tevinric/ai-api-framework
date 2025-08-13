@@ -66,66 +66,37 @@ def transcribe_audio(file_url):
 
 def calculate_audio_duration(file_url):
     """
-    Calculate audio duration in seconds from file URL
-    Uses mutagen if available, otherwise estimates from file size
+    Calculate audio duration from file size - simple reliable method
     """
-    import tempfile
-    import os
-    
     try:
-        print(f"DEBUG: Getting audio duration for: {file_url}")
+        print(f"DEBUG: Calculating duration for: {file_url}")
         
-        # Download the file
+        # Download file and get size
         response = requests.get(file_url, timeout=30)
         response.raise_for_status()
         file_size = len(response.content)
         
-        # Detect file type
-        if file_url.lower().endswith('.mp3') or 'mp3' in response.headers.get('content-type', '').lower():
-            file_ext = '.mp3'
-        elif file_url.lower().endswith('.wav') or 'wav' in response.headers.get('content-type', '').lower():
-            file_ext = '.wav'
-        elif file_url.lower().endswith('.m4a') or 'm4a' in response.headers.get('content-type', '').lower():
-            file_ext = '.m4a'
-        else:
-            file_ext = '.mp3'  # Default
+        print(f"DEBUG: Downloaded file size: {file_size} bytes")
         
-        print(f"DEBUG: File size: {file_size} bytes, type: {file_ext}")
+        # Simple estimation based on file size
+        # For most audio files, assume average 128kbps bitrate
+        # Formula: (file_size_in_bytes * 8) / (bitrate_in_kbps * 1000)
+        estimated_duration = (file_size * 8) / (128 * 1000)
         
-        # Try mutagen first
-        try:
-            with tempfile.NamedTemporaryFile(suffix=file_ext, delete=False) as tmp:
-                tmp.write(response.content)
-                tmp.flush()
-                
-                from mutagen import File
-                audio = File(tmp.name)
-                if audio and hasattr(audio, 'info') and hasattr(audio.info, 'length'):
-                    duration = round(audio.info.length, 2)
-                    print(f"DEBUG: Mutagen duration: {duration} seconds")
-                    os.unlink(tmp.name)
-                    return duration
-        except Exception as e:
-            print(f"DEBUG: Mutagen failed: {e}")
+        # Make sure we have a reasonable duration (at least 1 second for files > 16KB)
+        if file_size > 16000 and estimated_duration < 1:
+            estimated_duration = file_size / 32000  # Fallback calculation
         
-        # Fallback to file size estimation
-        if file_ext == '.mp3' or file_ext == '.m4a':
-            # Assume 128kbps for compressed audio
-            duration = round((file_size * 8) / (128 * 1000), 2)
-        elif file_ext == '.wav':
-            # Assume 16-bit, 44.1kHz, stereo
-            duration = round(file_size / (44100 * 2 * 2), 2)
-        else:
-            # Default compressed audio estimate
-            duration = round((file_size * 8) / (128 * 1000), 2)
+        duration = round(max(estimated_duration, 0.1), 2)  # Minimum 0.1 seconds
+        print(f"DEBUG: Calculated duration: {duration} seconds")
         
-        print(f"DEBUG: Estimated duration: {duration} seconds")
         return duration
         
     except Exception as e:
-        print(f"DEBUG: Audio duration calculation failed: {e}")
+        print(f"DEBUG: Duration calculation error: {e}")
         logger.error(f"Error calculating audio duration: {str(e)}")
-        return 0
+        # If all else fails, return a small positive value instead of 0
+        return 1.0
 
 def speech_to_text_route():
     """
@@ -328,9 +299,14 @@ def speech_to_text_route():
             transcript = "No transcript available"
         
         # Calculate the duration of the audio file
-        print(f"DEBUG: About to calculate audio duration from file URL: {file_url}")
+        print(f"DEBUG: STT - About to calculate audio duration from file URL: {file_url}")
         seconds_processed = calculate_audio_duration(file_url)
-        print(f"DEBUG: Calculated audio duration: {seconds_processed} seconds")
+        print(f"DEBUG: STT - Got audio duration: {seconds_processed} seconds")
+        
+        # Force a minimum value if we got 0
+        if seconds_processed <= 0:
+            seconds_processed = 1.0
+            print(f"DEBUG: STT - Duration was 0, forcing to: {seconds_processed} seconds")
         
         # Delete the uploaded file to avoid storage bloat using FileService directly
         success, message = FileService.delete_file(file_id, g.user_id)
@@ -345,6 +321,8 @@ def speech_to_text_route():
             "seconds_processed": seconds_processed,
             "model_used": "ms_stt"
         }
+        
+        print(f"DEBUG: STT - Response data: seconds_processed={response_data['seconds_processed']}, model_used={response_data['model_used']}")
         
         return create_api_response(response_data, 200)
         
