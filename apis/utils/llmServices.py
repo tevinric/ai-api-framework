@@ -214,7 +214,10 @@ def deepseek_r1_service(system_prompt, user_input, temperature=0.5, json_output=
             prompt_tokens = response.usage.prompt_tokens
             completion_tokens = response.usage.completion_tokens
             total_tokens = response.usage.total_tokens
-            cached_tokens = response.usage.cached_tokens if hasattr(response.usage, 'cached_tokens') else 0
+            # Azure OpenAI returns cached tokens in prompt_tokens_details
+            cached_tokens = 0
+            if hasattr(response.usage, 'prompt_tokens_details') and response.usage.prompt_tokens_details:
+                cached_tokens = getattr(response.usage.prompt_tokens_details, 'cached_tokens', 0)
             
             logger.info(f"GPT-4o request successful using {client_name} client")
             
@@ -266,7 +269,10 @@ def deepseek_r1_service(system_prompt, user_input, temperature=0.5, json_output=
         prompt_tokens = response.usage.prompt_tokens
         completion_tokens = response.usage.completion_tokens
         total_tokens = response.usage.total_tokens
-        cached_tokens = response.usage.cached_tokens if hasattr(response.usage, 'cached_tokens') else 0
+        # Azure OpenAI returns cached tokens in prompt_tokens_details
+        cached_tokens = 0
+        if hasattr(response.usage, 'prompt_tokens_details') and response.usage.prompt_tokens_details:
+            cached_tokens = getattr(response.usage.prompt_tokens_details, 'cached_tokens', 0)
         
         return {
             "success": True,
@@ -417,7 +423,10 @@ def o1_mini_service(system_prompt, user_input, temperature=0.5, json_output=Fals
             prompt_tokens = response.usage.prompt_tokens
             completion_tokens = response.usage.completion_tokens
             total_tokens = response.usage.total_tokens
-            cached_tokens = response.usage.cached_tokens if hasattr(response.usage, 'cached_tokens') else 0
+            # Azure OpenAI returns cached tokens in prompt_tokens_details
+            cached_tokens = 0
+            if hasattr(response.usage, 'prompt_tokens_details') and response.usage.prompt_tokens_details:
+                cached_tokens = getattr(response.usage.prompt_tokens_details, 'cached_tokens', 0)
             
             logger.info(f"O1-mini request successful using {client_name} client")
             
@@ -522,7 +531,10 @@ def o3_mini_service(system_prompt, user_input, max_completion_tokens=100000, rea
             completion_tokens = completion.usage.completion_tokens
             total_tokens = prompt_tokens + completion_tokens
             model_name = DEPLOYMENT
-            cached_tokens = completion.usage.cached_tokens if hasattr(completion.usage, 'cached_tokens') else 0
+            # Azure OpenAI returns cached tokens in prompt_tokens_details
+            cached_tokens = 0
+            if hasattr(completion.usage, 'prompt_tokens_details') and completion.usage.prompt_tokens_details:
+                cached_tokens = getattr(completion.usage.prompt_tokens_details, 'cached_tokens', 0)
             
             logger.info(f"O3-Mini request successful using {client_config['name']} client")
             
@@ -736,7 +748,10 @@ def gpt_o4_mini_service(system_prompt, user_input, json_output=False, file_ids=N
                 prompt_tokens = response.usage.prompt_tokens
                 completion_tokens = response.usage.completion_tokens
                 total_tokens = response.usage.total_tokens
-                cached_tokens = response.usage.cached_tokens if hasattr(response.usage, 'cached_tokens') else 0
+                # Azure OpenAI returns cached tokens in prompt_tokens_details
+                cached_tokens = 0
+                if hasattr(response.usage, 'prompt_tokens_details') and response.usage.prompt_tokens_details:
+                    cached_tokens = getattr(response.usage.prompt_tokens_details, 'cached_tokens', 0)
                 
                 # Total files processed
                 total_files_processed = file_stats["images_processed"]
@@ -874,7 +889,10 @@ def llama_service(system_prompt, user_input, temperature=0.7, json_output=False,
             if model_name.endswith("-2"):
                 model_name = model_name[:-2]
 
-            cached_tokens = response.usage.cached_tokens if hasattr(response.usage, 'cached_tokens') else 0
+            # Azure OpenAI returns cached tokens in prompt_tokens_details
+            cached_tokens = 0
+            if hasattr(response.usage, 'prompt_tokens_details') and response.usage.prompt_tokens_details:
+                cached_tokens = getattr(response.usage.prompt_tokens_details, 'cached_tokens', 0)
             
             logger.info(f"Llama request successful using {client_config['name']} client")
             
@@ -1134,7 +1152,10 @@ def llama_3_2_vision_instruct_service(system_prompt, user_input, temperature=0.7
                 model_name = client_config['model']
                 if model_name.endswith("-2"):
                     model_name = model_name[:-2]
-                cached_tokens = response.usage.cached_tokens if hasattr(response.usage, 'cached_tokens') else 0
+                # Azure OpenAI returns cached tokens in prompt_tokens_details
+            cached_tokens = 0
+            if hasattr(response.usage, 'prompt_tokens_details') and response.usage.prompt_tokens_details:
+                cached_tokens = getattr(response.usage.prompt_tokens_details, 'cached_tokens', 0)
                 
                 # Total files processed
                 total_files_processed = file_stats["images_processed"]
@@ -1387,7 +1408,10 @@ def llama_4_maverick_17b_128E_instruct_fp8_service(system_prompt, user_input, te
                 model_name = client_config['model']
                 if model_name.endswith("-2"):
                     model_name = model_name[:-2]
-                cached_tokens = response.usage.cached_tokens if hasattr(response.usage, 'cached_tokens') else 0
+                # Azure OpenAI returns cached tokens in prompt_tokens_details
+            cached_tokens = 0
+            if hasattr(response.usage, 'prompt_tokens_details') and response.usage.prompt_tokens_details:
+                cached_tokens = getattr(response.usage.prompt_tokens_details, 'cached_tokens', 0)
                 
                 # Total files processed
                 total_files_processed = file_stats["images_processed"]
@@ -1638,7 +1662,10 @@ def llama_4_scout_17b_16E_instruct_service(system_prompt, user_input, temperatur
                 model_name = client_config['model']
                 if model_name.endswith("-2"):
                     model_name = model_name[:-2]
-                cached_tokens = response.usage.cached_tokens if hasattr(response.usage, 'cached_tokens') else 0
+                # Azure OpenAI returns cached tokens in prompt_tokens_details
+            cached_tokens = 0
+            if hasattr(response.usage, 'prompt_tokens_details') and response.usage.prompt_tokens_details:
+                cached_tokens = getattr(response.usage.prompt_tokens_details, 'cached_tokens', 0)
                 
                 # Total files processed
                 total_files_processed = file_stats["images_processed"]
@@ -1850,7 +1877,10 @@ def gpt4o_service(system_prompt, user_input, temperature=0.5, json_output=False,
                 prompt_tokens = response.usage.prompt_tokens
                 completion_tokens = response.usage.completion_tokens
                 total_tokens = response.usage.total_tokens
-                cached_tokens = response.usage.cached_tokens if hasattr(response.usage, 'cached_tokens') else 0
+                # Azure OpenAI returns cached tokens in prompt_tokens_details
+                cached_tokens = 0
+                if hasattr(response.usage, 'prompt_tokens_details') and response.usage.prompt_tokens_details:
+                    cached_tokens = getattr(response.usage.prompt_tokens_details, 'cached_tokens', 0)
                 
                 # Total files processed
                 total_files_processed = file_stats["images_processed"]
@@ -2055,7 +2085,10 @@ def gpt4o_mini_service(system_prompt, user_input, temperature=0.5, json_output=F
                 prompt_tokens = response.usage.prompt_tokens
                 completion_tokens = response.usage.completion_tokens
                 total_tokens = response.usage.total_tokens
-                cached_tokens = response.usage.cached_tokens if hasattr(response.usage, 'cached_tokens') else 0
+                # Azure OpenAI returns cached tokens in prompt_tokens_details
+                cached_tokens = 0
+                if hasattr(response.usage, 'prompt_tokens_details') and response.usage.prompt_tokens_details:
+                    cached_tokens = getattr(response.usage.prompt_tokens_details, 'cached_tokens', 0)
                 
                 # Total files processed
                 total_files_processed = file_stats["images_processed"]
@@ -2260,7 +2293,10 @@ def gpt41_service(system_prompt, user_input, temperature=0.5, json_output=False,
                 prompt_tokens = response.usage.prompt_tokens
                 completion_tokens = response.usage.completion_tokens
                 total_tokens = response.usage.total_tokens
-                cached_tokens = response.usage.cached_tokens if hasattr(response.usage, 'cached_tokens') else 0
+                # Azure OpenAI returns cached tokens in prompt_tokens_details
+                cached_tokens = 0
+                if hasattr(response.usage, 'prompt_tokens_details') and response.usage.prompt_tokens_details:
+                    cached_tokens = getattr(response.usage.prompt_tokens_details, 'cached_tokens', 0)
                 
                 # Total files processed
                 total_files_processed = file_stats["images_processed"]
@@ -2465,7 +2501,10 @@ def gpt41_mini_service(system_prompt, user_input, temperature=0.5, json_output=F
                 prompt_tokens = response.usage.prompt_tokens
                 completion_tokens = response.usage.completion_tokens
                 total_tokens = response.usage.total_tokens
-                cached_tokens = response.usage.cached_tokens if hasattr(response.usage, 'cached_tokens') else 0
+                # Azure OpenAI returns cached tokens in prompt_tokens_details
+                cached_tokens = 0
+                if hasattr(response.usage, 'prompt_tokens_details') and response.usage.prompt_tokens_details:
+                    cached_tokens = getattr(response.usage.prompt_tokens_details, 'cached_tokens', 0)
                 
                 # Total files processed
                 total_files_processed = file_stats["images_processed"]
@@ -2715,7 +2754,10 @@ def mistral_medium_2505_service(system_prompt, user_input, temperature=0.8, json
                 model_name = client_config['model']
                 if model_name.endswith("-2"):
                     model_name = model_name[:-2]
-                cached_tokens = response.usage.cached_tokens if hasattr(response.usage, 'cached_tokens') else 0
+                # Azure OpenAI returns cached tokens in prompt_tokens_details
+            cached_tokens = 0
+            if hasattr(response.usage, 'prompt_tokens_details') and response.usage.prompt_tokens_details:
+                cached_tokens = getattr(response.usage.prompt_tokens_details, 'cached_tokens', 0)
                 
                 # Total files processed
                 total_files_processed = file_stats["images_processed"]
@@ -2856,7 +2898,10 @@ def mistral_nemo_service(system_prompt, user_input, temperature=0.7, max_tokens=
             model_name = client_config['model']
             if model_name.endswith("-2"):
                 model_name = model_name[:-2]
-            cached_tokens = response.usage.cached_tokens if hasattr(response.usage, 'cached_tokens') else 0
+            # Azure OpenAI returns cached tokens in prompt_tokens_details
+            cached_tokens = 0
+            if hasattr(response.usage, 'prompt_tokens_details') and response.usage.prompt_tokens_details:
+                cached_tokens = getattr(response.usage.prompt_tokens_details, 'cached_tokens', 0)
             
             logger.info(f"Mistral Nemo request successful using {client_config['name']} client")
             
