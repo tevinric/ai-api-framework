@@ -1153,9 +1153,9 @@ def llama_3_2_vision_instruct_service(system_prompt, user_input, temperature=0.7
                 if model_name.endswith("-2"):
                     model_name = model_name[:-2]
                 # Azure OpenAI returns cached tokens in prompt_tokens_details
-            cached_tokens = 0
-            if hasattr(response.usage, 'prompt_tokens_details') and response.usage.prompt_tokens_details:
-                cached_tokens = getattr(response.usage.prompt_tokens_details, 'cached_tokens', 0)
+                cached_tokens = 0
+                if hasattr(response.usage, 'prompt_tokens_details') and response.usage.prompt_tokens_details:
+                    cached_tokens = getattr(response.usage.prompt_tokens_details, 'cached_tokens', 0)
                 
                 # Total files processed
                 total_files_processed = file_stats["images_processed"]
@@ -1409,9 +1409,9 @@ def llama_4_maverick_17b_128E_instruct_fp8_service(system_prompt, user_input, te
                 if model_name.endswith("-2"):
                     model_name = model_name[:-2]
                 # Azure OpenAI returns cached tokens in prompt_tokens_details
-            cached_tokens = 0
-            if hasattr(response.usage, 'prompt_tokens_details') and response.usage.prompt_tokens_details:
-                cached_tokens = getattr(response.usage.prompt_tokens_details, 'cached_tokens', 0)
+                cached_tokens = 0
+                if hasattr(response.usage, 'prompt_tokens_details') and response.usage.prompt_tokens_details:
+                    cached_tokens = getattr(response.usage.prompt_tokens_details, 'cached_tokens', 0)
                 
                 # Total files processed
                 total_files_processed = file_stats["images_processed"]
@@ -1663,9 +1663,9 @@ def llama_4_scout_17b_16E_instruct_service(system_prompt, user_input, temperatur
                 if model_name.endswith("-2"):
                     model_name = model_name[:-2]
                 # Azure OpenAI returns cached tokens in prompt_tokens_details
-            cached_tokens = 0
-            if hasattr(response.usage, 'prompt_tokens_details') and response.usage.prompt_tokens_details:
-                cached_tokens = getattr(response.usage.prompt_tokens_details, 'cached_tokens', 0)
+                cached_tokens = 0
+                if hasattr(response.usage, 'prompt_tokens_details') and response.usage.prompt_tokens_details:
+                    cached_tokens = getattr(response.usage.prompt_tokens_details, 'cached_tokens', 0)
                 
                 # Total files processed
                 total_files_processed = file_stats["images_processed"]
@@ -2755,9 +2755,9 @@ def mistral_medium_2505_service(system_prompt, user_input, temperature=0.8, json
                 if model_name.endswith("-2"):
                     model_name = model_name[:-2]
                 # Azure OpenAI returns cached tokens in prompt_tokens_details
-            cached_tokens = 0
-            if hasattr(response.usage, 'prompt_tokens_details') and response.usage.prompt_tokens_details:
-                cached_tokens = getattr(response.usage.prompt_tokens_details, 'cached_tokens', 0)
+                cached_tokens = 0
+                if hasattr(response.usage, 'prompt_tokens_details') and response.usage.prompt_tokens_details:
+                    cached_tokens = getattr(response.usage.prompt_tokens_details, 'cached_tokens', 0)
                 
                 # Total files processed
                 total_files_processed = file_stats["images_processed"]
