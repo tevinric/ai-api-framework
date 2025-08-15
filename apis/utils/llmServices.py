@@ -31,7 +31,7 @@ def primary_openai_client():
     azure_endpoint=DEPLOYMENTS["openai"]["primary"]["api_endpoint"],
     api_key=DEPLOYMENTS["openai"]["primary"]["api_key"],
     max_retries=0,
-    api_version="2024-02-01",
+    api_version="2024-10-21",
 )
     return client
 ###### SECONDARY
@@ -40,7 +40,7 @@ def secondary_openai_client():
     azure_endpoint=DEPLOYMENTS["openai"]["secondary"]["api_endpoint"],
     api_key=DEPLOYMENTS["openai"]["secondary"]["api_key"],
     max_retries=0,
-    api_version="2024-02-01",
+    api_version="2024-10-21",
 )
     return client
 ###### TERTIARY
@@ -49,7 +49,7 @@ def tertiary_openai_client():
     azure_endpoint=DEPLOYMENTS["openai"]["tertiary"]["api_endpoint"],
     api_key=DEPLOYMENTS["openai"]["tertiary"]["api_key"],
     max_retries=0,
-    api_version="2024-02-01",
+    api_version="2024-10-21",
     # NO max retries for final deployment
 )
     return client
@@ -59,7 +59,7 @@ def fourth_openai_client():
     azure_endpoint=DEPLOYMENTS["openai"]["fourth"]["api_endpoint"],
     api_key=DEPLOYMENTS["openai"]["fourth"]["api_key"],
     max_retries=0,
-    api_version="2024-02-01",
+    api_version="2024-10-21",
     # NO max retries for final deployment
 )
     return client
