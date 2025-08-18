@@ -353,7 +353,9 @@ register_context_routes(app)
 
 # USAGE TRACKING ENDPOINTS
 from apis.usage_tracking.usage_analytics import register_usage_tracking_routes
+from apis.usage_tracking.cost_management import register_cost_management_routes
 register_usage_tracking_routes(app)
+register_cost_management_routes(app)
 
 #Agentic 
 # from apis.llm.agentic_llm import register_agentic_llm

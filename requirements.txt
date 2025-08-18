@@ -28,3 +28,5 @@ PyPDF2
 python-docx
 openpyxl
 asyncio
+azure-identity
+azure-mgmt-costmanagement
