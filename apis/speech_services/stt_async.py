@@ -335,10 +335,10 @@ def submit_stt_diarize_job_route():
         }, 500)
 
 def register_async_speech_to_text_routes(app):
+    from apis.utils.usageMiddleware import track_usage
     from apis.utils.rbacMiddleware import check_endpoint_access
     
     """Register async speech to text routes with the Flask app"""
     # Submit endpoints (replacing the original synchronous ones)
-    # Note: track_usage middleware removed for async endpoints - usage is tracked after job completion
-    app.route('/speech/stt', methods=['POST'])(api_logger(check_endpoint_access(check_balance(submit_stt_job_route))))
-    app.route('/speech/stt_diarize', methods=['POST'])(api_logger(check_endpoint_access(check_balance(submit_stt_diarize_job_route))))
+    app.route('/speech/stt', methods=['POST'])(track_usage(api_logger(check_endpoint_access(check_balance(submit_stt_job_route)))))
+    app.route('/speech/stt_diarize', methods=['POST'])(track_usage(api_logger(check_endpoint_access(check_balance(submit_stt_diarize_job_route)))))

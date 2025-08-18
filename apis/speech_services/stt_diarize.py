@@ -90,39 +90,24 @@ def transcribe_audio(file_url):
             "status_code": getattr(e.response, 'status_code', None)
         }
 
-def calculate_audio_duration(file_url):
+def calculate_audio_duration(transcription_result):
     """
-    Calculate audio duration from file size - simple reliable method
+    Calculate the total audio duration in seconds from the transcription result
+    
+    The Microsoft Speech API returns duration in milliseconds
     """
     try:
-        print(f"DEBUG: Calculating duration for: {file_url}")
-        
-        # Download file and get size
-        response = requests.get(file_url, timeout=30)
-        response.raise_for_status()
-        file_size = len(response.content)
-        
-        print(f"DEBUG: Downloaded file size: {file_size} bytes")
-        
-        # Simple estimation based on file size
-        # For most audio files, assume average 128kbps bitrate
-        # Formula: (file_size_in_bytes * 8) / (bitrate_in_kbps * 1000)
-        estimated_duration = (file_size * 8) / (128 * 1000)
-        
-        # Make sure we have a reasonable duration (at least 1 second for files > 16KB)
-        if file_size > 16000 and estimated_duration < 1:
-            estimated_duration = file_size / 32000  # Fallback calculation
-        
-        duration = round(max(estimated_duration, 0.1), 2)  # Minimum 0.1 seconds
-        print(f"DEBUG: Calculated duration: {duration} seconds")
-        
-        return duration
-        
+        # Check if duration is directly available in milliseconds
+        if 'duration' in transcription_result:
+            # Convert milliseconds to seconds
+            return transcription_result['duration'] / 1000.0
+            
+        # If all else fails, return a default value
+        return 0
+            
     except Exception as e:
-        print(f"DEBUG: Duration calculation error: {e}")
         logger.error(f"Error calculating audio duration: {str(e)}")
-        # If all else fails, return a small positive value instead of 0
-        return 1.0
+        return 0
 
 def split_transcript_into_chunks(transcript, max_tokens=MAX_CHUNK_TOKENS):
     """Split transcript into chunks respecting sentence boundaries where possible"""
@@ -295,14 +280,6 @@ def enhanced_speech_to_text_route():
               example: 0
             model_used:
               type: string
-              description: Combined model string showing STT and LLM models used
-              example: ms_stt+gpt-4o-mini
-            stt_model:
-              type: string
-              description: STT model used for transcription
-              example: ms_stt
-            llm_model:
-              type: string
               description: LLM model used for diarization
               example: gpt-4o-mini
       400:
@@ -431,14 +408,7 @@ def enhanced_speech_to_text_route():
             }, 500)
         
         # Calculate the duration of the audio file
-        print(f"DEBUG: STT_DIARIZE - About to calculate audio duration from file URL: {file_url}")
-        seconds_processed = calculate_audio_duration(file_url)
-        print(f"DEBUG: STT_DIARIZE - Got audio duration: {seconds_processed} seconds")
-        
-        # Force a minimum value if we got 0
-        if seconds_processed <= 0:
-            seconds_processed = 1.0
-            print(f"DEBUG: STT_DIARIZE - Duration was 0, forcing to: {seconds_processed} seconds")
+        seconds_processed = calculate_audio_duration(transcription_result)
         
         # Extract the transcript text
         raw_transcript = ""
@@ -534,9 +504,7 @@ def enhanced_speech_to_text_route():
             "total_tokens": total_tokens,
             "cached_tokens": total_cached_tokens,
             "embedded_tokens": total_embedded_tokens,
-            "model_used": f"ms_stt+{model_deplopyment}",
-            "stt_model": "ms_stt",
-            "llm_model": model_deplopyment
+            "model_used": model_deplopyment
         }
         
         return create_api_response(response_data, 200)

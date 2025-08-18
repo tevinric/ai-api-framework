@@ -64,83 +64,24 @@ def transcribe_audio(file_url):
             "status_code": getattr(e.response, 'status_code', None)
         }
 
-def calculate_audio_duration(file_url):
+def calculate_audio_duration(transcription_result):
     """
-    Calculate accurate audio duration using mutagen library
-    Falls back to estimation if mutagen fails
-    """
-    import tempfile
-    import wave
+    Calculate the total audio duration in seconds from the transcription result
     
+    The Microsoft Speech API returns duration in milliseconds
+    """
     try:
-        print(f"DEBUG: Calculating accurate duration for: {file_url}")
-        
-        # Download the audio file
-        response = requests.get(file_url, timeout=30)
-        response.raise_for_status()
-        audio_data = response.content
-        file_size = len(audio_data)
-        
-        print(f"DEBUG: Downloaded file size: {file_size} bytes")
-        
-        # Save to temporary file for analysis
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.audio') as temp_file:
-            temp_file.write(audio_data)
-            temp_file.flush()
-            temp_path = temp_file.name
+        # Check if duration is directly available in milliseconds
+        if 'duration' in transcription_result:
+            # Convert milliseconds to seconds
+            return transcription_result['duration'] / 1000.0
             
-            try:
-                # Try mutagen for accurate duration
-                try:
-                    from mutagen import File as MutagenFile
-                    audio_file = MutagenFile(temp_path)
-                    if audio_file and audio_file.info:
-                        duration = audio_file.info.length
-                        print(f"DEBUG: Mutagen detected duration: {duration} seconds")
-                        if duration and duration > 0:
-                            return round(duration, 2)
-                except ImportError:
-                    print("DEBUG: Mutagen not available, trying other methods")
-                except Exception as e:
-                    print(f"DEBUG: Mutagen failed: {e}")
-                
-                # Try wave library for WAV files
-                try:
-                    with wave.open(temp_path, 'rb') as wav_file:
-                        frames = wav_file.getnframes()
-                        sample_rate = wav_file.getframerate()
-                        duration = frames / float(sample_rate)
-                        print(f"DEBUG: Wave library detected duration: {duration} seconds")
-                        if duration > 0:
-                            return round(duration, 2)
-                except:
-                    pass
-                
-                # Fallback: Estimate based on file size
-                # For most audio files, assume average 128kbps bitrate
-                estimated_duration = (file_size * 8) / (128 * 1000)
-                
-                # Make sure we have a reasonable duration
-                if file_size > 16000 and estimated_duration < 1:
-                    estimated_duration = file_size / 32000
-                
-                duration = round(max(estimated_duration, 0.5), 2)  # Minimum 0.5 seconds
-                print(f"DEBUG: Estimated duration (fallback): {duration} seconds")
-                
-                return duration
-                
-            finally:
-                # Clean up temp file
-                try:
-                    os.unlink(temp_path)
-                except:
-                    pass
-        
+        # If all else fails, return a default value
+        return 0
+            
     except Exception as e:
-        print(f"DEBUG: Duration calculation error: {e}")
         logger.error(f"Error calculating audio duration: {str(e)}")
-        # Return a minimum duration instead of 0
-        return 1.0
+        return 0
 
 def speech_to_text_route():
     """
@@ -207,10 +148,6 @@ def speech_to_text_route():
               type: number
               description: Duration of the processed audio in seconds
               example: 45.6
-            model_used:
-              type: string
-              description: STT model used for transcription
-              example: ms_stt
       400:
         description: Bad request
         schema:
@@ -343,14 +280,7 @@ def speech_to_text_route():
             transcript = "No transcript available"
         
         # Calculate the duration of the audio file
-        print(f"DEBUG: STT - About to calculate audio duration from file URL: {file_url}")
-        seconds_processed = calculate_audio_duration(file_url)
-        print(f"DEBUG: STT - Got audio duration: {seconds_processed} seconds")
-        
-        # Force a minimum value if we got 0
-        if seconds_processed <= 0:
-            seconds_processed = 1.0
-            print(f"DEBUG: STT - Duration was 0, forcing to: {seconds_processed} seconds")
+        seconds_processed = calculate_audio_duration(transcription_result)
         
         # Delete the uploaded file to avoid storage bloat using FileService directly
         success, message = FileService.delete_file(file_id, g.user_id)
@@ -362,11 +292,8 @@ def speech_to_text_route():
             "message": "Audio transcribed successfully",
             "transcript": transcript,
             "transcription_details": transcription_result,
-            "seconds_processed": seconds_processed,
-            "model_used": "ms_stt"
+            "seconds_processed": seconds_processed
         }
-        
-        print(f"DEBUG: STT - Response data: seconds_processed={response_data['seconds_processed']}, model_used={response_data['model_used']}")
         
         return create_api_response(response_data, 200)
         
