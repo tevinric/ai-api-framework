@@ -66,36 +66,80 @@ def transcribe_audio(file_url):
 
 def calculate_audio_duration(file_url):
     """
-    Calculate audio duration from file size - simple reliable method
+    Calculate accurate audio duration using mutagen library
+    Falls back to estimation if mutagen fails
     """
+    import tempfile
+    import wave
+    
     try:
-        print(f"DEBUG: Calculating duration for: {file_url}")
+        print(f"DEBUG: Calculating accurate duration for: {file_url}")
         
-        # Download file and get size
+        # Download the audio file
         response = requests.get(file_url, timeout=30)
         response.raise_for_status()
-        file_size = len(response.content)
+        audio_data = response.content
+        file_size = len(audio_data)
         
         print(f"DEBUG: Downloaded file size: {file_size} bytes")
         
-        # Simple estimation based on file size
-        # For most audio files, assume average 128kbps bitrate
-        # Formula: (file_size_in_bytes * 8) / (bitrate_in_kbps * 1000)
-        estimated_duration = (file_size * 8) / (128 * 1000)
-        
-        # Make sure we have a reasonable duration (at least 1 second for files > 16KB)
-        if file_size > 16000 and estimated_duration < 1:
-            estimated_duration = file_size / 32000  # Fallback calculation
-        
-        duration = round(max(estimated_duration, 0.1), 2)  # Minimum 0.1 seconds
-        print(f"DEBUG: Calculated duration: {duration} seconds")
-        
-        return duration
+        # Save to temporary file for analysis
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.audio') as temp_file:
+            temp_file.write(audio_data)
+            temp_file.flush()
+            temp_path = temp_file.name
+            
+            try:
+                # Try mutagen for accurate duration
+                try:
+                    from mutagen import File as MutagenFile
+                    audio_file = MutagenFile(temp_path)
+                    if audio_file and audio_file.info:
+                        duration = audio_file.info.length
+                        print(f"DEBUG: Mutagen detected duration: {duration} seconds")
+                        if duration and duration > 0:
+                            return round(duration, 2)
+                except ImportError:
+                    print("DEBUG: Mutagen not available, trying other methods")
+                except Exception as e:
+                    print(f"DEBUG: Mutagen failed: {e}")
+                
+                # Try wave library for WAV files
+                try:
+                    with wave.open(temp_path, 'rb') as wav_file:
+                        frames = wav_file.getnframes()
+                        sample_rate = wav_file.getframerate()
+                        duration = frames / float(sample_rate)
+                        print(f"DEBUG: Wave library detected duration: {duration} seconds")
+                        if duration > 0:
+                            return round(duration, 2)
+                except:
+                    pass
+                
+                # Fallback: Estimate based on file size
+                # For most audio files, assume average 128kbps bitrate
+                estimated_duration = (file_size * 8) / (128 * 1000)
+                
+                # Make sure we have a reasonable duration
+                if file_size > 16000 and estimated_duration < 1:
+                    estimated_duration = file_size / 32000
+                
+                duration = round(max(estimated_duration, 0.5), 2)  # Minimum 0.5 seconds
+                print(f"DEBUG: Estimated duration (fallback): {duration} seconds")
+                
+                return duration
+                
+            finally:
+                # Clean up temp file
+                try:
+                    os.unlink(temp_path)
+                except:
+                    pass
         
     except Exception as e:
         print(f"DEBUG: Duration calculation error: {e}")
         logger.error(f"Error calculating audio duration: {str(e)}")
-        # If all else fails, return a small positive value instead of 0
+        # Return a minimum duration instead of 0
         return 1.0
 
 def speech_to_text_route():

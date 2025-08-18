@@ -142,10 +142,11 @@ class JobProcessor:
     
     @staticmethod
     def update_usage_metrics(user_id, job_type, metrics):
-        """Update or create usage metrics in the user_usage table
+        """Create usage metrics in the user_usage table for async jobs
         
-        This method will check if a usage record already exists for the job's API call
-        and update it rather than creating a duplicate record.
+        This method creates a new usage record after async job completion.
+        For async jobs, usage is logged only after processing completes,
+        not when the job is submitted.
         
         Args:
             user_id (str): ID of the user who submitted the job
@@ -168,99 +169,51 @@ class JobProcessor:
             conn = DatabaseService.get_connection()
             cursor = conn.cursor()
             
-            # First check if we already have a usage record for this user and endpoint
-            # (created within the last hour to avoid updating very old records)
-            query = """
-            SELECT id 
-            FROM user_usage 
-            WHERE user_id = ? 
-            AND endpoint_id = ? 
-            AND DATEDIFF(hour, timestamp, DATEADD(HOUR, 2, GETUTCDATE())) < 1
-            ORDER BY timestamp DESC
+            # Always create a new usage record for async jobs
+            # (since we removed the track_usage middleware from async endpoints)
+            usage_id = str(uuid.uuid4())
+            logger.info(f"Creating usage record {usage_id} for async {job_type} job")
+            
+            insert_query = """
+            INSERT INTO user_usage (
+                id, user_id, endpoint_id, timestamp,
+                images_generated, audio_seconds_processed, pages_processed,
+                documents_processed, model_used, prompt_tokens,
+                completion_tokens, total_tokens, cached_tokens, files_uploaded,
+                embedded_tokens
+            )
+            VALUES (
+                ?, ?, ?, DATEADD(HOUR, 2, GETUTCDATE()),
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+            )
             """
             
-            cursor.execute(query, [user_id, endpoint_id])
-            existing_record = cursor.fetchone()
+            cursor.execute(insert_query, [
+                usage_id,
+                user_id,
+                endpoint_id,
+                metrics.get("images_generated", 0),
+                metrics.get("audio_seconds_processed", 0),
+                metrics.get("pages_processed", 0),
+                metrics.get("documents_processed", 0),
+                metrics.get("model_used"),
+                metrics.get("prompt_tokens", 0),
+                metrics.get("completion_tokens", 0),
+                metrics.get("total_tokens", 0),
+                metrics.get("cached_tokens", 0),
+                metrics.get("files_uploaded", 0),
+                metrics.get("embedded_tokens", 0)
+            ])
             
-            if existing_record:
-                # Update existing record
-                usage_id = existing_record[0]
-                logger.info(f"Updating existing usage record {usage_id} for {job_type}")
-                
-                update_query = """
-                UPDATE user_usage
-                SET audio_seconds_processed = ?,
-                    model_used = ?,
-                    prompt_tokens = ?,
-                    completion_tokens = ?,
-                    total_tokens = ?,
-                    cached_tokens = ?,
-                    files_uploaded = ?
-                WHERE id = ?
-                """
-                
-                cursor.execute(update_query, [
-                    metrics.get("audio_seconds_processed", 0),
-                    metrics.get("model_used"),
-                    metrics.get("prompt_tokens", 0),
-                    metrics.get("completion_tokens", 0),
-                    metrics.get("total_tokens", 0),
-                    metrics.get("cached_tokens", 0),
-                    metrics.get("files_uploaded", 0),
-                    usage_id
-                ])
-                
-                conn.commit()
-                cursor.close()
-                conn.close()
-                
-                logger.info(f"Successfully updated usage metrics for {job_type} job, usage_id: {usage_id}")
-                return True
-                
-            else:
-                # If no existing record found (which shouldn't happen with middleware),
-                # create a new one as fallback
-                usage_id = str(uuid.uuid4())
-                logger.warning(f"No existing usage record found for {job_type}. Creating new record {usage_id}")
-                
-                insert_query = """
-                INSERT INTO user_usage (
-                    id, user_id, endpoint_id, timestamp,
-                    images_generated, audio_seconds_processed, pages_processed,
-                    documents_processed, model_used, prompt_tokens,
-                    completion_tokens, total_tokens, cached_tokens, files_uploaded
-                )
-                VALUES (
-                    ?, ?, ?, DATEADD(HOUR, 2, GETUTCDATE()),
-                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-                )
-                """
-                
-                cursor.execute(insert_query, [
-                    usage_id,
-                    user_id,
-                    endpoint_id,
-                    metrics.get("images_generated", 0),
-                    metrics.get("audio_seconds_processed", 0),
-                    metrics.get("pages_processed", 0),
-                    metrics.get("documents_processed", 0),
-                    metrics.get("model_used"),
-                    metrics.get("prompt_tokens", 0),
-                    metrics.get("completion_tokens", 0),
-                    metrics.get("total_tokens", 0),
-                    metrics.get("cached_tokens", 0),
-                    metrics.get("files_uploaded", 0)
-                ])
-                
-                conn.commit()
-                cursor.close()
-                conn.close()
-                
-                logger.info(f"Created new usage record {usage_id} for {job_type} as fallback")
-                return True
+            conn.commit()
+            cursor.close()
+            conn.close()
+            
+            logger.info(f"Successfully created usage record {usage_id} for async {job_type} job with {metrics.get('audio_seconds_processed', 0)} seconds processed")
+            return True
             
         except Exception as e:
-            logger.error(f"Error updating usage metrics for async job: {str(e)}")
+            logger.error(f"Error creating usage metrics for async job: {str(e)}")
             return False
     
     @staticmethod

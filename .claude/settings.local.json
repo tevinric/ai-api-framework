@@ -9,6 +9,7 @@
       "Bash(npm start)",
       "Bash(node:*)"
     ],
-    "deny": []
+    "deny": [],
+    "defaultMode": "acceptEdits"
   }
 }

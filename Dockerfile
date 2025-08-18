@@ -15,7 +15,8 @@ RUN apt-get update && \
     gnupg2 \  
     libodbc2 \
     build-essential \  
-    ca-certificates \ 
+    ca-certificates \
+    ffmpeg \
     && rm -rf /var/lib/apt/lists/*  
 
 # Add the Microsoft repository key  
