@@ -98,10 +98,10 @@ def calculate_audio_duration(transcription_result):
     """
     try:
         # Check if duration is directly available in milliseconds
-        if 'duration' in transcription_result:
+        if 'durationMilliseconds' in transcription_result:
             # Convert milliseconds to seconds
-            return transcription_result['duration'] / 1000.0
-            
+            return transcription_result['durationMilliseconds'] / 1000.0
+
         # If all else fails, return a default value
         return 0
             
