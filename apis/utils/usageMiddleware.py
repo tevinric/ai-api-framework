@@ -226,6 +226,10 @@ def create_api_log_and_get_id(user_id, endpoint_id, request_method, response_sta
 def log_dual_usage_for_stt_diarize(metrics, api_log_id, response_data):
     """Create two separate usage records for stt_diarize - one for MS STT and one for GPT-4o-mini"""
     try:
+        # Debug logging
+        logger.info(f"DEBUG: stt_diarize dual logging - audio_seconds_processed: {metrics.get('audio_seconds_processed', 'NOT_FOUND')}")
+        logger.info(f"DEBUG: stt_diarize dual logging - prompt_tokens: {metrics.get('prompt_tokens', 'NOT_FOUND')}")
+        
         conn = DatabaseService.get_connection()
         cursor = conn.cursor()
         
@@ -246,12 +250,16 @@ def log_dual_usage_for_stt_diarize(metrics, api_log_id, response_data):
         )
         """
         
+        # Debug logging for MS STT record
+        ms_stt_audio_seconds = metrics["audio_seconds_processed"]
+        logger.info(f"DEBUG: Inserting MS STT record - audio_seconds_processed: {ms_stt_audio_seconds}")
+        
         cursor.execute(ms_stt_query, [
             ms_stt_usage_id,
             metrics["user_id"],
             metrics["endpoint_id"],
             0,  # images_generated
-            metrics["audio_seconds_processed"],  # audio seconds from MS STT
+            ms_stt_audio_seconds,  # audio seconds from MS STT
             0,  # pages_processed
             0,  # documents_processed
             "ms_stt",  # model_used
@@ -281,16 +289,20 @@ def log_dual_usage_for_stt_diarize(metrics, api_log_id, response_data):
         )
         """
         
+        # Debug logging for GPT-4o-mini record
+        gpt_prompt_tokens = metrics["prompt_tokens"]
+        logger.info(f"DEBUG: Inserting GPT-4o-mini record - audio_seconds_processed: 0, prompt_tokens: {gpt_prompt_tokens}")
+        
         cursor.execute(gpt_query, [
             gpt_usage_id,
             metrics["user_id"],
             metrics["endpoint_id"],
             0,  # images_generated
-            0,  # audio_seconds_processed
+            0,  # audio_seconds_processed - explicitly zero for GPT model
             0,  # pages_processed
             0,  # documents_processed
             "gpt-4o-mini",  # model_used
-            metrics["prompt_tokens"],
+            gpt_prompt_tokens,
             metrics["completion_tokens"],
             metrics["total_tokens"],
             metrics["cached_tokens"],
