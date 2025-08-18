@@ -24,6 +24,17 @@ from azure.mgmt.costmanagement.models import (
 from decimal import Decimal
 import requests
 
+# Import simplified cost functions for fallback
+try:
+    from .cost_management_v2 import (
+        get_simplified_costs,
+        get_resource_group_summary,
+        get_detailed_costs_by_resource
+    )
+    SIMPLIFIED_FUNCTIONS_AVAILABLE = True
+except ImportError:
+    SIMPLIFIED_FUNCTIONS_AVAILABLE = False
+
 # Configure logging
 logger = logging.getLogger(__name__)
 
@@ -144,18 +155,18 @@ def get_resource_group_costs(start_date, end_date, resource_group=None):
                 granularity=GranularityType.DAILY,
                 aggregation={
                     "totalCost": QueryAggregation(
-                        name="Cost",
+                        name="PreTaxCost",
                         function="Sum"
                     ),
                     "totalCostUSD": QueryAggregation(
-                        name="CostUSD", 
+                        name="PreTaxCostUSD", 
                         function="Sum"
                     )
                 },
                 grouping=[
                     QueryGrouping(
                         type=QueryColumnType.DIMENSION,
-                        name="ResourceGroup"
+                        name="ResourceGroupName"
                     ),
                     QueryGrouping(
                         type=QueryColumnType.DIMENSION,
@@ -299,11 +310,11 @@ def get_detailed_line_item_costs(start_date, end_date, resource_group=None):
                 granularity=GranularityType.DAILY,
                 aggregation={
                     "totalCost": QueryAggregation(
-                        name="Cost",
+                        name="PreTaxCost",
                         function="Sum"
                     ),
-                    "totalQuantity": QueryAggregation(
-                        name="Quantity",
+                    "totalUsageQuantity": QueryAggregation(
+                        name="UsageQuantity",
                         function="Sum"
                     )
                 },
@@ -322,11 +333,11 @@ def get_detailed_line_item_costs(start_date, end_date, resource_group=None):
                     ),
                     QueryGrouping(
                         type=QueryColumnType.DIMENSION,
-                        name="MeterSubCategory"
+                        name="MeterSubcategory"
                     ),
                     QueryGrouping(
                         type=QueryColumnType.DIMENSION,
-                        name="MeterName"
+                        name="Meter"
                     )
                 ]
             )
@@ -678,8 +689,27 @@ def cost_all_resource_groups():
                 "message": "start_date and end_date are required (YYYY-MM-DD format)"
             }, 400)
         
-        # Get costs for all resource groups
-        result = get_resource_group_costs(start_date, end_date)
+        # Try to use simplified function if available, otherwise use original
+        if SIMPLIFIED_FUNCTIONS_AVAILABLE:
+            result = get_resource_group_summary(start_date, end_date)
+            if result["success"]:
+                # Transform to match expected format
+                result = {
+                    "success": True,
+                    "costs_by_resource_group": {
+                        rg: {"total_cost": cost, "total_cost_usd": cost, "services": {}}
+                        for rg, cost in result.get("resource_groups", {}).items()
+                    },
+                    "total_cost": result.get("total_cost", 0),
+                    "total_cost_usd": result.get("total_cost", 0),
+                    "date_range": result.get("date_range", {}),
+                    "currency": "USD"
+                }
+            else:
+                # Fallback to original function
+                result = get_resource_group_costs(start_date, end_date)
+        else:
+            result = get_resource_group_costs(start_date, end_date)
         
         if not result["success"]:
             return create_api_response({
@@ -804,8 +834,24 @@ def cost_line_items():
                 "message": "start_date and end_date are required (YYYY-MM-DD format)"
             }, 400)
         
-        # Get detailed line item costs
-        result = get_detailed_line_item_costs(start_date, end_date, resource_group)
+        # Try to use simplified function if available, otherwise use original
+        if SIMPLIFIED_FUNCTIONS_AVAILABLE:
+            result = get_detailed_costs_by_resource(start_date, end_date, resource_group)
+            if result["success"]:
+                # Transform to match expected format
+                result = {
+                    "success": True,
+                    "line_items": result.get("resources", []),
+                    "total_cost": result.get("total_cost", 0),
+                    "item_count": result.get("resource_count", 0),
+                    "date_range": result.get("date_range", {}),
+                    "currency": "USD"
+                }
+            else:
+                # Fallback to original function
+                result = get_detailed_line_item_costs(start_date, end_date, resource_group)
+        else:
+            result = get_detailed_line_item_costs(start_date, end_date, resource_group)
         
         if not result["success"]:
             return create_api_response({
