@@ -60,6 +60,24 @@ def safe_decimal(value, default=0):
     except (ValueError, TypeError, decimal.InvalidOperation, decimal.ConversionSyntax):
         return Decimal(str(default))
 
+def safe_string(value, default="Unknown"):
+    """
+    Safely convert a value to string, handling None and other types
+    
+    Args:
+        value: The value to convert
+        default: Default value if conversion fails
+        
+    Returns:
+        str: The converted value or default
+    """
+    try:
+        if value is None:
+            return default
+        return str(value)
+    except (ValueError, TypeError):
+        return default
+
 # Azure Cost Management Configuration
 SUBSCRIPTION_ID = os.environ.get("AZURE_SUBSCRIPTION_ID")
 TENANT_ID = os.environ.get("ENTRA_APP_TENANT_ID")
@@ -215,8 +233,8 @@ def get_resource_group_costs(start_date, end_date, resource_group=None):
             for row in result.rows:
                 if not resource_group:
                     # Multiple resource groups
-                    rg_name = row[0] if row[0] else "No Resource Group"
-                    service_name = row[1] if row[1] else "Unknown Service"
+                    rg_name = safe_string(row[0] if len(row) > 0 else None, "No Resource Group")
+                    service_name = safe_string(row[1] if len(row) > 1 else None, "Unknown Service")
                     cost = safe_decimal(row[2] if len(row) > 2 else None)
                     cost_usd = safe_decimal(row[3] if len(row) > 3 else None, cost)
                     
@@ -240,7 +258,7 @@ def get_resource_group_costs(start_date, end_date, resource_group=None):
                     costs_by_group[rg_name]["services"][service_name]["cost_usd"] += cost_usd
                 else:
                     # Single resource group
-                    service_name = row[0] if row[0] else "Unknown Service"
+                    service_name = safe_string(row[0] if len(row) > 0 else None, "Unknown Service")
                     cost = safe_decimal(row[1] if len(row) > 1 else None)
                     cost_usd = safe_decimal(row[2] if len(row) > 2 else None, cost)
                     
@@ -374,15 +392,15 @@ def get_detailed_line_item_costs(start_date, end_date, resource_group=None):
         
         if result.rows:
             for row in result.rows:
-                resource_id = row[0] if row[0] else "Unknown Resource"
-                resource_type = row[1] if row[1] else "Unknown Type"
-                meter_category = row[2] if row[2] else "Unknown Category"
-                meter_subcategory = row[3] if row[3] else "Unknown Subcategory"
-                meter_name = row[4] if row[4] else "Unknown Meter"
+                resource_id = safe_string(row[0] if len(row) > 0 else None, "Unknown Resource")
+                resource_type = safe_string(row[1] if len(row) > 1 else None, "Unknown Type")
+                meter_category = safe_string(row[2] if len(row) > 2 else None, "Unknown Category")
+                meter_subcategory = safe_string(row[3] if len(row) > 3 else None, "Unknown Subcategory")
+                meter_name = safe_string(row[4] if len(row) > 4 else None, "Unknown Meter")
                 cost = safe_decimal(row[5] if len(row) > 5 else None)
                 quantity = safe_decimal(row[6] if len(row) > 6 else None)
                 
-                # Extract resource name from resource ID
+                # Extract resource name from resource ID (now safe since resource_id is always a string)
                 resource_name = resource_id.split('/')[-1] if '/' in resource_id else resource_id
                 
                 line_item = {

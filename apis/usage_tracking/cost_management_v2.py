@@ -43,6 +43,24 @@ def safe_decimal(value, default=0):
     except (ValueError, TypeError, decimal.InvalidOperation, decimal.ConversionSyntax):
         return Decimal(str(default))
 
+def safe_string(value, default="Unknown"):
+    """
+    Safely convert a value to string, handling None and other types
+    
+    Args:
+        value: The value to convert
+        default: Default value if conversion fails
+        
+    Returns:
+        str: The converted value or default
+    """
+    try:
+        if value is None:
+            return default
+        return str(value)
+    except (ValueError, TypeError):
+        return default
+
 # Configure logging
 logger = logging.getLogger(__name__)
 
@@ -133,7 +151,7 @@ def get_simplified_costs(start_date, end_date, resource_group=None):
         
         if result.rows:
             for row in result.rows:
-                service_name = row[0] if row[0] else "Unknown Service"
+                service_name = safe_string(row[0] if len(row) > 0 else None, "Unknown Service")
                 cost = safe_decimal(row[1] if len(row) > 1 else None)
                 
                 if service_name not in costs_by_service:
@@ -219,7 +237,7 @@ def get_resource_group_summary(start_date, end_date):
         
         if result.rows:
             for row in result.rows:
-                rg_name = row[0] if row[0] else "No Resource Group"
+                rg_name = safe_string(row[0] if len(row) > 0 else None, "No Resource Group")
                 cost = safe_decimal(row[1] if len(row) > 1 else None)
                 
                 resource_groups[rg_name] = float(cost)
@@ -314,14 +332,14 @@ def get_detailed_costs_by_resource(start_date, end_date, resource_group=None):
             logger.info(f"Processing {len(result.rows)} rows from Azure Cost Management")
             for i, row in enumerate(result.rows):
                 try:
-                    logger.debug(f"Row {i}: {row}")
-                    resource_id = row[0] if row[0] else "Unknown Resource"
-                    resource_type = row[1] if row[1] else "Unknown Type"
-                    service_name = row[2] if row[2] else "Unknown Service"
+                    logger.debug(f"Row {i}: {row} (types: {[type(x).__name__ for x in row]})")
+                    resource_id = safe_string(row[0] if len(row) > 0 else None, "Unknown Resource")
+                    resource_type = safe_string(row[1] if len(row) > 1 else None, "Unknown Type")
+                    service_name = safe_string(row[2] if len(row) > 2 else None, "Unknown Service")
                     cost = safe_decimal(row[3] if len(row) > 3 else None)
                     usage = safe_decimal(row[4] if len(row) > 4 else None)
                 
-                    # Extract resource name from resource ID
+                    # Extract resource name from resource ID (now safe since resource_id is always a string)
                     resource_name = resource_id.split('/')[-1] if '/' in resource_id else resource_id
                     
                     resources.append({
