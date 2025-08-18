@@ -223,6 +223,109 @@ def create_api_log_and_get_id(user_id, endpoint_id, request_method, response_sta
         logger.error(f"Error creating API log for usage tracking: {str(e)}")
         return None
 
+def log_dual_usage_for_stt_diarize(metrics, api_log_id, response_data):
+    """Create two separate usage records for stt_diarize - one for MS STT and one for GPT-4o-mini"""
+    try:
+        conn = DatabaseService.get_connection()
+        cursor = conn.cursor()
+        
+        # Create first record for MS STT with audio seconds
+        ms_stt_usage_id = str(uuid.uuid4())
+        ms_stt_query = """
+        INSERT INTO user_usage (
+            id, user_id, endpoint_id, timestamp,
+            images_generated, audio_seconds_processed, pages_processed,
+            documents_processed, model_used, prompt_tokens,
+            completion_tokens, total_tokens, cached_tokens, files_uploaded,
+            api_log_id, embedded_tokens
+        )
+        VALUES (
+            ?, ?, ?, DATEADD(HOUR, 2, GETUTCDATE()),
+            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+            ?, ?
+        )
+        """
+        
+        cursor.execute(ms_stt_query, [
+            ms_stt_usage_id,
+            metrics["user_id"],
+            metrics["endpoint_id"],
+            0,  # images_generated
+            metrics["audio_seconds_processed"],  # audio seconds from MS STT
+            0,  # pages_processed
+            0,  # documents_processed
+            "ms_stt",  # model_used
+            0,  # prompt_tokens
+            0,  # completion_tokens
+            0,  # total_tokens
+            0,  # cached_tokens
+            0,  # files_uploaded
+            api_log_id,
+            0   # embedded_tokens
+        ])
+        
+        # Create second record for GPT-4o-mini with token usage
+        gpt_usage_id = str(uuid.uuid4())
+        gpt_query = """
+        INSERT INTO user_usage (
+            id, user_id, endpoint_id, timestamp,
+            images_generated, audio_seconds_processed, pages_processed,
+            documents_processed, model_used, prompt_tokens,
+            completion_tokens, total_tokens, cached_tokens, files_uploaded,
+            api_log_id, embedded_tokens
+        )
+        VALUES (
+            ?, ?, ?, DATEADD(HOUR, 2, GETUTCDATE()),
+            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+            ?, ?
+        )
+        """
+        
+        cursor.execute(gpt_query, [
+            gpt_usage_id,
+            metrics["user_id"],
+            metrics["endpoint_id"],
+            0,  # images_generated
+            0,  # audio_seconds_processed
+            0,  # pages_processed
+            0,  # documents_processed
+            "gpt-4o-mini",  # model_used
+            metrics["prompt_tokens"],
+            metrics["completion_tokens"],
+            metrics["total_tokens"],
+            metrics["cached_tokens"],
+            0,  # files_uploaded
+            api_log_id,
+            metrics["embedded_tokens"]
+        ])
+        
+        # Update the api_logs table with the first usage ID (MS STT)
+        if api_log_id:
+            update_query = """
+            UPDATE api_logs
+            SET user_usage_id = ?
+            WHERE id = ?
+            """
+            
+            cursor.execute(update_query, [ms_stt_usage_id, api_log_id])
+            
+            rows_affected = cursor.rowcount
+            if rows_affected > 0:
+                logger.info(f"Updated API log {api_log_id} with primary usage ID {ms_stt_usage_id}")
+            else:
+                logger.warning(f"No API log found with ID {api_log_id} to update")
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        logger.info(f"Dual usage metrics logged - MS STT: {ms_stt_usage_id}, GPT-4o-mini: {gpt_usage_id}, linked to API log: {api_log_id}")
+        return True
+        
+    except Exception as e:
+        logger.error(f"Error logging dual usage metrics for stt_diarize: {str(e)}")
+        return False
+
 def track_usage(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -262,9 +365,14 @@ def track_usage(f):
                     response.status_code if hasattr(response, 'status_code') else 200,
                     response_time
                 )
-                
-            # Log usage metrics and update the api_logs table
-            log_usage_metrics_and_update_api_log(metrics, api_log_id, usage_id)
+            
+            # Special handling for stt_diarize endpoint - create two separate usage records
+            if request.path == '/speech/stt_diarize':
+                response_data = response.get_json() if hasattr(response, 'get_json') else None
+                log_dual_usage_for_stt_diarize(metrics, api_log_id, response_data)
+            else:
+                # Log usage metrics and update the api_logs table for all other endpoints
+                log_usage_metrics_and_update_api_log(metrics, api_log_id, usage_id)
             
         except Exception as e:
             # Log the error but don't affect the response
