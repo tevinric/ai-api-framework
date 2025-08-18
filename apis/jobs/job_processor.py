@@ -141,6 +141,115 @@ class JobProcessor:
             return len(audio_data) / (16000 * 2)
     
     @staticmethod
+    def update_dual_usage_metrics_for_stt_diarize(user_id, audio_seconds, token_metrics):
+        """Create two separate usage records for stt_diarize job processing
+        
+        Args:
+            user_id (str): ID of the user who submitted the job
+            audio_seconds (float): Duration of processed audio
+            token_metrics (dict): Token usage metrics from GPT-4o-mini
+            
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        try:
+            # Get endpoint ID for stt_diarize
+            endpoint_id = DatabaseService.get_endpoint_id_by_path('/speech/stt_diarize')
+            
+            if not endpoint_id:
+                logger.error("Endpoint ID not found for path: /speech/stt_diarize")
+                return False
+                
+            # Connect to database
+            conn = DatabaseService.get_connection()
+            cursor = conn.cursor()
+            
+            # Create first record for MS STT with audio seconds
+            ms_stt_usage_id = str(uuid.uuid4())
+            ms_stt_query = """
+            INSERT INTO user_usage (
+                id, user_id, endpoint_id, timestamp,
+                images_generated, audio_seconds_processed, pages_processed,
+                documents_processed, model_used, prompt_tokens,
+                completion_tokens, total_tokens, cached_tokens, files_uploaded,
+                api_log_id, embedded_tokens
+            )
+            VALUES (
+                ?, ?, ?, DATEADD(HOUR, 2, GETUTCDATE()),
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                ?, ?
+            )
+            """
+            
+            logger.info(f"Creating MS STT usage record with audio_seconds_processed: {audio_seconds}")
+            
+            cursor.execute(ms_stt_query, [
+                ms_stt_usage_id,
+                user_id,
+                endpoint_id,
+                0,  # images_generated
+                audio_seconds,  # audio seconds from MS STT
+                0,  # pages_processed
+                0,  # documents_processed
+                "ms_stt",  # model_used
+                0,  # prompt_tokens
+                0,  # completion_tokens
+                0,  # total_tokens
+                0,  # cached_tokens
+                0,  # files_uploaded
+                None,  # api_log_id
+                0   # embedded_tokens
+            ])
+            
+            # Create second record for GPT-4o-mini with token usage
+            gpt_usage_id = str(uuid.uuid4())
+            gpt_query = """
+            INSERT INTO user_usage (
+                id, user_id, endpoint_id, timestamp,
+                images_generated, audio_seconds_processed, pages_processed,
+                documents_processed, model_used, prompt_tokens,
+                completion_tokens, total_tokens, cached_tokens, files_uploaded,
+                api_log_id, embedded_tokens
+            )
+            VALUES (
+                ?, ?, ?, DATEADD(HOUR, 2, GETUTCDATE()),
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                ?, ?
+            )
+            """
+            
+            logger.info(f"Creating GPT-4o-mini usage record with prompt_tokens: {token_metrics.get('prompt_tokens', 0)}")
+            
+            cursor.execute(gpt_query, [
+                gpt_usage_id,
+                user_id,
+                endpoint_id,
+                0,  # images_generated
+                0,  # audio_seconds_processed - zero for GPT model
+                0,  # pages_processed
+                0,  # documents_processed
+                "gpt-4o-mini",  # model_used
+                token_metrics.get("prompt_tokens", 0),
+                token_metrics.get("completion_tokens", 0),
+                token_metrics.get("total_tokens", 0),
+                token_metrics.get("cached_tokens", 0),
+                0,  # files_uploaded
+                None,  # api_log_id
+                token_metrics.get("embedded_tokens", 0)
+            ])
+            
+            conn.commit()
+            cursor.close()
+            conn.close()
+            
+            logger.info(f"Dual usage metrics created for stt_diarize job - MS STT: {ms_stt_usage_id}, GPT-4o-mini: {gpt_usage_id}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error creating dual usage metrics for stt_diarize job: {str(e)}")
+            return False
+
+    @staticmethod
     def update_usage_metrics(user_id, job_type, metrics):
         """Update or create usage metrics in the user_usage table
         
@@ -533,16 +642,15 @@ class JobProcessor:
                 "model_used": model_deplopyment
             }
             
-            # Update existing usage metrics
-            metrics = {
-                "audio_seconds_processed": seconds_processed,
-                "model_used": model_deplopyment,
+            # Create dual usage metrics - one for MS STT and one for GPT-4o-mini
+            token_metrics = {
                 "prompt_tokens": total_prompt_tokens,
                 "completion_tokens": total_completion_tokens,
                 "total_tokens": total_tokens,
-                "cached_tokens": total_cached_tokens
+                "cached_tokens": total_cached_tokens,
+                "embedded_tokens": total_embedded_tokens
             }
-            JobProcessor.update_usage_metrics(user_id, "stt_diarize", metrics)
+            JobProcessor.update_dual_usage_metrics_for_stt_diarize(user_id, seconds_processed, token_metrics)
             
             # Update job status to completed with results
             JobService.update_job_status(job_id, 'completed', result_data=result_data)

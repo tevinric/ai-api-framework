@@ -259,7 +259,7 @@ def log_dual_usage_for_stt_diarize(metrics, api_log_id, response_data):
             metrics["user_id"],
             metrics["endpoint_id"],
             0,  # images_generated
-            ms_stt_audio_seconds,  # audio seconds from MS STT
+            ms_stt_audio_seconds,  # audio seconds from MS STT - MUST GO HERE
             0,  # pages_processed
             0,  # documents_processed
             "ms_stt",  # model_used
@@ -298,7 +298,7 @@ def log_dual_usage_for_stt_diarize(metrics, api_log_id, response_data):
             metrics["user_id"],
             metrics["endpoint_id"],
             0,  # images_generated
-            0,  # audio_seconds_processed - explicitly zero for GPT model
+            0,  # audio_seconds_processed - MUST BE ZERO FOR GPT
             0,  # pages_processed
             0,  # documents_processed
             "gpt-4o-mini",  # model_used
