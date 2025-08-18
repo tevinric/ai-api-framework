@@ -72,10 +72,10 @@ def calculate_audio_duration(transcription_result):
     """
     try:
         # Check if duration is directly available in milliseconds
-        if 'duration' in transcription_result:
+        if 'durationMilliseconds' in transcription_result:
             # Convert milliseconds to seconds
-            return transcription_result['duration'] / 1000.0
-            
+            return transcription_result['durationMilliseconds'] / 1000.0
+
         # If all else fails, return a default value
         return 0
             
@@ -264,8 +264,10 @@ def speech_to_text_route():
             }, 500)
         
         # Transcribe the audio file
-        transcription_result, error = transcribe_audio(file_url)
         
+        transcription_result, error = transcribe_audio(file_url)
+        logger.info(f"The result is: {transcription_result}")
+
         if error:
             return create_api_response({
                 "error": "Transcription Error",
@@ -292,7 +294,8 @@ def speech_to_text_route():
             "message": "Audio transcribed successfully",
             "transcript": transcript,
             "transcription_details": transcription_result,
-            "seconds_processed": seconds_processed
+            "seconds_processed": seconds_processed,
+            "model_used": "ms_stt"
         }
         
         return create_api_response(response_data, 200)

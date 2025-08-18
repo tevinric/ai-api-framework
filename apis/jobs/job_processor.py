@@ -345,12 +345,14 @@ class JobProcessor:
                 "message": "Audio transcribed successfully",
                 "transcript": transcript,
                 "transcription_details": transcription_result,
-                "seconds_processed": seconds_processed
+                "seconds_processed": seconds_processed,
+                "model_used": "ms_stt"
             }
             
             # Update existing usage metrics
             metrics = {
-                "audio_seconds_processed": seconds_processed
+                "audio_seconds_processed": seconds_processed,
+                "model_used": "ms_stt"
             }
             JobProcessor.update_usage_metrics(user_id, "stt", metrics)
             
