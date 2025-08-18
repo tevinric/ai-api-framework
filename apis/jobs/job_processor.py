@@ -142,7 +142,10 @@ class JobProcessor:
     
     @staticmethod
     def update_dual_usage_metrics_for_stt_diarize(user_id, audio_seconds, token_metrics):
-        """Create two separate usage records for stt_diarize job processing
+        """Update existing usage record with dual records for stt_diarize job processing
+        
+        This finds the existing user_usage record created during job submission and 
+        replaces it with two separate records - one for MS STT and one for GPT-4o-mini.
         
         Args:
             user_id (str): ID of the user who submitted the job
@@ -163,6 +166,34 @@ class JobProcessor:
             # Connect to database
             conn = DatabaseService.get_connection()
             cursor = conn.cursor()
+            
+            # Find existing usage record created during job submission (within the last hour)
+            existing_query = """
+            SELECT id, api_log_id
+            FROM user_usage 
+            WHERE user_id = ? 
+            AND endpoint_id = ? 
+            AND DATEDIFF(hour, timestamp, DATEADD(HOUR, 2, GETUTCDATE())) < 1
+            ORDER BY timestamp DESC
+            """
+            
+            cursor.execute(existing_query, [user_id, endpoint_id])
+            existing_record = cursor.fetchone()
+            
+            if not existing_record:
+                logger.warning("No existing usage record found to update for stt_diarize job")
+                cursor.close()
+                conn.close()
+                return False
+            
+            existing_usage_id = existing_record[0]
+            api_log_id = existing_record[1]
+            
+            logger.info(f"Updating existing usage record {existing_usage_id} with dual records")
+            
+            # Delete the existing single record
+            delete_query = "DELETE FROM user_usage WHERE id = ?"
+            cursor.execute(delete_query, [existing_usage_id])
             
             # Create first record for MS STT with audio seconds
             ms_stt_usage_id = str(uuid.uuid4())
@@ -197,7 +228,7 @@ class JobProcessor:
                 0,  # total_tokens
                 0,  # cached_tokens
                 0,  # files_uploaded
-                None,  # api_log_id
+                api_log_id,  # api_log_id from existing record
                 0   # embedded_tokens
             ])
             
@@ -234,19 +265,28 @@ class JobProcessor:
                 token_metrics.get("total_tokens", 0),
                 token_metrics.get("cached_tokens", 0),
                 0,  # files_uploaded
-                None,  # api_log_id
+                api_log_id,  # api_log_id from existing record
                 token_metrics.get("embedded_tokens", 0)
             ])
+            
+            # Update the api_logs table to point to the MS STT record as primary
+            if api_log_id:
+                update_api_log_query = """
+                UPDATE api_logs
+                SET user_usage_id = ?
+                WHERE id = ?
+                """
+                cursor.execute(update_api_log_query, [ms_stt_usage_id, api_log_id])
             
             conn.commit()
             cursor.close()
             conn.close()
             
-            logger.info(f"Dual usage metrics created for stt_diarize job - MS STT: {ms_stt_usage_id}, GPT-4o-mini: {gpt_usage_id}")
+            logger.info(f"Replaced single usage record with dual records - MS STT: {ms_stt_usage_id}, GPT-4o-mini: {gpt_usage_id}, api_log_id: {api_log_id}")
             return True
             
         except Exception as e:
-            logger.error(f"Error creating dual usage metrics for stt_diarize job: {str(e)}")
+            logger.error(f"Error updating dual usage metrics for stt_diarize job: {str(e)}")
             return False
 
     @staticmethod
