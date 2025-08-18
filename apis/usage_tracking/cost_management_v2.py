@@ -22,7 +22,26 @@ from azure.mgmt.costmanagement.models import (
     ExportType
 )
 from decimal import Decimal
+import decimal
 import requests
+
+def safe_decimal(value, default=0):
+    """
+    Safely convert a value to Decimal, handling None and invalid values
+    
+    Args:
+        value: The value to convert
+        default: Default value if conversion fails
+        
+    Returns:
+        Decimal: The converted value or default
+    """
+    try:
+        if value is None or value == '':
+            return Decimal(str(default))
+        return Decimal(str(value))
+    except (ValueError, TypeError, decimal.InvalidOperation, decimal.ConversionSyntax):
+        return Decimal(str(default))
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -115,7 +134,7 @@ def get_simplified_costs(start_date, end_date, resource_group=None):
         if result.rows:
             for row in result.rows:
                 service_name = row[0] if row[0] else "Unknown Service"
-                cost = Decimal(str(row[1])) if row[1] else Decimal('0')
+                cost = safe_decimal(row[1] if len(row) > 1 else None)
                 
                 if service_name not in costs_by_service:
                     costs_by_service[service_name] = Decimal('0')
@@ -201,7 +220,7 @@ def get_resource_group_summary(start_date, end_date):
         if result.rows:
             for row in result.rows:
                 rg_name = row[0] if row[0] else "No Resource Group"
-                cost = Decimal(str(row[1])) if row[1] else Decimal('0')
+                cost = safe_decimal(row[1] if len(row) > 1 else None)
                 
                 resource_groups[rg_name] = float(cost)
                 total_cost += cost
@@ -292,26 +311,32 @@ def get_detailed_costs_by_resource(start_date, end_date, resource_group=None):
         total_cost = Decimal('0')
         
         if result.rows:
-            for row in result.rows:
-                resource_id = row[0] if row[0] else "Unknown Resource"
-                resource_type = row[1] if row[1] else "Unknown Type"
-                service_name = row[2] if row[2] else "Unknown Service"
-                cost = Decimal(str(row[3])) if row[3] else Decimal('0')
-                usage = Decimal(str(row[4])) if len(row) > 4 and row[4] else Decimal('0')
+            logger.info(f"Processing {len(result.rows)} rows from Azure Cost Management")
+            for i, row in enumerate(result.rows):
+                try:
+                    logger.debug(f"Row {i}: {row}")
+                    resource_id = row[0] if row[0] else "Unknown Resource"
+                    resource_type = row[1] if row[1] else "Unknown Type"
+                    service_name = row[2] if row[2] else "Unknown Service"
+                    cost = safe_decimal(row[3] if len(row) > 3 else None)
+                    usage = safe_decimal(row[4] if len(row) > 4 else None)
                 
-                # Extract resource name from resource ID
-                resource_name = resource_id.split('/')[-1] if '/' in resource_id else resource_id
-                
-                resources.append({
-                    "resource_id": resource_id,
-                    "resource_name": resource_name,
-                    "resource_type": resource_type,
-                    "service_name": service_name,
-                    "cost": float(cost),
-                    "usage_quantity": float(usage)
-                })
-                
-                total_cost += cost
+                    # Extract resource name from resource ID
+                    resource_name = resource_id.split('/')[-1] if '/' in resource_id else resource_id
+                    
+                    resources.append({
+                        "resource_id": resource_id,
+                        "resource_name": resource_name,
+                        "resource_type": resource_type,
+                        "service_name": service_name,
+                        "cost": float(cost),
+                        "usage_quantity": float(usage)
+                    })
+                    
+                    total_cost += cost
+                except Exception as row_error:
+                    logger.error(f"Error processing row {i}: {row_error}")
+                    continue
         
         # Sort by cost descending
         resources.sort(key=lambda x: x["cost"], reverse=True)

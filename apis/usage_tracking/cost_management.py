@@ -22,6 +22,7 @@ from azure.mgmt.costmanagement.models import (
     ExportType
 )
 from decimal import Decimal
+import decimal
 import requests
 
 # Import simplified cost functions for fallback
@@ -40,6 +41,24 @@ logger = logging.getLogger(__name__)
 
 # Initialize token service
 token_service = TokenService()
+
+def safe_decimal(value, default=0):
+    """
+    Safely convert a value to Decimal, handling None and invalid values
+    
+    Args:
+        value: The value to convert
+        default: Default value if conversion fails
+        
+    Returns:
+        Decimal: The converted value or default
+    """
+    try:
+        if value is None or value == '':
+            return Decimal(str(default))
+        return Decimal(str(value))
+    except (ValueError, TypeError, decimal.InvalidOperation, decimal.ConversionSyntax):
+        return Decimal(str(default))
 
 # Azure Cost Management Configuration
 SUBSCRIPTION_ID = os.environ.get("AZURE_SUBSCRIPTION_ID")
@@ -198,8 +217,8 @@ def get_resource_group_costs(start_date, end_date, resource_group=None):
                     # Multiple resource groups
                     rg_name = row[0] if row[0] else "No Resource Group"
                     service_name = row[1] if row[1] else "Unknown Service"
-                    cost = Decimal(str(row[2])) if row[2] else Decimal('0')
-                    cost_usd = Decimal(str(row[3])) if len(row) > 3 and row[3] else cost
+                    cost = safe_decimal(row[2] if len(row) > 2 else None)
+                    cost_usd = safe_decimal(row[3] if len(row) > 3 else None, cost)
                     
                     if rg_name not in costs_by_group:
                         costs_by_group[rg_name] = {
@@ -222,8 +241,8 @@ def get_resource_group_costs(start_date, end_date, resource_group=None):
                 else:
                     # Single resource group
                     service_name = row[0] if row[0] else "Unknown Service"
-                    cost = Decimal(str(row[1])) if row[1] else Decimal('0')
-                    cost_usd = Decimal(str(row[2])) if len(row) > 2 and row[2] else cost
+                    cost = safe_decimal(row[1] if len(row) > 1 else None)
+                    cost_usd = safe_decimal(row[2] if len(row) > 2 else None, cost)
                     
                     if resource_group not in costs_by_group:
                         costs_by_group[resource_group] = {
@@ -360,8 +379,8 @@ def get_detailed_line_item_costs(start_date, end_date, resource_group=None):
                 meter_category = row[2] if row[2] else "Unknown Category"
                 meter_subcategory = row[3] if row[3] else "Unknown Subcategory"
                 meter_name = row[4] if row[4] else "Unknown Meter"
-                cost = Decimal(str(row[5])) if row[5] else Decimal('0')
-                quantity = Decimal(str(row[6])) if len(row) > 6 and row[6] else Decimal('0')
+                cost = safe_decimal(row[5] if len(row) > 5 else None)
+                quantity = safe_decimal(row[6] if len(row) > 6 else None)
                 
                 # Extract resource name from resource ID
                 resource_name = resource_id.split('/')[-1] if '/' in resource_id else resource_id

@@ -99,9 +99,20 @@ def test_line_items():
         if line_items:
             print("\nTop 5 Line Items:")
             for item in line_items:
-                print(f"  - {item['resource_name']}: ${item['cost']:.2f} ({item['resource_type']})")
+                resource_name = item.get('resource_name', 'Unknown')
+                cost = item.get('cost', 0)
+                resource_type = item.get('resource_type', 'Unknown')
+                service_name = item.get('service_name', 'Unknown')
+                print(f"  - {resource_name}: ${cost:.2f} ({resource_type} - {service_name})")
+        else:
+            print("No line items found")
     else:
         print(f"Error: {response.text}")
+        try:
+            error_detail = response.json()
+            print(f"Error Detail: {error_detail}")
+        except:
+            pass
 
 def test_user_apportioned_costs():
     """Test getting user apportioned costs"""
