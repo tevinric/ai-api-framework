@@ -39,7 +39,7 @@ def async_route(f):
 # Create Agent Endpoint
 @agents_bp.route('/create', methods=['POST'])
 @check_endpoint_access
-@check_balance(cost=1.0)
+@check_balance
 @track_usage
 @async_route
 async def create_agent():
@@ -178,7 +178,7 @@ async def create_agent():
 # Execute Agent Endpoint (Async)
 @agents_bp.route('/execute', methods=['POST'])
 @check_endpoint_access
-@check_balance(cost=5.0)
+@check_balance
 @track_usage
 @async_route
 async def execute_agent():
@@ -457,7 +457,7 @@ async def list_agents():
 # Create Custom Agent Endpoint
 @agents_bp.route('/custom/create', methods=['POST'])
 @check_endpoint_access
-@check_balance(cost=2.0)
+@check_balance
 @track_usage
 @async_route
 async def create_custom_agent():
@@ -635,7 +635,7 @@ def get_agent_templates():
 # Create Workflow Endpoint
 @agents_bp.route('/workflow/create', methods=['POST'])
 @check_endpoint_access
-@check_balance(cost=3.0)
+@check_balance
 @track_usage
 @async_route
 async def create_workflow():

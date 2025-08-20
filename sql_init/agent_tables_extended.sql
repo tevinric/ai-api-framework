@@ -141,11 +141,11 @@ CREATE TABLE IF NOT EXISTS mcp_servers (
 
 -- Insert default endpoint entries for agent features
 INSERT INTO endpoints (id, endpoint_path, endpoint_name, cost, description, active) 
-SELECT NEWID(), '/agents/create', 'Create Agent', 1.0, 'Create a new AI agent', 1
+SELECT NEWID(), '/agents/create', 'Create Agent', 0.0, 'Create a new AI agent', 1
 WHERE NOT EXISTS (SELECT 1 FROM endpoints WHERE endpoint_path = '/agents/create');
 
 INSERT INTO endpoints (id, endpoint_path, endpoint_name, cost, description, active) 
-SELECT NEWID(), '/agents/execute', 'Execute Agent', 5.0, 'Execute an agent task', 1
+SELECT NEWID(), '/agents/execute', 'Execute Agent', 0.0, 'Execute an agent task', 1
 WHERE NOT EXISTS (SELECT 1 FROM endpoints WHERE endpoint_path = '/agents/execute');
 
 INSERT INTO endpoints (id, endpoint_path, endpoint_name, cost, description, active) 
@@ -157,7 +157,7 @@ SELECT NEWID(), '/agents/list', 'List Agents', 0.0, 'List available agents', 1
 WHERE NOT EXISTS (SELECT 1 FROM endpoints WHERE endpoint_path = '/agents/list');
 
 INSERT INTO endpoints (id, endpoint_path, endpoint_name, cost, description, active) 
-SELECT NEWID(), '/agents/custom/create', 'Create Custom Agent', 2.0, 'Create a custom agent', 1
+SELECT NEWID(), '/agents/custom/create', 'Create Custom Agent', 0.0, 'Create a custom agent', 1
 WHERE NOT EXISTS (SELECT 1 FROM endpoints WHERE endpoint_path = '/agents/custom/create');
 
 INSERT INTO endpoints (id, endpoint_path, endpoint_name, cost, description, active) 
@@ -165,7 +165,7 @@ SELECT NEWID(), '/agents/templates', 'Agent Templates', 0.0, 'Get agent template
 WHERE NOT EXISTS (SELECT 1 FROM endpoints WHERE endpoint_path = '/agents/templates');
 
 INSERT INTO endpoints (id, endpoint_path, endpoint_name, cost, description, active) 
-SELECT NEWID(), '/agents/workflow/create', 'Create Workflow', 3.0, 'Create multi-agent workflow', 1
+SELECT NEWID(), '/agents/workflow/create', 'Create Workflow', 0.0, 'Create multi-agent workflow', 1
 WHERE NOT EXISTS (SELECT 1 FROM endpoints WHERE endpoint_path = '/agents/workflow/create');
 
 INSERT INTO endpoints (id, endpoint_path, endpoint_name, cost, description, active) 
@@ -174,7 +174,7 @@ WHERE NOT EXISTS (SELECT 1 FROM endpoints WHERE endpoint_path = '/agents/tools')
 
 -- Tool Management Endpoints
 INSERT INTO endpoints (id, endpoint_path, endpoint_name, cost, description, active) 
-SELECT NEWID(), '/agents/tools/create', 'Create Custom Tool', 2.0, 'Create a custom tool', 1
+SELECT NEWID(), '/agents/tools/create', 'Create Custom Tool', 0.0, 'Create a custom tool', 1
 WHERE NOT EXISTS (SELECT 1 FROM endpoints WHERE endpoint_path = '/agents/tools/create');
 
 INSERT INTO endpoints (id, endpoint_path, endpoint_name, cost, description, active) 
@@ -186,7 +186,7 @@ SELECT NEWID(), '/agents/tools/get', 'Get Tool Details', 0.0, 'Get tool details'
 WHERE NOT EXISTS (SELECT 1 FROM endpoints WHERE endpoint_path = '/agents/tools/get');
 
 INSERT INTO endpoints (id, endpoint_path, endpoint_name, cost, description, active) 
-SELECT NEWID(), '/agents/tools/update', 'Update Custom Tool', 1.0, 'Update a custom tool', 1
+SELECT NEWID(), '/agents/tools/update', 'Update Custom Tool', 0.0, 'Update a custom tool', 1
 WHERE NOT EXISTS (SELECT 1 FROM endpoints WHERE endpoint_path = '/agents/tools/update');
 
 INSERT INTO endpoints (id, endpoint_path, endpoint_name, cost, description, active) 
@@ -194,77 +194,77 @@ SELECT NEWID(), '/agents/tools/delete', 'Delete Custom Tool', 0.0, 'Delete a cus
 WHERE NOT EXISTS (SELECT 1 FROM endpoints WHERE endpoint_path = '/agents/tools/delete');
 
 INSERT INTO endpoints (id, endpoint_path, endpoint_name, cost, description, active) 
-SELECT NEWID(), '/agents/tools/test', 'Test Custom Tool', 0.5, 'Test a custom tool', 1
+SELECT NEWID(), '/agents/tools/test', 'Test Custom Tool', 0, 'Test a custom tool', 1
 WHERE NOT EXISTS (SELECT 1 FROM endpoints WHERE endpoint_path = '/agents/tools/test');
 
 INSERT INTO endpoints (id, endpoint_path, endpoint_name, cost, description, active) 
 SELECT NEWID(), '/agents/tools/share', 'Share Custom Tool', 0.0, 'Share tool with users', 1
 WHERE NOT EXISTS (SELECT 1 FROM endpoints WHERE endpoint_path = '/agents/tools/share');
 
--- Create view for agent usage analytics
-CREATE OR ALTER VIEW agent_usage_analytics AS
-SELECT 
-    u.user_name,
-    u.user_email,
-    COUNT(DISTINCT ac.agent_id) as total_agents_created,
-    COUNT(DISTINCT at.thread_id) as total_threads,
-    COUNT(ar.run_id) as total_runs,
-    AVG(CASE 
-        WHEN ar.status = 'completed' THEN DATEDIFF(second, ar.created_at, ar.updated_at)
-        ELSE NULL 
-    END) as avg_completion_time_seconds,
-    SUM(CASE WHEN ar.status = 'completed' THEN 1 ELSE 0 END) as successful_runs,
-    SUM(CASE WHEN ar.status = 'failed' THEN 1 ELSE 0 END) as failed_runs,
-    MAX(ar.created_at) as last_activity
-FROM users u
-LEFT JOIN agent_configurations ac ON u.id = ac.owner_id
-LEFT JOIN agent_threads at ON u.id = at.user_id
-LEFT JOIN agent_runs ar ON u.id = ar.user_id
-GROUP BY u.id, u.user_name, u.user_email;
+-- -- Create view for agent usage analytics
+-- CREATE OR ALTER VIEW agent_usage_analytics AS
+-- SELECT 
+--     u.user_name,
+--     u.user_email,
+--     COUNT(DISTINCT ac.agent_id) as total_agents_created,
+--     COUNT(DISTINCT at.thread_id) as total_threads,
+--     COUNT(ar.run_id) as total_runs,
+--     AVG(CASE 
+--         WHEN ar.status = 'completed' THEN DATEDIFF(second, ar.created_at, ar.updated_at)
+--         ELSE NULL 
+--     END) as avg_completion_time_seconds,
+--     SUM(CASE WHEN ar.status = 'completed' THEN 1 ELSE 0 END) as successful_runs,
+--     SUM(CASE WHEN ar.status = 'failed' THEN 1 ELSE 0 END) as failed_runs,
+--     MAX(ar.created_at) as last_activity
+-- FROM users u
+-- LEFT JOIN agent_configurations ac ON u.id = ac.owner_id
+-- LEFT JOIN agent_threads at ON u.id = at.user_id
+-- LEFT JOIN agent_runs ar ON u.id = ar.user_id
+-- GROUP BY u.id, u.user_name, u.user_email;
 
--- Create stored procedure for agent analytics
-CREATE OR ALTER PROCEDURE GetAgentAnalytics
-    @UserId UNIQUEIDENTIFIER = NULL,
-    @StartDate DATETIME2 = NULL,
-    @EndDate DATETIME2 = NULL
-AS
-BEGIN
-    -- Set default date range if not provided
-    IF @StartDate IS NULL
-        SET @StartDate = DATEADD(day, -30, GETUTCDATE());
-    IF @EndDate IS NULL
-        SET @EndDate = GETUTCDATE();
+-- -- Create stored procedure for agent analytics
+-- CREATE OR ALTER PROCEDURE GetAgentAnalytics
+--     @UserId UNIQUEIDENTIFIER = NULL,
+--     @StartDate DATETIME2 = NULL,
+--     @EndDate DATETIME2 = NULL
+-- AS
+-- BEGIN
+--     -- Set default date range if not provided
+--     IF @StartDate IS NULL
+--         SET @StartDate = DATEADD(day, -30, GETUTCDATE());
+--     IF @EndDate IS NULL
+--         SET @EndDate = GETUTCDATE();
     
-    -- Agent usage summary
-    SELECT 
-        COUNT(DISTINCT ac.agent_id) as total_agents,
-        COUNT(DISTINCT at.thread_id) as total_threads,
-        COUNT(ar.run_id) as total_runs,
-        AVG(CASE 
-            WHEN ar.status = 'completed' THEN DATEDIFF(second, ar.created_at, ar.updated_at)
-            ELSE NULL 
-        END) as avg_run_time_seconds,
-        SUM(CASE WHEN ar.status = 'completed' THEN 1 ELSE 0 END) * 100.0 / 
-            NULLIF(COUNT(ar.run_id), 0) as success_rate
-    FROM agent_configurations ac
-    LEFT JOIN agent_threads at ON ac.agent_id = at.agent_id
-    LEFT JOIN agent_runs ar ON at.thread_id = ar.thread_id
-    WHERE (@UserId IS NULL OR ac.owner_id = @UserId)
-    AND ar.created_at BETWEEN @StartDate AND @EndDate;
+--     -- Agent usage summary
+--     SELECT 
+--         COUNT(DISTINCT ac.agent_id) as total_agents,
+--         COUNT(DISTINCT at.thread_id) as total_threads,
+--         COUNT(ar.run_id) as total_runs,
+--         AVG(CASE 
+--             WHEN ar.status = 'completed' THEN DATEDIFF(second, ar.created_at, ar.updated_at)
+--             ELSE NULL 
+--         END) as avg_run_time_seconds,
+--         SUM(CASE WHEN ar.status = 'completed' THEN 1 ELSE 0 END) * 100.0 / 
+--             NULLIF(COUNT(ar.run_id), 0) as success_rate
+--     FROM agent_configurations ac
+--     LEFT JOIN agent_threads at ON ac.agent_id = at.agent_id
+--     LEFT JOIN agent_runs ar ON at.thread_id = ar.thread_id
+--     WHERE (@UserId IS NULL OR ac.owner_id = @UserId)
+--     AND ar.created_at BETWEEN @StartDate AND @EndDate;
     
-    -- Most used agents
-    SELECT TOP 10
-        ac.name as agent_name,
-        ac.model,
-        COUNT(ar.run_id) as usage_count,
-        AVG(CASE 
-            WHEN ar.status = 'completed' THEN DATEDIFF(second, ar.created_at, ar.updated_at)
-            ELSE NULL 
-        END) as avg_execution_time
-    FROM agent_configurations ac
-    JOIN agent_runs ar ON ac.agent_id = ar.agent_id
-    WHERE (@UserId IS NULL OR ac.owner_id = @UserId)
-    AND ar.created_at BETWEEN @StartDate AND @EndDate
-    GROUP BY ac.name, ac.model
-    ORDER BY usage_count DESC;
-END;
+--     -- Most used agents
+--     SELECT TOP 10
+--         ac.name as agent_name,
+--         ac.model,
+--         COUNT(ar.run_id) as usage_count,
+--         AVG(CASE 
+--             WHEN ar.status = 'completed' THEN DATEDIFF(second, ar.created_at, ar.updated_at)
+--             ELSE NULL 
+--         END) as avg_execution_time
+--     FROM agent_configurations ac
+--     JOIN agent_runs ar ON ac.agent_id = ar.agent_id
+--     WHERE (@UserId IS NULL OR ac.owner_id = @UserId)
+--     AND ar.created_at BETWEEN @StartDate AND @EndDate
+--     GROUP BY ac.name, ac.model
+--     ORDER BY usage_count DESC;
+-- END;

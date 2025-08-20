@@ -29,7 +29,7 @@ token_service = TokenService()
 
 @tools_bp.route('/create', methods=['POST'])
 @check_endpoint_access
-@check_balance(cost=2.0)
+@check_balance
 @track_usage
 def create_custom_tool():
     """
@@ -487,7 +487,7 @@ def get_tool_details(tool_name):
 
 @tools_bp.route('/<tool_name>', methods=['PUT'])
 @check_endpoint_access
-@check_balance(cost=1.0)
+@check_balance
 @track_usage
 def update_custom_tool(tool_name):
     """
@@ -738,7 +738,7 @@ def delete_custom_tool(tool_name):
 
 @tools_bp.route('/<tool_name>/test', methods=['POST'])
 @check_endpoint_access
-@check_balance(cost=0.5)
+@check_balance
 @track_usage
 def test_custom_tool(tool_name):
     """
