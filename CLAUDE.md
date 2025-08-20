@@ -1,22 +1,22 @@
 You are given my ai api code base. 
 
-You need to assist me with the apis/speech_services in the following mannnger: 
-
-Current implementation:
-
-1. When a user submits a request to the stt speech services, an async job is created
-2. The log gets addded the the user_usage table to log which user called the service
-3. The backround job then processes the audio file for transcription
-4. Because the log is happeninng at the start when the job is submitted, the length of the audio file in seconds is not being logged. This is a critical piece of information as it will be used for billing. 
-5. Furthermore when the MS speech service completes it is not returning the duration of the processed audio file in seconds. The api response always shows 0 seconds in the value field. 
-
+As an expert python flask api engineer, you are tasked with evaluating the implementation of this current middleware and perform the addition tasks that I ask. 
 
 Your task: 
-1. Ensure that the audio processing api function gets the audio seconds from the processed file and includes this in the api response.
-2. If the MS api returns 0 seconds then use a native library for accurately determining the lenght of the audio file processed. 
-3. The app is deployed to a linux system so ensure that whatever you choose to use is compatiable with linux and must be included in the dockerfile. Please also use something that can be run on a windows system (during development and testing)
-4. you must also ensure that the log gets created ONLY after the audio file is processed so that it has the duration in seconds of the audio file. 
-5. The log must accurately capture the lenght of the audio file. 
 
+1. I want to create agentic apis - i.e apis that allow users to envoke agents using the OpenAI Agents SDK. 
+2. All the llm models will be served through Azure OpenAI. 
+3. You must design this to work within the current implementation of these apis
+4. The agents should be designed to standalone, connect to tools and mcp servers
+5. I want useful business agents that boost productivity for business users
+6. Please allow for plug and play capability of tools and mcp servers
+7. YOU MUST USE openai agents SDK to create and connects agents
+8. I want the users to be able to also create custom agents 
+9. Users should be able to link agents together if they wish 
+10. Deisgn this solution for an agentic ecosystem
+11. Bear in mind the KONG gateway timeout limitation of 1 minute - SO the APIS should work asynchronously.
+12. You can use the other apis as folders as guides to see how I want my agent apis to work - DO NOT depend on any of them though - Make all the neccessary services functions you need - see apis/utils for how servicefunctions are set up
+13. All apis and agent usage must use the track_usage middleware to log the token usage for agent interactions - This must be logged as per how other apis log and track usage. 
 
-Please make the relevant changes to safely implemnt these fixes in my code base without impacting the rest of the apis
+Please design a working system!
+

@@ -309,3 +309,17 @@ def create_api_response(data, status_code=200):
         response.headers['X-Correlation-ID'] = correlation_id
         
     return response
+
+def get_azure_openai_config():
+    """
+    Get Azure OpenAI configuration for agents
+    
+    Returns:
+        Dictionary with Azure OpenAI configuration
+    """
+    return {
+        'api_key': OPENAI_API_KEY,
+        'endpoint': OPENAI_API_ENDPOINT,
+        'api_version': os.environ.get("AZURE_OPENAI_API_VERSION", "2024-08-01-preview"),
+        'deployment_name': os.environ.get("AZURE_OPENAI_DEPLOYMENT", "gpt-4o")
+    }

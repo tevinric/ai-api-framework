@@ -34,3 +34,4 @@ runnables/env_var_init_dev_gaia.sh
 frontend/node_modules/
 apis/usage_tracking/__pycache__/
 runnables/docker_run.sh
+apis/agents/__pycache__/
