@@ -7,7 +7,7 @@ from flask import Blueprint, jsonify, request, g
 from apis.utils.tokenService import TokenService
 from apis.utils.balanceMiddleware import check_balance
 from apis.utils.usageMiddleware import track_usage
-from apis.utils.rbacMiddleware import check_rbac
+from apis.utils.rbacMiddleware import check_endpoint_access
 from apis.utils.databaseService import DatabaseService
 from apis.agents.tool_registry import tool_registry, ToolDefinition, ToolType
 from apis.agents.dynamic_tool_executor import DynamicToolExecutor
@@ -28,7 +28,7 @@ tools_bp = Blueprint('tools_management', __name__, url_prefix='/agents/tools')
 token_service = TokenService()
 
 @tools_bp.route('/create', methods=['POST'])
-@check_rbac(endpoint_name='tools_create')
+@check_endpoint_access
 @check_balance(cost=2.0)
 @track_usage
 def create_custom_tool():
@@ -196,7 +196,7 @@ def create_custom_tool():
         }), 500
 
 @tools_bp.route('/list', methods=['GET'])
-@check_rbac(endpoint_name='tools_list')
+@check_endpoint_access
 def list_custom_tools():
     """
     List custom tools created by or accessible to the user
@@ -340,7 +340,7 @@ def list_custom_tools():
         }), 500
 
 @tools_bp.route('/<tool_name>', methods=['GET'])
-@check_rbac(endpoint_name='tools_get')
+@check_endpoint_access
 def get_tool_details(tool_name):
     """
     Get detailed information about a specific tool
@@ -486,7 +486,7 @@ def get_tool_details(tool_name):
         }), 500
 
 @tools_bp.route('/<tool_name>', methods=['PUT'])
-@check_rbac(endpoint_name='tools_update')
+@check_endpoint_access
 @check_balance(cost=1.0)
 @track_usage
 def update_custom_tool(tool_name):
@@ -643,7 +643,7 @@ def update_custom_tool(tool_name):
         }), 500
 
 @tools_bp.route('/<tool_name>', methods=['DELETE'])
-@check_rbac(endpoint_name='tools_delete')
+@check_endpoint_access
 @track_usage
 def delete_custom_tool(tool_name):
     """
@@ -737,7 +737,7 @@ def delete_custom_tool(tool_name):
         }), 500
 
 @tools_bp.route('/<tool_name>/test', methods=['POST'])
-@check_rbac(endpoint_name='tools_test')
+@check_endpoint_access
 @check_balance(cost=0.5)
 @track_usage
 def test_custom_tool(tool_name):
@@ -848,7 +848,7 @@ def test_custom_tool(tool_name):
         }), 500
 
 @tools_bp.route('/<tool_name>/share', methods=['POST'])
-@check_rbac(endpoint_name='tools_share')
+@check_endpoint_access
 @track_usage
 def share_tool_with_users(tool_name):
     """

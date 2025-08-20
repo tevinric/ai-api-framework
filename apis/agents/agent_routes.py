@@ -7,7 +7,7 @@ from flask import Blueprint, jsonify, request, g
 from apis.utils.tokenService import TokenService
 from apis.utils.balanceMiddleware import check_balance
 from apis.utils.usageMiddleware import track_usage
-from apis.utils.rbacMiddleware import check_rbac
+from apis.utils.rbacMiddleware import check_endpoint_access
 from apis.agents.agent_manager import AgentManager
 from apis.agents.async_executor import async_executor
 from apis.agents.agent_orchestrator import agent_orchestrator
@@ -38,7 +38,7 @@ def async_route(f):
 
 # Create Agent Endpoint
 @agents_bp.route('/create', methods=['POST'])
-@check_rbac(endpoint_name='agents_create')
+@check_endpoint_access
 @check_balance(cost=1.0)
 @track_usage
 @async_route
@@ -177,7 +177,7 @@ async def create_agent():
 
 # Execute Agent Endpoint (Async)
 @agents_bp.route('/execute', methods=['POST'])
-@check_rbac(endpoint_name='agents_execute')
+@check_endpoint_access
 @check_balance(cost=5.0)
 @track_usage
 @async_route
@@ -298,7 +298,7 @@ async def execute_agent():
 
 # Get Job Status Endpoint
 @agents_bp.route('/status/<job_id>', methods=['GET'])
-@check_rbac(endpoint_name='agents_status')
+@check_endpoint_access
 @async_route
 async def get_job_status(job_id):
     """
@@ -373,7 +373,7 @@ async def get_job_status(job_id):
 
 # List Agents Endpoint
 @agents_bp.route('/list', methods=['GET'])
-@check_rbac(endpoint_name='agents_list')
+@check_endpoint_access
 @async_route
 async def list_agents():
     """
@@ -456,7 +456,7 @@ async def list_agents():
 
 # Create Custom Agent Endpoint
 @agents_bp.route('/custom/create', methods=['POST'])
-@check_rbac(endpoint_name='agents_custom_create')
+@check_endpoint_access
 @check_balance(cost=2.0)
 @track_usage
 @async_route
@@ -574,7 +574,7 @@ async def create_custom_agent():
 
 # Get Agent Templates Endpoint
 @agents_bp.route('/templates', methods=['GET'])
-@check_rbac(endpoint_name='agents_templates')
+@check_endpoint_access
 def get_agent_templates():
     """
     Get available agent templates
@@ -634,7 +634,7 @@ def get_agent_templates():
 
 # Create Workflow Endpoint
 @agents_bp.route('/workflow/create', methods=['POST'])
-@check_rbac(endpoint_name='agents_workflow_create')
+@check_endpoint_access
 @check_balance(cost=3.0)
 @track_usage
 @async_route
@@ -746,7 +746,7 @@ async def create_workflow():
 
 # Get Available Tools Endpoint
 @agents_bp.route('/tools', methods=['GET'])
-@check_rbac(endpoint_name='agents_tools')
+@check_endpoint_access
 def get_available_tools():
     """
     Get tools available to the user
