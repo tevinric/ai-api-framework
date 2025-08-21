@@ -70,6 +70,7 @@ Lets start simple:
 
 First create the api for creating a simple agent. 
 Also create an api for create a tool that gets registered in the DB so that the agent(s) can access the tool by specifying the tool name. 
+Remember that the agents apis will require aync operation as they may take long to process and return a result. So consider this when processing requests for agents.
 
 
 Add these to the apis/agents folder and keep a markdown file with instrcutions for how to use each api. 
