@@ -386,8 +386,7 @@ def register_context_get_routes(app):
     """Register context retrieval routes with the Flask app"""
     from apis.utils.logMiddleware import api_logger
     from apis.utils.balanceMiddleware import check_balance
-    from apis.utils.usageMiddleware import track_usage
     from apis.utils.rbacMiddleware import check_endpoint_access
     
-    app.route('/context', methods=['GET'])(track_usage(api_logger(check_endpoint_access(check_balance(get_context_route)))))
-    app.route('/context/list', methods=['GET'])(track_usage(api_logger(check_endpoint_access(check_balance(list_contexts_route)))))
+    app.route('/context', methods=['GET'])(api_logger(check_endpoint_access(check_balance(get_context_route))))
+    app.route('/context/list', methods=['GET'])(api_logger(check_endpoint_access(check_balance(list_contexts_route))))

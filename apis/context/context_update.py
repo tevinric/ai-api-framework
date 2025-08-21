@@ -257,7 +257,6 @@ def register_context_update_routes(app):
     """Register context update route with the Flask app"""
     from apis.utils.logMiddleware import api_logger
     from apis.utils.balanceMiddleware import check_balance
-    from apis.utils.usageMiddleware import track_usage
     from apis.utils.rbacMiddleware import check_endpoint_access
     
-    app.route('/context', methods=['PUT'])(track_usage(api_logger(check_endpoint_access(check_balance(update_context_route)))))
+    app.route('/context', methods=['PUT'])(api_logger(check_endpoint_access(check_balance(update_context_route))))

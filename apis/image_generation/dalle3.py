@@ -20,7 +20,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Default deployment model for image generation
-DEFAULT_IMAGE_DEPLOYMENT = 'dall-e-3'  # Options: 'dalle3', 'dalle3-hd'
+DEFAULT_IMAGE_DEPLOYMENT = 'dall-e-3'
 
 # Azure Blob Storage container for images
 BLOB_CONTAINER_NAME = IMAGE_GENERATION_CONTAINER
@@ -54,11 +54,6 @@ def custom_image_generation_route():
             prompt:
               type: string
               description: Text prompt describing the image to generate
-            deployment:
-              type: string
-              enum: [dall-e-3, dalle3-hd]
-              default: dall-e-3
-              description: The DALLE-3 model deployment to use
             size:
               type: string
               enum: [1024x1024, 1792x1024, 1024x1792]
@@ -89,7 +84,6 @@ def custom_image_generation_route():
           -H "Content-Type: application/json" \\
           -d '{
             "prompt": "A futuristic city with flying cars and tall glass buildings",
-            "deployment": "dall-e-3",
             "size": "1024x1024",
             "quality": "standard",
             "style": "vivid"
@@ -126,8 +120,8 @@ def custom_image_generation_route():
               description: Email of the authenticated user
             model:
               type: string
-              description: The model deployment used
-              enum: [dall-e-3, dalle3-hd]
+              description: The model used based on quality
+              enum: [dalle3, dalle3-hd]
       400:
         description: Bad request - Missing required fields or invalid parameter values
         schema:
@@ -234,18 +228,9 @@ def custom_image_generation_route():
     
     # Extract parameters with defaults
     prompt = data.get('prompt', '')
-    deployment = data.get('deployment', DEFAULT_IMAGE_DEPLOYMENT)
     size = data.get('size', '1024x1024')
     quality = data.get('quality', 'standard')
     style = data.get('style', 'vivid')
-    
-    # Validate deployment option
-    valid_deployments = ['dall-e-3', 'dalle3-hd']
-    if deployment not in valid_deployments:
-        return create_api_response({
-            "response": "400",
-            "message": f"Invalid deployment. Must be one of: {', '.join(valid_deployments)}"
-        }, 400)
     
     # Validate size option
     valid_sizes = ['1024x1024', '1792x1024', '1024x1792']
@@ -273,7 +258,7 @@ def custom_image_generation_route():
     
     try:
         # Log API usage
-        logger.info(f"Image Generation API called by user: {user_id}, deployment: {deployment}, quality: {quality}")
+        logger.info(f"Image Generation API called by user: {user_id}, quality: {quality}")
         
         # Use the consolidated dalle3_service function
         response = dalle3_service(
@@ -281,7 +266,7 @@ def custom_image_generation_route():
             size=size,
             quality=quality,
             style=style,
-            deployment=deployment
+            deployment=DEFAULT_IMAGE_DEPLOYMENT
         )
         
         # Check if the service call was successful
@@ -294,9 +279,11 @@ def custom_image_generation_route():
         
         # Extract response data
         b64_image = response["b64_image"]
-        model_used = response["model"]
         client_used = response["client_used"]
         quality_used = response["quality"]
+        
+        # Determine model name based on quality for usage tracking
+        model_for_usage = "dalle3-hd" if quality_used == "hd" else "dalle3"
         
         # Convert base64 to binary
         import base64
@@ -343,7 +330,7 @@ def custom_image_generation_route():
             "user_id": user_details["id"],
             "user_name": user_details["user_name"],
             "user_email": user_details["user_email"],
-            "model": model_used,
+            "model": model_for_usage,
             "client_used": client_used,
             "quality": quality_used
         }, 200)

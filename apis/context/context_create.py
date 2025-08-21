@@ -163,7 +163,7 @@ def create_context_route():
             "error": "Bad Request",
             "message": "Either content or file_ids must be provided"
         }, 400)
-    
+ 
     try:
         # Create context
         context_info, error = ContextService.create_context(
@@ -194,7 +194,6 @@ def register_context_create_routes(app):
     """Register context creation route with the Flask app"""
     from apis.utils.logMiddleware import api_logger
     from apis.utils.balanceMiddleware import check_balance
-    from apis.utils.usageMiddleware import track_usage
     from apis.utils.rbacMiddleware import check_endpoint_access
     
-    app.route('/context', methods=['POST'])(track_usage(api_logger(check_endpoint_access(check_balance(create_context_route)))))
+    app.route('/context', methods=['POST'])(api_logger(check_endpoint_access(check_balance(create_context_route))))

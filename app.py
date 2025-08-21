@@ -291,6 +291,13 @@ register_image_generation_routes(app)
 from apis.image_generation.stable_diffusion_ultra import register_stable_diffusion_ultra_routes
 register_stable_diffusion_ultra_routes(app)
 
+from apis.image_generation.flux_1_1_pro import register_flux_image_generation_routes
+register_flux_image_generation_routes(app)
+
+from apis.image_generation.flux_1_kontext_pro import register_flux_kontext_image_generation_routes
+register_flux_kontext_image_generation_routes(app)
+
+
 # FILE MANAGEMENT ENDPOINTS
 from apis.file_upload.upload_file import register_file_upload_routes
 register_file_upload_routes(app)
@@ -350,6 +357,8 @@ register_nlp_routes(app)
 # CONTEXT MANAGEMENT ENDPOINTS
 from apis.context import register_context_routes
 register_context_routes(app)
+from apis.context.get_context_data import register_get_context_data_routes
+register_get_context_data_routes(app)
 
 # USAGE TRACKING ENDPOINTS
 from apis.usage_tracking.usage_analytics import register_usage_tracking_routes
@@ -357,4 +366,4 @@ register_usage_tracking_routes(app)
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)

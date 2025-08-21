@@ -51,6 +51,7 @@ class ContextService:
             if content:
                 context_content += content + "\n\n"
             
+            
             # Process files if any
             file_processing_errors = []
             if files and isinstance(files, list) and len(files) > 0:

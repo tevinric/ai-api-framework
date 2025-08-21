@@ -1,30 +1,29 @@
-# apis/context/context_delete.py
-from flask import jsonify, request, g, make_response
-from apis.utils.tokenService import TokenService
+from flask import jsonify, request, g
 from apis.utils.databaseService import DatabaseService
 from apis.utils.logMiddleware import api_logger
+from apis.utils.config import create_api_response
 from apis.context.context_service import ContextService
 import logging
 import pytz
 from datetime import datetime
 
-# Configure logging
+# CONFIGURE LOGGING
 logger = logging.getLogger(__name__)
 
-from apis.utils.config import create_api_response
-
-def delete_context_route():
+def get_context_data_route():
     """
-    Delete a context file
+    Retrieve the text content of a context file by context ID
     ---
     tags:
       - Context
+    summary: Get context file text content
+    description: Retrieves the text content of a context file to allow users to see what the context file contains before making updates. Returns the full text content along with metadata.
     parameters:
       - name: X-Token
         in: header
         type: string
         required: true
-        description: Authentication token
+        description: Valid token for authentication
       - name: X-Correlation-ID
         in: header
         type: string
@@ -34,21 +33,47 @@ def delete_context_route():
         in: query
         type: string
         required: true
-        description: ID of the context to delete
+        description: Unique context identifier
     produces:
       - application/json
     responses:
       200:
-        description: Context deleted successfully
+        description: Context data retrieved successfully
         schema:
           type: object
           properties:
-            message:
-              type: string
-              example: "Context deleted successfully"
             context_id:
               type: string
               example: "12345678-1234-1234-1234-123456789012"
+            context_name:
+              type: string
+              example: "Project Documentation Context"
+            context_description:
+              type: string
+              example: "Context containing project documentation and guidelines"
+            context_text:
+              type: string
+              example: "This is the full text content of the context file..."
+            created_date:
+              type: string
+              format: date-time
+              example: "2024-03-16T10:30:45+02:00"
+            updated_date:
+              type: string
+              format: date-time
+              example: "2024-03-16T15:45:30+02:00"
+            file_size:
+              type: integer
+              example: 2048
+              description: Size of the context file in bytes
+            owner_id:
+              type: string
+              example: "12345678-1234-1234-1234-123456789012"
+              description: ID of the user who owns this context
+            owner_name:
+              type: string
+              example: "John Doe"
+              description: Name of the user who owns this context
       400:
         description: Bad request
         schema:
@@ -56,10 +81,10 @@ def delete_context_route():
           properties:
             error:
               type: string
-              example: "Bad Request"
+              example: Bad Request
             message:
               type: string
-              example: "Missing required parameter: context_id"
+              example: context_id is required as a query parameter
       401:
         description: Authentication error
         schema:
@@ -67,10 +92,13 @@ def delete_context_route():
           properties:
             error:
               type: string
-              example: "Authentication Error"
+              example: Authentication Error
             message:
               type: string
-              example: "Token has expired"
+              enum:
+                - Missing X-Token header
+                - Invalid token
+                - Token has expired
       403:
         description: Forbidden
         schema:
@@ -78,21 +106,21 @@ def delete_context_route():
           properties:
             error:
               type: string
-              example: "Forbidden"
+              example: Forbidden
             message:
               type: string
-              example: "You don't have permission to delete this context"
+              example: You don't have permission to access this context
       404:
-        description: Not found
+        description: Context not found
         schema:
           type: object
           properties:
             error:
               type: string
-              example: "Not Found"
+              example: Not Found
             message:
               type: string
-              example: "Context not found"
+              example: Context with ID 12345678-1234-1234-1234-123456789012 not found
       500:
         description: Server error
         schema:
@@ -100,10 +128,10 @@ def delete_context_route():
           properties:
             error:
               type: string
-              example: "Server Error"
+              example: Server Error
             message:
               type: string
-              example: "Error deleting context"
+              example: Error retrieving context data
     """
     # Get token from X-Token header
     token = request.headers.get('X-Token')
@@ -113,18 +141,14 @@ def delete_context_route():
             "message": "Missing X-Token header"
         }, 401)
     
-    # Validate token from database
+    # Validate token and get token details
     token_details = DatabaseService.get_token_details_by_value(token)
     if not token_details:
         return create_api_response({
             "error": "Authentication Error",
-            "message": "Invalid token - not found in database"
+            "message": "Invalid token"
         }, 401)
-    
-    # Store token ID and user ID in g for logging and balance check
-    g.token_id = token_details["id"]
-    g.user_id = token_details["user_id"]
-    
+        
     # Check if token is expired
     now = datetime.now(pytz.UTC)
     expiration_time = token_details["token_expiration_time"]
@@ -139,20 +163,24 @@ def delete_context_route():
             "error": "Authentication Error",
             "message": "Token has expired"
         }, 401)
+        
+    g.user_id = token_details["user_id"]
+    g.token_id = token_details["id"]
     
     # Get context_id from query parameter
     context_id = request.args.get('context_id')
     if not context_id:
         return create_api_response({
             "error": "Bad Request",
-            "message": "Missing required parameter: context_id"
+            "message": "context_id is required as a query parameter"
         }, 400)
     
     try:
-        # Delete context
-        success, error = ContextService.delete_context(
+        # Get context data using ContextService (includes content)
+        context_data, error = ContextService.get_context(
             context_id=context_id,
-            user_id=g.user_id
+            user_id=g.user_id,
+            metadata_only=False  # We want the full content
         )
         
         if error:
@@ -172,22 +200,29 @@ def delete_context_route():
                     "message": error
                 }, 500)
         
-        # Return success
-        return create_api_response({
-            "message": "Context deleted successfully",
-            "context_id": context_id
-        }, 200)
+        # Prepare response data with the content
+        response_data = {
+            "context_id": context_data.get('context_id'),
+            "context_name": context_data.get('name', ''),
+            "context_description": context_data.get('description', ''),
+            "context_text": context_data.get('content', ''),
+            "created_date": context_data.get('created_at'),
+            "updated_date": context_data.get('modified_at'),
+            "file_size": context_data.get('file_size', 0),
+            "owner_id": context_data.get('owner_id'),
+            "owner_name": context_data.get('owner_name', 'Unknown')
+        }
+        
+        return create_api_response(response_data, 200)
         
     except Exception as e:
-        logger.error(f"Error deleting context: {str(e)}")
+        logger.error(f"Error retrieving context data: {str(e)}")
         return create_api_response({
             "error": "Server Error",
-            "message": f"Error deleting context: {str(e)}"
+            "message": f"Error retrieving context data: {str(e)}"
         }, 500)
 
-def register_context_delete_routes(app):
-    """Register context deletion route with the Flask app"""
-    from apis.utils.logMiddleware import api_logger
+def register_get_context_data_routes(app):
+    """Register context data retrieval routes with the Flask app"""
     from apis.utils.rbacMiddleware import check_endpoint_access
-    
-    app.route('/context', methods=['DELETE'])(api_logger(check_endpoint_access(delete_context_route)))
+    app.route('/context/data', methods=['GET'])(api_logger(check_endpoint_access(get_context_data_route)))

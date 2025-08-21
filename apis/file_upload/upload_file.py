@@ -224,7 +224,8 @@ def upload_file_route():
         
         return create_api_response({
             "message": "Files uploaded successfully",
-            "uploaded_files": uploaded_files
+            "uploaded_files": uploaded_files,
+            "model": "file-upload"
         }, 200)
         
     except Exception as e:
