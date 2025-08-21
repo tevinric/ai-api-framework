@@ -794,16 +794,7 @@ if __name__ == "__main__":
     Contact Precious Molefe or Blessing Nkosi for details.
     
     Security Credentials:
-    password: MySecretPass123!
-    api_key: sk_live_4242424242424242424242
-    AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
-    AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
-    github_token: ghp_1234567890abcdefghijklmnopqrstuvwxyz
-    database: mongodb://admin:password123@localhost:27017/mydb
-    Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
-    client_secret: 6L3v3ryS3cr3tK3yF0rMyApp
-    stripe_key: sk_test_4eC39HqLyjWDarjtT1zdp7dc
-    AZURE_API_KEY=abc123def456ghi789jkl012mno345pqr678
+
     """
     
     redacted = redact_pii(test_text)
