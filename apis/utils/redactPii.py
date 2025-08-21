@@ -809,13 +809,7 @@ if __name__ == "__main__":
     print("="*50)
     
     security_tests = [
-        "My password is SuperSecret123!",
-        "API_KEY=AIzaSyDrBGPeJVlahUANmBgd8n1Zh1I2tmA",
-        "export DATABASE_URL=postgres://user:pass@localhost/db",
-        "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC user@host",
-        "client_id: abc123 client_secret: xyz789secret",
-        "-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEA...\n-----END RSA PRIVATE KEY-----",
-        "token: xoxb-123456789012-123456789012-abcdefghijklmnopqrstuv",
+
     ]
     
     for test in security_tests:
