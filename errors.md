@@ -1,22 +1,56 @@
-$ python app.py
-INFO:apis.app_init:Initializing application components...
-INFO:apis.utils.job_scheduler:Job scheduler thread started
-INFO:apis.utils.job_scheduler:Job scheduler started
-INFO:apis.app_init:Job scheduler initialized
-INFO:apis.app_init:Application initialization complete
-INFO:apis.agents.tool_registry:Registered tool: web_search
-INFO:apis.agents.tool_registry:Registered tool: database_query
-INFO:apis.agents.tool_registry:Registered tool: calculator
-INFO:apis.agents.tool_registry:Registered tool: send_email
-INFO:apis.agents.tool_registry:Registered tool: data_analysis
-INFO:apis.agents.tool_registry:Registered tool: document_generator
-INFO:apis.agents.tool_registry:Registered tool: calendar_manager
-INFO:apis.agents.tool_registry:Registered tool: task_manager
-ERROR:apis.agents.tool_registry:Error loading custom tools: ('42S02', "[42S02] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Invalid object name 'custom_tools'. (208) (SQLExecDirectW)")
-Traceback (most recent call last):
-  File "C:\Users\E100545\Git\ai-api-framework\app.py", line 361, in <module>
-    from apis.agents.agent_routes import agents_bp
-  File "C:\Users\E100545\Git\ai-api-framework\apis\agents\agent_routes.py", line 42, in <module>
-    @check_balance(cost=1.0)
-     ^^^^^^^^^^^^^^^^^^^^^^^
-TypeError: check_balance() got an unexpected keyword argument 'cost'
+{
+    "message": "Failed to create agent: Error code: 424 - {'error': {'message': 'Invalid URL (POST /v1/assistants)', 'type': 'invalid_request_error', 'param': None, 'code': None}}",
+    "response": "500"
+}
+
+
+
+from openai import AsyncAzureOpenAI
+from agents import set_default_openai_client, function_tool
+from dotenv import load_dotenv
+import os
+
+# Load environment variables
+load_dotenv(override=True)
+
+# Create OpenAI client using Azure OpenAI
+openai_client = AsyncAzureOpenAI(
+    api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+    api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
+    azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+    azure_deployment="gpt-4o-mini"
+)
+
+# Set the default OpenAI client for the Agents SDK
+set_default_openai_client(openai_client)
+
+@function_tool()
+async def get_datetime() -> str:
+    """Get the current date and time."""
+    from datetime import datetime
+    return datetime.now().isoformat()
+
+from agents import Agent, OpenAIChatCompletionsModel
+from openai.types.chat import ChatCompletionMessageParam
+
+# Create a banking assistant agent
+banking_assistant = Agent(
+    name="Banking Assistant",
+    instructions="You are a helpful banking assistant. Be concise and professional.",
+    model=OpenAIChatCompletionsModel(
+            model="gpt-4o-mini", # This will use the deployment specified in your Azure OpenAI/APIM client
+            openai_client=openai_client,
+        ),
+    tools=[get_datetime]  # A function tool defined elsewhere
+)
+
+from agents import Runner
+import asyncio
+
+# Run the banking assistant
+result = await Runner.run(
+    banking_assistant, 
+    input="What is the current time?"
+)
+
+print(result.final_output)
