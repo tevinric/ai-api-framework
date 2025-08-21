@@ -357,11 +357,6 @@ from apis.usage_tracking.cost_management import register_cost_management_routes
 register_usage_tracking_routes(app)
 register_cost_management_routes(app)
 
-# AGENT ENDPOINTS
-from apis.agents.agent_routes import agents_bp
-from apis.agents.tool_management_routes import tools_bp
-app.register_blueprint(agents_bp)
-app.register_blueprint(tools_bp)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run()
