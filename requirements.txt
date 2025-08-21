@@ -30,4 +30,4 @@ openpyxl
 asyncio
 azure-identity
 azure-mgmt-costmanagement
-openai>=1.0.0
+spacy
