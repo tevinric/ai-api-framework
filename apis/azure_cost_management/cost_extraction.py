@@ -370,33 +370,23 @@ class AzureCostManagementService:
             all_costs = self.get_subscription_costs(start_date=start_date, end_date=end_date)
             return self._filter_ai_costs_from_all(all_costs, subscription_id, start_date, end_date)
         
-        # Enhanced query for detailed meter-level AI services data matching Azure portal
+        # Query for individual meter entries (no aggregation) to match Azure portal detail
         query_body = {
-            "type": "Usage",
+            "type": "ActualCost",  # Use ActualCost instead of Usage for meter details
             "timeframe": "Custom",
             "timePeriod": {
                 "from": start_date,
                 "to": end_date
             },
             "dataset": {
-                "granularity": "None",  # Get all data without daily granularity for meter detail
-                "aggregation": {
-                    "totalCost": {
-                        "name": "PreTaxCost",
-                        "function": "Sum"
-                    },
-                    "totalCostUSD": {
-                        "name": "PreTaxCostUSD",
-                        "function": "Sum"
-                    }
-                },
+                "granularity": "None",  # No time granularity - get all individual records
                 "grouping": [
                     {
                         "type": "Dimension",
-                        "name": "ResourceGroup"
+                        "name": "ResourceGroupName"
                     },
                     {
-                        "type": "Dimension",
+                        "type": "Dimension", 
                         "name": "ResourceId"
                     },
                     {
@@ -414,6 +404,10 @@ class AzureCostManagementService:
                     {
                         "type": "Dimension",
                         "name": "ResourceType"
+                    },
+                    {
+                        "type": "Dimension",
+                        "name": "UsageDate"
                     }
                 ],
                 "filter": {
@@ -433,7 +427,7 @@ class AzureCostManagementService:
                         },
                         {
                             "dimensions": {
-                                "name": "MeterCategory",
+                                "name": "MeterCategory", 
                                 "operator": "In",
                                 "values": [
                                     "Cognitive Services",
@@ -507,20 +501,26 @@ class AzureCostManagementService:
         
         for row in rows:
             try:
-                # Extract all available fields based on column map
-                cost = row[column_map.get('PreTaxCost', 0)] or 0
-                cost_usd = row[column_map.get('PreTaxCostUSD', 1)] or 0
-                resource_group = row[column_map.get('ResourceGroup', 2)] or 'Unknown'
+                # Extract fields from ActualCost query - different column structure
+                # ActualCost provides individual cost records, not aggregated usage
+                cost = row[column_map.get('Cost', 0)] or row[column_map.get('PreTaxCost', 0)] or 0
+                cost_usd = row[column_map.get('CostUSD', 1)] or row[column_map.get('PreTaxCostUSD', 1)] or cost
+                
+                # Handle different resource group column names
+                resource_group = (row[column_map.get('ResourceGroupName', 2)] or 
+                                row[column_map.get('ResourceGroup', 2)] or 'Unknown')
+                
                 resource_id = row[column_map.get('ResourceId', 3)] or 'Unknown'
                 service_name = row[column_map.get('ServiceName', 4)] or 'Unknown'
                 meter_name = row[column_map.get('MeterName', 5)] or 'Unknown'
                 meter_category = row[column_map.get('MeterCategory', 6)] or 'Unknown'
                 resource_type = row[column_map.get('ResourceType', 7)] if 'ResourceType' in column_map else 'Unknown'
+                usage_date = row[column_map.get('UsageDate', 8)] if 'UsageDate' in column_map else 'Unknown'
                 
-                # Optional fields
+                # Optional fields that may be available in ActualCost
                 meter_subcategory = row[column_map.get('MeterSubCategory')] if 'MeterSubCategory' in column_map else 'Unknown'
                 unit_of_measure = row[column_map.get('UnitOfMeasure')] if 'UnitOfMeasure' in column_map else 'Unknown'
-                usage_quantity = row[column_map.get('UsageQuantity')] if 'UsageQuantity' in column_map else 0
+                usage_quantity = row[column_map.get('Quantity')] or row[column_map.get('UsageQuantity')] if 'Quantity' in column_map or 'UsageQuantity' in column_map else 0
                 
                 # Skip if cost is zero or negligible
                 if cost_usd < 0.001:
@@ -565,7 +565,7 @@ class AzureCostManagementService:
                         'meters': []
                     }
                 
-                # Create detailed meter entry (matching Azure portal exactly)
+                # Create detailed meter entry (individual cost record like portal)
                 meter_detail = {
                     'meter_name': meter_name,
                     'meter_category': meter_category,
@@ -573,7 +573,8 @@ class AzureCostManagementService:
                     'usage_quantity': usage_quantity,
                     'unit_of_measure': unit_of_measure,
                     'cost': round(cost, 2),
-                    'cost_usd': round(cost_usd, 2)
+                    'cost_usd': round(cost_usd, 2),
+                    'usage_date': usage_date
                 }
                 
                 # Parse model and token information from meter name
