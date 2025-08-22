@@ -19,10 +19,29 @@ class AzureCostManagementService:
         self.tenant_id = os.getenv('AZURE_TENANT_ID')
         self.client_id = os.getenv('AZURE_CLIENT_ID')
         self.client_secret = os.getenv('AZURE_CLIENT_SECRET')
+        self.subscription_id = os.getenv('AZURE_SUBSCRIPTION_ID')
         self.base_url = "https://management.azure.com"
-        self.api_version = "2025-03-01"
+        self.api_version = "2023-11-01"  # Use stable API version
         self.access_token = None
         self.token_expiry = None
+        
+        # Validate required credentials
+        self._validate_credentials()
+    
+    def _validate_credentials(self):
+        """Validate that all required Azure credentials are present"""
+        missing_vars = []
+        if not self.tenant_id:
+            missing_vars.append('AZURE_TENANT_ID')
+        if not self.client_id:
+            missing_vars.append('AZURE_CLIENT_ID')
+        if not self.client_secret:
+            missing_vars.append('AZURE_CLIENT_SECRET')
+        if not self.subscription_id:
+            missing_vars.append('AZURE_SUBSCRIPTION_ID')
+        
+        if missing_vars:
+            raise ValueError(f"Missing required environment variables: {', '.join(missing_vars)}. Please set these in your .env file.")
     
     def _get_access_token(self) -> str:
         """Get Azure access token using client credentials"""
@@ -52,20 +71,26 @@ class AzureCostManagementService:
             logger.error(f"Failed to get Azure access token: {str(e)}")
             raise
     
-    def get_subscription_costs(self, subscription_id: str, 
+    def get_subscription_costs(self, subscription_id: Optional[str] = None, 
                               start_date: Optional[str] = None, 
                               end_date: Optional[str] = None) -> Dict:
         """
         Get hierarchical cost breakdown for a subscription
         
         Args:
-            subscription_id: Azure subscription ID
+            subscription_id: Azure subscription ID (uses env var if not provided)
             start_date: Start date in YYYY-MM-DD format (defaults to 30 days ago)
             end_date: End date in YYYY-MM-DD format (defaults to today)
         
         Returns:
             Hierarchical cost breakdown dictionary
         """
+        # Use subscription ID from environment if not provided
+        if not subscription_id:
+            subscription_id = self.subscription_id
+        
+        if not subscription_id:
+            raise ValueError("No subscription ID provided and AZURE_SUBSCRIPTION_ID not set in environment")
         if not start_date:
             start_date = (datetime.utcnow() - timedelta(days=30)).strftime('%Y-%m-%d')
         if not end_date:
@@ -279,8 +304,8 @@ def get_azure_costs_route():
       - name: subscription_id
         in: query
         type: string
-        required: true
-        description: Azure subscription ID
+        required: false
+        description: Azure subscription ID (uses AZURE_SUBSCRIPTION_ID env var if not provided)
       - name: start_date
         in: query
         type: string
@@ -362,10 +387,15 @@ def get_azure_costs_route():
         
         # Get request parameters
         subscription_id = request.args.get('subscription_id')
+        
+        # Try to get subscription ID from environment if not provided
+        if not subscription_id:
+            subscription_id = os.getenv('AZURE_SUBSCRIPTION_ID')
+        
         if not subscription_id:
             return create_api_response({
                 "error": "Bad Request",
-                "message": "Missing required parameter: subscription_id"
+                "message": "Missing subscription_id parameter and AZURE_SUBSCRIPTION_ID not set in environment"
             }, 400)
         
         start_date = request.args.get('start_date')
@@ -416,6 +446,12 @@ def get_azure_costs_route():
         
         return create_api_response(cost_data, 200)
         
+    except ValueError as e:
+        logger.error(f"Configuration error in get_azure_costs_route: {str(e)}")
+        return create_api_response({
+            "error": "Configuration Error",
+            "message": str(e)
+        }, 400)
     except Exception as e:
         logger.error(f"Error in get_azure_costs_route: {str(e)}")
         return create_api_response({
@@ -439,8 +475,8 @@ def get_azure_cost_summary_route():
       - name: subscription_id
         in: query
         type: string
-        required: true
-        description: Azure subscription ID
+        required: false
+        description: Azure subscription ID (uses AZURE_SUBSCRIPTION_ID env var if not provided)
       - name: days
         in: query
         type: integer
@@ -513,10 +549,15 @@ def get_azure_cost_summary_route():
         
         # Get request parameters
         subscription_id = request.args.get('subscription_id')
+        
+        # Try to get subscription ID from environment if not provided
+        if not subscription_id:
+            subscription_id = os.getenv('AZURE_SUBSCRIPTION_ID')
+        
         if not subscription_id:
             return create_api_response({
                 "error": "Bad Request",
-                "message": "Missing required parameter: subscription_id"
+                "message": "Missing subscription_id parameter and AZURE_SUBSCRIPTION_ID not set in environment"
             }, 400)
         
         days = int(request.args.get('days', 30))
@@ -590,6 +631,12 @@ def get_azure_cost_summary_route():
         
         return create_api_response(summary, 200)
         
+    except ValueError as e:
+        logger.error(f"Configuration error in get_azure_cost_summary_route: {str(e)}")
+        return create_api_response({
+            "error": "Configuration Error",
+            "message": str(e)
+        }, 400)
     except Exception as e:
         logger.error(f"Error in get_azure_cost_summary_route: {str(e)}")
         return create_api_response({
