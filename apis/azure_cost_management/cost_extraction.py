@@ -334,7 +334,7 @@ class AzureCostManagementService:
         return self.get_subscription_costs(start_date=start_date, end_date=end_date)
     
     def get_ai_service_costs(self, start_date: Optional[str] = None, 
-                            end_date: Optional[str] = None) -> Dict:
+                            end_date: Optional[str] = None, use_fallback: bool = False) -> Dict:
         """
         Get detailed AI/ML/Cognitive Services costs with token-level breakdown
         
@@ -364,7 +364,13 @@ class AzureCostManagementService:
             'Content-Type': 'application/json'
         }
         
-        # Specialized query for AI services with meter details
+        if use_fallback:
+            # Fallback: Get all costs and filter client-side
+            logger.info("Using fallback method - getting all costs and filtering client-side")
+            all_costs = self.get_subscription_costs(start_date=start_date, end_date=end_date)
+            return self._filter_ai_costs_from_all(all_costs, subscription_id, start_date, end_date)
+        
+        # Simplified query for AI services - start with basic structure and add AI filtering
         query_body = {
             "type": "Usage",
             "timeframe": "Custom",
@@ -381,10 +387,6 @@ class AzureCostManagementService:
                     },
                     "totalCostUSD": {
                         "name": "PreTaxCostUSD",
-                        "function": "Sum"
-                    },
-                    "usageQuantity": {
-                        "name": "UsageQuantity",
                         "function": "Sum"
                     }
                 },
@@ -404,44 +406,19 @@ class AzureCostManagementService:
                     {
                         "type": "Dimension",
                         "name": "MeterCategory"
-                    },
-                    {
-                        "type": "Dimension",
-                        "name": "MeterSubCategory"
-                    },
-                    {
-                        "type": "Dimension",
-                        "name": "UnitOfMeasure"
                     }
                 ],
                 "filter": {
-                    "or": [
-                        {
-                            "dimensions": {
-                                "name": "ServiceName",
-                                "operator": "In",
-                                "values": [
-                                    "Cognitive Services",
-                                    "Azure OpenAI",
-                                    "Azure Machine Learning",
-                                    "Azure Databricks",
-                                    "Azure Cognitive Search"
-                                ]
-                            }
-                        },
-                        {
-                            "dimensions": {
-                                "name": "MeterCategory",
-                                "operator": "In",
-                                "values": [
-                                    "Cognitive Services",
-                                    "Azure OpenAI Service",
-                                    "Machine Learning",
-                                    "Azure Applied AI Services"
-                                ]
-                            }
-                        }
-                    ]
+                    "dimensions": {
+                        "name": "ServiceName",
+                        "operator": "In",
+                        "values": [
+                            "Cognitive Services",
+                            "Azure OpenAI",
+                            "Azure Machine Learning",
+                            "Azure Cognitive Search"
+                        ]
+                    }
                 }
             }
         }
@@ -456,7 +433,10 @@ class AzureCostManagementService:
             return self._format_ai_costs_response(response.json(), subscription_id, start_date, end_date)
         except requests.exceptions.HTTPError as e:
             logger.error(f"HTTP error getting AI service costs: {str(e)}")
-            if response.status_code == 401:
+            if response.status_code == 400 and not use_fallback:
+                logger.info("Trying fallback method without filters...")
+                return self.get_ai_service_costs(start_date, end_date, use_fallback=True)
+            elif response.status_code == 401:
                 raise Exception("Authentication failed. Please check Azure credentials.")
             elif response.status_code == 403:
                 raise Exception("Access denied. Please check permissions for Cost Management API.")
@@ -500,14 +480,16 @@ class AzureCostManagementService:
         for row in rows:
             try:
                 cost = row[column_map.get('PreTaxCost', 0)] or 0
-                cost_usd = row[column_map.get('PreTaxCostUSD', 0)] or 0
-                usage_quantity = row[column_map.get('UsageQuantity', 2)] or 0
-                service_name = row[column_map.get('ServiceName', 3)] or 'Unknown'
-                resource_id = row[column_map.get('ResourceId', 4)] or 'Unknown'
-                meter_name = row[column_map.get('MeterName', 5)] or 'Unknown'
-                meter_category = row[column_map.get('MeterCategory', 6)] or 'Unknown'
-                meter_subcategory = row[column_map.get('MeterSubCategory', 7)] or 'Unknown'
-                unit_of_measure = row[column_map.get('UnitOfMeasure', 8)] or 'Unknown'
+                cost_usd = row[column_map.get('PreTaxCostUSD', 1)] or 0
+                service_name = row[column_map.get('ServiceName', 2)] or 'Unknown'
+                resource_id = row[column_map.get('ResourceId', 3)] or 'Unknown'
+                meter_name = row[column_map.get('MeterName', 4)] or 'Unknown'
+                meter_category = row[column_map.get('MeterCategory', 5)] or 'Unknown'
+                
+                # Optional fields that may not be available
+                meter_subcategory = row[column_map.get('MeterSubCategory')] if 'MeterSubCategory' in column_map else 'Unknown'
+                unit_of_measure = row[column_map.get('UnitOfMeasure')] if 'UnitOfMeasure' in column_map else 'Unknown'
+                usage_quantity = row[column_map.get('UsageQuantity')] if 'UsageQuantity' in column_map else 0
                 
                 # Update totals
                 result['total_ai_cost'] += cost
@@ -591,6 +573,127 @@ class AzureCostManagementService:
                 continue
         
         # Sort services and models by cost
+        result['services'] = dict(sorted(
+            result['services'].items(),
+            key=lambda x: x[1]['total_cost_usd'],
+            reverse=True
+        ))
+        
+        result['models'] = dict(sorted(
+            result['models'].items(),
+            key=lambda x: x[1]['total_cost_usd'],
+            reverse=True
+        ))
+        
+        return result
+    
+    def _filter_ai_costs_from_all(self, all_costs: Dict, subscription_id: str, 
+                                 start_date: str, end_date: str) -> Dict:
+        """
+        Filter AI/ML services from standard cost response when direct API filtering fails
+        """
+        result = {
+            "subscription_id": subscription_id,
+            "period": {
+                "from": start_date,
+                "to": end_date
+            },
+            "total_ai_cost": 0,
+            "total_ai_cost_usd": 0,
+            "services": {},
+            "models": {},
+            "metadata": {
+                "queryTime": datetime.utcnow().isoformat(),
+                "rowCount": 0,
+                "fallback_method": True
+            }
+        }
+        
+        # AI service keywords to look for
+        ai_keywords = [
+            'cognitive', 'openai', 'machine learning', 'databricks', 
+            'search', 'ai', 'ml', 'gpt', 'whisper', 'dall-e',
+            'embedding', 'vision', 'speech', 'text analytics'
+        ]
+        
+        # Filter resources that appear to be AI-related
+        if 'subscription' in all_costs and 'resourceGroups' in all_costs['subscription']:
+            for rg_name, rg_data in all_costs['subscription']['resourceGroups'].items():
+                if 'resources' in rg_data:
+                    for resource in rg_data['resources']:
+                        resource_name = resource.get('resourceName', '').lower()
+                        service_name = resource.get('serviceName', '').lower()
+                        resource_type = resource.get('resourceType', '').lower()
+                        
+                        # Check if this looks like an AI service
+                        is_ai_service = any(keyword in resource_name or 
+                                          keyword in service_name or 
+                                          keyword in resource_type 
+                                          for keyword in ai_keywords)
+                        
+                        if is_ai_service:
+                            result['metadata']['rowCount'] += 1
+                            cost = resource.get('cost', 0)
+                            cost_usd = resource.get('costUSD', 0)
+                            
+                            result['total_ai_cost'] += cost
+                            result['total_ai_cost_usd'] += cost_usd
+                            
+                            # Determine service name
+                            if 'openai' in resource_name or 'gpt' in resource_name:
+                                service_name = 'Azure OpenAI'
+                            elif 'cognitive' in resource_name or 'cognitive' in service_name:
+                                service_name = 'Cognitive Services'
+                            elif 'machine learning' in service_name or 'ml' in resource_name:
+                                service_name = 'Azure Machine Learning'
+                            elif 'search' in resource_name:
+                                service_name = 'Azure Cognitive Search'
+                            else:
+                                service_name = resource.get('serviceName', 'AI Services')
+                            
+                            # Initialize service if not exists
+                            if service_name not in result['services']:
+                                result['services'][service_name] = {
+                                    'name': service_name,
+                                    'total_cost': 0,
+                                    'total_cost_usd': 0,
+                                    'resources': {}
+                                }
+                            
+                            result['services'][service_name]['total_cost'] += cost
+                            result['services'][service_name]['total_cost_usd'] += cost_usd
+                            
+                            # Add resource
+                            resource_key = resource.get('resourceName', 'Unknown')
+                            result['services'][service_name]['resources'][resource_key] = {
+                                'name': resource_key,
+                                'resource_id': resource.get('resourceId', ''),
+                                'total_cost': cost,
+                                'total_cost_usd': cost_usd,
+                                'meters': [{
+                                    'meter_name': 'Aggregated Usage',
+                                    'meter_category': service_name,
+                                    'cost': cost,
+                                    'cost_usd': cost_usd
+                                }]
+                            }
+                            
+                            # Try to parse model info from resource name
+                            model_info = self._parse_ai_model_info(resource_name, service_name, '')
+                            if model_info:
+                                model_key = model_info.get('model', 'Unknown')
+                                if model_key not in result['models']:
+                                    result['models'][model_key] = {
+                                        'model': model_key,
+                                        'total_cost': 0,
+                                        'total_cost_usd': 0,
+                                        'usage_breakdown': {}
+                                    }
+                                
+                                result['models'][model_key]['total_cost'] += cost
+                                result['models'][model_key]['total_cost_usd'] += cost_usd
+        
+        # Sort by cost
         result['services'] = dict(sorted(
             result['services'].items(),
             key=lambda x: x[1]['total_cost_usd'],
