@@ -21,9 +21,9 @@ Create a service principal with Cost Management Reader role:
 az ad sp create-for-rbac --name "cost-management-reader" --role "Cost Management Reader" --scopes /subscriptions/{subscription-id}
 
 # Note the output:
-# - appId (use as AZURE_CLIENT_ID)
-# - password (use as AZURE_CLIENT_SECRET)
-# - tenant (use as AZURE_TENANT_ID)
+# - appId (use as ENTRA_APP_CLIENT_ID)
+# - password (use as ENTRA_APP_CLIENT_SECRET)
+# - tenant (use as ENTRA_APP_TENANT_ID)
 ```
 
 ### 2. Environment Variables
@@ -31,9 +31,9 @@ az ad sp create-for-rbac --name "cost-management-reader" --role "Cost Management
 Update the `.env` file in the project root with your Azure credentials:
 
 ```env
-AZURE_TENANT_ID=your_tenant_id_here
-AZURE_CLIENT_ID=your_client_id_here
-AZURE_CLIENT_SECRET=your_client_secret_here
+ENTRA_APP_TENANT_ID=your_tenant_id_here
+ENTRA_APP_CLIENT_ID=your_client_id_here
+ENTRA_APP_CLIENT_SECRET=your_client_secret_here
 AZURE_SUBSCRIPTION_ID=your_subscription_id_here
 ```
 

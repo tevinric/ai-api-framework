@@ -15,16 +15,16 @@ def test_environment_variables():
     print("-" * 50)
     
     required_vars = {
-        'AZURE_TENANT_ID': 'Azure AD tenant ID',
-        'AZURE_CLIENT_ID': 'Service principal client ID',
-        'AZURE_CLIENT_SECRET': 'Service principal secret',
+        'ENTRA_APP_TENANT_ID': 'Azure AD tenant ID',
+        'ENTRA_APP_CLIENT_ID': 'Service principal client ID',
+        'ENTRA_APP_CLIENT_SECRET': 'Service principal secret',
         'AZURE_SUBSCRIPTION_ID': 'Azure subscription ID'
     }
     
     all_set = True
     for var_name, description in required_vars.items():
         value = os.getenv(var_name)
-        if value and value != f"your_{var_name.lower().replace('azure_', '').replace('_', '_')}_here":
+        if value and value != f"your_{var_name.lower().replace('entra_app_', '').replace('azure_', '').replace('_', '_')}_here":
             # Mask the secret for display
             if 'SECRET' in var_name:
                 display_value = '*' * 8 + value[-4:] if len(value) > 4 else '*' * len(value)

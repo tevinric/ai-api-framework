@@ -420,15 +420,8 @@ def get_azure_costs_route():
                     "message": "Invalid end_date format. Use YYYY-MM-DD"
                 }, 400)
         
-        # Log the API call
-        api_logger(
-            user_info['username'],
-            request.method,
-            request.path,
-            {"subscription_id": subscription_id, "start_date": start_date, "end_date": end_date},
-            200,
-            user_info.get('scope', 'unknown')
-        )
+        # Log the API call details
+        logger.info(f"Azure costs request - User: {user_info.get('username', 'unknown')}, Subscription: {subscription_id[:8] if subscription_id else 'default'}...")
         
         # Get cost data
         cost_service = AzureCostManagementService()
@@ -619,15 +612,8 @@ def get_azure_cost_summary_route():
             "total_resources": len(all_resources)
         }
         
-        # Log the API call
-        api_logger(
-            user_info['username'],
-            request.method,
-            request.path,
-            {"subscription_id": subscription_id, "days": days},
-            200,
-            user_info.get('scope', 'unknown')
-        )
+        # Log the API call details
+        logger.info(f"Azure cost summary request - User: {user_info.get('username', 'unknown')}, Subscription: {subscription_id[:8] if subscription_id else 'default'}..., Days: {days}")
         
         return create_api_response(summary, 200)
         
