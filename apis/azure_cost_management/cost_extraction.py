@@ -16,10 +16,10 @@ class AzureCostManagementService:
     """Service for extracting hierarchical cost data from Azure"""
     
     def __init__(self):
-        self.tenant_id = os.getenv('AZURE_TENANT_ID')
-        self.client_id = os.getenv('AZURE_CLIENT_ID')
-        self.client_secret = os.getenv('AZURE_CLIENT_SECRET')
-        self.subscription_id = os.getenv('AZURE_SUBSCRIPTION_ID')
+        self.tenant_id = os.environ.get('ENTRA_APP_TENANT_ID')
+        self.client_id = os.environ.get('ENTRA_APP_CLIENT_ID')
+        self.client_secret = os.environ.get('ENTRA_APP_CLIENT_SECRET')
+        self.subscription_id = os.environ.get('AZURE_SUBSCRIPTION_ID')
         self.base_url = "https://management.azure.com"
         self.api_version = "2023-11-01"  # Use stable API version
         self.access_token = None
@@ -32,11 +32,11 @@ class AzureCostManagementService:
         """Validate that all required Azure credentials are present"""
         missing_vars = []
         if not self.tenant_id:
-            missing_vars.append('AZURE_TENANT_ID')
+            missing_vars.append('ENTRA_APP_TENANT_ID')
         if not self.client_id:
-            missing_vars.append('AZURE_CLIENT_ID')
+            missing_vars.append('ENTRA_APP_CLIENT_ID')
         if not self.client_secret:
-            missing_vars.append('AZURE_CLIENT_SECRET')
+            missing_vars.append('ENTRA_APP_CLIENT_SECRET')
         if not self.subscription_id:
             missing_vars.append('AZURE_SUBSCRIPTION_ID')
         
