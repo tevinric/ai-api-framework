@@ -290,12 +290,21 @@ GET /azure/costs/ai-services
 }
 ```
 
-The AI services endpoint provides:
-- **Detailed token-level cost attribution** for each AI model
-- **Breakdown by service** (Azure OpenAI, Cognitive Services, etc.)
-- **Model-specific costs** with input/output/cached token separation
-- **Usage quantities** for cost analysis and optimization
-- **Support for all AI models** including GPT-4, GPT-3.5, DALL-E, Whisper, embeddings
+The AI services endpoint provides **meter-level detail matching Azure portal**:
+
+### 🎯 **Exact Portal Match Structure**
+- **Resource Group → Resource → Service → Meters** (same hierarchy as portal)
+- **Every individual meter** with specific costs (e.g., "gpt-4o 1120 Outp glbl Tokens": $2.17)
+- **Enhanced model detection** (gpt-4o-1120, gpt-4o-mini-0718, kontext-pro, etc.)
+- **Token type parsing** (Inp/Outp/cached from meter names)
+- **Regional detection** (glbl = global)
+
+### 📊 **Comprehensive Cost Attribution**
+- **Meter-level granularity** - every charge line item
+- **Perfect for chargeback** and cost attribution
+- **Model summary** with input/output/cached token breakdown
+- **Service categorization** (Cognitive Services, Defender, etc.)
+- **Sorted by cost** (highest first, matching portal)
 
 ## Error Handling
 

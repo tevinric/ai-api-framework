@@ -370,7 +370,7 @@ class AzureCostManagementService:
             all_costs = self.get_subscription_costs(start_date=start_date, end_date=end_date)
             return self._filter_ai_costs_from_all(all_costs, subscription_id, start_date, end_date)
         
-        # Simplified query for AI services - start with basic structure and add AI filtering
+        # Enhanced query for detailed meter-level AI services data matching Azure portal
         query_body = {
             "type": "Usage",
             "timeframe": "Custom",
@@ -379,7 +379,7 @@ class AzureCostManagementService:
                 "to": end_date
             },
             "dataset": {
-                "granularity": "Daily",
+                "granularity": "None",  # Get all data without daily granularity for meter detail
                 "aggregation": {
                     "totalCost": {
                         "name": "PreTaxCost",
@@ -393,11 +393,15 @@ class AzureCostManagementService:
                 "grouping": [
                     {
                         "type": "Dimension",
-                        "name": "ServiceName"
+                        "name": "ResourceGroup"
                     },
                     {
                         "type": "Dimension",
                         "name": "ResourceId"
+                    },
+                    {
+                        "type": "Dimension",
+                        "name": "ServiceName"
                     },
                     {
                         "type": "Dimension",
@@ -406,19 +410,40 @@ class AzureCostManagementService:
                     {
                         "type": "Dimension",
                         "name": "MeterCategory"
+                    },
+                    {
+                        "type": "Dimension",
+                        "name": "ResourceType"
                     }
                 ],
                 "filter": {
-                    "dimensions": {
-                        "name": "ServiceName",
-                        "operator": "In",
-                        "values": [
-                            "Cognitive Services",
-                            "Azure OpenAI",
-                            "Azure Machine Learning",
-                            "Azure Cognitive Search"
-                        ]
-                    }
+                    "or": [
+                        {
+                            "dimensions": {
+                                "name": "ServiceName",
+                                "operator": "In",
+                                "values": [
+                                    "Cognitive Services",
+                                    "Azure OpenAI",
+                                    "Azure Machine Learning",
+                                    "Azure Cognitive Search",
+                                    "Microsoft Defender for Cloud"
+                                ]
+                            }
+                        },
+                        {
+                            "dimensions": {
+                                "name": "MeterCategory",
+                                "operator": "In",
+                                "values": [
+                                    "Cognitive Services",
+                                    "Azure OpenAI Service",
+                                    "Machine Learning",
+                                    "Azure Applied AI Services"
+                                ]
+                            }
+                        }
+                    ]
                 }
             }
         }
@@ -449,7 +474,8 @@ class AzureCostManagementService:
     def _format_ai_costs_response(self, raw_data: Dict, subscription_id: str, 
                                  start_date: str, end_date: str) -> Dict:
         """
-        Format AI services cost response with detailed token attribution
+        Format AI services cost response with detailed meter-level data matching Azure portal
+        Structure: Resource Groups -> Resources -> Services -> Meters (exact portal match)
         """
         result = {
             "subscription_id": subscription_id,
@@ -459,11 +485,13 @@ class AzureCostManagementService:
             },
             "total_ai_cost": 0,
             "total_ai_cost_usd": 0,
-            "services": {},
-            "models": {},
+            "resource_groups": {},
+            "meter_summary": {},
+            "model_summary": {},
             "metadata": {
                 "queryTime": datetime.utcnow().isoformat(),
-                "rowCount": 0
+                "rowCount": 0,
+                "detail_level": "meter"
             }
         }
         
@@ -479,108 +507,178 @@ class AzureCostManagementService:
         
         for row in rows:
             try:
+                # Extract all available fields based on column map
                 cost = row[column_map.get('PreTaxCost', 0)] or 0
                 cost_usd = row[column_map.get('PreTaxCostUSD', 1)] or 0
-                service_name = row[column_map.get('ServiceName', 2)] or 'Unknown'
+                resource_group = row[column_map.get('ResourceGroup', 2)] or 'Unknown'
                 resource_id = row[column_map.get('ResourceId', 3)] or 'Unknown'
-                meter_name = row[column_map.get('MeterName', 4)] or 'Unknown'
-                meter_category = row[column_map.get('MeterCategory', 5)] or 'Unknown'
+                service_name = row[column_map.get('ServiceName', 4)] or 'Unknown'
+                meter_name = row[column_map.get('MeterName', 5)] or 'Unknown'
+                meter_category = row[column_map.get('MeterCategory', 6)] or 'Unknown'
+                resource_type = row[column_map.get('ResourceType', 7)] if 'ResourceType' in column_map else 'Unknown'
                 
-                # Optional fields that may not be available
+                # Optional fields
                 meter_subcategory = row[column_map.get('MeterSubCategory')] if 'MeterSubCategory' in column_map else 'Unknown'
                 unit_of_measure = row[column_map.get('UnitOfMeasure')] if 'UnitOfMeasure' in column_map else 'Unknown'
                 usage_quantity = row[column_map.get('UsageQuantity')] if 'UsageQuantity' in column_map else 0
+                
+                # Skip if cost is zero or negligible
+                if cost_usd < 0.001:
+                    continue
                 
                 # Update totals
                 result['total_ai_cost'] += cost
                 result['total_ai_cost_usd'] += cost_usd
                 
-                # Extract resource name
+                # Extract resource name from resource ID
                 resource_name = resource_id.split('/')[-1] if resource_id != 'Unknown' else 'Unknown'
                 
-                # Initialize service if not exists
-                if service_name not in result['services']:
-                    result['services'][service_name] = {
-                        'name': service_name,
+                # Build the hierarchy: Resource Group -> Resource -> Service -> Meters
+                # Initialize Resource Group
+                if resource_group not in result['resource_groups']:
+                    result['resource_groups'][resource_group] = {
+                        'name': resource_group,
                         'total_cost': 0,
                         'total_cost_usd': 0,
                         'resources': {}
                     }
                 
-                # Update service totals
-                result['services'][service_name]['total_cost'] += cost
-                result['services'][service_name]['total_cost_usd'] += cost_usd
-                
-                # Initialize resource if not exists
-                if resource_name not in result['services'][service_name]['resources']:
-                    result['services'][service_name]['resources'][resource_name] = {
+                # Initialize Resource within Resource Group
+                if resource_name not in result['resource_groups'][resource_group]['resources']:
+                    result['resource_groups'][resource_group]['resources'][resource_name] = {
                         'name': resource_name,
                         'resource_id': resource_id,
+                        'resource_type': resource_type,
+                        'total_cost': 0,
+                        'total_cost_usd': 0,
+                        'services': {}
+                    }
+                
+                # Initialize Service within Resource
+                resource_ref = result['resource_groups'][resource_group]['resources'][resource_name]
+                if service_name not in resource_ref['services']:
+                    resource_ref['services'][service_name] = {
+                        'name': service_name,
+                        'category': meter_category,
                         'total_cost': 0,
                         'total_cost_usd': 0,
                         'meters': []
                     }
                 
-                # Add meter details
+                # Create detailed meter entry (matching Azure portal exactly)
                 meter_detail = {
                     'meter_name': meter_name,
                     'meter_category': meter_category,
                     'meter_subcategory': meter_subcategory,
                     'usage_quantity': usage_quantity,
                     'unit_of_measure': unit_of_measure,
-                    'cost': cost,
-                    'cost_usd': cost_usd
+                    'cost': round(cost, 2),
+                    'cost_usd': round(cost_usd, 2)
                 }
                 
-                # Parse model information from meter name
+                # Parse model and token information from meter name
                 model_info = self._parse_ai_model_info(meter_name, meter_category, meter_subcategory)
                 if model_info:
                     meter_detail.update(model_info)
-                    
-                    # Track by model
-                    model_key = model_info.get('model', 'Unknown')
-                    if model_key not in result['models']:
-                        result['models'][model_key] = {
+                
+                # Add meter to service
+                resource_ref['services'][service_name]['meters'].append(meter_detail)
+                
+                # Update all level totals
+                resource_ref['services'][service_name]['total_cost'] += cost
+                resource_ref['services'][service_name]['total_cost_usd'] += cost_usd
+                resource_ref['total_cost'] += cost
+                resource_ref['total_cost_usd'] += cost_usd
+                result['resource_groups'][resource_group]['total_cost'] += cost
+                result['resource_groups'][resource_group]['total_cost_usd'] += cost_usd
+                
+                # Track meters for summary (like portal's meter view)
+                meter_key = f"{meter_name}_{meter_category}"
+                if meter_key not in result['meter_summary']:
+                    result['meter_summary'][meter_key] = {
+                        'meter_name': meter_name,
+                        'meter_category': meter_category,
+                        'total_cost': 0,
+                        'total_cost_usd': 0,
+                        'usage_count': 0
+                    }
+                result['meter_summary'][meter_key]['total_cost'] += cost
+                result['meter_summary'][meter_key]['total_cost_usd'] += cost_usd
+                result['meter_summary'][meter_key]['usage_count'] += 1
+                
+                # Track models for summary
+                if model_info and 'model' in model_info:
+                    model_key = model_info['model']
+                    if model_key not in result['model_summary']:
+                        result['model_summary'][model_key] = {
                             'model': model_key,
                             'total_cost': 0,
                             'total_cost_usd': 0,
                             'usage_breakdown': {}
                         }
                     
-                    result['models'][model_key]['total_cost'] += cost
-                    result['models'][model_key]['total_cost_usd'] += cost_usd
+                    result['model_summary'][model_key]['total_cost'] += cost
+                    result['model_summary'][model_key]['total_cost_usd'] += cost_usd
                     
-                    # Track token usage if applicable
+                    # Track token usage breakdown
                     usage_type = model_info.get('usage_type', 'other')
-                    if usage_type not in result['models'][model_key]['usage_breakdown']:
-                        result['models'][model_key]['usage_breakdown'][usage_type] = {
+                    if usage_type not in result['model_summary'][model_key]['usage_breakdown']:
+                        result['model_summary'][model_key]['usage_breakdown'][usage_type] = {
                             'quantity': 0,
                             'cost': 0,
                             'cost_usd': 0,
                             'unit': unit_of_measure
                         }
                     
-                    result['models'][model_key]['usage_breakdown'][usage_type]['quantity'] += usage_quantity
-                    result['models'][model_key]['usage_breakdown'][usage_type]['cost'] += cost
-                    result['models'][model_key]['usage_breakdown'][usage_type]['cost_usd'] += cost_usd
-                
-                result['services'][service_name]['resources'][resource_name]['meters'].append(meter_detail)
-                result['services'][service_name]['resources'][resource_name]['total_cost'] += cost
-                result['services'][service_name]['resources'][resource_name]['total_cost_usd'] += cost_usd
+                    result['model_summary'][model_key]['usage_breakdown'][usage_type]['quantity'] += usage_quantity
+                    result['model_summary'][model_key]['usage_breakdown'][usage_type]['cost'] += cost
+                    result['model_summary'][model_key]['usage_breakdown'][usage_type]['cost_usd'] += cost_usd
                 
             except Exception as e:
                 logger.warning(f"Error processing AI cost row: {str(e)}")
                 continue
         
-        # Sort services and models by cost
-        result['services'] = dict(sorted(
-            result['services'].items(),
+        # Sort all hierarchies by cost (highest first) - matching Azure portal
+        # Sort resource groups by total cost
+        result['resource_groups'] = dict(sorted(
+            result['resource_groups'].items(),
             key=lambda x: x[1]['total_cost_usd'],
             reverse=True
         ))
         
-        result['models'] = dict(sorted(
-            result['models'].items(),
+        # Sort resources within each resource group
+        for rg_name, rg_data in result['resource_groups'].items():
+            rg_data['resources'] = dict(sorted(
+                rg_data['resources'].items(),
+                key=lambda x: x[1]['total_cost_usd'],
+                reverse=True
+            ))
+            
+            # Sort services within each resource and meters within services
+            for resource_name, resource_data in rg_data['resources'].items():
+                resource_data['services'] = dict(sorted(
+                    resource_data['services'].items(),
+                    key=lambda x: x[1]['total_cost_usd'],
+                    reverse=True
+                ))
+                
+                # Sort meters within each service by cost
+                for service_name, service_data in resource_data['services'].items():
+                    service_data['meters'] = sorted(
+                        service_data['meters'],
+                        key=lambda x: x['cost_usd'],
+                        reverse=True
+                    )
+        
+        # Sort summaries by cost
+        result['meter_summary'] = dict(sorted(
+            result['meter_summary'].items(),
+            key=lambda x: x[1]['total_cost_usd'],
+            reverse=True
+        ))
+        
+        result['model_summary'] = dict(sorted(
+            result['model_summary'].items(),
             key=lambda x: x[1]['total_cost_usd'],
             reverse=True
         ))
@@ -710,14 +808,25 @@ class AzureCostManagementService:
     
     def _parse_ai_model_info(self, meter_name: str, meter_category: str, meter_subcategory: str) -> Optional[Dict]:
         """
-        Parse AI model information from meter details
+        Parse AI model information from meter details - enhanced to match portal examples
+        Examples from portal: 'gpt-4o 1120 Outp glbl Tokens', 'gpt-4o 1120 Inp glbl Tokens'
         """
         model_info = {}
         meter_lower = meter_name.lower()
         
-        # OpenAI models
-        if 'gpt-4' in meter_lower:
-            if 'turbo' in meter_lower:
+        # Enhanced OpenAI model detection based on portal examples
+        if 'gpt-4o' in meter_lower:
+            if '1120' in meter_lower:
+                model_info['model'] = 'gpt-4o-1120'
+            else:
+                model_info['model'] = 'gpt-4o'
+        elif 'gpt-4' in meter_lower:
+            if 'mini' in meter_lower:
+                if '0718' in meter_lower:
+                    model_info['model'] = 'gpt-4o-mini-0718'
+                else:
+                    model_info['model'] = 'gpt-4o-mini'
+            elif 'turbo' in meter_lower:
                 model_info['model'] = 'gpt-4-turbo'
             elif '32k' in meter_lower:
                 model_info['model'] = 'gpt-4-32k'
@@ -732,26 +841,50 @@ class AzureCostManagementService:
                 model_info['model'] = 'text-embedding-ada-002'
             else:
                 model_info['model'] = 'ada'
-        elif 'dall-e' in meter_lower:
+        elif 'text-embedding' in meter_lower:
+            if 'large' in meter_lower:
+                model_info['model'] = 'text-embedding-3-large'
+            elif '3' in meter_lower:
+                model_info['model'] = 'text-embedding-3-small'
+            else:
+                model_info['model'] = 'text-embedding-ada-002'
+        elif 'dall-e' in meter_lower or 'dalle' in meter_lower:
             model_info['model'] = 'dall-e'
         elif 'whisper' in meter_lower:
             model_info['model'] = 'whisper'
+        elif 'kontext' in meter_lower:
+            model_info['model'] = 'kontext-pro'
+        elif 'flux' in meter_lower:
+            model_info['model'] = 'flux-1.1-pro'
+        elif 'llama' in meter_lower:
+            if 'maverick' in meter_lower:
+                model_info['model'] = 'llama-4-maverick-17b'
+            else:
+                model_info['model'] = 'llama'
         
-        # Determine usage type (input/output/cached tokens)
-        if 'input' in meter_lower or 'prompt' in meter_lower:
+        # Enhanced usage type detection based on portal examples
+        if 'inp' in meter_lower or 'input' in meter_lower or 'prompt' in meter_lower:
             model_info['usage_type'] = 'input_tokens'
-        elif 'output' in meter_lower or 'completion' in meter_lower:
+        elif 'outp' in meter_lower or 'output' in meter_lower or 'completion' in meter_lower:
             model_info['usage_type'] = 'output_tokens'
         elif 'cached' in meter_lower:
             model_info['usage_type'] = 'cached_tokens'
         elif 'embedding' in meter_lower:
             model_info['usage_type'] = 'embeddings'
-        elif 'image' in meter_lower:
+        elif 'image' in meter_lower or 'images' in meter_lower:
             model_info['usage_type'] = 'images'
         elif 'audio' in meter_lower or 'transcription' in meter_lower:
             model_info['usage_type'] = 'audio_minutes'
+        elif 'text records' in meter_lower:
+            model_info['usage_type'] = 'text_records'
+        elif 'tokens' in meter_lower:
+            model_info['usage_type'] = 'tokens'
         else:
             model_info['usage_type'] = 'other'
+        
+        # Parse additional details from meter name
+        if 'glbl' in meter_lower:
+            model_info['region'] = 'global'
         
         return model_info if model_info.get('model') else None
 
