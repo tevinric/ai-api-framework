@@ -35,3 +35,4 @@ frontend/node_modules/
 apis/usage_tracking/__pycache__/
 runnables/docker_run.sh
 apis/agents/__pycache__/
+apis/azure_cost_management/__pycache__/
