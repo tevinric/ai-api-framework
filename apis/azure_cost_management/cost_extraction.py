@@ -113,23 +113,11 @@ class AzureCostManagementService:
                 "granularity": "Daily",
                 "aggregation": {
                     "totalCost": {
-                        "name": "Cost",
-                        "function": "Sum"
-                    },
-                    "totalCostUSD": {
-                        "name": "CostUSD",
-                        "function": "Sum"
-                    },
-                    "usageQuantity": {
-                        "name": "UsageQuantity",
+                        "name": "PreTaxCost",  # Use PreTaxCost for ActualCost queries
                         "function": "Sum"
                     }
                 },
                 "grouping": [
-                    {
-                        "type": "Dimension",
-                        "name": "ResourceGroupName"
-                    },
                     {
                         "type": "Dimension",
                         "name": "ResourceId"
@@ -137,14 +125,6 @@ class AzureCostManagementService:
                     {
                         "type": "Dimension",
                         "name": "ServiceName"
-                    },
-                    {
-                        "type": "Dimension",
-                        "name": "ResourceType"
-                    },
-                    {
-                        "type": "Dimension",
-                        "name": "MeterName"
                     },
                     {
                         "type": "Dimension",
@@ -156,7 +136,7 @@ class AzureCostManagementService:
                     },
                     {
                         "type": "Dimension",
-                        "name": "UnitOfMeasure"
+                        "name": "Meter"  # Use "Meter" instead of "MeterName"
                     }
                 ]
             }
@@ -226,26 +206,32 @@ class AzureCostManagementService:
         
         for row in rows:
             try:
-                # Extract values from row with enhanced column mapping
-                cost = (row[column_map.get('Cost')] if 'Cost' in column_map else 
-                       row[column_map.get('PreTaxCost')] if 'PreTaxCost' in column_map else 0) or 0
-                cost_usd = (row[column_map.get('CostUSD')] if 'CostUSD' in column_map else 
-                           row[column_map.get('PreTaxCostUSD')] if 'PreTaxCostUSD' in column_map else cost) or cost
+                # Extract values from row - corrected for ActualCost query
+                cost = (row[column_map.get('PreTaxCost')] if 'PreTaxCost' in column_map else 0) or 0
+                cost_usd = cost  # ActualCost typically returns cost in USD by default
                 
-                resource_group = (row[column_map.get('ResourceGroupName')] if 'ResourceGroupName' in column_map else
-                                row[column_map.get('ResourceGroup')] if 'ResourceGroup' in column_map else 'unassigned') or 'unassigned'
                 resource_id = row[column_map.get('ResourceId')] if 'ResourceId' in column_map else 'unknown'
-                service_name = row[column_map.get('ServiceName')] if 'ServiceName' in column_map else 'unknown'
-                resource_type = row[column_map.get('ResourceType')] if 'ResourceType' in column_map else 'unknown'
                 
-                # Additional meter details
-                meter_name = row[column_map.get('MeterName')] if 'MeterName' in column_map else 'unknown'
+                # Extract resource group from ResourceId
+                resource_group = 'unassigned'
+                if resource_id != 'unknown' and '/resourceGroups/' in resource_id:
+                    try:
+                        resource_group = resource_id.split('/resourceGroups/')[1].split('/')[0]
+                    except (IndexError, AttributeError):
+                        resource_group = 'unassigned'
+                
+                service_name = row[column_map.get('ServiceName')] if 'ServiceName' in column_map else 'unknown'
+                
+                # Additional meter details - corrected column names
+                meter_name = row[column_map.get('Meter')] if 'Meter' in column_map else 'unknown'  # Updated from MeterName to Meter
                 meter_category = row[column_map.get('MeterCategory')] if 'MeterCategory' in column_map else 'unknown'
                 meter_subcategory = row[column_map.get('MeterSubCategory')] if 'MeterSubCategory' in column_map else 'unknown'
-                unit_of_measure = row[column_map.get('UnitOfMeasure')] if 'UnitOfMeasure' in column_map else 'unknown'
-                usage_quantity = (row[column_map.get('UsageQuantity')] if 'UsageQuantity' in column_map else 0) or 0
                 
-                currency = row[column_map.get('Currency')] if 'Currency' in column_map else 'USD'
+                # Default values for fields not available in current query
+                resource_type = 'unknown'
+                unit_of_measure = 'unknown'
+                usage_quantity = 0
+                currency = 'USD'
                 
                 # Update subscription total
                 hierarchy['subscription']['totalCost'] += cost
@@ -419,7 +405,7 @@ class AzureCostManagementService:
             all_costs = self.get_subscription_costs(start_date=start_date, end_date=end_date)
             return self._filter_ai_costs_from_all(all_costs, subscription_id, start_date, end_date)
         
-        # Query for individual meter entries with minimal grouping to get granular details
+        # Query for individual meter entries with proper ActualCost structure
         query_body = {
             "type": "ActualCost",  # ActualCost provides individual cost records
             "timeframe": "Custom",
@@ -431,34 +417,14 @@ class AzureCostManagementService:
                 "granularity": "Daily",  # Use Daily granularity for detailed records
                 "aggregation": {
                     "totalCost": {
-                        "name": "Cost",
-                        "function": "Sum"
-                    },
-                    "totalCostUSD": {
-                        "name": "CostUSD", 
-                        "function": "Sum"
-                    },
-                    "usageQuantity": {
-                        "name": "UsageQuantity",
+                        "name": "PreTaxCost",  # Use PreTaxCost for ActualCost queries
                         "function": "Sum"
                     }
                 },
                 "grouping": [
                     {
                         "type": "Dimension",
-                        "name": "ResourceGroupName"
-                    },
-                    {
-                        "type": "Dimension", 
-                        "name": "ResourceId"
-                    },
-                    {
-                        "type": "Dimension",
                         "name": "ServiceName"
-                    },
-                    {
-                        "type": "Dimension",
-                        "name": "MeterName"
                     },
                     {
                         "type": "Dimension",
@@ -470,24 +436,20 @@ class AzureCostManagementService:
                     },
                     {
                         "type": "Dimension",
-                        "name": "ResourceType"
+                        "name": "Meter"  # Use "Meter" instead of "MeterName"
                     },
                     {
                         "type": "Dimension",
-                        "name": "UnitOfMeasure"
-                    },
-                    {
-                        "type": "Dimension",
-                        "name": "UsageDate"
+                        "name": "ResourceId"
                     }
                 ],
                 "filter": {
-                    "or": [
+                    "Or": [  # Use capital "Or" instead of lowercase "or"
                         {
-                            "dimensions": {
-                                "name": "ServiceName",
-                                "operator": "In",
-                                "values": [
+                            "Dimensions": {  # Use capital "Dimensions"
+                                "Name": "ServiceName",  # Use capital "Name"
+                                "Operator": "In",  # Use capital "Operator"
+                                "Values": [  # Use capital "Values"
                                     "Cognitive Services",
                                     "Azure OpenAI",
                                     "Azure Machine Learning",
@@ -497,10 +459,10 @@ class AzureCostManagementService:
                             }
                         },
                         {
-                            "dimensions": {
-                                "name": "MeterCategory", 
-                                "operator": "In",
-                                "values": [
+                            "Dimensions": {
+                                "Name": "MeterCategory", 
+                                "Operator": "In",
+                                "Values": [
                                     "Cognitive Services",
                                     "Azure OpenAI Service",
                                     "Machine Learning",
@@ -573,26 +535,29 @@ class AzureCostManagementService:
         
         for row in rows:
             try:
-                # Extract fields from ActualCost query with enhanced column mapping
-                cost = (row[column_map.get('Cost')] if 'Cost' in column_map else 
-                       row[column_map.get('PreTaxCost')] if 'PreTaxCost' in column_map else 0) or 0
-                cost_usd = (row[column_map.get('CostUSD')] if 'CostUSD' in column_map else 
-                           row[column_map.get('PreTaxCostUSD')] if 'PreTaxCostUSD' in column_map else cost) or cost
+                # Extract fields from ActualCost query - using corrected column names
+                cost = (row[column_map.get('PreTaxCost')] if 'PreTaxCost' in column_map else 0) or 0
+                cost_usd = cost  # ActualCost typically returns cost in USD by default
                 
-                # Handle different resource group column names
-                resource_group = (row[column_map.get('ResourceGroupName')] if 'ResourceGroupName' in column_map else
-                                row[column_map.get('ResourceGroup')] if 'ResourceGroup' in column_map else 'Unknown') or 'Unknown'
-                
+                # Extract resource group from ResourceId since we may not have ResourceGroupName
                 resource_id = row[column_map.get('ResourceId')] if 'ResourceId' in column_map else 'Unknown'
+                resource_group = 'Unknown'
+                if resource_id != 'Unknown' and '/resourceGroups/' in resource_id:
+                    try:
+                        resource_group = resource_id.split('/resourceGroups/')[1].split('/')[0]
+                    except (IndexError, AttributeError):
+                        resource_group = 'Unknown'
+                
                 service_name = row[column_map.get('ServiceName')] if 'ServiceName' in column_map else 'Unknown'
-                meter_name = row[column_map.get('MeterName')] if 'MeterName' in column_map else 'Unknown'
+                meter_name = row[column_map.get('Meter')] if 'Meter' in column_map else 'Unknown'  # Updated from MeterName to Meter
                 meter_category = row[column_map.get('MeterCategory')] if 'MeterCategory' in column_map else 'Unknown'
                 meter_subcategory = row[column_map.get('MeterSubCategory')] if 'MeterSubCategory' in column_map else 'Unknown'
-                resource_type = row[column_map.get('ResourceType')] if 'ResourceType' in column_map else 'Unknown'
-                unit_of_measure = row[column_map.get('UnitOfMeasure')] if 'UnitOfMeasure' in column_map else 'Unknown'
-                usage_date = row[column_map.get('UsageDate')] if 'UsageDate' in column_map else 'Unknown'
-                usage_quantity = (row[column_map.get('UsageQuantity')] if 'UsageQuantity' in column_map else
-                                row[column_map.get('Quantity')] if 'Quantity' in column_map else 0) or 0
+                
+                # Default values for fields not available in current query
+                resource_type = 'Unknown'
+                unit_of_measure = 'Unknown'
+                usage_date = 'Unknown'
+                usage_quantity = 0
                 
                 # Skip if cost is zero or negligible
                 if cost_usd < 0.001:
