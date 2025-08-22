@@ -110,7 +110,7 @@ class AzureCostManagementService:
                 "to": end_date
             },
             "dataset": {
-                "granularity": "Daily",
+                "granularity": "None",  # No time granularity - aggregate across entire date range
                 "aggregation": {
                     "totalCost": {
                         "name": "PreTaxCost",  # Use PreTaxCost for ActualCost queries
@@ -414,7 +414,7 @@ class AzureCostManagementService:
                 "to": end_date
             },
             "dataset": {
-                "granularity": "Daily",  # Use Daily granularity for detailed records
+                "granularity": "None",  # No time granularity - aggregate across entire date range
                 "aggregation": {
                     "totalCost": {
                         "name": "PreTaxCost",  # Use PreTaxCost for ActualCost queries
