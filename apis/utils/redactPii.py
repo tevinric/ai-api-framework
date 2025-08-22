@@ -128,7 +128,7 @@ class RedactPiiService:
             'chris', 'dan', 'matt', 'greg', 'josh', 'andy', 'nick', 'ben', 'sam', 'alex',
             'liz', 'beth', 'jen', 'sue', 'maggie', 'kate', 'sally', 'annie', 'katie', 'becky',
             # Additional common names
-            'tevin', 'trevor', 'tyler', 'taylor', 'travis', 'troy', 'todd', 'tommy', 'tony', 'tim'
+            'trevor', 'tyler', 'taylor', 'travis', 'troy', 'todd', 'tommy', 'tony', 'tim'
         }
     
     def _build_surname_database(self) -> Set[str]:
