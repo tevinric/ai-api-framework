@@ -101,9 +101,9 @@ class AzureCostManagementService:
             'Content-Type': 'application/json'
         }
         
-        # Query body for hierarchical cost data
+        # Query body for detailed hierarchical cost data with meter-level granularity
         query_body = {
-            "type": "Usage",
+            "type": "ActualCost",  # Use ActualCost for more detailed meter information
             "timeframe": "Custom",
             "timePeriod": {
                 "from": start_date,
@@ -113,18 +113,22 @@ class AzureCostManagementService:
                 "granularity": "Daily",
                 "aggregation": {
                     "totalCost": {
-                        "name": "PreTaxCost",
+                        "name": "Cost",
                         "function": "Sum"
                     },
                     "totalCostUSD": {
-                        "name": "PreTaxCostUSD",
+                        "name": "CostUSD",
+                        "function": "Sum"
+                    },
+                    "usageQuantity": {
+                        "name": "UsageQuantity",
                         "function": "Sum"
                     }
                 },
                 "grouping": [
                     {
                         "type": "Dimension",
-                        "name": "ResourceGroup"
+                        "name": "ResourceGroupName"
                     },
                     {
                         "type": "Dimension",
@@ -137,6 +141,22 @@ class AzureCostManagementService:
                     {
                         "type": "Dimension",
                         "name": "ResourceType"
+                    },
+                    {
+                        "type": "Dimension",
+                        "name": "MeterName"
+                    },
+                    {
+                        "type": "Dimension",
+                        "name": "MeterCategory"
+                    },
+                    {
+                        "type": "Dimension",
+                        "name": "MeterSubCategory"
+                    },
+                    {
+                        "type": "Dimension",
+                        "name": "UnitOfMeasure"
                     }
                 ]
             }
@@ -206,14 +226,26 @@ class AzureCostManagementService:
         
         for row in rows:
             try:
-                # Extract values from row
-                cost = row[column_map.get('PreTaxCost', 0)] or 0
-                cost_usd = row[column_map.get('PreTaxCostUSD', 0)] or 0
-                resource_group = row[column_map.get('ResourceGroup', 2)] or 'unassigned'
-                resource_id = row[column_map.get('ResourceId', 3)] or 'unknown'
-                service_name = row[column_map.get('ServiceName', 4)] or 'unknown'
-                resource_type = row[column_map.get('ResourceType', 5)] or 'unknown'
-                currency = row[column_map.get('Currency', 6)] if 'Currency' in column_map else 'USD'
+                # Extract values from row with enhanced column mapping
+                cost = (row[column_map.get('Cost')] if 'Cost' in column_map else 
+                       row[column_map.get('PreTaxCost')] if 'PreTaxCost' in column_map else 0) or 0
+                cost_usd = (row[column_map.get('CostUSD')] if 'CostUSD' in column_map else 
+                           row[column_map.get('PreTaxCostUSD')] if 'PreTaxCostUSD' in column_map else cost) or cost
+                
+                resource_group = (row[column_map.get('ResourceGroupName')] if 'ResourceGroupName' in column_map else
+                                row[column_map.get('ResourceGroup')] if 'ResourceGroup' in column_map else 'unassigned') or 'unassigned'
+                resource_id = row[column_map.get('ResourceId')] if 'ResourceId' in column_map else 'unknown'
+                service_name = row[column_map.get('ServiceName')] if 'ServiceName' in column_map else 'unknown'
+                resource_type = row[column_map.get('ResourceType')] if 'ResourceType' in column_map else 'unknown'
+                
+                # Additional meter details
+                meter_name = row[column_map.get('MeterName')] if 'MeterName' in column_map else 'unknown'
+                meter_category = row[column_map.get('MeterCategory')] if 'MeterCategory' in column_map else 'unknown'
+                meter_subcategory = row[column_map.get('MeterSubCategory')] if 'MeterSubCategory' in column_map else 'unknown'
+                unit_of_measure = row[column_map.get('UnitOfMeasure')] if 'UnitOfMeasure' in column_map else 'unknown'
+                usage_quantity = (row[column_map.get('UsageQuantity')] if 'UsageQuantity' in column_map else 0) or 0
+                
+                currency = row[column_map.get('Currency')] if 'Currency' in column_map else 'USD'
                 
                 # Update subscription total
                 hierarchy['subscription']['totalCost'] += cost
@@ -226,7 +258,7 @@ class AzureCostManagementService:
                         "name": resource_group,
                         "totalCost": 0,
                         "totalCostUSD": 0,
-                        "resources": []
+                        "resources": {}
                     }
                 
                 # Update resource group total
@@ -237,40 +269,57 @@ class AzureCostManagementService:
                 # Extract resource name from resource ID
                 resource_name = resource_id.split('/')[-1] if resource_id else 'unknown'
                 
-                # Add resource details
-                resource_entry = {
-                    "resourceId": resource_id,
-                    "resourceName": resource_name,
-                    "resourceType": resource_type,
-                    "serviceName": service_name,
-                    "cost": cost,
-                    "costUSD": cost_usd,
-                    "currency": currency
+                # Initialize resource if doesn't exist
+                if resource_name not in rg['resources']:
+                    rg['resources'][resource_name] = {
+                        "resourceId": resource_id,
+                        "resourceName": resource_name,
+                        "resourceType": resource_type,
+                        "serviceName": service_name,
+                        "totalCost": 0,
+                        "totalCostUSD": 0,
+                        "currency": currency,
+                        "meters": []
+                    }
+                
+                # Update resource totals
+                resource_ref = rg['resources'][resource_name]
+                resource_ref['totalCost'] += cost
+                resource_ref['totalCostUSD'] += cost_usd
+                
+                # Add detailed meter entry
+                meter_entry = {
+                    "meterName": meter_name,
+                    "meterCategory": meter_category,
+                    "meterSubCategory": meter_subcategory,
+                    "usageQuantity": usage_quantity,
+                    "unitOfMeasure": unit_of_measure,
+                    "cost": round(cost, 2),
+                    "costUSD": round(cost_usd, 2)
                 }
                 
-                # Check if resource already exists and aggregate
-                existing_resource = next(
-                    (r for r in rg['resources'] if r['resourceId'] == resource_id), 
-                    None
-                )
-                
-                if existing_resource:
-                    existing_resource['cost'] += cost
-                    existing_resource['costUSD'] += cost_usd
-                else:
-                    rg['resources'].append(resource_entry)
+                resource_ref['meters'].append(meter_entry)
                     
             except Exception as e:
                 logger.warning(f"Error processing row: {str(e)}")
                 continue
         
-        # Sort resources by cost (descending)
+        # Sort meters within each resource and convert resources dict to sorted list
         for rg_name, rg_data in hierarchy['subscription']['resourceGroups'].items():
-            rg_data['resources'] = sorted(
-                rg_data['resources'], 
-                key=lambda x: x['costUSD'], 
+            # Sort resources within resource group by cost
+            rg_data['resources'] = dict(sorted(
+                rg_data['resources'].items(),
+                key=lambda x: x[1]['totalCostUSD'],
                 reverse=True
-            )
+            ))
+            
+            # Sort meters within each resource by cost
+            for resource_name, resource_data in rg_data['resources'].items():
+                resource_data['meters'] = sorted(
+                    resource_data['meters'],
+                    key=lambda x: x['costUSD'],
+                    reverse=True
+                )
         
         # Sort resource groups by total cost (descending)
         hierarchy['subscription']['resourceGroups'] = dict(
@@ -370,16 +419,30 @@ class AzureCostManagementService:
             all_costs = self.get_subscription_costs(start_date=start_date, end_date=end_date)
             return self._filter_ai_costs_from_all(all_costs, subscription_id, start_date, end_date)
         
-        # Query for individual meter entries (no aggregation) to match Azure portal detail
+        # Query for individual meter entries with minimal grouping to get granular details
         query_body = {
-            "type": "ActualCost",  # Use ActualCost instead of Usage for meter details
+            "type": "ActualCost",  # ActualCost provides individual cost records
             "timeframe": "Custom",
             "timePeriod": {
                 "from": start_date,
                 "to": end_date
             },
             "dataset": {
-                "granularity": "None",  # No time granularity - get all individual records
+                "granularity": "Daily",  # Use Daily granularity for detailed records
+                "aggregation": {
+                    "totalCost": {
+                        "name": "Cost",
+                        "function": "Sum"
+                    },
+                    "totalCostUSD": {
+                        "name": "CostUSD", 
+                        "function": "Sum"
+                    },
+                    "usageQuantity": {
+                        "name": "UsageQuantity",
+                        "function": "Sum"
+                    }
+                },
                 "grouping": [
                     {
                         "type": "Dimension",
@@ -403,7 +466,15 @@ class AzureCostManagementService:
                     },
                     {
                         "type": "Dimension",
+                        "name": "MeterSubCategory"
+                    },
+                    {
+                        "type": "Dimension",
                         "name": "ResourceType"
+                    },
+                    {
+                        "type": "Dimension",
+                        "name": "UnitOfMeasure"
                     },
                     {
                         "type": "Dimension",
@@ -469,7 +540,7 @@ class AzureCostManagementService:
                                  start_date: str, end_date: str) -> Dict:
         """
         Format AI services cost response with detailed meter-level data matching Azure portal
-        Structure: Resource Groups -> Resources -> Services -> Meters (exact portal match)
+        Structure: Resource Groups -> Resources -> Services -> Individual Meter Records (portal match)
         """
         result = {
             "subscription_id": subscription_id,
@@ -482,10 +553,11 @@ class AzureCostManagementService:
             "resource_groups": {},
             "meter_summary": {},
             "model_summary": {},
+            "individual_meter_records": [],  # New: Individual records like portal
             "metadata": {
                 "queryTime": datetime.utcnow().isoformat(),
                 "rowCount": 0,
-                "detail_level": "meter"
+                "detail_level": "granular_meter_records"
             }
         }
         
@@ -501,26 +573,26 @@ class AzureCostManagementService:
         
         for row in rows:
             try:
-                # Extract fields from ActualCost query - different column structure
-                # ActualCost provides individual cost records, not aggregated usage
-                cost = row[column_map.get('Cost', 0)] or row[column_map.get('PreTaxCost', 0)] or 0
-                cost_usd = row[column_map.get('CostUSD', 1)] or row[column_map.get('PreTaxCostUSD', 1)] or cost
+                # Extract fields from ActualCost query with enhanced column mapping
+                cost = (row[column_map.get('Cost')] if 'Cost' in column_map else 
+                       row[column_map.get('PreTaxCost')] if 'PreTaxCost' in column_map else 0) or 0
+                cost_usd = (row[column_map.get('CostUSD')] if 'CostUSD' in column_map else 
+                           row[column_map.get('PreTaxCostUSD')] if 'PreTaxCostUSD' in column_map else cost) or cost
                 
                 # Handle different resource group column names
-                resource_group = (row[column_map.get('ResourceGroupName', 2)] or 
-                                row[column_map.get('ResourceGroup', 2)] or 'Unknown')
+                resource_group = (row[column_map.get('ResourceGroupName')] if 'ResourceGroupName' in column_map else
+                                row[column_map.get('ResourceGroup')] if 'ResourceGroup' in column_map else 'Unknown') or 'Unknown'
                 
-                resource_id = row[column_map.get('ResourceId', 3)] or 'Unknown'
-                service_name = row[column_map.get('ServiceName', 4)] or 'Unknown'
-                meter_name = row[column_map.get('MeterName', 5)] or 'Unknown'
-                meter_category = row[column_map.get('MeterCategory', 6)] or 'Unknown'
-                resource_type = row[column_map.get('ResourceType', 7)] if 'ResourceType' in column_map else 'Unknown'
-                usage_date = row[column_map.get('UsageDate', 8)] if 'UsageDate' in column_map else 'Unknown'
-                
-                # Optional fields that may be available in ActualCost
+                resource_id = row[column_map.get('ResourceId')] if 'ResourceId' in column_map else 'Unknown'
+                service_name = row[column_map.get('ServiceName')] if 'ServiceName' in column_map else 'Unknown'
+                meter_name = row[column_map.get('MeterName')] if 'MeterName' in column_map else 'Unknown'
+                meter_category = row[column_map.get('MeterCategory')] if 'MeterCategory' in column_map else 'Unknown'
                 meter_subcategory = row[column_map.get('MeterSubCategory')] if 'MeterSubCategory' in column_map else 'Unknown'
+                resource_type = row[column_map.get('ResourceType')] if 'ResourceType' in column_map else 'Unknown'
                 unit_of_measure = row[column_map.get('UnitOfMeasure')] if 'UnitOfMeasure' in column_map else 'Unknown'
-                usage_quantity = row[column_map.get('Quantity')] or row[column_map.get('UsageQuantity')] if 'Quantity' in column_map or 'UsageQuantity' in column_map else 0
+                usage_date = row[column_map.get('UsageDate')] if 'UsageDate' in column_map else 'Unknown'
+                usage_quantity = (row[column_map.get('UsageQuantity')] if 'UsageQuantity' in column_map else
+                                row[column_map.get('Quantity')] if 'Quantity' in column_map else 0) or 0
                 
                 # Skip if cost is zero or negligible
                 if cost_usd < 0.001:
@@ -574,13 +646,22 @@ class AzureCostManagementService:
                     'unit_of_measure': unit_of_measure,
                     'cost': round(cost, 2),
                     'cost_usd': round(cost_usd, 2),
-                    'usage_date': usage_date
+                    'usage_date': usage_date,
+                    'resource_name': resource_name,
+                    'resource_group': resource_group,
+                    'service_name': service_name
                 }
                 
                 # Parse model and token information from meter name
                 model_info = self._parse_ai_model_info(meter_name, meter_category, meter_subcategory)
                 if model_info:
                     meter_detail.update(model_info)
+                
+                # Add individual meter record (like portal detail view)
+                individual_record = meter_detail.copy()
+                individual_record['resource_id'] = resource_id
+                individual_record['resource_type'] = resource_type
+                result['individual_meter_records'].append(individual_record)
                 
                 # Add meter to service
                 resource_ref['services'][service_name]['meters'].append(meter_detail)
@@ -683,6 +764,13 @@ class AzureCostManagementService:
             key=lambda x: x[1]['total_cost_usd'],
             reverse=True
         ))
+        
+        # Sort individual meter records by cost (matching portal order)
+        result['individual_meter_records'] = sorted(
+            result['individual_meter_records'],
+            key=lambda x: x['cost_usd'],
+            reverse=True
+        )
         
         return result
     
@@ -1148,17 +1236,18 @@ def get_azure_cost_summary_route():
         # Top 10 resources across all resource groups
         all_resources = []
         for rg_data in subscription_data['resourceGroups'].values():
-            all_resources.extend(rg_data['resources'])
+            for resource_data in rg_data['resources'].values():
+                all_resources.append(resource_data)
         
-        all_resources.sort(key=lambda x: x['costUSD'], reverse=True)
+        all_resources.sort(key=lambda x: x['totalCostUSD'], reverse=True)
         top_resources = []
         for resource in all_resources[:10]:
             top_resources.append({
                 "name": resource['resourceName'],
                 "type": resource['resourceType'],
                 "service": resource['serviceName'],
-                "cost": round(resource['costUSD'], 2),
-                "percentage": round((resource['costUSD'] / total_cost * 100) if total_cost > 0 else 0, 2)
+                "cost": round(resource['totalCostUSD'], 2),
+                "percentage": round((resource['totalCostUSD'] / total_cost * 100) if total_cost > 0 else 0, 2)
             })
         
         summary = {
@@ -1351,52 +1440,60 @@ def get_azure_ai_costs_route():
             total_ai_cost_usd:
               type: number
               description: Total AI services cost in USD
+            resource_groups:
+              type: object
+              description: Hierarchical breakdown by resource group containing all resources and services
             services:
               type: object
               description: Breakdown by AI service (OpenAI, Cognitive Services, etc.)
             models:
               type: object
               description: Breakdown by AI model with token usage details
-              additionalProperties:
+            individual_meter_records:
+              type: array
+              description: Individual meter usage records matching Azure portal detail view
+              items:
                 type: object
                 properties:
+                  meter_name:
+                    type: string
+                    description: Specific meter name (e.g., 'gpt-4o 1120 Outp glbl Tokens')
+                  meter_category:
+                    type: string
+                    description: Meter category (e.g., 'Cognitive Services')
+                  meter_subcategory:
+                    type: string
+                    description: Meter subcategory
+                  service_name:
+                    type: string
+                    description: Service name (e.g., 'Cognitive Services')
+                  resource_name:
+                    type: string
+                    description: Resource name
+                  resource_group:
+                    type: string
+                    description: Resource group name
+                  usage_quantity:
+                    type: number
+                    description: Quantity of usage
+                  unit_of_measure:
+                    type: string
+                    description: Unit of measurement (e.g., 'Tokens', 'Images')
+                  cost:
+                    type: number
+                    description: Cost in original currency
+                  cost_usd:
+                    type: number
+                    description: Cost in USD
+                  usage_date:
+                    type: string
+                    description: Date of usage
                   model:
                     type: string
-                    description: Model name (e.g., gpt-4, gpt-3.5-turbo)
-                  total_cost:
-                    type: number
-                  total_cost_usd:
-                    type: number
-                  usage_breakdown:
-                    type: object
-                    properties:
-                      input_tokens:
-                        type: object
-                        properties:
-                          quantity:
-                            type: number
-                          cost:
-                            type: number
-                          cost_usd:
-                            type: number
-                      output_tokens:
-                        type: object
-                        properties:
-                          quantity:
-                            type: number
-                          cost:
-                            type: number
-                          cost_usd:
-                            type: number
-                      cached_tokens:
-                        type: object
-                        properties:
-                          quantity:
-                            type: number
-                          cost:
-                            type: number
-                          cost_usd:
-                            type: number
+                    description: Parsed AI model name (if applicable)
+                  usage_type:
+                    type: string
+                    description: Token type (input_tokens, output_tokens, etc.)
       400:
         description: Bad request
       401:
