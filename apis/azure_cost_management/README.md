@@ -47,14 +47,13 @@ python test_azure_credentials.py
 
 ## API Endpoints
 
-### Get Detailed Cost Breakdown
+### 1. Get Detailed Cost Breakdown
 
 ```http
 GET /azure/costs
 ```
 
 **Parameters:**
-- `subscription_id` (optional): Azure subscription ID. Uses `AZURE_SUBSCRIPTION_ID` from environment if not provided
 - `start_date` (optional): Start date in YYYY-MM-DD format (defaults to 30 days ago)
 - `end_date` (optional): End date in YYYY-MM-DD format (defaults to today)
 
@@ -99,14 +98,13 @@ GET /azure/costs
 }
 ```
 
-### Get Cost Summary
+### 2. Get Cost Summary
 
 ```http
 GET /azure/costs/summary
 ```
 
 **Parameters:**
-- `subscription_id` (optional): Azure subscription ID. Uses `AZURE_SUBSCRIPTION_ID` from environment if not provided
 - `days` (optional): Number of days to look back (default 30)
 
 **Headers:**
@@ -144,6 +142,160 @@ GET /azure/costs/summary
   "total_resources": 25
 }
 ```
+
+### 3. Get Period-Based Costs
+
+```http
+GET /azure/costs/period
+```
+
+**Parameters:**
+- `period` (optional): Period type - 'mtd' (month-to-date), 'ytd' (year-to-date), or 'custom' (default 'mtd')
+- `start_period` (optional): For custom period, start in YYYYMM format (e.g., 202401)
+- `end_period` (optional): For custom period, end in YYYYMM format (e.g., 202412)
+
+**Headers:**
+- `API-Key`: Your API key for authentication
+
+**Examples:**
+
+Month-to-date:
+```http
+GET /azure/costs/period?period=mtd
+```
+
+Year-to-date:
+```http
+GET /azure/costs/period?period=ytd
+```
+
+Custom period (Jan-Mar 2024):
+```http
+GET /azure/costs/period?period=custom&start_period=202401&end_period=202403
+```
+
+**Response:** Returns the same hierarchical structure as `/azure/costs` with additional period information.
+
+### 4. Get AI/ML/Cognitive Services Costs
+
+```http
+GET /azure/costs/ai-services
+```
+
+**Parameters:**
+- `start_date` (optional): Start date in YYYY-MM-DD format (defaults to 30 days ago)
+- `end_date` (optional): End date in YYYY-MM-DD format (defaults to today)
+
+**Headers:**
+- `API-Key`: Your API key for authentication
+
+**Response:**
+```json
+{
+  "subscription_id": "subscription-id",
+  "period": {
+    "from": "2024-01-01",
+    "to": "2024-01-31"
+  },
+  "total_ai_cost": 2500.00,
+  "total_ai_cost_usd": 2375.00,
+  "services": {
+    "Azure OpenAI": {
+      "name": "Azure OpenAI",
+      "total_cost": 1800.00,
+      "total_cost_usd": 1710.00,
+      "resources": {
+        "openai-prod": {
+          "name": "openai-prod",
+          "resource_id": "/subscriptions/.../openai-prod",
+          "total_cost": 1800.00,
+          "total_cost_usd": 1710.00,
+          "meters": [
+            {
+              "meter_name": "GPT-4 Input Tokens",
+              "meter_category": "Azure OpenAI Service",
+              "usage_quantity": 5000000,
+              "unit_of_measure": "1K Tokens",
+              "cost": 300.00,
+              "cost_usd": 285.00,
+              "model": "gpt-4",
+              "usage_type": "input_tokens"
+            },
+            {
+              "meter_name": "GPT-4 Output Tokens",
+              "usage_quantity": 2000000,
+              "cost": 600.00,
+              "cost_usd": 570.00,
+              "model": "gpt-4",
+              "usage_type": "output_tokens"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "models": {
+    "gpt-4": {
+      "model": "gpt-4",
+      "total_cost": 900.00,
+      "total_cost_usd": 855.00,
+      "usage_breakdown": {
+        "input_tokens": {
+          "quantity": 5000000,
+          "cost": 300.00,
+          "cost_usd": 285.00,
+          "unit": "1K Tokens"
+        },
+        "output_tokens": {
+          "quantity": 2000000,
+          "cost": 600.00,
+          "cost_usd": 570.00,
+          "unit": "1K Tokens"
+        }
+      }
+    },
+    "gpt-3.5-turbo": {
+      "model": "gpt-3.5-turbo",
+      "total_cost": 450.00,
+      "total_cost_usd": 427.50,
+      "usage_breakdown": {
+        "input_tokens": {
+          "quantity": 20000000,
+          "cost": 200.00,
+          "cost_usd": 190.00,
+          "unit": "1K Tokens"
+        },
+        "output_tokens": {
+          "quantity": 15000000,
+          "cost": 250.00,
+          "cost_usd": 237.50,
+          "unit": "1K Tokens"
+        }
+      }
+    },
+    "text-embedding-ada-002": {
+      "model": "text-embedding-ada-002",
+      "total_cost": 50.00,
+      "total_cost_usd": 47.50,
+      "usage_breakdown": {
+        "embeddings": {
+          "quantity": 10000000,
+          "cost": 50.00,
+          "cost_usd": 47.50,
+          "unit": "1K Tokens"
+        }
+      }
+    }
+  }
+}
+```
+
+The AI services endpoint provides:
+- **Detailed token-level cost attribution** for each AI model
+- **Breakdown by service** (Azure OpenAI, Cognitive Services, etc.)
+- **Model-specific costs** with input/output/cached token separation
+- **Usage quantities** for cost analysis and optimization
+- **Support for all AI models** including GPT-4, GPT-3.5, DALL-E, Whisper, embeddings
 
 ## Error Handling
 
