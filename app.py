@@ -364,6 +364,10 @@ register_get_context_data_routes(app)
 from apis.usage_tracking.usage_analytics import register_usage_tracking_routes
 register_usage_tracking_routes(app)
 
+# AZURE COST MANAGEMENT ENDPOINTS
+from apis.azure_cost_management.cost_extraction import register_azure_cost_routes
+register_azure_cost_routes(app)
+
 
 if __name__ == '__main__':
     app.run(debug=True)

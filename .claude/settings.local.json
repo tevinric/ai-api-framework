@@ -7,7 +7,8 @@
       "Bash(rm:*)",
       "Bash(python:*)",
       "Bash(npm start)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "WebSearch"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"
