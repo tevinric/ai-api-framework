@@ -552,9 +552,9 @@ def print_research_summary(result: Dict):
 # Main execution
 if __name__ == "__main__":
     # Configure your Azure OpenAI settings
-    AZURE_OPENAI_ENDPOINT = "https://your-resource.openai.azure.com/"
-    AZURE_OPENAI_KEY = "your-api-key"
-    DEPLOYMENT_NAME = "gpt-4"
+    AZURE_OPENAI_ENDPOINT = os.environ.get("OPENAI_API_ENDPOINT")
+    AZURE_OPENAI_KEY = os.environ.get("OPENAI_API_KEY")
+    DEPLOYMENT_NAME = "gpt-4o"
     
     # Initialize the research agent
     agent = DeepResearchAgent(
