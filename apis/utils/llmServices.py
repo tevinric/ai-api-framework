@@ -179,118 +179,6 @@ def deepseek_r1_service(system_prompt, user_input, temperature=0.5, json_output=
         "error": str(last_error)
     }
 
-
-
-    """OpenAI GPT-4o LLM service function for text completion and content generation with failover logic"""
-    # Fixed deployment model
-    DEPLOYMENT = 'gpt-4o'
-    
-    # List of clients to try in order
-    clients = [
-        ("primary", primary_openai_client),
-        ("secondary", secondary_openai_client), 
-        ("tertiary", tertiary_openai_client)
-    ]
-    
-    last_error = None
-    
-    for client_name, client in clients:
-        try:
-            logger.info(f"Attempting GPT-4o request using {client_name} client")
-            
-            # Make request to LLM
-            response = client.chat.completions.create(
-                model=DEPLOYMENT,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": f"Provided text: {user_input}"}
-                ],
-                temperature=temperature,
-                response_format={"type": "json_object"} if json_output else {"type": "text"}
-            )
-            
-            # Extract response data
-            result = response.choices[0].message.content
-            prompt_tokens = response.usage.prompt_tokens
-            completion_tokens = response.usage.completion_tokens
-            total_tokens = response.usage.total_tokens
-            # Azure OpenAI returns cached tokens in prompt_tokens_details
-            cached_tokens = 0
-            if hasattr(response.usage, 'prompt_tokens_details') and response.usage.prompt_tokens_details:
-                cached_tokens = getattr(response.usage.prompt_tokens_details, 'cached_tokens', 0)
-            
-            logger.info(f"GPT-4o request successful using {client_name} client")
-            
-            return {
-                "success": True,
-                "result": result,
-                "model": DEPLOYMENT,
-                "client_used": client_name,
-                "prompt_tokens": prompt_tokens,
-                "completion_tokens": completion_tokens,
-                "total_tokens": total_tokens,
-                "cached_tokens": cached_tokens
-            }
-            
-        except Exception as e:
-            last_error = e
-            logger.warning(f"GPT-4o API error with {client_name} client: {str(e)}")
-            
-            # If this is not the last client, continue to next one
-            if client_name != "tertiary":
-                logger.info(f"Trying next client...")
-                continue
-    
-    # All clients failed, return error
-    logger.error(f"All GPT-4o clients failed. Final error: {str(last_error)}")
-    return {
-        "success": False,
-        "error": str(last_error)
-    }
-
-    """OpenAI GPT-4o-mini LLM service function for everyday text completion tasks"""
-    try:
-        # Fixed deployment model
-        DEPLOYMENT = 'gpt-4o-mini'
-        
-        # Make request to LLM
-        response = openai_client.chat.completions.create(
-            model=DEPLOYMENT,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": f"Provided text: {user_input}"}
-            ],
-            temperature=temperature,
-            response_format={"type": "json_object"} if json_output else {"type": "text"}
-        )
-        
-        # Extract response data
-        result = response.choices[0].message.content
-        prompt_tokens = response.usage.prompt_tokens
-        completion_tokens = response.usage.completion_tokens
-        total_tokens = response.usage.total_tokens
-        # Azure OpenAI returns cached tokens in prompt_tokens_details
-        cached_tokens = 0
-        if hasattr(response.usage, 'prompt_tokens_details') and response.usage.prompt_tokens_details:
-            cached_tokens = getattr(response.usage.prompt_tokens_details, 'cached_tokens', 0)
-        
-        return {
-            "success": True,
-            "result": result,
-            "model": DEPLOYMENT,
-            "prompt_tokens": prompt_tokens,
-            "completion_tokens": completion_tokens,
-            "total_tokens": total_tokens,
-            "cached_tokens": cached_tokens
-        }
-        
-    except Exception as e:
-        logger.error(f"GPT-4o-mini API error: {str(e)}")
-        return {
-            "success": False,
-            "error": str(e)
-        }
-
 def deepseek_v3_service(system_prompt, user_input, temperature=0.7, json_output=False, max_tokens=1000):
     """DeepSeek-V3-0324 LLM service function for general task completion with failover logic"""
     
@@ -1868,7 +1756,6 @@ def gpt4o_service(system_prompt, user_input, temperature=0.5, json_output=False,
                     model=DEPLOYMENT,
                     messages=messages,
                     temperature=temperature,
-                    max_tokens=4000,  # Add reasonable limit
                     response_format={"type": "json_object"} if json_output else {"type": "text"}
                 )
                 
